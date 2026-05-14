@@ -448,6 +448,23 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web UI
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="././" class="md-nav__link md-nav__link--active">
         
   
@@ -463,6 +480,37 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tasks
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -572,6 +620,11 @@
                       
                     
                     
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
                   
                   <div class="md-sidebar__inner">
                     
@@ -583,6 +636,25 @@
   
     
   
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tasks
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -605,7 +677,10 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dadrock<span class="w"> </span>preview
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>dadrock<span class="w"> </span>preview<span class="w"> </span>--port<span class="w"> </span><span class="m">4005</span><span class="w"> </span>path/to/project
 </span></code></pre></div>
-<p>Running <code>dadrock</code> with no subcommand starts the same web preview server with default options. The preview UI is the interactive workbench: a split record browser with lifecycle filters, candidate accept/reject actions, supersession controls, project and record validation queues, link health, settings, and local ACP agent drafting when an agent provider is configured.</p>
+<p>The preview UI is the interactive workbench: a split record browser with lifecycle filters, candidate accept/reject actions, supersession controls, project and record validation queues, link health, settings, and local ACP agent drafting when an agent provider is configured.</p>
+<h2 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">&para;</a></h2>
+<p>The preview UI includes a Tasks tab for agent-assisted workflows over the decision ledger. Tasks can be built in, project-local under <code>dadr/tasks/</code>, or user-installed. Runs are saved under <code>dadr/runs/</code> and ignored by default because they may contain pasted context, source excerpts, and model transcripts.</p>
+<p>Typed task results drive the matching UI: candidate drafts open in a one-panel editor, conflict findings use side-by-side review, diagnosis reports render as issue lists, and unknown third-party output kinds fall back to a report view with raw JSON.</p>
 
 
 

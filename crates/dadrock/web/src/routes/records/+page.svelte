@@ -247,7 +247,7 @@
       {/snippet}
 
       {#snippet right()}
-      <WorkbenchPane framed data-record-detail-pane class="hidden min-h-0 min-w-0 flex-col p-4 lg:flex lg:p-5">
+      <WorkbenchPane framed data-record-detail-pane class="hidden min-h-0 min-w-0 flex-col p-4 md:flex md:p-5">
         <RecordDetailPanel id={selectedId} showBackLink={false} embedded />
       </WorkbenchPane>
       {/snippet}

@@ -715,19 +715,19 @@
 <p><strong>DADR</strong> is the standard, the record format, and the project vocabulary. </p>
 <p><strong>dadrock</strong> is one Rust tool that implements DADR. It offers convenience functions to manage decision records, validate them, direct LLM agents, etc.</p>
 <h2 id="at-a-glance">At a glance<a class="headerlink" href="#at-a-glance" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dadrock<span class="w"> </span>init<span class="w">                                </span><span class="c1"># scaffold decisions/ and templates</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dadrock<span class="w"> </span>init<span class="w">                                </span><span class="c1"># scaffold dadr/</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>dadrock<span class="w"> </span>new<span class="w"> </span><span class="s2">&quot;Decision title&quot;</span><span class="w">                </span><span class="c1"># draft a candidate</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>dadrock<span class="w"> </span>list<span class="w"> </span>--status<span class="w"> </span>candidate<span class="w">             </span><span class="c1"># browse the queue</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>dadrock<span class="w">                                     </span><span class="c1"># local web UI on :4004</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>dadrock<span class="w"> </span>status<span class="w"> </span>accept<span class="w"> </span>&lt;id&gt;<span class="w">                  </span><span class="c1"># candidate → accepted</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>dadrock<span class="w"> </span>status<span class="w"> </span>supersede<span class="w"> </span>--from<span class="w"> </span>OLD<span class="w"> </span>--to<span class="w"> </span>NEW<span class="w"> </span><span class="c1"># link a new accepted decision to the one it supersedes</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>dadrock<span class="w"> </span>infer<span class="w"> </span>--code<span class="w"> </span>analysis/<span class="w">              </span><span class="c1"># draft candidates from source</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>dadrock<span class="w"> </span>validate<span class="w">                            </span><span class="c1"># full project validation</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>dadrock<span class="w"> </span>preview<span class="w"> </span>--port<span class="w"> </span><span class="m">4005</span><span class="w">                 </span><span class="c1"># local web UI with explicit options</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>dadrock<span class="w"> </span>build<span class="w">                               </span><span class="c1"># static site under decisions/_site</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>dadrock<span class="w"> </span>task<span class="w"> </span>list<span class="w">                           </span><span class="c1"># list built-in and project tasks</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>dadrock<span class="w"> </span>task<span class="w"> </span>run<span class="w"> </span>code-to-record<span class="w"> </span>--input-json<span class="w"> </span><span class="s1">&#39;{&quot;path&quot;:&quot;analysis/&quot;}&#39;</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>dadrock<span class="w"> </span>validate<span class="w">                            </span><span class="c1"># full project validation</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>dadrock<span class="w"> </span>preview<span class="w"> </span>--port<span class="w"> </span><span class="m">4005</span><span class="w">                 </span><span class="c1"># local web UI with explicit options</span>
 </span></code></pre></div>
 <p>The full surface is documented in the pages above.</p>
-<p><strong>dadrock</strong> is the Rust binary that implements DADR. It is repository-local by default. Records are the canonical files; the binary orchestrates lifecycle transitions, validation, inference, hooks, reports, and the static-site build.</p>
+<p><strong>dadrock</strong> is the Rust binary that implements DADR. It is repository-local by default. Records are the canonical files; the binary orchestrates lifecycle transitions, validation, tag inspection, local preview, task-based agent workflows, and optional MCP integration.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <p>Prebuilt binaries are published with each <a href="https://github.com/vincentarelbundock/dadr/releases">release</a>. A single-line installer script is available for macOS, Linux, and Windows. From source:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cargo<span class="w"> </span>install<span class="w"> </span>dadrock
@@ -736,18 +736,24 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadrock<span class="w"> </span>--version
 </span></code></pre></div>
 <h2 id="project-layout">Project layout<a class="headerlink" href="#project-layout" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>decisions/
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  candidates/
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    01938b8e-4d70-7abc-...md
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  01938c20-a3b4-7000-...md
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  ...
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>.dadr/
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dadr/
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  accepted/
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    01938c20-a3b4-7000-...md
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  candidates/
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    01938b8e-4d70-7abc-...md
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  rejected/
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  templates/
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    candidate.md
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  tasks/
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  runs/
 </span></code></pre></div>
 <ul>
-<li><code>decisions/</code> holds accepted records (current or superseded) at the root, with <code>candidates/</code> underneath for active proposals and the rejected-candidate archive.</li>
-<li><code>.dadr/</code> holds local tooling artefacts (templates, schema files). Records under version control belong in <code>decisions/</code>; everything in <code>.dadr/</code> is regenerable and may be ignored.</li>
+<li><code>dadr/accepted/</code> holds accepted records, current or superseded.</li>
+<li><code>dadr/candidates/</code> holds active proposals.</li>
+<li><code>dadr/rejected/</code> holds rejected records.</li>
+<li><code>dadr/templates/</code> holds optional project template overrides.</li>
+<li><code>dadr/tasks/</code> holds project-local task packages such as <code>dadr/tasks/&lt;task-id&gt;/task.toml</code> plus the prompt file named by that manifest.</li>
+<li><code>dadr/runs/</code> holds ignored task run state: inputs, metadata, logs, results, and other execution artifacts.</li>
 </ul>
 <h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h2>
 <p>Validation is concerned with the <strong>internal coherence</strong> of the records: front matter parses, required fields are present, status values are valid, IDs are well-formed and unique, links resolve, the supersession DAG is acyclic, and accepted records have not silently mutated since acceptance. Checks against external anchors (plan, code, manuscript) live under <a href="../getting-started/#existing-projects">Existing projects</a>.</p>
@@ -787,8 +793,7 @@
 <li>an accepted record with a non-empty <code>successors</code> array is <strong>superseded</strong> — derived from the graph rather than expressed as a status value;</li>
 <li><code>successors</code> entries, when supplied, are well-formed UUIDv7s on accepted records;</li>
 <li><code>tags</code> entries follow the format rules in the <a href="../specification/#tags">DADR specification</a>;</li>
-<li><code>#plan/&lt;id&gt;</code> tags resolve against local plans or registry metadata when supplied;</li>
-<li><code>#plan-relation/...</code> tags use the recommended vocabulary when supplied.</li>
+<li><code>#plan/&lt;id&gt;</code> tags resolve against local plans or registry metadata when supplied.</li>
 </ul>
 <h3 id="structural">Structural<a class="headerlink" href="#structural" title="Permanent link">&para;</a></h3>
 <ul>
@@ -796,8 +801,9 @@
 <li>the <code>Alternatives</code> section is non-empty (or contains an explicit <code>Not applicable</code> / <code>Unknown</code> statement);</li>
 <li>accepted records contain no placeholders such as <code>{...}</code> or <code>TBD</code>;</li>
 <li>citation keys resolve against the per-record <code>bibliography</code> field;</li>
-<li>records carrying <code>#plan-relation/deviates-from</code> include a <code>## Plan deviation</code> section with reason, impact assessment, and reviewer;</li>
-<li>records carrying <code>#plan-relation/amends</code> link to the approved amendment or review event.</li>
+<li>records that document plan deviations include a <code>## Plan deviation</code> section
+  with reason, impact assessment, and reviewer;</li>
+<li>records that amend a plan link to the approved amendment or review event.</li>
 </ul>
 <h3 id="project-validation">Project validation<a class="headerlink" href="#project-validation" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dadrock<span class="w"> </span>validate
@@ -820,7 +826,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>links
 </span></code></pre></div>
 <p><code>dadrock validate links</code> verifies that every <code>[[&lt;uuid7-prefix&gt;]]</code> resolves to exactly one record and that Markdown links to local files exist.</p>
-<p>The static-site build (<code>dadrock build</code>) and the preview UI (<code>dadrock preview</code>) run a wikilink → Markdown pass before rendering. Wikilinks remain the source of truth on disk; resolving them at render time means a record file moving (e.g., on lifecycle transition) does not silently break links.</p>
+<p>The preview UI (<code>dadrock preview</code>) runs a wikilink → Markdown pass before rendering. Wikilinks remain the source of truth on disk; resolving them at render time means a record file moving (e.g., on lifecycle transition) does not silently break links.</p>
 <h2 id="ci-integration">CI integration<a class="headerlink" href="#ci-integration" title="Permanent link">&para;</a></h2>
 <p>A minimal GitHub Actions workflow:</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dadrock</span>

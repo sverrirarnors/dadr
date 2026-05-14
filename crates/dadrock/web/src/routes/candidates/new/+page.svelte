@@ -115,8 +115,8 @@
   }
 </script>
 
-<WorkbenchPage layout="single">
-  <WorkbenchPane class="max-w-4xl overflow-auto">
+<WorkbenchPage layout="single" class="h-full">
+  <WorkbenchPane data-candidate-new-pane class="h-full max-w-4xl overflow-auto">
     <div class="p-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>

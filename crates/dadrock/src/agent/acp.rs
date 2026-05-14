@@ -32,7 +32,7 @@ use crate::{
         types::{AgentRequestEnvelope, AgentResponseEnvelope},
     },
     error::DadrError,
-    mcp::dadrock_mcp_server_config,
+    mcp::{dadrock_mcp_server_config_with_access, DadrockMcpAccess},
 };
 
 mod config;
@@ -88,6 +88,7 @@ pub struct AcpPromptOptions {
     pub permission_policy: AcpPermissionPolicy,
     pub output_limit_bytes: usize,
     pub enable_dadrock_mcp: bool,
+    pub dadrock_mcp_access: DadrockMcpAccess,
 }
 
 impl Default for AcpPromptOptions {
@@ -96,6 +97,7 @@ impl Default for AcpPromptOptions {
             permission_policy: AcpPermissionPolicy::default(),
             output_limit_bytes: ACP_OUTPUT_LIMIT_BYTES,
             enable_dadrock_mcp: true,
+            dadrock_mcp_access: DadrockMcpAccess::Full,
         }
     }
 }
@@ -103,12 +105,14 @@ impl Default for AcpPromptOptions {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AcpConversationOptions {
     pub enable_dadrock_mcp: bool,
+    pub dadrock_mcp_access: DadrockMcpAccess,
 }
 
 impl Default for AcpConversationOptions {
     fn default() -> Self {
         Self {
             enable_dadrock_mcp: true,
+            dadrock_mcp_access: DadrockMcpAccess::Full,
         }
     }
 }
@@ -146,12 +150,14 @@ impl AcpCancellationToken {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AcpHealthOptions {
     pub enable_dadrock_mcp: bool,
+    pub dadrock_mcp_access: DadrockMcpAccess,
 }
 
 impl Default for AcpHealthOptions {
     fn default() -> Self {
         Self {
             enable_dadrock_mcp: true,
+            dadrock_mcp_access: DadrockMcpAccess::Full,
         }
     }
 }
@@ -711,19 +717,28 @@ fn run_acp_prompt(
 
 fn new_session_request(
     cwd: PathBuf,
-    enable_dadrock_mcp: bool,
+    dadrock_mcp_access: Option<DadrockMcpAccess>,
 ) -> Result<NewSessionRequest, DadrError> {
     let mut request = NewSessionRequest::new(cwd.clone());
-    if enable_dadrock_mcp {
+    if let Some(access) = dadrock_mcp_access {
         let utf8_cwd = camino::Utf8PathBuf::from_path_buf(cwd).map_err(|path| {
             DadrError::Mcp(format!(
                 "failed to attach Dadrock MCP server for non-UTF-8 cwd `{}`",
                 path.display()
             ))
         })?;
-        request = request.mcp_servers(vec![dadrock_mcp_server_config(&utf8_cwd)?]);
+        request = request.mcp_servers(vec![dadrock_mcp_server_config_with_access(
+            &utf8_cwd, access,
+        )?]);
     }
     Ok(request)
+}
+
+fn dadrock_mcp_access_option(
+    enable_dadrock_mcp: bool,
+    access: DadrockMcpAccess,
+) -> Option<DadrockMcpAccess> {
+    enable_dadrock_mcp.then_some(access)
 }
 
 fn dadr_to_acp(error: DadrError) -> agent_client_protocol::Error {
@@ -753,8 +768,11 @@ async fn check_local_acp_agent_async(
                 .send_request(InitializeRequest::new(ProtocolVersion::V1))
                 .block_task()
                 .await?;
-            let session_request =
-                new_session_request(cwd, options.enable_dadrock_mcp).map_err(dadr_to_acp)?;
+            let session_request = new_session_request(
+                cwd,
+                dadrock_mcp_access_option(options.enable_dadrock_mcp, options.dadrock_mcp_access),
+            )
+            .map_err(dadr_to_acp)?;
             let session = cx
                 .build_session_from(session_request)
                 .block_task()
@@ -828,8 +846,14 @@ async fn run_acp_prompt_async(
                     .block_task()
                     .await?;
 
-                let session_request =
-                    new_session_request(cwd, options.enable_dadrock_mcp).map_err(dadr_to_acp)?;
+                let session_request = new_session_request(
+                    cwd,
+                    dadrock_mcp_access_option(
+                        options.enable_dadrock_mcp,
+                        options.dadrock_mcp_access,
+                    ),
+                )
+                .map_err(dadr_to_acp)?;
                 let mut session = cx
                     .build_session_from(session_request)
                     .block_task()
@@ -1003,8 +1027,11 @@ async fn run_acp_conversation_async(
                 .block_task()
                 .await?;
 
-            let session_request =
-                new_session_request(cwd, options.enable_dadrock_mcp).map_err(dadr_to_acp)?;
+            let session_request = new_session_request(
+                cwd,
+                dadrock_mcp_access_option(options.enable_dadrock_mcp, options.dadrock_mcp_access),
+            )
+            .map_err(dadr_to_acp)?;
             let response = cx
                 .send_request_to(Agent, session_request)
                 .block_task()
@@ -1296,5 +1323,17 @@ mod tests {
         release_sender.send(()).unwrap();
 
         assert!(joined_receiver.recv_timeout(Duration::from_secs(1)).is_ok());
+    }
+
+    #[test]
+    fn read_only_dadrock_mcp_session_uses_read_only_server_arg() {
+        let request = new_session_request(
+            PathBuf::from("/tmp/dadrock-project"),
+            Some(DadrockMcpAccess::ReadOnly),
+        )
+        .expect("session request");
+        let json = serde_json::to_value(request).expect("serialize session request");
+
+        assert!(json.to_string().contains("--read-only"));
     }
 }

@@ -432,6 +432,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#recommended-kind-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Recommended <code>kind/</code> Values
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tidy-tags" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -775,6 +786,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#recommended-kind-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Recommended <code>kind/</code> Values
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tidy-tags" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -839,14 +861,12 @@ annotations, see <a href="../specification/#code-tags">Code tags</a>.</p>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">01938c20-a3b4-7000-8000-111122223333</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">tags</span><span class="p">:</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kind/sample</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scope/main-analysis</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confidence/high</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="nn">---</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confidence/high</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nn">---</span>
 </span></code></pre></div>
 <h3 id="inline">Inline<a class="headerlink" href="#inline" title="Permanent link">&para;</a></h3>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">&gt; </span><span class="ge">#plan-relation/conforms</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">&gt; </span><span class="ge">Drop the 47 respondents without recorded treatment</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">&gt; </span><span class="ge">assignment from the analysis sample.</span>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">&gt; </span><span class="ge">Drop the 47 respondents without recorded treatment</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">&gt; </span><span class="ge">assignment from the analysis sample.</span>
 </span></code></pre></div>
 <h3 id="code-comments">Code comments<a class="headerlink" href="#code-comments" title="Permanent link">&para;</a></h3>
 <div class="language-r highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># #dadr/01938c20a3b4</span>
@@ -868,7 +888,7 @@ needed, and ignore the rest.</p>
     <tr>
       <td><code>#kind/</code></td>
       <td>What sort of decision the record captures</td>
-      <td><code>#kind/sample</code><br/><code>#kind/model</code><br/><code>#kind/estimand</code><br/><code>#kind/report</code></td>
+      <td><code>#kind/sample</code><br/><code>#kind/modeling</code><br/><code>#kind/inference</code><br/><code>#kind/communication</code></td>
     </tr>
     <tr>
       <td><code>#confidence/</code></td>
@@ -877,8 +897,8 @@ needed, and ignore the rest.</p>
     </tr>
     <tr>
       <td><code>#plan/</code></td>
-      <td>How a record relates to a statistical analysis plan (SAP) or pre-registration</td>
-      <td><code>#plan/implementation</code><br/><code>#plan/clarification</code><br/><code>#plan/deviation</code></td>
+      <td>Which statistical analysis plan (SAP), pre-registration, protocol, or other plan the record references</td>
+      <td><code>#plan/sap-2026</code><br/><code>#plan/pap-main</code><br/><code>#plan/protocol-v2</code></td>
     </tr>
     <tr>
       <td><code>#people/</code></td>
@@ -906,6 +926,154 @@ needed, and ignore the rest.</p>
 <p>There is no single required vocabulary. A team may decide to use only
 <code>kind/...</code> and <code>people/...</code>, or to add its own namespaces for plans, review,
 datasets, outputs, or anything else that helps keep records organized.</p>
+<h2 id="recommended-kind-values">Recommended <code>kind/</code> Values<a class="headerlink" href="#recommended-kind-values" title="Permanent link">&para;</a></h2>
+<p><code>kind/...</code> is the main classification axis. It describes the analytic activity
+or review surface that the decision belongs to. Start with the values below and
+add project-specific values only when they clarify review.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Use it for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind/setup</code></td>
+<td>Seeds, library loading, paths, global options, version pins</td>
+</tr>
+<tr>
+<td><code>kind/input</code></td>
+<td>Reading files, querying databases, API fetches, snapshots</td>
+</tr>
+<tr>
+<td><code>kind/sample</code></td>
+<td>Eligibility, row filters, deduplication, joins, date windows</td>
+</tr>
+<tr>
+<td><code>kind/measurement</code></td>
+<td>Outcomes, treatments, covariates, labels, units, coding</td>
+</tr>
+<tr>
+<td><code>kind/transformation</code></td>
+<td>Imputation, winsorization, scaling, aggregation, derived features</td>
+</tr>
+<tr>
+<td><code>kind/exploration</code></td>
+<td>Summaries, diagnostics, missingness reviews, exploratory plots</td>
+</tr>
+<tr>
+<td><code>kind/modeling</code></td>
+<td>Formulas, estimators, priors, hyperparameters, model families</td>
+</tr>
+<tr>
+<td><code>kind/inference</code></td>
+<td>Standard errors, tests, intervals, validation metrics</td>
+</tr>
+<tr>
+<td><code>kind/robustness</code></td>
+<td>Sensitivity checks, placebo tests, alternative specifications</td>
+</tr>
+<tr>
+<td><code>kind/visualization</code></td>
+<td>Plot encodings, scales, facets, annotations</td>
+</tr>
+<tr>
+<td><code>kind/communication</code></td>
+<td>Tables, captions, rounding, manuscript/report wording</td>
+</tr>
+<tr>
+<td><code>kind/output</code></td>
+<td>Written data, figures, models, dashboards, published artifacts</td>
+</tr>
+<tr>
+<td><code>kind/governance</code></td>
+<td>SAP/PAP/protocol relations, deviations, amendments, approvals</td>
+</tr>
+<tr>
+<td><code>kind/quality</code></td>
+<td>Assertions, schema checks, reconciliation, validation checks</td>
+</tr>
+<tr>
+<td><code>kind/orchestration</code></td>
+<td>Pipeline targets, DAG rules, dependencies, parameters</td>
+</tr>
+</tbody>
+</table>
+<p>The list is intentionally broad. A DADR records a decision, not every activity
+in a script or notebook. Use <code>kind/...</code> to classify consequential choices that a
+reviewer, collaborator, or future analyst would want explained.</p>
+<p>Common subactivities can help pick the closest <code>kind/...</code> value:</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Example subactivities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind/setup</code></td>
+<td><code>seed</code>, <code>library_load</code>, <code>global_option</code>, <code>version_pin</code>, <code>path_config</code></td>
+</tr>
+<tr>
+<td><code>kind/input</code></td>
+<td><code>file_read</code>, <code>database_query</code>, <code>api_fetch</code>, <code>snapshot_select</code>, <code>schema_select</code></td>
+</tr>
+<tr>
+<td><code>kind/sample</code></td>
+<td><code>row_filter</code>, <code>eligibility_rule</code>, <code>deduplication</code>, <code>date_window</code>, <code>cohort_join</code>, <code>missingness_filter</code></td>
+</tr>
+<tr>
+<td><code>kind/measurement</code></td>
+<td><code>outcome_definition</code>, <code>treatment_definition</code>, <code>covariate_definition</code>, <code>unit_conversion</code>, <code>label_mapping</code>, <code>missing_value_code</code></td>
+</tr>
+<tr>
+<td><code>kind/transformation</code></td>
+<td><code>imputation</code>, <code>winsorization</code>, <code>scaling</code>, <code>aggregation</code>, <code>interaction</code>, <code>encoding</code>, <code>derived_score</code></td>
+</tr>
+<tr>
+<td><code>kind/exploration</code></td>
+<td><code>summary_statistic</code>, <code>missingness_summary</code>, <code>distribution_check</code>, <code>diagnostic_plot</code>, <code>correlation_check</code></td>
+</tr>
+<tr>
+<td><code>kind/modeling</code></td>
+<td><code>formula</code>, <code>estimator</code>, <code>prior</code>, <code>hyperparameter</code>, <code>fixed_effect</code>, <code>random_effect</code>, <code>resampling_design</code></td>
+</tr>
+<tr>
+<td><code>kind/inference</code></td>
+<td><code>standard_error</code>, <code>test</code>, <code>interval</code>, <code>metric</code>, <code>multiple_testing</code>, <code>validation_split</code></td>
+</tr>
+<tr>
+<td><code>kind/robustness</code></td>
+<td><code>alternative_specification</code>, <code>placebo</code>, <code>negative_control</code>, <code>leave_one_out</code>, <code>specification_curve</code></td>
+</tr>
+<tr>
+<td><code>kind/visualization</code></td>
+<td><code>encoding</code>, <code>scale</code>, <code>facet</code>, <code>annotation</code>, <code>theme</code>, <code>axis_transform</code></td>
+</tr>
+<tr>
+<td><code>kind/communication</code></td>
+<td><code>table_format</code>, <code>rounding</code>, <code>model_selection_for_display</code>, <code>caption</code>, <code>report_render</code></td>
+</tr>
+<tr>
+<td><code>kind/output</code></td>
+<td><code>write_table</code>, <code>write_figure</code>, <code>write_model</code>, <code>cache_artifact</code>, <code>publish_artifact</code>, <code>data_export</code></td>
+</tr>
+<tr>
+<td><code>kind/governance</code></td>
+<td><code>plan_reference</code>, <code>data_cleaning_plan</code>, <code>sop_reference</code>, <code>plan_deviation</code>, <code>amendment</code>, <code>approval</code></td>
+</tr>
+<tr>
+<td><code>kind/quality</code></td>
+<td><code>assertion</code>, <code>schema_check</code>, <code>row_count_check</code>, <code>snapshot_check</code>, <code>test_expectation</code></td>
+</tr>
+<tr>
+<td><code>kind/orchestration</code></td>
+<td><code>target</code>, <code>rule</code>, <code>dependency</code>, <code>parameter</code>, <code>resource</code>, <code>schedule</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="tidy-tags">Tidy tags<a class="headerlink" href="#tidy-tags" title="Permanent link">&para;</a></h2>
 <p>Keep tags short, consistent, and predictable. In practice that usually means:</p>
 <ul>

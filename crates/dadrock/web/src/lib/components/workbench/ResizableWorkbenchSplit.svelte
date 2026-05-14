@@ -90,7 +90,7 @@
   bind:element={root}
   data-resizable-workbench-split={splitId}
   layout="two-pane"
-  class={cn('grid-cols-1 lg:grid-cols-[var(--workbench-split-left-width)_8px_minmax(0,1fr)]', className)}
+  class={cn('grid-cols-1 md:grid-cols-[var(--workbench-split-left-width)_8px_minmax(0,1fr)]', className)}
   style={splitStyle}
   {...rest}
 >
@@ -107,7 +107,7 @@
     aria-valuenow={Math.round(leftWidth)}
     aria-valuemax={Math.round(maxLeftWidth())}
     tabindex="0"
-    class="hidden cursor-col-resize items-stretch justify-center px-1 outline-none focus-visible:ring-2 focus-visible:ring-accent lg:flex"
+    class="hidden cursor-col-resize items-stretch justify-center px-1 outline-none focus-visible:ring-2 focus-visible:ring-accent md:flex"
     onpointerdown={startResize}
     onkeydown={resizeWithKeyboard}
   >

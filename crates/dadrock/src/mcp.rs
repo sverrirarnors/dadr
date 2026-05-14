@@ -60,6 +60,14 @@ const TOOL_PROJECT_SNAPSHOT: &str = "dadrock.project_snapshot";
 #[derive(Debug, Clone)]
 pub struct DadrockMcpServer {
     context: CommandContext,
+    access: DadrockMcpAccess,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum DadrockMcpAccess {
+    Full,
+    ReadOnly,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -75,12 +83,27 @@ pub struct McpProjectSnapshot {
 
 impl DadrockMcpServer {
     pub fn new(context: CommandContext) -> Self {
-        Self { context }
+        Self::new_with_access(context, DadrockMcpAccess::Full)
+    }
+
+    pub fn new_with_access(context: CommandContext, access: DadrockMcpAccess) -> Self {
+        Self { context, access }
     }
 
     pub fn tools() -> Vec<Tool> {
         static TOOLS: OnceLock<Vec<Tool>> = OnceLock::new();
         TOOLS.get_or_init(Self::build_tools).clone()
+    }
+
+    pub fn tools_for_access(access: DadrockMcpAccess) -> Vec<Tool> {
+        let tools = Self::tools();
+        match access {
+            DadrockMcpAccess::Full => tools,
+            DadrockMcpAccess::ReadOnly => tools
+                .into_iter()
+                .filter(|tool| tool_is_read_only(tool))
+                .collect(),
+        }
     }
 
     fn build_tools() -> Vec<Tool> {
@@ -314,6 +337,11 @@ impl DadrockMcpServer {
         name: &str,
         arguments: Option<JsonObject>,
     ) -> Result<Value, DadrError> {
+        if self.access == DadrockMcpAccess::ReadOnly && !Self::tool_name_is_read_only(name) {
+            return Err(DadrError::InvalidInput(format!(
+                "Dadrock MCP tool `{name}` is not available in read-only mode"
+            )));
+        }
         match name {
             TOOL_COMMAND_CATALOG => {
                 serde_json::to_value(commands::command_catalog()).map_err(Into::into)
@@ -545,11 +573,15 @@ impl ServerHandler for DadrockMcpServer {
         _context: rmcp::service::RequestContext<rmcp::service::RoleServer>,
     ) -> impl Future<Output = Result<ListToolsResult, ErrorData>> + rmcp::service::MaybeSendFuture + '_
     {
-        std::future::ready(Ok(ListToolsResult::with_all_items(Self::tools())))
+        std::future::ready(Ok(ListToolsResult::with_all_items(Self::tools_for_access(
+            self.access,
+        ))))
     }
 
     fn get_tool(&self, name: &str) -> Option<Tool> {
-        Self::tools().into_iter().find(|tool| tool.name == name)
+        Self::tools_for_access(self.access)
+            .into_iter()
+            .find(|tool| tool.name == name)
     }
 
     async fn call_tool(
@@ -564,12 +596,19 @@ impl ServerHandler for DadrockMcpServer {
 }
 
 pub fn serve_stdio(context: CommandContext) -> Result<(), DadrError> {
+    serve_stdio_with_access(context, DadrockMcpAccess::Full)
+}
+
+pub fn serve_stdio_with_access(
+    context: CommandContext,
+    access: DadrockMcpAccess,
+) -> Result<(), DadrError> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .map_err(|err| DadrError::Mcp(format!("failed to start MCP runtime: {err}")))?;
     runtime.block_on(async move {
-        let service = DadrockMcpServer::new(context);
+        let service = DadrockMcpServer::new_with_access(context, access);
         let running = service
             .serve(stdio())
             .await
@@ -585,15 +624,39 @@ pub fn serve_stdio(context: CommandContext) -> Result<(), DadrError> {
 pub fn dadrock_mcp_server_config(
     cwd: &Utf8PathBuf,
 ) -> Result<agent_client_protocol::schema::McpServer, DadrError> {
+    dadrock_mcp_server_config_with_access(cwd, DadrockMcpAccess::Full)
+}
+
+pub fn dadrock_mcp_server_config_with_access(
+    cwd: &Utf8PathBuf,
+    access: DadrockMcpAccess,
+) -> Result<agent_client_protocol::schema::McpServer, DadrError> {
     let executable = std::env::current_exe()
         .map_err(|err| DadrError::Mcp(format!("failed to resolve current executable: {err}")))?;
+    let mut args = vec!["mcp".to_owned(), "serve".to_owned()];
+    if access == DadrockMcpAccess::ReadOnly {
+        args.push("--read-only".to_owned());
+    }
+    args.push(cwd.to_string());
     Ok(agent_client_protocol::schema::McpServer::Stdio(
-        agent_client_protocol::schema::McpServerStdio::new("dadrock", executable).args(vec![
-            "mcp".to_owned(),
-            "serve".to_owned(),
-            cwd.to_string(),
-        ]),
+        agent_client_protocol::schema::McpServerStdio::new("dadrock", executable).args(args),
     ))
+}
+
+impl DadrockMcpServer {
+    fn tool_name_is_read_only(name: &str) -> bool {
+        Self::tools()
+            .iter()
+            .find(|tool| tool.name == name)
+            .is_some_and(tool_is_read_only)
+    }
+}
+
+fn tool_is_read_only(tool: &Tool) -> bool {
+    tool.annotations
+        .as_ref()
+        .and_then(|annotations| annotations.read_only_hint)
+        .unwrap_or(false)
 }
 
 fn read_tool(name: &'static str, description: &'static str, input_schema: JsonObject) -> Tool {
@@ -797,7 +860,8 @@ fn dadr_error_to_mcp(error: DadrError) -> ErrorData {
 
 #[cfg(test)]
 mod tests {
-    use super::DadrockMcpServer;
+    use super::{DadrockMcpAccess, DadrockMcpServer};
+    use crate::commands::CommandContext;
 
     #[test]
     fn dadrock_mcp_tools_mark_read_and_write_capabilities() {
@@ -837,5 +901,34 @@ mod tests {
                 .and_then(|annotations| annotations.read_only_hint),
             Some(false)
         );
+    }
+
+    #[test]
+    fn read_only_dadrock_mcp_omits_write_tools() {
+        let tools = DadrockMcpServer::tools_for_access(DadrockMcpAccess::ReadOnly);
+
+        assert!(tools.iter().any(|tool| tool.name == "dadrock.list_records"));
+        assert!(!tools
+            .iter()
+            .any(|tool| tool.name == "dadrock.create_candidate"));
+        assert!(!tools
+            .iter()
+            .any(|tool| tool.name == "dadrock.accept_record"));
+    }
+
+    #[test]
+    fn read_only_dadrock_mcp_rejects_write_tool_calls() {
+        let server = DadrockMcpServer::new_with_access(
+            CommandContext {
+                cwd: camino::Utf8PathBuf::from("/tmp"),
+            },
+            DadrockMcpAccess::ReadOnly,
+        );
+
+        let error = server
+            .call_tool_value("dadrock.create_candidate", None)
+            .expect_err("read-only MCP must reject write tools");
+
+        assert!(error.to_string().contains("not available in read-only"));
     }
 }

@@ -38,54 +38,49 @@ data.
 
 ## Episode Order
 
-1. **Initialize a project**
+1. **Initialize a project and create the first candidate**
    Start from an uninitialized folder in the UI. Use the initialize action and
-   end on the empty workbench.
+   continue into candidate creation. Add tags, fill the four standard sections,
+   save the candidate, and show it in the candidate queue.
 
-2. **Create the first candidate**
-   In an initialized empty project, create a candidate, add tags, fill the four
-   standard sections, save it, and show it in the candidate queue.
-
-3. **Review a candidate**
+2. **Review a candidate and tour the workbench**
    Use the `candidate-review` example. Edit a candidate, run validation if
-   visible, accept a strong candidate, and reject a weak one.
+   visible, accept a strong candidate, and reject a weak one. While moving
+   through the review, show record filters, status views, the detail pane, tags,
+   links, validation entry points, settings, and task navigation.
 
-4. **Workbench tour**
-   Use `lifecycle`. Show record filters, status views, detail pane, tags, links,
-   validation entry points, settings, and task navigation.
-
-5. **Context to record**
+3. **Context to record**
    Use a populated lifecycle project. Paste a short analysis note or reviewer
    comment into the task, generate one candidate, edit it, and save it for human
    review.
 
-6. **Code to records**
+4. **Code to records**
    Use `penguins`. Choose `analysis/penguins_ols.py` in the UI path picker, run
    `code-to-record`, inspect the candidate batch, save the best proposal, and
    leave weak proposals unsaved.
 
-7. **Supersede a decision**
+5. **Supersede a decision**
    Use `lifecycle`. Start from an accepted record, draft or select a successor,
    accept the successor if needed, and show the old record as superseded.
 
-8. **Validation and repair**
+6. **Validation and repair**
    Use `broken`. Open the validation queue, inspect issues, repair one missing
    required section or malformed field, and rerun validation.
 
-9. **Find conflicts**
+7. **Find conflicts**
    Use `conflicts`. Run conflict detection, inspect duplicate or contradictory
    candidates, and choose the appropriate follow-up path.
 
-10. **Merge records**
+8. **Merge records**
     Continue from `conflicts`. Merge two overlapping candidates into one clearer
     candidate, then show that the originals remain unchanged until the user
     explicitly rejects or leaves them.
 
-11. **Edit record task**
+9. **Edit record task**
     Use `candidate-review`. Select a candidate with reviewer
     feedback, run `edit-record`, inspect the proposed revision, and apply it.
 
-12. **Task history and results**
+10. **Task history and results**
     Use `task-history`. Show typed result rendering for candidate drafts,
     candidate batches, supersession proposals, conflict reports, record
     revisions, and markdown reports.
@@ -94,8 +89,8 @@ data.
 
 Record these first because they cover the highest-value workflows:
 
-1. Initialize a project.
-2. Create and review the first candidate.
+1. Initialize a project and create the first candidate.
+2. Review a candidate and tour the workbench.
 3. Run context-to-record.
 4. Run code-to-record on Penguins.
 5. Supersede an accepted decision.

@@ -7,7 +7,7 @@ dadrock preview
 dadrock preview --port 4005 path/to/project
 ```
 
-Running `dadrock` with no subcommand starts the same web preview server with default options. The preview UI is the interactive workbench: a split record browser with lifecycle filters, candidate accept/reject actions, supersession controls, project and record validation queues, link health, settings, and local ACP agent drafting when an agent provider is configured.
+The preview UI is the interactive workbench: a split record browser with lifecycle filters, candidate accept/reject actions, supersession controls, project and record validation queues, link health, settings, and local ACP agent drafting when an agent provider is configured.
 
 ## Tasks
 

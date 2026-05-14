@@ -43,3 +43,17 @@ test('new with agent opens the candidate editor in agent mode', async ({ page })
   await expect(page.getByLabel('Draft Prompt')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Draft candidate' })).toBeVisible();
 });
+
+test('manual candidate creation scrolls to the submit action on short viewports', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 520 });
+  await page.goto('/candidates/new');
+
+  const pane = page.locator('[data-candidate-new-pane]');
+  await expect(pane).toBeVisible();
+
+  await pane.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+
+  await expect(page.getByRole('button', { name: 'Create candidate' })).toBeInViewport();
+});

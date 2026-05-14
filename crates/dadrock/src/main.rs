@@ -59,7 +59,7 @@ fn dispatch_command(command: cli::Command) -> Result<ExitCode> {
 }
 
 fn print_help() {
-    println!("Dadrock\n\nUSAGE:\n    dadrock [COMMAND]\n\nWith no command, starts the local web review UI.");
+    println!("Dadrock\n\nUSAGE:\n    dadrock [COMMAND]\n\nWith no command, prints this help menu.");
     for command in core_commands::COMMANDS {
         println!("    dadrock {}", command.usage);
     }
@@ -99,8 +99,13 @@ fn completions(args: cli::CompletionsArgs) -> Result<ExitCode> {
 }
 
 fn gen_cli_docs() -> Result<ExitCode> {
-    print!("{}", clap_markdown::help_markdown::<cli::Cli>());
+    print!("{}", render_cli_docs());
     Ok(ExitCode::SUCCESS)
+}
+
+fn render_cli_docs() -> String {
+    clap_markdown::help_markdown::<cli::Cli>()
+        .replace("[alias: `prompt-pack`]", r"\[alias: `prompt-pack`\]")
 }
 
 fn print_command_catalog() {
@@ -334,6 +339,7 @@ fn agent_check(args: cli::AgentCheckArgs) -> Result<ExitCode> {
         command_context()?.cwd.into_std_path_buf(),
         AcpHealthOptions {
             enable_dadrock_mcp: !args.no_mcp,
+            ..AcpHealthOptions::default()
         },
     )?;
     println!("{}", report.message);
@@ -492,12 +498,17 @@ fn mcp(args: cli::McpArgs) -> Result<ExitCode> {
 }
 
 fn mcp_serve(args: cli::McpServeArgs) -> Result<ExitCode> {
+    let access = if args.read_only {
+        core_mcp::DadrockMcpAccess::ReadOnly
+    } else {
+        core_mcp::DadrockMcpAccess::Full
+    };
     let context = match args.directory {
         Some(directory) => core_commands::CommandContext::from_path(directory.as_std_path())
             .context("failed to create command context")?,
         None => command_context()?,
     };
-    core_mcp::serve_stdio(context)?;
+    core_mcp::serve_stdio_with_access(context, access)?;
     Ok(ExitCode::SUCCESS)
 }
 
@@ -682,5 +693,18 @@ fn severity_label(severity: Severity) -> &'static str {
         Severity::Error => "error",
         Severity::Warning => "warning",
         Severity::Info => "info",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generated_cli_docs_escape_alias_brackets() {
+        let docs = render_cli_docs();
+
+        assert!(!docs.contains(" [alias:"));
+        assert!(docs.contains(r"\[alias: `prompt-pack`\]"));
     }
 }

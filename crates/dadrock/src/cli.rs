@@ -8,7 +8,7 @@ use dadrock::{agent::acp::AcpPermissionPolicy, commands::RecordViewFilter, demo:
     name = "dadrock",
     version,
     about = "DADR decision records and web review UI",
-    long_about = "DADR decision records and web review UI.\n\nWith no command, starts the local web review UI."
+    long_about = "DADR decision records and web review UI.\n\nWith no command, prints this help menu."
 )]
 #[command(disable_help_subcommand = true)]
 pub struct Cli {
@@ -65,7 +65,7 @@ pub enum Command {
 
 impl Default for Command {
     fn default() -> Self {
-        Self::Preview(PreviewArgs::default())
+        Self::Help(HelpArgs { topic: Vec::new() })
     }
 }
 
@@ -273,6 +273,8 @@ pub enum McpCommand {
 
 #[derive(Debug, Args)]
 pub struct McpServeArgs {
+    #[arg(long)]
+    pub read_only: bool,
     pub directory: Option<Utf8PathBuf>,
 }
 
@@ -417,15 +419,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn no_args_defaults_to_preview() {
+    fn no_args_defaults_to_help() {
         let cli = Cli::try_parse_from(["dadrock"]).unwrap();
 
-        let Command::Preview(args) = cli.into_command_or_default() else {
-            panic!("expected preview command");
+        let Command::Help(args) = cli.into_command_or_default() else {
+            panic!("expected help command");
         };
-        assert_eq!(args.port, 4004);
-        assert_eq!(args.host, "127.0.0.1");
-        assert_eq!(args.directory, None);
+        assert!(args.topic.is_empty());
     }
 
     #[test]
@@ -539,6 +539,22 @@ mod tests {
         else {
             panic!("expected mcp serve command");
         };
+        assert!(!args.read_only);
+        assert_eq!(args.directory, Some(Utf8PathBuf::from("example")));
+    }
+
+    #[test]
+    fn parses_mcp_serve_read_only() {
+        let cli =
+            Cli::try_parse_from(["dadrock", "mcp", "serve", "--read-only", "example"]).unwrap();
+
+        let Some(Command::Mcp(McpArgs {
+            command: McpCommand::Serve(args),
+        })) = cli.command
+        else {
+            panic!("expected mcp serve command");
+        };
+        assert!(args.read_only);
         assert_eq!(args.directory, Some(Utf8PathBuf::from("example")));
     }
 

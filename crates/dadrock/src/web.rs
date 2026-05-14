@@ -501,7 +501,9 @@ fn validate_tags(cwd: &Utf8PathBuf) -> Result<HttpResponse, ApiFailure> {
 
 fn agent_draft(request: &HttpRequest, cwd: &Utf8PathBuf) -> Result<HttpResponse, ApiFailure> {
     let body: AgentDraftRequest = json_body(request)?;
-    let local_agent = configured_local_acp_agent()?;
+    let local_agent = configured_local_acp_agent().map_err(|err| {
+        ApiFailure::bad_request(format!("agent draft configuration failed: {err}"))
+    })?;
     let envelope = core_commands::draft_with_acp_agent(
         &context_for(cwd)?,
         AgentDraftCommandRequest {
@@ -512,7 +514,8 @@ fn agent_draft(request: &HttpRequest, cwd: &Utf8PathBuf) -> Result<HttpResponse,
             enable_dadrock_mcp: true,
             write: body.write,
         },
-    )?;
+    )
+    .map_err(|err| ApiFailure::bad_request(format!("agent draft failed: {err}")))?;
     let message = envelope
         .data
         .candidate

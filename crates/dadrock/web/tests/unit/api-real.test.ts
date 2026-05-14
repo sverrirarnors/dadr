@@ -359,6 +359,32 @@ describe('RealApi.draftCandidate', () => {
       }),
     );
   });
+
+  it('includes the server diagnostic when an agent draft fails', async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error:
+            'agent draft failed: ACP agent candidate body is missing required section(s): Decision',
+        }),
+        {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        },
+      ),
+    );
+    const api = new RealApi('http://example.test', fakeFetch as typeof fetch);
+
+    await expect(
+      api.draftCandidate({
+        prompt: 'Draft a decision about local joins.',
+        prompt_packs: ['dadr'],
+        write: true,
+      }),
+    ).rejects.toThrow(
+      'POST /api/agent/draft failed with 400: agent draft failed: ACP agent candidate body is missing required section(s): Decision',
+    );
+  });
 });
 
 describe('RealApi.initializeProject', () => {

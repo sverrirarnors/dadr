@@ -568,6 +568,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dadrock-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dadrock Tasks
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#roadmap" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -714,6 +725,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dadrock-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dadrock Tasks
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#roadmap" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -808,6 +830,9 @@
 <li>MCP tools for structured project inspection and DADR lifecycle mutations during agent sessions.</li>
 <li>Optional local skill/prompt-pack instructions for agent drafts.</li>
 </ul>
+<h2 id="dadrock-tasks">Dadrock Tasks<a class="headerlink" href="#dadrock-tasks" title="Permanent link">&para;</a></h2>
+<p>Dadrock tasks are editable prompt workflows that use the same Dadrock MCP and command layers as the CLI and web UI. Built-in tasks are examples, not special cases: project tasks live under <code>dadr/tasks/</code>, user-installed tasks can also be discovered, and task runs are persisted under <code>dadr/runs/</code>.</p>
+<p>Agents running tasks must return the declared JSON output kind exactly. They must not accept, reject, supersede, or rewrite records except through explicit user-requested Dadrock lifecycle actions.</p>
 <h2 id="roadmap">Roadmap<a class="headerlink" href="#roadmap" title="Permanent link">&para;</a></h2>
 <p>These features will be implemented in <strong>dadrock</strong> in the short term:</p>
 <ul>
@@ -916,7 +941,7 @@
 <p>ACP tool permission requests are denied by default. To allow them for a session:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>draft<span class="w"> </span>--permission<span class="w"> </span>allow-once<span class="w"> </span><span class="s2">&quot;Draft a DADR for the sample restriction&quot;</span>
 </span></code></pre></div>
-<p>By default, <strong>dadrock</strong> attaches an MCP server to ACP sessions so the agent can inspect records, tags, validation reports, and the bounded project snapshot with structured tools instead of guessing. The same MCP surface also exposes DADR lifecycle mutations through the <code>dadrock_core::commands</code> layer used by the CLI, so writes return command envelopes with changed paths and diagnostics. To run the MCP server directly for another client:</p>
+<p>By default, <strong>dadrock</strong> attaches an MCP server to ACP sessions so the agent can inspect records, tags, validation reports, and the bounded project snapshot with structured tools instead of guessing. The same MCP surface also exposes DADR lifecycle mutations through the <code>dadrock::commands</code> layer used by the CLI, so writes return command envelopes with changed paths and diagnostics. To run the MCP server directly for another client:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dadrock<span class="w"> </span>mcp<span class="w"> </span>serve
 </span></code></pre></div>
 <p>To check that a local ACP provider accepts a Dadrock session with MCP attached:</p>

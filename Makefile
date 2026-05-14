@@ -1,10 +1,10 @@
-.PHONY: help install web-deps build serve clean cli-docs kill version bump release vscode positron editors vscode-sync-version vscode-stage-binary vscode-package-target vscode-package-universal vscode-publish
+.PHONY: help install web-deps build serve clean cli-docs kill window version bump release vscode positron editors vscode-sync-version vscode-stage-binary vscode-package-target vscode-package-universal vscode-publish
 
 .DEFAULT_GOAL := help
 
 help: ## Display this help screen
 	@printf "\033[1mAvailable commands:\033[0m\n\n"
-	@grep -E '^[a-z.A-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' | sort
+	@grep -E '^[a-zA-Z0-9_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' | sort
 
 VERSION := $(shell awk -F'"' '/^version/ { print $$2; exit }' Cargo.toml)
 
@@ -55,6 +55,9 @@ clean: ## Remove the generated docs/ directory
 kill: ## Kill running dadrock preview servers
 	@pkill -f '[d]adrock.*preview' || true
 
+window: ## Resize the active window to 1920x1080 at 100,100 after a short delay
+	sleep 3 && wmctrl -r :ACTIVE: -e 0,100,100,1920,1080
+
 .PHONY: web-dev web-build web-test web-lint
 
 web-dev: ## Run the Svelte web UI dev server
@@ -85,7 +88,7 @@ vscode-stage-binary:
 	@chmod +x $(VSCODE_DIR)/bin/dadrock* 2>/dev/null || true
 
 vscode: vscode-sync-version ## Build and install the VS Code extension with bundled dadrock
-	cargo build --release -p dadrock --bin dadrock
+	DADROCK_REQUIRE_JS_BUILD=1 cargo build --release -p dadrock --bin dadrock
 	rm -f $(VSCODE_DIR)/dadrock-*.vsix
 	rm -rf $(VSCODE_DIR)/bin
 	mkdir -p $(VSCODE_DIR)/bin
@@ -105,7 +108,7 @@ else
 endif
 
 positron: vscode-sync-version ## Build and install the Positron extension with bundled dadrock
-	cargo build --release -p dadrock --bin dadrock
+	DADROCK_REQUIRE_JS_BUILD=1 cargo build --release -p dadrock --bin dadrock
 	rm -f $(VSCODE_DIR)/dadrock-*.vsix
 	rm -rf $(VSCODE_DIR)/bin
 	mkdir -p $(VSCODE_DIR)/bin

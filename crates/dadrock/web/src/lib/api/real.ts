@@ -73,7 +73,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/project failed with ${response.status}`);
+      throw await apiError(response, `GET /api/project failed with ${response.status}`);
     }
     return snapshotSchema.parse(await response.json());
   }
@@ -88,7 +88,7 @@ export class RealApi implements DadrApi {
       body: JSON.stringify({}),
     });
     if (!response.ok) {
-      throw new Error(`POST /api/init failed with ${response.status}`);
+      throw await apiError(response, `POST /api/init failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }
@@ -99,7 +99,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/records/${id}/source failed with ${response.status}`);
+      throw await apiError(response, `GET /api/records/${id}/source failed with ${response.status}`);
     }
     return recordSourceSchema.parse(await response.json());
   }
@@ -110,7 +110,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/records/${id}/status failed with ${response.status}`);
+      throw await apiError(response, `GET /api/records/${id}/status failed with ${response.status}`);
     }
     return recordLifecycleSchema.parse(await response.json());
   }
@@ -125,7 +125,7 @@ export class RealApi implements DadrApi {
       body: JSON.stringify({ content }),
     });
     if (!response.ok) {
-      throw new Error(`POST /api/records/${id}/source failed with ${response.status}`);
+      throw await apiError(response, `POST /api/records/${id}/source failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }
@@ -140,7 +140,7 @@ export class RealApi implements DadrApi {
       body: JSON.stringify({}),
     });
     if (!response.ok) {
-      throw new Error(`POST /api/validate/${target} failed with ${response.status}`);
+      throw await apiError(response, `POST /api/validate/${target} failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }
@@ -151,7 +151,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/templates/candidate failed with ${response.status}`);
+      throw await apiError(response, `GET /api/templates/candidate failed with ${response.status}`);
     }
     return candidateTemplateSchema.parse(await response.json());
   }
@@ -166,7 +166,7 @@ export class RealApi implements DadrApi {
       body: JSON.stringify(request),
     });
     if (!response.ok) {
-      throw new Error(`POST /api/records failed with ${response.status}`);
+      throw await apiError(response, `POST /api/records failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }
@@ -185,7 +185,7 @@ export class RealApi implements DadrApi {
       },
     );
     if (!response.ok) {
-      throw new Error(`POST /api/records/${record_id}/revision failed with ${response.status}`);
+      throw await apiError(response, `POST /api/records/${record_id}/revision failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }
@@ -203,7 +203,7 @@ export class RealApi implements DadrApi {
       body: JSON.stringify(request),
     });
     if (!response.ok) {
-      throw new Error(`POST /api/records/supersede failed with ${response.status}`);
+      throw await apiError(response, `POST /api/records/supersede failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }
@@ -218,7 +218,7 @@ export class RealApi implements DadrApi {
       body: JSON.stringify(request),
     });
     if (!response.ok) {
-      throw new Error(`POST /api/agent/draft failed with ${response.status}`);
+      throw await apiError(response, `POST /api/agent/draft failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }
@@ -237,7 +237,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/tasks failed with ${response.status}`);
+      throw await apiError(response, `GET /api/tasks failed with ${response.status}`);
     }
     return commandEnvelopeSchema(taskListingSchema).parse(await response.json()).data;
   }
@@ -248,7 +248,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/tasks/${id} failed with ${response.status}`);
+      throw await apiError(response, `GET /api/tasks/${id} failed with ${response.status}`);
     }
     return commandEnvelopeSchema(taskPackageSchema).parse(await response.json()).data;
   }
@@ -259,7 +259,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/task-runs failed with ${response.status}`);
+      throw await apiError(response, `GET /api/task-runs failed with ${response.status}`);
     }
     return commandEnvelopeSchema(taskRunSchema.array()).parse(await response.json()).data;
   }
@@ -270,7 +270,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/task-runs/${id} failed with ${response.status}`);
+      throw await apiError(response, `GET /api/task-runs/${id} failed with ${response.status}`);
     }
     return commandEnvelopeSchema(taskResultSchema).parse(await response.json()).data;
   }
@@ -281,7 +281,7 @@ export class RealApi implements DadrApi {
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
-      throw new Error(`GET /api/task-runs/${id}/log failed with ${response.status}`);
+      throw await apiError(response, `GET /api/task-runs/${id}/log failed with ${response.status}`);
     }
     return commandEnvelopeSchema(taskRunLogEntrySchema.array()).parse(await response.json()).data;
   }
@@ -311,7 +311,7 @@ export class RealApi implements DadrApi {
       body: JSON.stringify({}),
     });
     if (!response.ok) {
-      throw new Error(`POST /api/task-runs/${id}/cancel failed with ${response.status}`);
+      throw await apiError(response, `POST /api/task-runs/${id}/cancel failed with ${response.status}`);
     }
     return commandEnvelopeSchema(taskRunSchema).parse(await response.json()).data;
   }
@@ -326,7 +326,7 @@ export class RealApi implements DadrApi {
       body: JSON.stringify({}),
     });
     if (!response.ok) {
-      throw new Error(`POST /api/task-runs/clear failed with ${response.status}`);
+      throw await apiError(response, `POST /api/task-runs/clear failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }
@@ -344,7 +344,7 @@ export class RealApi implements DadrApi {
       },
     );
     if (!response.ok) {
-      throw new Error(`POST /api/candidates/${id}/${action} failed with ${response.status}`);
+      throw await apiError(response, `POST /api/candidates/${id}/${action} failed with ${response.status}`);
     }
     return mutationResponseSchema.parse(await response.json());
   }

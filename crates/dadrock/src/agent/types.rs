@@ -80,7 +80,8 @@ impl Confidence {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SourceReference {
-    pub path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub line_start: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]

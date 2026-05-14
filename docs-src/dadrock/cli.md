@@ -42,7 +42,7 @@ This document contains the help content for the `dadrock` command-line program.
 
 DADR decision records and web review UI.
 
-With no command, starts the local web review UI.
+With no command, prints this help menu.
 
 **Usage:** `dadrock [COMMAND]`
 
@@ -156,6 +156,7 @@ Seed a new project with a named DADR example.
   Default value: `lifecycle`
 
   Possible values: `lifecycle`, `candidate-review`, `penguins`, `broken`, `conflicts`, `task-history`
+
 
 
 
@@ -347,11 +348,15 @@ Serve Dadrock MCP tools over stdio.
 
 Serve Dadrock MCP tools over stdio.
 
-**Usage:** `dadrock mcp serve [DIRECTORY]`
+**Usage:** `dadrock mcp serve [OPTIONS] [DIRECTORY]`
 
 ###### **Arguments:**
 
 * `<DIRECTORY>`
+
+###### **Options:**
+
+* `--read-only`
 
 
 
@@ -405,7 +410,7 @@ Ask a local ACP agent to draft a candidate decision.
 
 * `--agent <AGENT>`
 * `--agent-arg <AGENT_ARGS>`
-* `--skill <SKILLS>` \(alias: `prompt-pack`\)
+* `--skill <SKILLS>` \[alias: `prompt-pack`\]
 * `--no-mcp`
 
 

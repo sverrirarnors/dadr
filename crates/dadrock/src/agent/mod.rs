@@ -254,6 +254,23 @@ Final answer:
     }
 
     #[test]
+    fn parses_agent_json_with_partial_source_reference() {
+        let response = parse_agent_response_text(
+            r###"
+{"intent":"draft_candidate","confidence":"medium","summary":"Drafted.","frontmatter":{"title":"Use partial source refs"},"body_markdown":"## Context\nContext.\n\n## Decision\nDecision.\n\n## Alternatives\nAlternatives.\n\n## Consequences\nConsequences.","source_references":[{"excerpt":"source excerpt without a path"}],"activity_observations":[],"warnings":[],"provenance":{"model":"local-test","tool_runs":[]}}
+"###,
+        )
+        .expect("partial source references should not reject the draft");
+
+        assert_eq!(response.source_references.len(), 1);
+        assert_eq!(response.source_references[0].path, None);
+        assert_eq!(
+            response.source_references[0].excerpt.as_deref(),
+            Some("source excerpt without a path")
+        );
+    }
+
+    #[test]
     fn rejects_truncated_agent_json_with_brace_inside_string() {
         let error = parse_agent_response_text(
             r#"{"intent":"draft_candidate","body_markdown":"unterminated }"#,

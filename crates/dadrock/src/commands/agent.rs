@@ -21,6 +21,7 @@ use crate::{
     },
     error::DadrError,
     index::ProjectIndex,
+    mcp::DadrockMcpAccess,
     records::{
         create_candidate_with_body, preview_candidate_revision, update_candidate_with_body,
         ScannedRecord, ScannedRecordSummary,
@@ -86,6 +87,7 @@ pub fn draft_with_acp_agent(
         AcpPromptOptions {
             permission_policy: request.permission_policy,
             enable_dadrock_mcp: request.enable_dadrock_mcp,
+            dadrock_mcp_access: DadrockMcpAccess::ReadOnly,
             ..AcpPromptOptions::default()
         },
     )?;
@@ -190,6 +192,7 @@ pub fn revise_candidate_with_acp_agent(
         &agent_request,
         AcpPromptOptions {
             permission_policy: request.permission_policy,
+            dadrock_mcp_access: DadrockMcpAccess::ReadOnly,
             ..AcpPromptOptions::default()
         },
     )?;

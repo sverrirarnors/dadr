@@ -39,4 +39,22 @@ describe('web UI vocabulary', () => {
       }
     }
   });
+
+  it('keeps split workbench panes side-by-side before the large breakpoint', () => {
+    const split = text('../../src/lib/components/workbench/ResizableWorkbenchSplit.svelte');
+    const recordsRoute = text('../../src/routes/records/+page.svelte');
+
+    expect(split).toContain('md:grid-cols-[var(--workbench-split-left-width)_8px_minmax(0,1fr)]');
+    expect(split).toContain('md:flex');
+    expect(split).not.toContain('lg:grid-cols-[var(--workbench-split-left-width)_8px_minmax(0,1fr)]');
+    expect(recordsRoute).toContain('md:flex');
+    expect(recordsRoute).not.toContain('data-record-detail-pane class="hidden min-h-0 min-w-0 flex-col p-4 lg:flex');
+  });
+
+  it('keeps candidate creation content in a bounded scroll container', () => {
+    const candidateNewRoute = text('../../src/routes/candidates/new/+page.svelte');
+
+    expect(candidateNewRoute).toContain('<WorkbenchPage layout="single" class="h-full">');
+    expect(candidateNewRoute).toContain('data-candidate-new-pane class="h-full max-w-4xl overflow-auto"');
+  });
 });

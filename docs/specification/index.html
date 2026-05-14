@@ -1471,7 +1471,7 @@
 <p>The key words <strong>MUST</strong>, <strong>MUST NOT</strong>, <strong>SHOULD</strong>, <strong>SHOULD NOT</strong>, and <strong>MAY</strong> are to be interpreted as normative requirements when written in uppercase. Lowercase words such as "must" and "should" are used in their ordinary English sense and are not normative. Examples are non-normative unless explicitly labelled as requirements.</p>
 <p><strong>DADR</strong> — Data-Analysis Decision Records, the standard defined here.</p>
 <p><strong>Record</strong> — a single Markdown file with DADR front matter and body content.</p>
-<p><strong>Records directory</strong> — the directory whose Markdown record files make up a DADR project. The default records directory is <code>decisions/</code>.</p>
+<p><strong>Record set</strong> — the Markdown record files that make up a DADR project. The DADR specification does not mandate where these files live on disk.</p>
 <p><strong>Candidate</strong> — a proposed decision captured in a record file. A candidate has <code>status: candidate</code> while under review. It becomes an accepted decision by conversion of the same record, or becomes a rejected record when closed without approval.</p>
 <p><strong>Accepted decision</strong> — a human-approved decision record. An accepted decision normally begins as a candidate and keeps the same UUIDv7 when accepted.</p>
 <p><strong>Superseded decision</strong> — an accepted decision whose <code>successors</code> array points to a later accepted decision. "Superseded" is a derived predicate on the record graph, not a <code>status</code> value.</p>
@@ -1501,7 +1501,7 @@
 <tr>
 <td><code>title</code></td>
 <td>string</td>
-<td>MUST be a short human-readable title (a noun phrase).</td>
+<td>MUST be a short human-readable title (a noun phrase). It MUST be non-empty after trimming, MUST be a single line, and MUST NOT have leading or trailing whitespace. Titles SHOULD be brief enough for filenames, lists, and tables; 120 characters is the recommended maximum.</td>
 </tr>
 <tr>
 <td><code>status</code></td>
@@ -1543,8 +1543,14 @@
 </tr>
 </tbody>
 </table>
-<p>Fields that classify a record by <strong>kind</strong>, <strong>scope</strong>, <strong>plan relationship</strong>, <strong>confidence</strong>, <strong>person</strong>, <strong>robustness role</strong>, <strong>origin</strong>, <strong>topic</strong>, or <strong>workflow state</strong> SHOULD be expressed as tags rather than as dedicated front-matter entries. Decision ownership and review attribution SHOULD use <code>#decider/&lt;handle&gt;</code> and <code>#reviewer/&lt;handle&gt;</code> tags rather than dedicated <code>deciders</code> or <code>reviewers</code> fields.</p>
+<p>Fields that classify a record by <strong>kind</strong>, <strong>confidence</strong>, <strong>person</strong>,
+<strong>robustness role</strong>, <strong>origin</strong>, <strong>topic</strong>, or <strong>workflow state</strong> SHOULD be
+expressed as tags rather than as dedicated front-matter entries. Decision
+ownership and review attribution SHOULD use <code>#decider/&lt;handle&gt;</code> and
+<code>#reviewer/&lt;handle&gt;</code> tags rather than dedicated <code>deciders</code> or <code>reviewers</code>
+fields.</p>
 <p>Lifecycle timestamp fields such as <code>date</code>, <code>created</code>, <code>accepted_at</code>, or <code>superseded_at</code> MUST NOT be used. DADR derives record-creation timestamps from UUIDv7 identifiers (see <a href="#identifiers">Identifiers</a>).</p>
+<p>For optional entries, an empty <code>tags: []</code> value is equivalent to omitting <code>tags</code>. An empty <code>bibliography: ""</code> string and an empty <code>bibliography: []</code> array are equivalent to omitting <code>bibliography</code>; they do not suppress a project-level bibliography. Empty <code>successors: []</code> is defined above and is equivalent to omitting <code>successors</code>.</p>
 <h3 id="preamble-examples">3.3 Examples<a class="headerlink" href="#preamble-examples" title="Permanent link">&para;</a></h3>
 <p>A minimal preamble for an accepted record (the body must still contain the four standard sections; see <a href="#body">Body</a>):</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nn">---</span>
@@ -1560,10 +1566,9 @@
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">01938b8f-9d71-7456-8000-fedcba987654</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nt">tags</span><span class="p">:</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kind/sample</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scope/analysis-sample</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">origin/agent</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confidence/high</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="nn">---</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">origin/agent</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confidence/high</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="nn">---</span>
 </span></code></pre></div>
 <hr />
 <h2 id="body">4. Body<a class="headerlink" href="#body" title="Permanent link">&para;</a></h2>
@@ -1612,8 +1617,9 @@
 <li>a tag in the YAML <code>tags</code> list MUST omit the leading <code>#</code>;</li>
 <li>tag characters MAY be Unicode letters, Unicode numbers, emoji, underscore (<code>_</code>), hyphen (<code>-</code>), and forward slash (<code>/</code>);</li>
 <li>forward slash (<code>/</code>) denotes hierarchy: <code>#kind/sample</code> is a child of <code>#kind</code>;</li>
-<li>tags are case-insensitive (<code>#Kind</code> and <code>#kind</code> are the same tag); the first casing observed in a project SHOULD be treated as the canonical display form;</li>
-<li>a tag MUST contain at least one non-numeric character (<code>#1984</code> is not valid; <code>#y1984</code> is);</li>
+<li>slash-delimited tags MUST NOT contain empty path segments, so <code>#bad//tag</code>, <code>#bad/</code>, and <code>#/bad</code> are invalid;</li>
+<li>tags are case-insensitive (<code>#Kind</code> and <code>#kind</code> are the same tag); the first casing observed in a deterministic project scan SHOULD be treated as the canonical display form. If a tool needs a tie-breaker, it SHOULD scan records by lexicographic record path and then scan front matter before body text in document order;</li>
+<li>a tag MUST contain at least one non-numeric character in the tag as a whole (<code>#1984</code> is not valid; <code>#y1984</code> and <code>#dadr/0123456789ab</code> are valid). Numeric-only slash-delimited segments are allowed when another segment contains a non-numeric character;</li>
 <li>a tag MUST NOT contain whitespace; combine words with <code>camelCase</code>, <code>PascalCase</code>, <code>snake_case</code>, or <code>kebab-case</code>;</li>
 </ul>
 <p>These are the only format rules. <strong>DADR does not define a required tag namespace or controlled vocabulary.</strong> Projects MAY define their own conventions.</p>
@@ -1625,13 +1631,12 @@
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">01938b8e-4d70-7abc-8def-0123456789ab</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="nt">tags</span><span class="p">:</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kind/sample</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">scope/analysis-sample</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confidence/high</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="nn">---</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confidence/high</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="nn">---</span>
 </span></code></pre></div>
 <h3 id="inline-tags">5.3 Inline tags<a class="headerlink" href="#inline-tags" title="Permanent link">&para;</a></h3>
 <p>Inline tags appear in the Markdown body prefixed with <code>#</code>. They attach to a specific sentence, paragraph, or subsection rather than the whole record. A common pattern is to put them on the first line of a Markdown blockquote so the tagged passage is visually grouped:</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">&gt; </span><span class="ge">#plan-relation/deviates-from #rejected/no-longer-relevant</span>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">&gt; </span><span class="ge">#rejected/no-longer-relevant</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">&gt; </span><span class="ge">The pre-analysis plan called for a complete-case rule, but the registered</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">&gt; </span><span class="ge">sample is small enough that we now prefer multiple imputation. This deviation</span>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">&gt; </span><span class="ge">was approved by the steward on 2026-05-07.</span>
@@ -1647,13 +1652,13 @@ decision-relevant code with DADR-style tags.</p>
 <p>It follows the same character rules as any other DADR tag (see <a href="#format-rules">Format
 rules</a>). The <code>#dadr/</code> prefix distinguishes DADR tags from
 arbitrary comment text and from non-DADR tag systems in shared source files.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># #dadr/kind/measurement #dadr/scope/student-survey</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># #dadr/kind/measurement #dadr/topic/student-survey</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">survey</span><span class="p">[</span><span class="s2">&quot;anx_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">survey</span><span class="p">[[</span><span class="s2">&quot;anx1&quot;</span><span class="p">,</span> <span class="s2">&quot;anx2&quot;</span><span class="p">,</span> <span class="s2">&quot;anx3&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </span></code></pre></div>
-<div class="language-sql highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">-- #dadr/scope/main-analysis #dadr/topic/missingness</span>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">-- #dadr/kind/sample #dadr/topic/missingness</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="k">where</span><span class="w"> </span><span class="n">treatment</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
 </span></code></pre></div>
-<p>The <code>#dadr/</code> prefix is recommended <strong>only in code comments</strong>. Tags inside DADR record files (YAML or body) do not need the prefix because the surrounding context already identifies them as DADR metadata.</p>
+<p>The <code>#dadr/</code> prefix is recommended <strong>only in code comments</strong>. Tags inside DADR record files (YAML or body) do not need the prefix because the surrounding context already identifies them as DADR metadata. If a DADR record nevertheless contains a tag such as <code>#dadr/kind/sample</code>, it is a normal tag whose top-level segment is <code>dadr</code>; it is valid but discouraged unless the project deliberately uses that namespace in records.</p>
 <p>The same tag namespaces used in records also apply in code:</p>
 <table>
 <thead>
@@ -1665,31 +1670,23 @@ arbitrary comment text and from non-DADR tag systems in shared source files.</p>
 <tbody>
 <tr>
 <td><code>#dadr/&lt;uuid7&gt;</code> or <code>#dadr/&lt;uuid7-prefix&gt;</code></td>
-<td>Link the surrounding code to a specific record.</td>
+<td>Link the surrounding code to a specific record. A 12-character UUIDv7 prefix SHOULD be used when unambiguous, matching the wikilink recommendation.</td>
 </tr>
 <tr>
 <td><code>#dadr/kind/&lt;value&gt;</code></td>
 <td>Coarse classification of the decision kind.</td>
 </tr>
 <tr>
-<td><code>#dadr/scope/&lt;value&gt;</code></td>
-<td>Analysis subtree, dataset, or area.</td>
-</tr>
-<tr>
 <td><code>#dadr/topic/&lt;value&gt;</code></td>
 <td>Free-form topic.</td>
 </tr>
 <tr>
-<td><code>#dadr/plan/&lt;id&gt;</code> and <code>#dadr/plan-relation/&lt;value&gt;</code></td>
-<td>Plan reference and relationship.</td>
+<td><code>#dadr/plan/&lt;id&gt;</code></td>
+<td>Plan reference.</td>
 </tr>
 <tr>
 <td><code>#dadr/axis/&lt;name&gt;/&lt;value&gt;</code></td>
 <td>Robustness or sensitivity axis and the value implemented here.</td>
-</tr>
-<tr>
-<td><code>#dadr/activity/&lt;class&gt;/&lt;subactivity&gt;</code></td>
-<td>Activity classification chosen by the project.</td>
 </tr>
 <tr>
 <td><code>#dadr/confidence/&lt;low\|medium\|high&gt;</code></td>
@@ -1702,7 +1699,7 @@ arbitrary comment text and from non-DADR tag systems in shared source files.</p>
 </tbody>
 </table>
 <p>Multiple tags MAY appear in one comment.</p>
-<p>A code tag applies to the next logical statement or nearby code block. Parsers MAY use language-aware structure (AST, notebook cell boundaries, SQL statements, workflow nodes) when available; the fallback is line proximity. For longer blocks, tag the first line; the parser uses the surrounding context to infer the range.</p>
+<p>A code tag applies to the next logical statement or nearby code block. Parsers MAY use language-aware structure (AST, notebook cell boundaries, SQL statements, workflow nodes) when available. When language-aware structure is unavailable, the default fallback scope is the next non-blank, non-comment line after the tag comment. If the tag appears on the same line as executable code, the fallback scope is that line. For longer blocks, tag the first line; the parser uses the surrounding context to infer the range.</p>
 <hr />
 <h2 id="links-and-citations">6. Links and citations<a class="headerlink" href="#links-and-citations" title="Permanent link">&para;</a></h2>
 <p>DADR uses two link syntaxes, split by what they point at:</p>
@@ -1742,7 +1739,8 @@ arbitrary comment text and from non-DADR tag systems in shared source files.</p>
 </span></code></pre></div>
 <h3 id="citations">6.3 Citations<a class="headerlink" href="#citations" title="Permanent link">&para;</a></h3>
 <p>DADR records MAY use standard Pandoc or Quarto citation syntax such as <code>[@citation-key]</code>.</p>
-<p>If a record declares <code>bibliography</code>, citation-aware tools and renderers MUST resolve that bibliography for the record. If no record-level bibliography is declared, citation-aware tools and renderers MAY use a project-level default. Project-level defaults are defined by the tooling, not by this specification.</p>
+<p>If a record declares <code>bibliography</code>, citation-aware tools and renderers MUST resolve that bibliography for the record. A string value is one bibliography path. An array value is an ordered list of bibliography paths. Relative bibliography paths MUST be interpreted relative to the project root for portability across renderers and record locations.</p>
+<p>Record-level <code>bibliography</code> replaces, rather than extends, any project-level default bibliography. If no record-level bibliography is declared, citation-aware tools and renderers MAY use a project-level default. Project-level defaults are defined by the tooling, not by this specification.</p>
 <p>Most projects do not need to set <code>bibliography</code> on every record. The default is set once project-wide; the per-record field exists only as an override.</p>
 <hr />
 <h2 id="identifiers">7. Identifiers<a class="headerlink" href="#identifiers" title="Permanent link">&para;</a></h2>
@@ -1795,26 +1793,35 @@ arbitrary comment text and from non-DADR tag systems in shared source files.</p>
 <p>Tools MUST NOT infer acceptance from directory location alone.</p>
 <hr />
 <h2 id="project-layout">9. Project layout<a class="headerlink" href="#project-layout" title="Permanent link">&para;</a></h2>
-<p>A record's lifecycle stage is determined by the front-matter <code>status</code> field. Projects MAY mirror status in their directory layout (for example, accepted records under <code>decisions/</code> and active candidates under <code>decisions/candidates/</code>) as an organizational convenience, but tools MUST NOT use directory path to infer status, and a record in any location is valid as long as its front matter is correct.</p>
-<p>The recommended default layout is:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>decisions/
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>  01938b8e4d70-income-preprocessing.md
-</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>  01938b8f9d71-drop-missing-treatment.md
-</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>  candidates/
-</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>    01938ba1c4f3-country-exclusions.md
-</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>    archive/
-</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>      01938b8d9c10-deprecated-cohort-filter.md      # rejected
-</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>      01938b91bcd0-imputation-rule.md               # rejected (duplicate)
-</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>  bibliography.bib                                  # optional
+<p>DADR does not mandate a specific directory structure. A conforming project MAY keep all records in one directory, split records by lifecycle state, organize records by topic, or use another layout that fits the project.</p>
+<p>Specific tools MAY mandate a directory structure for discovery, lifecycle operations, local state, or user-interface consistency. A tool-mandated layout is a tool profile, not a requirement of the DADR record format.</p>
+<p>A record's lifecycle stage is determined by the front-matter <code>status</code> field. Tools MUST NOT infer status from directory path alone; front matter remains authoritative.</p>
+<p>Dadrock mandates this project layout:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>dadr/
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>  accepted/
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    01938b8e4d70-income-preprocessing.md
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    01938b8f9d71-drop-missing-treatment.md
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>  candidates/
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>    01938ba1c4f3-country-exclusions.md
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>  rejected/
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>    01938b8d9c10-deprecated-cohort-filter.md        # rejected
+</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>    01938b91bcd0-imputation-rule.md                 # rejected (duplicate)
+</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>  templates/
+</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>    candidate.md                                    # optional
+</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>  tasks/
+</span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>  runs/
+</span><span id="__span-19-14"><a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>    .gitignore
 </span></code></pre></div>
-<p>In this layout:</p>
+<p>In Dadrock's layout:</p>
 <ul>
-<li>accepted decisions (whether current or superseded) live at the root of <code>decisions/</code> so the directory is the project's visible table of contents;</li>
-<li>active candidates live under <code>decisions/candidates/</code>;</li>
-<li>rejected candidates live under <code>decisions/candidates/archive/</code>.</li>
+<li>accepted decisions, whether current or superseded, live under <code>dadr/accepted/</code>;</li>
+<li>active candidates live under <code>dadr/candidates/</code>;</li>
+<li>rejected records live under <code>dadr/rejected/</code>;</li>
+<li>project-local task customizations live under <code>dadr/tasks/</code> as task packages such as <code>dadr/tasks/&lt;task-id&gt;/task.toml</code> plus the prompt file named by that manifest;</li>
+<li>task run state lives under <code>dadr/runs/</code> and is ignored by default.</li>
 </ul>
-<p>When a candidate is accepted, the same record is converted into an accepted decision: its <code>status</code> changes from <code>candidate</code> to <code>accepted</code>, its UUIDv7 stays unchanged, and under the default layout the file moves from <code>decisions/candidates/</code> to the root of <code>decisions/</code>. Acceptance does not add a <code>successors</code> edge. When a candidate is rejected, the same record changes to <code>status: rejected</code> and moves to the archive.</p>
-<p>Projects that prefer a different organization (everything in one flat directory, organized by topic, etc.) MAY adopt it freely. Non-default records directory discovery is tooling-specific unless a DADR profile defines it. Conforming tools MUST walk all <code>.md</code> files within the project's records directory and use the front-matter <code>status</code> to identify lifecycle stage, not the directory.</p>
+<p>When a candidate is accepted, the same record is converted into an accepted decision: its <code>status</code> changes from <code>candidate</code> to <code>accepted</code>, its UUIDv7 stays unchanged, and under Dadrock's layout the file moves from <code>dadr/candidates/</code> to <code>dadr/accepted/</code>. Acceptance does not add a <code>successors</code> edge. When a candidate is rejected, the same record changes to <code>status: rejected</code> and moves to <code>dadr/rejected/</code>.</p>
+<p>Tools that support non-Dadrock layouts SHOULD document how they discover the project record set. Conforming tools MUST use the front-matter <code>status</code> to identify lifecycle stage, not the directory.</p>
 <hr />
 <h2 id="lifecycle">10. Lifecycle<a class="headerlink" href="#lifecycle" title="Permanent link">&para;</a></h2>
 <h3 id="status-vocabulary">10.1 Status vocabulary<a class="headerlink" href="#status-vocabulary" title="Permanent link">&para;</a></h3>
@@ -1904,39 +1911,37 @@ arbitrary comment text and from non-DADR tag systems in shared source files.</p>
 </span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>status: accepted
 </span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>id: 01938c20-a3b4-7000-8000-111122223333
 </span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>tags:
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">  </span><span class="k">-</span><span class="w"> </span>kind/sample
-</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">  </span><span class="k">-</span><span class="w"> </span>scope/main-analysis
-</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="gu">  - plan-relation/implements</span>
-</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="gu">---</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="gu">  - kind/sample</span>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="gu">---</span>
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>
+</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="gh"># Drop observations with missing treatment assignment</span>
 </span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>
-</span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="gh"># Drop observations with missing treatment assignment</span>
+</span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="gu">## Context</span>
 </span><span id="__span-22-12"><a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>
-</span><span id="__span-22-13"><a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a><span class="gu">## Context</span>
-</span><span id="__span-22-14"><a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>
-</span><span id="__span-22-15"><a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a>The treatment variable is required for the primary estimand. Observations with
-</span><span id="__span-22-16"><a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a>missing treatment assignment cannot contribute to the main comparison without
-</span><span id="__span-22-17"><a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a>introducing an additional imputation model.
+</span><span id="__span-22-13"><a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>The treatment variable is required for the primary estimand. Observations with
+</span><span id="__span-22-14"><a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>missing treatment assignment cannot contribute to the main comparison without
+</span><span id="__span-22-15"><a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a>introducing an additional imputation model.
+</span><span id="__span-22-16"><a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a>
+</span><span id="__span-22-17"><a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a><span class="gu">## Decision</span>
 </span><span id="__span-22-18"><a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a>
-</span><span id="__span-22-19"><a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a><span class="gu">## Decision</span>
-</span><span id="__span-22-20"><a id="__codelineno-22-20" name="__codelineno-22-20" href="#__codelineno-22-20"></a>
-</span><span id="__span-22-21"><a id="__codelineno-22-21" name="__codelineno-22-21" href="#__codelineno-22-21"></a>Drop observations with missing treatment assignment from the main analysis
-</span><span id="__span-22-22"><a id="__codelineno-22-22" name="__codelineno-22-22" href="#__codelineno-22-22"></a>sample.
+</span><span id="__span-22-19"><a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a>Drop observations with missing treatment assignment from the main analysis
+</span><span id="__span-22-20"><a id="__codelineno-22-20" name="__codelineno-22-20" href="#__codelineno-22-20"></a>sample.
+</span><span id="__span-22-21"><a id="__codelineno-22-21" name="__codelineno-22-21" href="#__codelineno-22-21"></a>
+</span><span id="__span-22-22"><a id="__codelineno-22-22" name="__codelineno-22-22" href="#__codelineno-22-22"></a><span class="gu">## Alternatives</span>
 </span><span id="__span-22-23"><a id="__codelineno-22-23" name="__codelineno-22-23" href="#__codelineno-22-23"></a>
-</span><span id="__span-22-24"><a id="__codelineno-22-24" name="__codelineno-22-24" href="#__codelineno-22-24"></a><span class="gu">## Alternatives</span>
-</span><span id="__span-22-25"><a id="__codelineno-22-25" name="__codelineno-22-25" href="#__codelineno-22-25"></a>
-</span><span id="__span-22-26"><a id="__codelineno-22-26" name="__codelineno-22-26" href="#__codelineno-22-26"></a>One alternative was to impute treatment assignment. This was not chosen because
-</span><span id="__span-22-27"><a id="__codelineno-22-27" name="__codelineno-22-27" href="#__codelineno-22-27"></a>the assignment mechanism is part of the study design rather than a downstream
-</span><span id="__span-22-28"><a id="__codelineno-22-28" name="__codelineno-22-28" href="#__codelineno-22-28"></a>measurement, and imputing it would make the estimand harder to interpret.
-</span><span id="__span-22-29"><a id="__codelineno-22-29" name="__codelineno-22-29" href="#__codelineno-22-29"></a>
-</span><span id="__span-22-30"><a id="__codelineno-22-30" name="__codelineno-22-30" href="#__codelineno-22-30"></a>Another alternative was to keep the observations for descriptive tables only.
-</span><span id="__span-22-31"><a id="__codelineno-22-31" name="__codelineno-22-31" href="#__codelineno-22-31"></a>This can still be done in a supplemental descriptive analysis, but those rows
-</span><span id="__span-22-32"><a id="__codelineno-22-32" name="__codelineno-22-32" href="#__codelineno-22-32"></a>are excluded from the primary model.
+</span><span id="__span-22-24"><a id="__codelineno-22-24" name="__codelineno-22-24" href="#__codelineno-22-24"></a>One alternative was to impute treatment assignment. This was not chosen because
+</span><span id="__span-22-25"><a id="__codelineno-22-25" name="__codelineno-22-25" href="#__codelineno-22-25"></a>the assignment mechanism is part of the study design rather than a downstream
+</span><span id="__span-22-26"><a id="__codelineno-22-26" name="__codelineno-22-26" href="#__codelineno-22-26"></a>measurement, and imputing it would make the estimand harder to interpret.
+</span><span id="__span-22-27"><a id="__codelineno-22-27" name="__codelineno-22-27" href="#__codelineno-22-27"></a>
+</span><span id="__span-22-28"><a id="__codelineno-22-28" name="__codelineno-22-28" href="#__codelineno-22-28"></a>Another alternative was to keep the observations for descriptive tables only.
+</span><span id="__span-22-29"><a id="__codelineno-22-29" name="__codelineno-22-29" href="#__codelineno-22-29"></a>This can still be done in a supplemental descriptive analysis, but those rows
+</span><span id="__span-22-30"><a id="__codelineno-22-30" name="__codelineno-22-30" href="#__codelineno-22-30"></a>are excluded from the primary model.
+</span><span id="__span-22-31"><a id="__codelineno-22-31" name="__codelineno-22-31" href="#__codelineno-22-31"></a>
+</span><span id="__span-22-32"><a id="__codelineno-22-32" name="__codelineno-22-32" href="#__codelineno-22-32"></a><span class="gu">## Consequences</span>
 </span><span id="__span-22-33"><a id="__codelineno-22-33" name="__codelineno-22-33" href="#__codelineno-22-33"></a>
-</span><span id="__span-22-34"><a id="__codelineno-22-34" name="__codelineno-22-34" href="#__codelineno-22-34"></a><span class="gu">## Consequences</span>
-</span><span id="__span-22-35"><a id="__codelineno-22-35" name="__codelineno-22-35" href="#__codelineno-22-35"></a>
-</span><span id="__span-22-36"><a id="__codelineno-22-36" name="__codelineno-22-36" href="#__codelineno-22-36"></a>The main sample size decreases. The manuscript should report the number of
-</span><span id="__span-22-37"><a id="__codelineno-22-37" name="__codelineno-22-37" href="#__codelineno-22-37"></a>excluded observations, and robustness checks should verify that treatment
-</span><span id="__span-22-38"><a id="__codelineno-22-38" name="__codelineno-22-38" href="#__codelineno-22-38"></a>missingness is not concentrated in one site.
+</span><span id="__span-22-34"><a id="__codelineno-22-34" name="__codelineno-22-34" href="#__codelineno-22-34"></a>The main sample size decreases. The manuscript should report the number of
+</span><span id="__span-22-35"><a id="__codelineno-22-35" name="__codelineno-22-35" href="#__codelineno-22-35"></a>excluded observations, and robustness checks should verify that treatment
+</span><span id="__span-22-36"><a id="__codelineno-22-36" name="__codelineno-22-36" href="#__codelineno-22-36"></a>missingness is not concentrated in one site.
 </span></code></pre></div>
 <hr />
 <h2 id="reference-implementation">Reference implementation<a class="headerlink" href="#reference-implementation" title="Permanent link">&para;</a></h2>

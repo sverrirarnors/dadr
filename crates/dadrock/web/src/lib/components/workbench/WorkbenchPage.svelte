@@ -16,7 +16,7 @@
 
   const layouts: Record<Layout, string> = {
     single: 'grid-cols-1',
-    'two-pane': 'grid-cols-1 lg:grid-cols-[minmax(15rem,22rem)_minmax(0,1fr)]',
+    'two-pane': 'grid-cols-1 md:grid-cols-[minmax(15rem,22rem)_minmax(0,1fr)]',
     'three-pane': 'grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)_minmax(16rem,22rem)]',
   };
 
