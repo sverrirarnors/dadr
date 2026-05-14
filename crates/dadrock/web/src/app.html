@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dadrock</title>
+    <script>
+      (function () {
+        const html = document.documentElement;
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('vscode') === '1') {
+          html.setAttribute('data-host', 'vscode');
+          html.setAttribute('data-theme', 'dark');
+          return;
+        }
+        const stored = localStorage.getItem('dadr.theme');
+        const theme = stored === 'light' || stored === 'dark' ? stored : 'system';
+        html.setAttribute('data-theme', theme);
+        if (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          html.setAttribute('data-prefers-dark', '');
+        }
+      })();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

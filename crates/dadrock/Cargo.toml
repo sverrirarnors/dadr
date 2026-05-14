@@ -1,0 +1,54 @@
+[package]
+name = "dadrock"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+build = "build.rs"
+
+[features]
+no-js-build = []
+
+[[bin]]
+name = "dadrock"
+path = "src/main.rs"
+
+[dependencies]
+agent-client-protocol = { version = "0.11.1", features = ["unstable_session_usage"] }
+agent-client-protocol-tokio = "0.11.1"
+anyhow = "1"
+camino = { version = "1", features = ["serde1"] }
+clap = { version = "4", features = ["derive"] }
+clap-markdown = "0.1"
+clap_complete = "4"
+dadr = { version = "0.0.1", path = "../dadr" }
+chrono = { version = "0.4", features = ["serde"] }
+mime_guess = "2"
+rmcp = { version = "1.6.0", features = ["transport-io"] }
+rust-embed = { version = "8", features = ["compression"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+sha2 = "0.10"
+shell-words = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt", "process", "io-util", "macros", "sync"] }
+toml = "0.8"
+uuid = { version = "1", features = ["v7", "serde"] }
+
+[build-dependencies]
+walkdir = "2"
+
+[dev-dependencies]
+pretty_assertions = "1"
+rmcp = { version = "1.6.0", features = ["client", "transport-child-process"] }
+tokio = { version = "1", features = ["macros", "process", "rt", "time"] }
+
+[lints]
+workspace = true

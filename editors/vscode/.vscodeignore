@@ -1,0 +1,7 @@
+src/**
+tsconfig.json
+node_modules/**
+bin/**
+dist/**
+*.vsix
+npm-debug.log

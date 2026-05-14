@@ -1,0 +1,9 @@
+export { default as ActionBar } from './ActionBar.svelte';
+export { default as DocumentPane } from './DocumentPane.svelte';
+export { default as InspectorPane } from './InspectorPane.svelte';
+export { default as MetadataStrip } from './MetadataStrip.svelte';
+export { default as PaneHeader } from './PaneHeader.svelte';
+export { default as PaneToolbar } from './PaneToolbar.svelte';
+export { default as ResizableWorkbenchSplit } from './ResizableWorkbenchSplit.svelte';
+export { default as WorkbenchPage } from './WorkbenchPage.svelte';
+export { default as WorkbenchPane } from './WorkbenchPane.svelte';

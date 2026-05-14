@@ -1,0 +1,36 @@
+id = "merge-records"
+title = "Merge records"
+description = "Combine overlapping candidate DADRs into one clearer candidate while leaving source records unchanged."
+version = 1
+
+[input]
+mode = "form"
+
+[[inputs]]
+name = "record_ids"
+label = "Candidate records"
+type = "textarea"
+required = true
+
+[[inputs]]
+name = "merge_goal"
+label = "Merge goal"
+type = "textarea"
+required = false
+
+[requirements]
+records = "many"
+record_status = "candidate"
+paths = "none"
+notes = "optional"
+scope = "none"
+
+[output]
+kind = "candidate_draft.v1"
+
+[prompt]
+system = "prompt.md"
+
+[[tools]]
+name = "dadrock.get_record"
+mode = "read"

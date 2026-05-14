@@ -1,0 +1,45 @@
+import { expect, test } from '@playwright/test';
+
+test('manual candidate creation loads the template and opens the new record', async ({ page }) => {
+  await page.goto('/candidates/new');
+
+  await expect(page.locator('[data-workbench-page][data-layout="single"]')).toBeVisible();
+  await expect(page.getByText('Candidate editor')).toHaveCount(0);
+  await expect(page.getByText('Create a candidate decision manually or from an agent draft.')).toHaveCount(1);
+  await expect(page.locator('[data-ui-panel-section]')).toBeVisible();
+  await expect(page.locator('[data-ui-segmented-tabs]')).toBeVisible();
+  await expect(page.locator('[data-ui-text-input]').first()).toBeVisible();
+  await expect(page.locator('[data-ui-textarea-input]').first()).toBeVisible();
+  await expect(page.locator('[data-ui-button]').getByText('Create candidate')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'New Candidate' })).toBeVisible();
+  await expect(page.getByLabel('Candidate Markdown')).toHaveValue(/## Context/);
+
+  const title = `Manual candidate ${Date.now()}`;
+  await page.getByLabel('Title').fill(title);
+  await page.getByLabel('Tags').fill('#dadr/data/processing #kind/test');
+  await page.getByLabel('Candidate Markdown').fill(`## Context\nManual test.\n\n## Decision\nCreate ${title}.`);
+  await page.getByRole('button', { name: 'Create candidate' }).click();
+
+  await expect(page).toHaveURL(/\/records\/0193fb1f-a3a0-7000-8000-[0-9a-f]{12}$/);
+  await expect(page.getByRole('article')).toContainText(title);
+});
+
+test('agent candidate creation writes a candidate from a prompt', async ({ page }) => {
+  await page.goto('/candidates/new');
+
+  await page.getByRole('tab', { name: 'Agent draft' }).click();
+  await page.getByLabel('Draft Prompt').fill('Draft a candidate about using DuckDB for local joins.');
+  await page.getByLabel('Prompt Packs').fill('dadr');
+  await page.getByRole('button', { name: 'Draft candidate' }).click();
+
+  await expect(page).toHaveURL(/\/records\/0193fb1f-a3a0-7000-8000-[0-9a-f]{12}$/);
+  await expect(page.getByRole('article')).toContainText('Agent draft');
+});
+
+test('new with agent opens the candidate editor in agent mode', async ({ page }) => {
+  await page.goto('/candidates/new?mode=agent');
+
+  await expect(page.getByRole('tab', { name: 'Agent draft' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByLabel('Draft Prompt')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Draft candidate' })).toBeVisible();
+});

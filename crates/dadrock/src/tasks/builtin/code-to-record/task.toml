@@ -1,0 +1,36 @@
+id = "code-to-record"
+title = "Code to records"
+description = "Scan selected project files and draft candidate DADRs for consequential choices to review."
+version = 1
+
+[input]
+mode = "form"
+
+[[inputs]]
+name = "path"
+label = "Path"
+type = "path"
+default = "."
+
+[[inputs]]
+name = "focus"
+label = "Focus"
+type = "textarea"
+required = false
+
+[requirements]
+records = "none"
+record_status = "all"
+paths = "required"
+notes = "optional"
+scope = "none"
+
+[output]
+kind = "candidate_batch.v1"
+
+[prompt]
+system = "prompt.md"
+
+[[tools]]
+name = "dadrock.project_snapshot"
+mode = "read"

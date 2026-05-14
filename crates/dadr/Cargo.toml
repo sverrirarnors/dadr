@@ -1,0 +1,26 @@
+[package]
+name = "dadr"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+camino = { version = "1", features = ["serde1"] }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+thiserror = "2"
+uuid = { version = "1", features = ["v7", "serde"] }
+
+[dev-dependencies]
+serde_json = "1"
+
+[lints]
+workspace = true

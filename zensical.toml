@@ -1,0 +1,45 @@
+[project]
+docs_dir = "docs-src"
+site_dir = "docs"
+site_name = "DADR"
+site_description = "Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis."
+site_url = "https://vincentarelbundock.github.io/dadr"
+repo_url = "https://github.com/vincentarelbundock/dadr"
+repo_name = "vincentarelbundock/dadr"
+extra_css = ["stylesheets/home.css"]
+nav = [
+  {"Home" = "index.md"},
+  {"Get started" = "getting-started.md"},
+  {"Specification" = "specification.md"},
+  {"Tags" = "tags.md"},
+  {"dadrock" = [
+    {"Overview" = "dadrock/dadrock.md"},
+    {"CLI" = "dadrock/cli.md"},
+    {"Web UI" = "dadrock/web.md"},
+    {"IDE integrations" = "dadrock/ide.md"},
+  ]},
+  {"LLM agents" = "llms.md"},
+  {"UUID v7" = "uuidv7.md"},
+]
+
+[project.theme]
+logo = "assets/dadr_logo.svg"
+favicon = "assets/dadr_logo.svg"
+custom_dir = "docs-src/overrides"
+font.text = "Source Serif 4"
+font.code = "JetBrains Mono"
+features = ["content.code.copy", "navigation.footer", "toc.follow"]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "black"
+accent = "red"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "black"
+accent = "red"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"

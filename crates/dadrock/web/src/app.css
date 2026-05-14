@@ -1,0 +1,112 @@
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/inter/wght-italic.css";
+@import "@fontsource-variable/source-serif-4/wght.css";
+@import "@fontsource-variable/source-serif-4/wght-italic.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="system"][data-prefers-dark]) *);
+
+@theme {
+  --color-bg: oklch(99% 0.005 95);
+  --color-surface: oklch(97% 0.005 95);
+  --color-surface-2: oklch(94% 0.008 95);
+  --color-border: oklch(88% 0.01 95);
+
+  --color-fg: oklch(20% 0.015 270);
+  --color-fg-muted: oklch(45% 0.015 270);
+  --color-fg-subtle: oklch(60% 0.015 270);
+
+  --color-accent: oklch(55% 0.18 265);
+  --color-accent-fg: oklch(98% 0 0);
+  --color-accent-subtle: oklch(92% 0.04 265);
+
+  --color-success: oklch(60% 0.15 145);
+  --color-warning: oklch(70% 0.15 75);
+  --color-danger: oklch(58% 0.2 25);
+
+  --color-candidate: oklch(65% 0.13 95);
+  --color-accepted: oklch(60% 0.15 145);
+  --color-rejected: oklch(58% 0.05 25);
+  --color-superseded: oklch(60% 0.02 270);
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4 Variable", Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", monospace;
+
+  --radius-sm: 3px;
+  --radius: 5px;
+  --radius-lg: 8px;
+}
+
+:where([data-theme="dark"], [data-theme="system"][data-prefers-dark]) {
+  --color-bg: oklch(18% 0.012 270);
+  --color-surface: oklch(22% 0.012 270);
+  --color-surface-2: oklch(26% 0.014 270);
+  --color-border: oklch(32% 0.014 270);
+  --color-fg: oklch(95% 0.005 270);
+  --color-fg-muted: oklch(72% 0.012 270);
+  --color-fg-subtle: oklch(55% 0.012 270);
+  --color-accent-subtle: oklch(28% 0.06 265);
+}
+
+:root[data-host="vscode"] {
+  --color-bg: var(--vscode-editor-background, #1e1e1e);
+  --color-surface: var(--vscode-sideBar-background, #252526);
+  --color-surface-2: var(--vscode-editorWidget-background, #2d2d30);
+  --color-border: var(--vscode-panel-border, #3c3c3c);
+  --color-fg: var(--vscode-foreground, #cccccc);
+  --color-fg-muted: var(--vscode-descriptionForeground, #9d9d9d);
+  --color-fg-subtle: var(--vscode-descriptionForeground, #858585);
+  --color-accent: var(--vscode-textLink-foreground, #3794ff);
+  --color-accent-fg: var(--vscode-button-foreground, #ffffff);
+  --color-accent-subtle: var(--vscode-list-activeSelectionBackground, #04395e);
+  --color-success: var(--vscode-testing-iconPassed, var(--vscode-charts-green, #73c991));
+  --color-warning: var(--vscode-editorWarning-foreground, #cca700);
+  --color-danger: var(--vscode-errorForeground, #f48771);
+  --font-sans: var(--vscode-font-family, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--vscode-editor-font-family, ui-monospace, "SF Mono", monospace);
+  color-scheme: dark;
+  font-size: var(--vscode-font-size, 13px);
+  line-height: 1.4;
+}
+
+:root[data-host="vscode"][data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-host="vscode"] body {
+  font-family: var(--font-sans);
+}
+
+:root[data-host="vscode"] code,
+:root[data-host="vscode"] pre {
+  font-family: var(--font-mono);
+}
+
+:root[data-host="vscode"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+:root[data-host="vscode"] ::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background, color-mix(in oklab, var(--color-fg) 25%, transparent));
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01", "ss03";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-subtle);
+    color: var(--color-fg);
+  }
+}

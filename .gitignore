@@ -1,0 +1,43 @@
+# macOS
+.DS_Store
+
+# Rust
+/target
+**/*.rs.bk
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Caches
+.cache/
+.worktrees/
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts
+/dist
+/build
+/editors/vscode/bin
+/editors/vscode/dist
+/editors/vscode/node_modules
+/editors/vscode/out
+/editors/vscode/*.vsix
+
+# Logs
+*.log

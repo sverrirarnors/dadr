@@ -1,0 +1,36 @@
+id = "edit-record"
+title = "Edit record"
+description = "Revise any existing DADR while preserving its lifecycle status until you choose what to do next."
+version = 1
+
+[input]
+mode = "form"
+
+[[inputs]]
+name = "record_id"
+label = "Record"
+type = "text"
+required = true
+
+[[inputs]]
+name = "requested_changes"
+label = "Requested changes"
+type = "textarea"
+required = true
+
+[requirements]
+records = "one"
+record_status = "all"
+paths = "none"
+notes = "required"
+scope = "none"
+
+[output]
+kind = "record_revision.v1"
+
+[prompt]
+system = "prompt.md"
+
+[[tools]]
+name = "dadrock.get_record"
+mode = "read"

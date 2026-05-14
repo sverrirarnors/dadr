@@ -1,0 +1,1 @@
+df <- na.omit(df)

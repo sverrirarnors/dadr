@@ -1,0 +1,96 @@
+{
+  "name": "dadrock",
+  "displayName": "dadrock",
+  "description": "Data Analysis Decision Records browser and editor.",
+  "version": "0.0.1",
+  "publisher": "VincentArel-Bundock",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "homepage": "https://vincentarelbundock.github.io/dadr",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vincentarelbundock/dadr"
+  },
+  "bugs": {
+    "url": "https://github.com/vincentarelbundock/dadr/issues"
+  },
+  "qna": "marketplace",
+  "pricing": "Free",
+  "galleryBanner": {
+    "color": "#0f172a",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Data Science",
+    "Notebooks",
+    "Other"
+  ],
+  "keywords": [
+    "dadr",
+    "dadrock",
+    "decision records",
+    "data analysis",
+    "adr",
+    "reproducibility"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/dadr/accepted",
+    "workspaceContains:**/dadr/candidates",
+    "workspaceContains:**/dadr/rejected"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dadrock.start",
+        "title": "Dadrock: Start"
+      },
+      {
+        "command": "dadrock.stop",
+        "title": "Dadrock: Stop"
+      },
+      {
+        "command": "dadrock.showPanel",
+        "title": "Dadrock: Show Panel"
+      },
+      {
+        "command": "dadrock.restart",
+        "title": "Dadrock: Restart"
+      },
+      {
+        "command": "dadrock.init",
+        "title": "Dadrock: Init"
+      }
+    ],
+    "configuration": {
+      "title": "Dadrock",
+      "properties": {
+        "dadrock.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the dadrock binary. Leave empty to use the bundled binary or find dadrock on $PATH."
+        },
+        "dadrock.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start Dadrock when a DADR workspace opens."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^3.0.0",
+    "ovsx": "^0.9.0",
+    "typescript": "^5.4.0"
+  }
+}

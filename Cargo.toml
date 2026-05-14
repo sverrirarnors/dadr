@@ -1,0 +1,42 @@
+[workspace]
+members = [
+    "crates/dadr",
+    "crates/dadrock",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+version = "0.0.1"
+description = "Data Analysis Decision Records tooling and local review UI."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/vincentarelbundock/dadr"
+homepage = "https://vincentarelbundock.github.io/dadr"
+authors = ["Vincent Arel-Bundock"]
+readme = "README.md"
+keywords = ["data-analysis", "decision-records", "reproducibility", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.metadata.dist]
+cargo-dist-version = "0.31.0"
+ci = "github"
+installers = ["shell", "powershell"]
+targets = [
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",
+]
+pr-run-mode = "plan"
+install-path = "CARGO_HOME"
+install-updater = false
+
+[profile.dist]
+inherits = "release"
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

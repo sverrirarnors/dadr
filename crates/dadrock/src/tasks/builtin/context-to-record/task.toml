@@ -1,0 +1,30 @@
+id = "context-to-record"
+title = "Context to record"
+description = "Turn supplied context into one candidate DADR when you already know the decision to capture."
+version = 1
+
+[input]
+mode = "form"
+
+[[inputs]]
+name = "context"
+label = "Context"
+type = "textarea"
+required = true
+
+[requirements]
+records = "none"
+record_status = "all"
+paths = "optional"
+notes = "required"
+scope = "none"
+
+[output]
+kind = "candidate_draft.v1"
+
+[prompt]
+system = "prompt.md"
+
+[[tools]]
+name = "dadrock.project_snapshot"
+mode = "read"

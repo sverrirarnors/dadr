@@ -1,0 +1,343 @@
+/* DADR site styles: open-source documentation pairing.
+   Source Serif 4 for body (loaded by zensical from zensical.toml).
+   Open Sans for headings + UI (loaded here; zensical preloads only one
+   primary text font and Open Sans isn't it). */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  /* Color tokens. Neutral web-standard palette: white surfaces, slate text,
+     a clean blue for links and hover accents. Inspired by typical modern
+     documentation sites (Tailwind docs, Stripe docs, Linear). */
+  --dadr-paper: #ffffff;
+  --dadr-paper-2: #f8fafc;        /* slate-50, surface tint */
+  --dadr-rule: #e2e8f0;            /* slate-200, hairlines */
+  --dadr-ink: #0f172a;             /* slate-900, body text */
+  --dadr-muted: #475569;           /* slate-600, secondary text */
+  --dadr-accent: #2563eb;          /* blue-600, links and hover */
+
+  /* Font tokens.
+     - text:    Source Serif 4 for long-form body text. Document-feel,
+                readable at length, scholarly without being precious.
+     - heading: Open Sans for h1-h6, navbar, buttons. Practical, neutral,
+                works on every OS without an extra preload weight.
+     - code:    JetBrains Mono via zensical, with system mono fallbacks. */
+  --font-text: "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --font-heading: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Apply the body font with full fallback chain. zensical sets
+   --md-text-font to just "Source Serif 4"; this layers system fallbacks. */
+body,
+.md-typeset {
+  font-family: var(--font-text);
+}
+
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: var(--dadr-paper);
+  --md-default-fg-color: var(--dadr-ink);
+  --md-typeset-a-color: var(--dadr-accent);
+  --md-accent-fg-color: var(--dadr-accent);
+  --md-primary-fg-color: var(--dadr-ink);
+  --md-primary-fg-color--light: #2a2a2a;
+  --md-primary-fg-color--dark: #000000;
+  --md-primary-bg-color: var(--dadr-paper);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-typeset-a-color: #60a5fa;       /* blue-400, lighter for dark bg */
+  --md-accent-fg-color: #60a5fa;
+}
+
+/* Hide the palette toggle. We keep both palettes in zensical.toml so
+   Material's Mermaid bootstrap (which keys off the palette config) stays
+   happy, but the user is never offered the dark-mode switch. */
+.md-header__option,
+form[data-md-component="palette"] {
+  display: none !important;
+}
+
+.md-typeset {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+/* Header logo (the home icon partial). Force it to a fixed icon size. */
+.md-header .md-logo svg,
+.md-nav__title .md-logo svg {
+  height: 1.2rem !important;
+  width: 1.2rem !important;
+}
+
+/* Inline navbar links. The override partial replaces .md-header__title with
+   <nav class="dadr-header-nav">. flex:1 makes it consume the middle of the
+   header so the right-side controls (palette, search, repo) hug the edge. */
+.dadr-header-nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+  margin: 0 1rem;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.dadr-header-nav__link {
+  color: var(--md-default-fg-color);
+  text-decoration: none;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.dadr-header-nav__link:hover,
+.dadr-header-nav__link:focus {
+  color: var(--md-accent-fg-color);
+  border-bottom-color: var(--md-accent-fg-color);
+}
+
+/* On narrow viewports the drawer (hamburger) replaces the inline links so
+   they don't crowd the search box. */
+@media (max-width: 76.1875em) {
+  .dadr-header-nav {
+    display: none;
+  }
+}
+
+/* Right-sidebar TOC: fold h3+ under each h2 by default. zensical's
+   toc.follow feature applies .md-nav__link--active to the currently
+   visible heading's link as the user scrolls; we use :has() to reveal
+   only the active h2's nested nav. */
+[data-md-component="toc"] > .md-nav__item > .md-nav {
+  display: none;
+}
+[data-md-component="toc"] > .md-nav__item:has(.md-nav__link--active) > .md-nav {
+  display: block;
+}
+
+/* Footer matches the navbar. zensical's .md-header uses
+   --md-default-bg-color--light + --md-default-fg-color, so the footer reads
+   from the same tokens for a uniform light/paper strip top and bottom.
+   A 1px rule on top mirrors the header's bottom shadow. */
+.md-footer,
+.md-footer-meta {
+  background-color: var(--md-default-bg-color--light);
+  color: var(--md-default-fg-color);
+}
+.md-footer {
+  border-top: 1px solid var(--dadr-rule);
+}
+.md-footer a,
+.md-footer-meta a {
+  color: var(--md-default-fg-color);
+}
+.md-footer a:hover,
+.md-footer-meta a:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* Skip-link target. Zensical injects an h1#__skip on pages with no markdown
+   heading; visually hide it but keep it accessible to screen readers. */
+.md-typeset h1#__skip {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.md-typeset h1 { font-size: 1.7rem; }
+.md-typeset h2 { font-size: 1.35rem; }
+.md-typeset h3 { font-size: 1.15rem; }
+.md-typeset h4 { font-size: 1.05rem; }
+.md-typeset h5,
+.md-typeset h6 { font-size: 1rem; }
+
+/* ============ Hero ============ */
+.hero {
+  text-align: center;
+  padding: 1.5rem 1rem 3rem;
+  border-bottom: 1px solid var(--dadr-rule);
+  margin-bottom: 2rem;
+}
+
+.md-typeset .hero-logo {
+  display: block;
+  margin: 0 auto .4rem;
+  width: auto;
+  max-width: 30rem;
+  height: auto;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .hero-logo {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* The Markdown parser wraps the bare hero img in a <p>. Target only that
+   wrapper (a <p> whose only child is an image) so we don't clobber the
+   tagline's margin/centering. */
+.md-typeset .hero > p:has(> img) {
+  margin: 0;
+}
+
+.md-typeset .hero-tagline {
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.55;
+  max-width: 32rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 0;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: var(--dadr-muted);
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+/* Editorial button: square corners, thin rule, all-caps label. Both buttons
+   in the hero use the same style; the distinction is destination, not weight. */
+.md-typeset .hero-buttons .md-button {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 0.7rem 1.4rem;
+  margin: 0;
+  border: 1px solid var(--dadr-ink);
+  border-radius: 0;
+  color: var(--dadr-ink);
+  background: transparent;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+
+.md-typeset .hero-buttons .md-button:hover,
+.md-typeset .hero-buttons .md-button:focus {
+  background: var(--dadr-ink);
+  color: var(--dadr-paper);
+  border-color: var(--dadr-ink);
+}
+
+/* ============ Feature grid ============ */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.feature-grid .feature {
+  border-top: 2px solid var(--dadr-ink);
+  padding-top: 0.8rem;
+}
+
+.feature-grid .feature h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.2rem;
+}
+
+.feature-grid .feature p {
+  margin: 0;
+  color: var(--dadr-muted);
+}
+
+/* ============ Mermaid diagram ============ */
+/* Center the rendered SVG and constrain its width so the diagram reads as a
+   figure rather than a code block. Strip the default code-block chrome that
+   pymdownx.superfences leaves around the <pre class="mermaid"> wrapper. */
+.md-typeset .diagram {
+  margin: 2.5rem auto;
+  text-align: center;
+}
+
+.md-typeset .diagram .mermaid {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.md-typeset .diagram .mermaid > svg {
+  display: block;
+  margin: 0 auto;
+  max-width: min(46rem, 100%);
+  height: auto;
+}
+
+/* Edge labels: muted secondary text, paper-colored background to mask the
+   line where they sit, with a touch of letter-spacing for the lowercase look. */
+.md-typeset .diagram .mermaid .edgeLabel,
+.md-typeset .diagram .mermaid .edgeLabel * {
+  font-family: var(--font-heading) !important;
+  color: var(--dadr-muted) !important;
+  background: var(--dadr-paper) !important;
+  letter-spacing: 0.01em;
+}
+
+.md-typeset .diagram .mermaid .edgePath path {
+  stroke-width: 1px;
+}
+
+/* Node text in the heading font, just a hair heavier than body. */
+.md-typeset .diagram .mermaid .nodeLabel,
+.md-typeset .diagram .mermaid .nodeLabel * {
+  font-family: var(--font-heading) !important;
+  font-weight: 500 !important;
+}
+
+/* Dark-mode tints: nodes pick up the page's slate surface; the accent node
+   inverts to white-on-paper for contrast against dark surroundings. */
+[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .node rect,
+[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .node polygon,
+[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .node path {
+  fill: var(--md-default-bg-color) !important;
+  stroke: #475569 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .nodeLabel,
+[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .nodeLabel * {
+  color: #e2e8f0 !important;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .edgeLabel,
+[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .edgeLabel * {
+  background: var(--md-default-bg-color) !important;
+  color: #94a3b8 !important;
+}
+
+
+/* ============ Pull-quote ============ */
+.pull {
+  border-left: 3px solid var(--dadr-accent);
+  padding: 0.6rem 1.2rem;
+  margin: 2rem 0;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--dadr-muted);
+}
