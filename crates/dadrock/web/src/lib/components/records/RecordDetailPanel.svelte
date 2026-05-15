@@ -9,6 +9,7 @@
   import RecordSelectionDialog from '$lib/components/records/RecordSelectionDialog.svelte';
   import { ActionBar, DocumentPane, MetadataStrip } from '$lib/components/workbench';
   import { renderMarkdown, stripFrontMatter } from '$lib/markdown/render';
+  import { detailActionRecord } from '$lib/records/detail-state';
   import {
     displayRecordStatus,
     recordStatusVariant,
@@ -60,12 +61,15 @@
 
   const dirty = $derived(isRecordEditorDirty(editorState));
   const renderedHtml = $derived(source.data ? renderMarkdown(stripFrontMatter(source.data.content)) : '');
-  const isCandidate = $derived(lifecycle.data?.record.status === 'candidate');
 
   const snapshot = createQuery(() => ({
     queryKey: ['snapshot'],
     queryFn: () => api.getSnapshot(),
   }));
+
+  const detailRecord = $derived(detailActionRecord(lifecycle.data?.record, snapshot.data?.records));
+  const isCandidate = $derived(detailRecord?.status === 'candidate');
+  const canSupersede = $derived(detailRecord ? displayRecordStatus(detailRecord) === 'accepted' : false);
 
   $effect(() => {
     if (source.data) {
@@ -221,16 +225,16 @@
   <div class={showBackLink ? 'mt-6 flex flex-wrap items-start justify-between gap-4' : 'flex flex-wrap items-start justify-between gap-4'}>
     <div class="min-w-0">
       <div class="flex flex-wrap items-center gap-2">
-        <Badge variant={recordStatusVariant(lifecycle.data.record) as StatusVariant} mono class="uppercase">
-          {displayRecordStatus(lifecycle.data.record).slice(0, 3)}
+        <Badge variant={recordStatusVariant(detailRecord ?? lifecycle.data.record) as StatusVariant} mono class="uppercase">
+          {displayRecordStatus(detailRecord ?? lifecycle.data.record).slice(0, 3)}
         </Badge>
-        <h1 class={embedded ? 'text-xl font-semibold' : 'text-2xl font-semibold'}>{lifecycle.data.record.title}</h1>
+        <h1 class={embedded ? 'text-xl font-semibold' : 'text-2xl font-semibold'}>{(detailRecord ?? lifecycle.data.record).title}</h1>
       </div>
       <div class="mt-2">
-        <Badge mono>{fileName(lifecycle.data.record.path)}</Badge>
-        {#if lifecycle.data.record.tags.length}
+        <Badge mono>{fileName((detailRecord ?? lifecycle.data.record).path)}</Badge>
+        {#if (detailRecord ?? lifecycle.data.record).tags.length}
           <MetadataStrip class="mt-1">
-            {#each lifecycle.data.record.tags as tag (tag)}
+            {#each (detailRecord ?? lifecycle.data.record).tags as tag (tag)}
               <InlineLinkBadge href={resolve(tagSearchLink(tag))}>
                 {tag}
               </InlineLinkBadge>
@@ -382,7 +386,7 @@
           <Check class="h-3.5 w-3.5" />
           <span>{accept.isPending ? 'Accepting' : 'Accept'}</span>
         </Button>
-      {:else if displayRecordStatus(lifecycle.data.record) === 'accepted'}
+      {:else if canSupersede}
         <ActionMenu label="Supersede">
           <button
             role="menuitem"
@@ -399,7 +403,7 @@
           <a
             role="menuitem"
             class={actionMenuItemClass}
-            href={resolve(`/candidates/new?supersedes=${encodeURIComponent(lifecycle.data.record.id)}`)}
+            href={resolve(`/candidates/new?supersedes=${encodeURIComponent((detailRecord ?? lifecycle.data.record).id)}`)}
           >
             <FilePlus2 class="h-3.5 w-3.5" aria-hidden="true" />
             <span>Supersede with new record</span>
@@ -407,7 +411,7 @@
           <a
             role="menuitem"
             class={actionMenuItemClass}
-            href={resolve(taskLink('supersede-record', lifecycle.data.record.id))}
+            href={resolve(taskLink('supersede-record', (detailRecord ?? lifecycle.data.record).id))}
           >
             <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
             <span>Supersede with agent</span>

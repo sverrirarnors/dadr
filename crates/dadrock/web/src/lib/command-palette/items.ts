@@ -1,4 +1,5 @@
 import type { RecordSummary } from '$lib/api';
+import { primaryNavItems, type PrimaryNavHref } from '$lib/navigation/routes';
 import { recordSearchText } from '$lib/records/filters';
 
 export type CommandPaletteSection = 'Navigation' | 'Records' | 'Actions';
@@ -9,14 +10,7 @@ export type CommandPaletteAction =
   | 'reload-snapshot'
   | 'open-settings';
 
-export type CommandPaletteRoute =
-  | '/inbox'
-  | '/records'
-  | '/records?status=candidate'
-  | '/tags'
-  | '/tasks'
-  | '/validation'
-  | '/settings';
+export type CommandPaletteRoute = PrimaryNavHref;
 
 export interface CommandPaletteItem {
   id: string;
@@ -29,14 +23,9 @@ export interface CommandPaletteItem {
   action?: CommandPaletteAction;
 }
 
-const NAVIGATION: CommandPaletteItem[] = [
-  navigationItem('/records?status=candidate', 'Go to Inbox'),
-  navigationItem('/records', 'Go to Records'),
-  navigationItem('/tags', 'Go to Tags'),
-  navigationItem('/tasks', 'Go to Tasks'),
-  navigationItem('/validation', 'Go to Validation'),
-  navigationItem('/settings', 'Go to Settings'),
-];
+const NAVIGATION: CommandPaletteItem[] = primaryNavItems.map((item) =>
+  navigationItem(item.href, `Go to ${item.label}`),
+);
 
 const ACTIONS: CommandPaletteItem[] = [
   actionItem('new-candidate', 'New Candidate', 'Draft a decision manually'),

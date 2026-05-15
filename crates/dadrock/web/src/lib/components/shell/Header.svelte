@@ -9,32 +9,23 @@
     ShieldCheck,
     Tag,
   } from 'lucide-svelte';
+  import {
+    isPrimaryNavItemActive,
+    primaryNavItems,
+    type PrimaryNavId,
+  } from '$lib/navigation/routes';
   import ThemeToggle from './ThemeToggle.svelte';
 
-  const navItems = [
-    { href: '/records?status=candidate', label: 'Inbox', ariaLabel: 'Candidate inbox', icon: Inbox },
-    { href: '/records', label: 'Records', ariaLabel: 'Browse records', icon: FileText },
-    { href: '/tags', label: 'Tags', ariaLabel: 'Browse tag list', icon: Tag },
-    { href: '/tasks', label: 'Tasks', ariaLabel: 'Task runner', icon: Hammer },
-    { href: '/validation', label: 'Validation', ariaLabel: 'Project validation', icon: ShieldCheck },
-    { href: '/settings', label: 'Settings', ariaLabel: 'Project settings', icon: Settings },
-  ] as const;
+  const icons = {
+    inbox: Inbox,
+    records: FileText,
+    tags: Tag,
+    tasks: Hammer,
+    validation: ShieldCheck,
+    settings: Settings,
+  } satisfies Record<PrimaryNavId, typeof Inbox>;
 
-  type NavHref = (typeof navItems)[number]['href'];
-
-  function routeHref(href: NavHref) {
-    return resolve(href);
-  }
-
-  function isActive(href: NavHref) {
-    if (href === '/records?status=candidate') {
-      return page.url.pathname === '/records' && page.url.searchParams.get('status') === 'candidate';
-    }
-    if (href === '/records') {
-      return page.url.pathname === '/records' && page.url.searchParams.get('status') !== 'candidate';
-    }
-    return page.url.pathname === routeHref(href) || page.url.pathname.startsWith(`${routeHref(href)}/`);
-  }
+  const navItems = primaryNavItems.map((item) => ({ ...item, icon: icons[item.id] }));
 </script>
 
 <header data-app-header class="flex h-11 items-center gap-2 border-b border-border bg-bg px-2">
@@ -47,8 +38,8 @@
         aria-label={item.ariaLabel}
         title={item.label}
         class="group relative inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-2 hover:text-fg"
-        class:bg-surface-2={isActive(item.href)}
-        class:!text-fg={isActive(item.href)}
+        class:bg-surface-2={isPrimaryNavItemActive(item, page.url)}
+        class:!text-fg={isPrimaryNavItemActive(item, page.url)}
       >
         <item.icon class="h-4 w-4" />
         <span

@@ -1,10 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
+  import { candidateInboxHref } from '$lib/navigation/routes';
   import { onMount } from 'svelte';
 
   onMount(() => {
-    goto(resolve('/records?status=candidate'), { replaceState: true });
+    goto(resolve(candidateInboxHref), { replaceState: true });
   });
 </script>
 

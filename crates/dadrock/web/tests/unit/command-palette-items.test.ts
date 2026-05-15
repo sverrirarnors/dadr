@@ -4,6 +4,7 @@ import {
   buildCommandPaletteItems,
   filterCommandPaletteItems,
 } from '../../src/lib/command-palette/items';
+import { primaryNavItems } from '../../src/lib/navigation/routes';
 
 const records: RecordSummary[] = [
   {
@@ -40,6 +41,16 @@ describe('buildCommandPaletteItems', () => {
       'Reload Snapshot',
       'Open Settings',
     ]);
+  });
+
+  it('builds navigation commands from the primary navigation model', () => {
+    const items = buildCommandPaletteItems([]);
+
+    expect(
+      items
+        .filter((item) => item.section === 'Navigation')
+        .map((item) => ({ label: item.label, route: item.route })),
+    ).toEqual(primaryNavItems.map((item) => ({ label: `Go to ${item.label}`, route: item.href })));
   });
 });
 

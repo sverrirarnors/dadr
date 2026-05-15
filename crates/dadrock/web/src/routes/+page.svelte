@@ -1,10 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
+  import { homeHref } from '$lib/navigation/routes';
   import { onMount } from 'svelte';
 
   onMount(() => {
-    goto(resolve('/inbox'), { replaceState: true });
+    goto(resolve(homeHref), { replaceState: true });
   });
 </script>
 

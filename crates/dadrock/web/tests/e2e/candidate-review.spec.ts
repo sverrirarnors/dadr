@@ -38,6 +38,9 @@ test('candidate review accepts a newly created candidate', async ({ page }) => {
   await page.getByRole('button', { name: 'Accept candidate' }).click();
 
   await expect(page).toHaveURL(new RegExp(`/records/${id}$`));
+  await expect(page.getByRole('button', { name: 'Accept', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Reject', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Supersede', exact: true })).toBeVisible();
   const toast = page.getByText(`accepted candidate ${id}`);
   await expect(toast).toBeVisible();
   await expect(toast).not.toBeVisible({ timeout: 4000 });
