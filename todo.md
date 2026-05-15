@@ -1,0 +1,2 @@
+- [ ] supersession candidates drafted by agents link to the original decision, but they do not put the uuid in double square brackets wikilinks. They should.
+- [ ] Custom task requires two records, but it should only require a prompt.

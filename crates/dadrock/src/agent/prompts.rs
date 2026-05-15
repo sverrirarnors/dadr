@@ -182,8 +182,11 @@ fn candidate_contract_text() -> String {
 
 fn candidate_response_schema(intent: &str, summary: &str) -> String {
     format!(
-        r###"The JSON object must have this shape:
+        r###"If your ACP runtime can emit a completed tool call with structured `rawOutput`, put this JSON object in that `rawOutput` and use a short human-facing text summary. Otherwise return this JSON object as the final text response.
+
+The JSON object must have this shape:
 {{
+  "kind": "dadrock.draft_candidate.v1",
   "intent": "{intent}",
   "confidence": "low|medium|high",
   "summary": "{summary}",

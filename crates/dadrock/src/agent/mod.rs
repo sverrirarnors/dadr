@@ -25,8 +25,8 @@ mod tests {
 
     use super::{
         acp::{
-            run_acp_agent, AcpConversation, AcpPermissionOptionKind, AcpPermissionPolicy,
-            AcpPermissionRequest, AcpPromptOptions, AcpSessionEvent,
+            run_acp_agent, run_acp_agent_json, AcpConversation, AcpPermissionOptionKind,
+            AcpPermissionPolicy, AcpPermissionRequest, AcpPromptOptions, AcpSessionEvent,
         },
         providers::{
             detect_local_acp_agent_in_path, known_acp_providers, parse_acp_agent_args,
@@ -271,6 +271,41 @@ Final answer:
     }
 
     #[test]
+    fn parses_agent_json_with_string_activity_observation() {
+        let response = parse_agent_response_text(
+            r###"
+{"intent":"draft_candidate","confidence":"medium","summary":"Drafted.","frontmatter":{"title":"Use string activity observation"},"body_markdown":"## Context\nContext.\n\n## Decision\nDecision.\n\n## Alternatives\nAlternatives.\n\n## Consequences\nConsequences.","source_references":[],"activity_observations":["analysis/penguins_ols.py already reads from the Rdatasets URL (line 11, 15)"],"warnings":[],"provenance":{"model":"local-test","tool_runs":[]}}
+"###,
+        )
+        .expect("string activity observations should not reject the draft");
+
+        assert_eq!(response.activity_observations.len(), 1);
+        assert_eq!(response.activity_observations[0].activity, "observation");
+        assert_eq!(
+            response.activity_observations[0].summary,
+            "analysis/penguins_ols.py already reads from the Rdatasets URL (line 11, 15)"
+        );
+        assert_eq!(response.activity_observations[0].path, None);
+    }
+
+    #[test]
+    fn parses_agent_json_with_string_tool_run() {
+        let response = parse_agent_response_text(
+            r###"
+{"intent":"draft_candidate","confidence":"medium","summary":"Drafted.","frontmatter":{"title":"Use string tool run"},"body_markdown":"## Context\nContext.\n\n## Decision\nDecision.\n\n## Alternatives\nAlternatives.\n\n## Consequences\nConsequences.","source_references":[],"activity_observations":[],"warnings":[],"provenance":{"model":"local-test","tool_runs":["dadrock_dadrock_project_snapshot"]}}
+"###,
+        )
+        .expect("string tool runs should not reject the draft");
+
+        assert_eq!(response.provenance.tool_runs.len(), 1);
+        assert_eq!(
+            response.provenance.tool_runs[0].name,
+            "dadrock_dadrock_project_snapshot"
+        );
+        assert_eq!(response.provenance.tool_runs[0].summary, None);
+    }
+
+    #[test]
     fn rejects_truncated_agent_json_with_brace_inside_string() {
         let error = parse_agent_response_text(
             r#"{"intent":"draft_candidate","body_markdown":"unterminated }"#,
@@ -483,6 +518,45 @@ Final answer:
     }
 
     #[cfg(unix)]
+    #[test]
+    fn fake_acp_prompt_reads_draft_from_tool_raw_output() {
+        let fixture = FakeAcpFixture::new("draft-raw-output");
+        let request = minimal_agent_request(&fixture.root);
+
+        let response = run_acp_agent(&fixture.command(), &request, AcpPromptOptions::default())
+            .expect("run fake ACP agent with structured raw output");
+
+        assert_eq!(response.summary, "Raw output draft.");
+        assert_eq!(
+            response
+                .frontmatter
+                .get("title")
+                .and_then(serde_json::Value::as_str),
+            Some("Use ACP rawOutput")
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn fake_acp_json_prompt_reads_kinded_tool_raw_output() {
+        let fixture = FakeAcpFixture::new("draft-raw-output");
+        let request = minimal_agent_request(&fixture.root);
+
+        let response =
+            run_acp_agent_json(&fixture.command(), &request, AcpPromptOptions::default())
+                .expect("run fake ACP JSON prompt with structured raw output");
+
+        assert_eq!(
+            response.get("kind").and_then(serde_json::Value::as_str),
+            Some("dadrock.draft_candidate.v1")
+        );
+        assert_eq!(
+            response.get("summary").and_then(serde_json::Value::as_str),
+            Some("Raw output draft.")
+        );
+    }
+
+    #[cfg(unix)]
     struct FakeAcpFixture {
         root: PathBuf,
         script: PathBuf,
@@ -634,6 +708,8 @@ while IFS= read -r line; do
         else
           send "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"fake-session\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"permission granted\"}}}}"
         fi
+      elif [ "$mode" = "draft-raw-output" ]; then
+        send "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"fake-session\",\"update\":{\"sessionUpdate\":\"tool_call_update\",\"toolCallId\":\"emit-draft\",\"title\":\"Emit Dadrock draft\",\"kind\":\"other\",\"status\":\"completed\",\"rawOutput\":{\"kind\":\"dadrock.draft_candidate.v1\",\"intent\":\"draft_candidate\",\"confidence\":\"high\",\"summary\":\"Raw output draft.\",\"frontmatter\":{\"title\":\"Use ACP rawOutput\"},\"body_markdown\":\"## Context\\nText chunks are for narration.\\n\\n## Decision\\nRead Dadrock draft envelopes from ACP tool rawOutput when present.\\n\\n## Alternatives\\nContinue scraping final agent text.\\n\\n## Consequences\\nStructured ACP output can create candidates without relying on prose parsing.\",\"source_references\":[],\"activity_observations\":[],\"warnings\":[],\"provenance\":{\"model\":\"fake-acp\",\"tool_runs\":[{\"name\":\"emit-draft\"}]}}}}}"
       else
         send "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"fake-session\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"fake chat answer\"}}}}"
       fi

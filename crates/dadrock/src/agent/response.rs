@@ -36,6 +36,21 @@ fn looks_like_agent_response_json(input: &str) -> bool {
     object.contains_key("intent") && object.contains_key("body_markdown")
 }
 
+pub fn parse_agent_response_value(value: Value) -> Result<AgentResponseEnvelope, DadrError> {
+    serde_json::from_value::<AgentResponseEnvelope>(value).map_err(|err| {
+        DadrError::Acp(format!(
+            "ACP agent response did not match the Dadrock draft envelope: {err}"
+        ))
+    })
+}
+
+pub fn looks_like_agent_response_value(value: &Value) -> bool {
+    let Some(object) = value.as_object() else {
+        return false;
+    };
+    object.contains_key("intent") && object.contains_key("body_markdown")
+}
+
 pub fn candidate_metadata_from_response(
     response: &mut AgentResponseEnvelope,
 ) -> Result<AgentCandidateMetadata, DadrError> {

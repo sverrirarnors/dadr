@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     path::PathBuf,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -12,7 +13,7 @@ use agent_client_protocol::schema::{
     CancelNotification, InitializeRequest, NewSessionRequest, ProtocolVersion,
     RequestPermissionOutcome, RequestPermissionRequest, RequestPermissionResponse,
     SelectedPermissionOutcome, SessionNotification, SessionUpdate, SetSessionConfigOptionRequest,
-    SetSessionConfigOptionResponse,
+    SetSessionConfigOptionResponse, ToolCall, ToolCallId, ToolCallStatus, ToolCallUpdate,
 };
 use agent_client_protocol::util::MatchDispatch;
 use agent_client_protocol::{
@@ -28,7 +29,9 @@ use crate::{
         json::extract_json_object,
         prompts::agent_prompt,
         providers::LocalAcpAgentCommand,
-        response::parse_agent_response_text,
+        response::{
+            looks_like_agent_response_value, parse_agent_response_text, parse_agent_response_value,
+        },
         types::{AgentRequestEnvelope, AgentResponseEnvelope},
     },
     error::DadrError,
@@ -248,6 +251,80 @@ enum AcpConversationCommand {
     },
     Cancel,
     Shutdown,
+}
+
+#[derive(Debug, Default)]
+struct AcpPromptOutput {
+    text: String,
+    raw_outputs: Vec<Value>,
+}
+
+impl AcpPromptOutput {
+    fn parse_agent_response(self) -> Result<AgentResponseEnvelope, DadrError> {
+        for raw_output in self.raw_outputs.into_iter().rev() {
+            if looks_like_agent_response_value(&raw_output) {
+                return parse_agent_response_value(raw_output);
+            }
+        }
+        parse_agent_response_text(&self.text)
+    }
+
+    fn parse_json_response(self) -> Result<Value, DadrError> {
+        for raw_output in self.raw_outputs.into_iter().rev() {
+            if looks_like_structured_json_output(&raw_output) {
+                return Ok(raw_output);
+            }
+        }
+        parse_acp_agent_json_response(&self.text)
+    }
+}
+
+fn looks_like_structured_json_output(value: &Value) -> bool {
+    value
+        .as_object()
+        .and_then(|object| object.get("kind"))
+        .and_then(Value::as_str)
+        .is_some()
+}
+
+#[derive(Debug, Default)]
+struct AcpToolCallState {
+    calls: HashMap<ToolCallId, ToolCall>,
+    completed_raw_outputs: Vec<Value>,
+}
+
+impl AcpToolCallState {
+    fn apply_call(&mut self, call: ToolCall) {
+        if call.status == ToolCallStatus::Completed {
+            if let Some(raw_output) = call.raw_output.clone() {
+                self.completed_raw_outputs.push(raw_output);
+            }
+        }
+        self.calls.insert(call.tool_call_id.clone(), call);
+    }
+
+    fn apply_update(&mut self, update: ToolCallUpdate) {
+        let tool_call_id = update.tool_call_id.clone();
+        if let Some(call) = self.calls.get_mut(&tool_call_id) {
+            call.update(update.fields);
+            if call.status == ToolCallStatus::Completed {
+                if let Some(raw_output) = call.raw_output.clone() {
+                    self.completed_raw_outputs.push(raw_output);
+                }
+            }
+            return;
+        }
+
+        if update.fields.status == Some(ToolCallStatus::Completed) {
+            if let Some(raw_output) = update.fields.raw_output.clone() {
+                self.completed_raw_outputs.push(raw_output);
+            }
+        }
+
+        if let Ok(call) = ToolCall::try_from(update) {
+            self.apply_call(call);
+        }
+    }
 }
 
 fn set_conversation_state(state: &AcpConversationState, lifecycle: AcpConversationLifecycle) {
@@ -533,7 +610,7 @@ pub fn run_acp_agent(
     options: AcpPromptOptions,
 ) -> Result<AgentResponseEnvelope, DadrError> {
     let prompt = agent_prompt(request)?;
-    let text = run_acp_prompt(
+    let output = run_acp_prompt(
         command,
         request.project.cwd.clone().into_std_path_buf(),
         &prompt,
@@ -541,7 +618,7 @@ pub fn run_acp_agent(
         None,
         None,
     )?;
-    parse_agent_response_text(&text)
+    output.parse_agent_response()
 }
 
 pub fn run_acp_agent_json(
@@ -568,14 +645,16 @@ pub fn run_acp_agent_json_with_events_and_cancellation(
     events: Option<AcpPromptEventSink>,
     cancellation: Option<AcpCancellationToken>,
 ) -> Result<Value, DadrError> {
-    let text = run_acp_agent_text_with_events_and_cancellation(
+    let prompt = agent_prompt(request)?;
+    let output = run_acp_prompt(
         command,
-        request,
+        request.project.cwd.clone().into_std_path_buf(),
+        &prompt,
         options,
         events,
         cancellation,
     )?;
-    parse_acp_agent_json_response(&text)
+    output.parse_json_response()
 }
 
 pub fn run_acp_prompt_json_with_events(
@@ -585,8 +664,7 @@ pub fn run_acp_prompt_json_with_events(
     options: AcpPromptOptions,
     events: Option<AcpPromptEventSink>,
 ) -> Result<Value, DadrError> {
-    let text = run_acp_prompt_text_with_events(command, cwd, prompt, options, events)?;
-    parse_acp_agent_json_response(&text)
+    run_acp_prompt(command, cwd, &prompt, options, events, None)?.parse_json_response()
 }
 
 pub fn run_acp_prompt_text_with_events(
@@ -596,7 +674,7 @@ pub fn run_acp_prompt_text_with_events(
     options: AcpPromptOptions,
     events: Option<AcpPromptEventSink>,
 ) -> Result<String, DadrError> {
-    run_acp_prompt(command, cwd, &prompt, options, events, None)
+    Ok(run_acp_prompt(command, cwd, &prompt, options, events, None)?.text)
 }
 
 pub fn run_acp_agent_text_with_events(
@@ -616,14 +694,15 @@ pub fn run_acp_agent_text_with_events_and_cancellation(
     cancellation: Option<AcpCancellationToken>,
 ) -> Result<String, DadrError> {
     let prompt = agent_prompt(request)?;
-    run_acp_prompt(
+    Ok(run_acp_prompt(
         command,
         request.project.cwd.clone().into_std_path_buf(),
         &prompt,
         options,
         events,
         cancellation,
-    )
+    )?
+    .text)
 }
 
 pub fn parse_acp_agent_json_response(text: &str) -> Result<Value, DadrError> {
@@ -694,7 +773,7 @@ fn run_acp_prompt(
     options: AcpPromptOptions,
     events: Option<AcpPromptEventSink>,
     cancellation: Option<AcpCancellationToken>,
-) -> Result<String, DadrError> {
+) -> Result<AcpPromptOutput, DadrError> {
     if command.program.trim().is_empty() {
         return Err(DadrError::Acp(
             "local ACP agent command cannot be empty".to_owned(),
@@ -820,7 +899,7 @@ async fn run_acp_prompt_async(
     options: AcpPromptOptions,
     events: Option<AcpPromptEventSink>,
     cancellation: Option<AcpCancellationToken>,
-) -> Result<String, DadrError> {
+) -> Result<AcpPromptOutput, DadrError> {
     validate_prompt_options(options)?;
     let command_line = command.command_line();
     send_acp_prompt_event(
@@ -832,6 +911,8 @@ async fn run_acp_prompt_async(
     let agent = acp_agent_from_command(command)?;
     let output = Arc::new(Mutex::new(AcpOutputBuffer::new(options.output_limit_bytes)));
     let output_for_handler = Arc::clone(&output);
+    let tool_calls = Arc::new(Mutex::new(AcpToolCallState::default()));
+    let tool_calls_for_handler = Arc::clone(&tool_calls);
     let permission_error = Arc::new(Mutex::new(None::<String>));
     let permission_error_for_handler = Arc::clone(&permission_error);
     let events_for_handler = events.clone();
@@ -839,6 +920,7 @@ async fn run_acp_prompt_async(
     let prompt_run =
         Client.connect_with(agent, |cx: agent_client_protocol::ConnectionTo<Agent>| {
             let output = Arc::clone(&output_for_handler);
+            let tool_calls = Arc::clone(&tool_calls_for_handler);
             let permission_error = Arc::clone(&permission_error_for_handler);
             let events = events_for_handler.clone();
             async move {
@@ -917,10 +999,22 @@ async fn run_acp_prompt_async(
                                                 );
                                             }
                                         }
+                                        SessionUpdate::ToolCall(call) => {
+                                            let mut tool_calls =
+                                                tool_calls.lock().map_err(|_| {
+                                                    agent_client_protocol::Error::internal_error()
+                                                })?;
+                                            tool_calls.apply_call(call);
+                                        }
+                                        SessionUpdate::ToolCallUpdate(update) => {
+                                            let mut tool_calls =
+                                                tool_calls.lock().map_err(|_| {
+                                                    agent_client_protocol::Error::internal_error()
+                                                })?;
+                                            tool_calls.apply_update(update);
+                                        }
                                         SessionUpdate::UserMessageChunk(_)
                                         | SessionUpdate::AgentThoughtChunk(_)
-                                        | SessionUpdate::ToolCall(_)
-                                        | SessionUpdate::ToolCallUpdate(_)
                                         | SessionUpdate::Plan(_)
                                         | SessionUpdate::AvailableCommandsUpdate(_)
                                         | SessionUpdate::CurrentModeUpdate(_)
@@ -999,7 +1093,13 @@ async fn run_acp_prompt_async(
     let output = output
         .lock()
         .map_err(|_| DadrError::Acp("failed to read ACP response buffer".to_owned()))?;
-    Ok(output.as_str().to_owned())
+    let tool_calls = tool_calls
+        .lock()
+        .map_err(|_| DadrError::Acp("failed to read ACP tool call state".to_owned()))?;
+    Ok(AcpPromptOutput {
+        text: output.as_str().to_owned(),
+        raw_outputs: tool_calls.completed_raw_outputs.clone(),
+    })
 }
 
 fn send_acp_prompt_event(events: Option<&AcpPromptEventSink>, event: AcpPromptEvent) {

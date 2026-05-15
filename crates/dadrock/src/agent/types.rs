@@ -1,5 +1,5 @@
 use camino::Utf8PathBuf;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
 use crate::{
@@ -98,13 +98,27 @@ pub struct ActivityObservation {
     pub path: Option<String>,
 }
 
+impl ActivityObservation {
+    fn from_summary(summary: String) -> Self {
+        Self {
+            activity: "observation".to_owned(),
+            summary,
+            path: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AgentProvenance {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prompt_pack_sha256: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "deserialize_agent_tool_runs"
+    )]
     pub tool_runs: Vec<AgentToolRun>,
 }
 
@@ -113,6 +127,15 @@ pub struct AgentToolRun {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
+}
+
+impl AgentToolRun {
+    fn from_name(name: String) -> Self {
+        Self {
+            name,
+            summary: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -125,12 +148,60 @@ pub struct AgentResponseEnvelope {
     pub body_markdown: String,
     #[serde(default)]
     pub source_references: Vec<SourceReference>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_activity_observations")]
     pub activity_observations: Vec<ActivityObservation>,
     #[serde(default)]
     pub warnings: Vec<String>,
     #[serde(default)]
     pub provenance: AgentProvenance,
+}
+
+fn deserialize_activity_observations<'de, D>(
+    deserializer: D,
+) -> Result<Vec<ActivityObservation>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum ActivityObservationValue {
+        Structured(ActivityObservation),
+        Summary(String),
+    }
+
+    Vec::<ActivityObservationValue>::deserialize(deserializer).map(|observations| {
+        observations
+            .into_iter()
+            .map(|observation| match observation {
+                ActivityObservationValue::Structured(observation) => observation,
+                ActivityObservationValue::Summary(summary) => {
+                    ActivityObservation::from_summary(summary)
+                }
+            })
+            .collect()
+    })
+}
+
+fn deserialize_agent_tool_runs<'de, D>(deserializer: D) -> Result<Vec<AgentToolRun>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum AgentToolRunValue {
+        Structured(AgentToolRun),
+        Name(String),
+    }
+
+    Vec::<AgentToolRunValue>::deserialize(deserializer).map(|tool_runs| {
+        tool_runs
+            .into_iter()
+            .map(|tool_run| match tool_run {
+                AgentToolRunValue::Structured(tool_run) => tool_run,
+                AgentToolRunValue::Name(name) => AgentToolRun::from_name(name),
+            })
+            .collect()
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

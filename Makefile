@@ -57,6 +57,7 @@ kill: ## Kill running dadrock preview servers
 
 window: ## Resize the active window to 1920x1080 at 100,100 after a short delay
 	sleep 3 && wmctrl -r :ACTIVE: -e 0,100,100,1920,1080
+	xdotool getactivewindow getwindowgeometry
 
 .PHONY: web-dev web-build web-test web-lint
 
