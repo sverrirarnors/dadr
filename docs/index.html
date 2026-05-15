@@ -344,17 +344,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#new-possibilities" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -467,6 +456,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Workflow
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -873,17 +873,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#new-possibilities" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1000,6 +989,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Workflow
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1033,30 +1033,54 @@
 <div class="hero">
 <p><img src="assets/dadr_logo.svg" alt="DADR — Data Analysis Decision Records" class="hero-logo">
 <br></p>
-<p class="hero-tagline">A lightweight file specification, workflow, and set of tools to capture the choices that drive our data analysis results.
+<p class="hero-tagline">A lightweight file specification, workflow, and set of tools to capture the <b>human decisions</b> that drive our results.
 </p>
 </div>
+<div class="problem">
 <h2 id="problem-1-opacity">Problem 1: Opacity<a class="headerlink" href="#problem-1-opacity" title="Permanent link">&para;</a></h2>
-<p>Every data analysis rests on dozens of choices: which observations to include, how to code key variables, which model to fit, how to quantify uncertainty, which robustness checks to report, etc. These decisions can have major consequences. Indeed, <em>Many Analysts</em> studies have shown that when independent teams analyze the same data and the same hypotheses, they routinely arrive at very different results.<sup id="fnref:many-analysts"><a class="footnote-ref" href="#fn:many-analysts">1</a></sup></p>
+<div class="problem-body">
+<div class="problem-prose">
+<p>Every data analysis rests on dozens of choices: which observations to include, how to code key variables, which model to fit, how to quantify uncertainty, which robustness checks to report, etc. These decisions can have major consequences. Indeed, <em>Many Analysts</em> studies show that when independent teams analyze the same data and the same hypotheses, they routinely arrive at very different results.<sup id="fnref:many-analysts"><a class="footnote-ref" href="#fn:many-analysts">1</a></sup></p>
 <p>Unfortunately, many of the choices that drive data analytic results are not surfaced in the methods sections of reports and articles. And even when an analyst makes available their full code and data, reconstructing their decisions and rationales retrospectively can often feel like an impossible archeology project.</p>
-<div class="pull">
-<p>Data analysts need a simple way to capture and communicate what was decided, why, what alternatives were considered, and what the consequences are.</p>
 </div>
+<div class="pull pull--aside">
+<p>A simple way to record what was decided, why, what alternatives were considered, and what the consequences are.</p>
+</div>
+</div>
+</div>
+<div class="problem">
 <h2 id="problem-2-drift">Problem 2: Drift<a class="headerlink" href="#problem-2-drift" title="Permanent link">&para;</a></h2>
-<p>Analysts who work on complex projects can sometimes lose track of key decisions and the reasons behind them. Over time, their codebase can slowly drift away from the original intent of the project, and minor-looking coding decisions can completely change the interpretation of empirical results. This risk is especially pronounced when part of the analysis is delegated to agentic coding, which produce a lot of hard-to-review code.</p>
-<div class="pull">
-<p>Data analysts need a human-readable, human-approved, auditable, and authoritative record of the key decisions made in a project.</p>
+<div class="problem-body">
+<div class="problem-prose">
+<p>Analysts who work on complex projects can sometimes lose track of key decisions and the reasons behind them. Over time, their codebase can slowly drift away from the original intent of the project, and minor-looking coding decisions can completely change the interpretation of empirical results. This risk is especially pronounced when part of the analysis is delegated to agentic coding, which produces a lot of hard-to-review code.</p>
+</div>
+<div class="pull pull--aside">
+<p>A human-approved, auditable, and authoritative record of the key decisions made in a project.</p>
+</div>
+</div>
 </div>
 <h2 id="solution-data-analysis-decision-records">Solution: Data Analysis Decision Records<a class="headerlink" href="#solution-data-analysis-decision-records" title="Permanent link">&para;</a></h2>
 <p>Data Analysis Decision Records (DADR) are designed to make our key analytical choices explicit. Each decision becomes a short Markdown record, stored alongside the code, data, and prose of a project. The DADR markdown files are human-editable, LLM-readable, and version-controllable. They include meta-data fields and tags that enable external tools to track decision flows, audit the faithfulness of a codebase to recorded decisions, and generate reports and narratives directly from the decision ledger.</p>
 <p>DADR is not meant to be a comprehensive record of every thought, but rather a focused ledger of the key decisions that shape an analysis. It is a simple specification inspired by the <a href="https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-decision-record">Architecture Decision Record</a>, a proven and popular development practice in the software engineering community.</p>
 <h2 id="audience">Audience<a class="headerlink" href="#audience" title="Permanent link">&para;</a></h2>
 <p>DADR serves three audiences:</p>
-<ol>
-<li><strong>The researcher</strong>, as a reminder of past decisions and the reasoning behind them.</li>
-<li><strong>Readers</strong> (collaborators, reviewers, future analysts) who want to understand which analytic decisions were made and why, without having to reconstruct them from the code, data, or commit history.</li>
-<li><strong>LLMs</strong> that need to verify the faithfulness of the codebase to an analyst's intent or published results.</li>
-</ol>
+<div class="audience-grid">
+<div class="audience">
+<div class="audience-icon">👤</div>
+<p><strong>Researcher</strong></p>
+<p>A transparent reminder of past decisions and the reasons behind them.</p>
+</div>
+<div class="audience">
+<div class="audience-icon">👥</div>
+<p><strong>Readers</strong></p>
+<p>People who want to understand which decisions were made and why, without having to reconstruct the analyst's intent from code or git commit history.</p>
+</div>
+<div class="audience">
+<div class="audience-icon">🤖</div>
+<p><strong>LLMs</strong></p>
+<p>Machines can verify if the analyst's intent is implemented faithfully in the code, a pre-analysis plan, or a report.</p>
+</div>
+</div>
 <h2 id="frictionless">Frictionless<a class="headerlink" href="#frictionless" title="Permanent link">&para;</a></h2>
 <p>DADR is easy to implement because automated tools and LLMs do all the hard work! In the vast majority of cases, all the analyst needs to do is click "Accept" or "Reject" to determine if a candidate decision should enter the permanent record.</p>
 <p>A decision can be initiated in several ways:</p>
@@ -1066,18 +1090,62 @@
 <li>The LLM agent drafts a candidate decision based on analyst-supplied prompt and context.</li>
 <li>The analyst drafts a candidate decision manually.</li>
 </ol>
-<p>Crucially, <em>every candidate decision is approved or rejected by the human analyst</em> before it enters the permanent record.</p>
+<div class="principle">
+<p>Every candidate decision <b>must</b> be approved by the human analyst before it enters the permanent record.</p>
+</div>
+<h2 id="new-possibilities">New possibilities<a class="headerlink" href="#new-possibilities" title="Permanent link">&para;</a></h2>
+<p>A complete, structured trace of analytic decisions is more than documentation. It is an asset that downstream tools and humans can act on.</p>
+<div class="feature-grid">
+<div class="feature">
+<h4 id="faithfulness">Faithfulness<a class="headerlink" href="#faithfulness" title="Permanent link">&para;</a></h4>
+<p>Compare code, plan, and manuscript against recorded decisions to flag drift, undocumented choices, or contradictions. An LLM walks the relevant code paths and produces a discrepancy report for human triage.</p>
+</div>
+<div class="feature">
+<h4 id="compliance">Compliance<a class="headerlink" href="#compliance" title="Permanent link">&para;</a></h4>
+<p>Cross-check decisions against a Statistical Analysis Plan (SAP), a Pre-Analysis Plan (PAP), Pre-registration, or data cleaning plan to surface deviations and unexecuted commitments.</p>
+</div>
+<div class="feature">
+<h4 id="multiverse-and-robustness">Multiverse and robustness<a class="headerlink" href="#multiverse-and-robustness" title="Permanent link">&para;</a></h4>
+<p>Automatically surface the choices that need to be subjected to sensitivity, robustness, or multiverse analysis.</p>
+</div>
+<div class="feature">
+<h4 id="decision-flow">Decision flow<a class="headerlink" href="#decision-flow" title="Permanent link">&para;</a></h4>
+<p>Follow how analytic choices evolved: which decisions replaced which, when, and why.</p>
+</div>
+<div class="feature">
+<h4 id="drafting">Drafting<a class="headerlink" href="#drafting" title="Permanent link">&para;</a></h4>
+<p>Generate methods sections, appendices, and decision tables directly from the trace, with citations back to the records.</p>
+</div>
+<div class="feature">
+<h4 id="onboarding">Onboarding<a class="headerlink" href="#onboarding" title="Permanent link">&para;</a></h4>
+<p>Hand a collaborator or new contributor a readable narrative instead of a code-archaeology assignment.</p>
+</div>
+<div class="feature">
+<h4 id="replication-and-reuse">Replication and reuse<a class="headerlink" href="#replication-and-reuse" title="Permanent link">&para;</a></h4>
+<p>Give independent analysts a self-contained rationale for every consequential choice.</p>
+</div>
+<div class="feature">
+<h4 id="coverage-and-audit">Coverage and audit<a class="headerlink" href="#coverage-and-audit" title="Permanent link">&para;</a></h4>
+<p>Report which analysis activities are backed by decisions, which are unreviewed, and which have gone stale.</p>
+</div>
+<div class="feature">
+<h4 id="teaching">Teaching<a class="headerlink" href="#teaching" title="Permanent link">&para;</a></h4>
+<p>Use real annotated analyses to show how defensible alternatives were considered and chosen.</p>
+</div>
+</div>
 <h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
+<p>Candidate decisions can be drafted automatically by a LLM agent, or manually by the analyst. Every candidate decision <em>must</em> be reviewed by the human analyst before it enters the permanent record. The analyst can either accept the candidate decision, reject it, or draft a superseding decision that replaces it. Every decision (candidate, accepted, rejected, superseded) is recorded in the DADR ledger to create a complete trace of how the analysis evolved over time.</p>
 <div class="diagram">
 <pre class="mermaid"><code>%%{init: {"flowchart": {"defaultRenderer": "elk", "curve": "basis", "nodeSpacing": 70, "rankSpacing": 70}}}%%
 flowchart TD
     analyst["Analyst"]
     no["No decision needed"]
     llm1["LLM agent"]
-    candidate["Candidate draft"]
+    candidate["Candidate decision"]
     review(["Analyst approval"])
     accepted["Accepted decision"]
-    rejected["Rejected draft"]
+    rejected["Rejected decision"]
+    supersede["Superseding decision"]
     log["Data&amp;nbsp;Analysis&amp;nbsp;Decision&amp;nbsp;Records"]
 
     analyst -- "Ask an agent to&lt;br/&gt;draft a decision" --&gt; llm1
@@ -1086,12 +1154,13 @@ flowchart TD
     llm1 --&gt; no
     llm1 --&gt; candidate
     candidate --&gt; review
-    review -- "Convert" --&gt; accepted
-    review -- "Reject" --&gt; rejected
-    accepted -- "Draft replacement" --&gt; candidate
+    review --&gt; accepted
+    review --&gt; rejected
+    accepted --&gt; supersede
     accepted -.-&gt; log
     rejected -.-&gt; log
     candidate -.-&gt; log
+    supersede -.-&gt; log
 
     linkStyle 9,10,11 stroke:#94a3b8,stroke-width:1px;
 
@@ -1099,52 +1168,14 @@ flowchart TD
     classDef sReview fill:#ffffff,stroke:#0f172a,stroke-width:2px,color:#0f172a,font-weight:600,font-size:18px;
     classDef sCandidate fill:#fefce8,stroke:#ca8a04,stroke-width:1px,color:#422006;
     classDef sAccepted fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
+    classDef sSuperseded fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
     classDef sRejected fill:#fef2f2,stroke:#dc2626,stroke-width:1px,color:#450a0a;
 
     class review sReview;
     class candidate sCandidate;
     class accepted sAccepted;
-    class rejected sRejected;</code></pre>
-</div>
-<h2 id="new-possibilities">New possibilities<a class="headerlink" href="#new-possibilities" title="Permanent link">&para;</a></h2>
-<p>A complete, structured trace of analytic decisions is more than documentation. It is an asset that downstream tools and humans can act on.</p>
-<div class="feature-grid">
-<div class="feature">
-<h3 id="faithfulness">Faithfulness<a class="headerlink" href="#faithfulness" title="Permanent link">&para;</a></h3>
-<p>Compare code, plan, and manuscript against recorded decisions to flag drift, undocumented choices, or contradictions. An LLM walks the relevant code paths and produces a discrepancy report for human triage.</p>
-</div>
-<div class="feature">
-<h3 id="compliance">Compliance<a class="headerlink" href="#compliance" title="Permanent link">&para;</a></h3>
-<p>Cross-check decisions against a Statistical Analysis Plan (SAP), a Pre-Analysis Plan (PAP), Pre-registration, or data cleaning plan to surface deviations and unexecuted commitments.</p>
-</div>
-<div class="feature">
-<h3 id="multiverse-and-robustness">Multiverse and robustness<a class="headerlink" href="#multiverse-and-robustness" title="Permanent link">&para;</a></h3>
-<p>Automatically surface the choices that need to be subjected to sensitivity, robustness, or multiverse analysis.</p>
-</div>
-<div class="feature">
-<h3 id="decision-flow">Decision flow<a class="headerlink" href="#decision-flow" title="Permanent link">&para;</a></h3>
-<p>Follow how analytic choices evolved: which decisions replaced which, when, and why.</p>
-</div>
-<div class="feature">
-<h3 id="drafting">Drafting<a class="headerlink" href="#drafting" title="Permanent link">&para;</a></h3>
-<p>Generate methods sections, appendices, and decision tables directly from the trace, with citations back to the records.</p>
-</div>
-<div class="feature">
-<h3 id="onboarding">Onboarding<a class="headerlink" href="#onboarding" title="Permanent link">&para;</a></h3>
-<p>Hand a collaborator or new contributor a readable narrative instead of a code-archaeology assignment.</p>
-</div>
-<div class="feature">
-<h3 id="replication-and-reuse">Replication and reuse<a class="headerlink" href="#replication-and-reuse" title="Permanent link">&para;</a></h3>
-<p>Give independent analysts a self-contained rationale for every consequential choice.</p>
-</div>
-<div class="feature">
-<h3 id="coverage-and-audit">Coverage and audit<a class="headerlink" href="#coverage-and-audit" title="Permanent link">&para;</a></h3>
-<p>Report which analysis activities are backed by decisions, which are unreviewed, and which have gone stale.</p>
-</div>
-<div class="feature">
-<h3 id="teaching">Teaching<a class="headerlink" href="#teaching" title="Permanent link">&para;</a></h3>
-<p>Use real annotated analyses to show how defensible alternatives were considered and chosen.</p>
-</div>
+    class rejected sRejected;
+    class supersede sSuperseded;</code></pre>
 </div>
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nn">---</span>

@@ -429,6 +429,18 @@ test('tasks route prefills supersede-record from query parameters', async ({ pag
   await expect(page.getByRole('button', { name: 'Remove Use Polars lazy frames' })).toBeVisible();
 });
 
+test('supersede-record writes the agent proposal as a candidate after the active run', async ({ page }) => {
+  const recordId = '0193fb1f-a3a0-7000-8000-000000000003';
+  await page.goto(`/tasks?task=supersede-record&record=${recordId}`);
+
+  await page.getByLabel('Instructions and notes').fill('The newer pipeline decision replaces this record.');
+  await page.getByRole('button', { name: 'Run task' }).click();
+
+  await expect(page).toHaveURL(/\/records\/0193fb1f-a3a0-7000-8000-[0-9a-f]{12}$/);
+  await expect(page.getByRole('heading', { name: 'Superseding candidate' }).first()).toBeVisible();
+  await expect(page.getByRole('article')).toContainText('Supersede the older record.');
+});
+
 test('tasks route prefills instructions and path context from query parameters', async ({ page }) => {
   const recordId = '0193fb1f-a3a0-7000-8000-000000000001';
   const instructions = 'Fix validation issue broken_markdown_link.';

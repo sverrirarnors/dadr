@@ -124,6 +124,17 @@ test('records route shows candidate actions in the detail pane', async ({ page }
   await expect(page.getByRole('button', { name: 'Reject', exact: true })).toBeVisible();
 });
 
+test('records route updates detail actions after accepting a candidate', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/records?status=candidate&id=${candidateId}`);
+  await page.getByRole('button', { name: 'Accept', exact: true }).click();
+
+  await expect(page).toHaveURL(`/records?id=${candidateId}`);
+  await expect(page.getByRole('button', { name: 'Accept', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Reject', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Supersede', exact: true })).toBeVisible();
+});
+
 test('records route links candidate records to the revise task', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/records?status=candidate&id=${candidateId}`);

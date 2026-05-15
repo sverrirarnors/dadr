@@ -4,7 +4,7 @@
   import { page } from '$app/state';
   import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
   import { ArrowLeft } from 'lucide-svelte';
-  import { createApi, type MutationResponse, type RecordSummary, type Snapshot } from '$lib/api';
+  import { createApi, type MutationResponse, type RecordSummary } from '$lib/api';
   import { candidateDestination, parseListInput } from '$lib/candidates/form';
   import {
     Alert,
@@ -15,6 +15,7 @@
     TextInput,
   } from '$lib/components/ui';
   import { WorkbenchPage, WorkbenchPane } from '$lib/components/workbench';
+  import { applyMutationResponse } from '$lib/query/mutation-cache';
   import { toasts } from '$lib/stores/toast.svelte';
 
   const api = createApi();
@@ -76,8 +77,8 @@
   }
 
   async function finish(response: MutationResponse) {
-    queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
     toasts.push({ severity: 'success', message: response.message });
+    await applyMutationResponse(queryClient, response);
     const destination = candidateDestination(response);
     if (destination.params) {
       await goto(resolve('/records/[id]', destination.params));

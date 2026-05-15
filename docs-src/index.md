@@ -10,12 +10,17 @@ hide:
 <div class="hero" markdown>
 <img src="assets/dadr_logo.svg" alt="DADR — Data Analysis Decision Records" class="hero-logo">
 <br>
-<p class="hero-tagline">A lightweight file specification, workflow, and set of tools to capture the choices that drive our data analysis results.
+<p class="hero-tagline">A lightweight file specification, workflow, and set of tools to capture the <b>human decisions</b> that drive our results.
 </div>
+
+<div class="problem" markdown>
 
 ## Problem 1: Opacity
 
-Every data analysis rests on dozens of choices: which observations to include, how to code key variables, which model to fit, how to quantify uncertainty, which robustness checks to report, etc. These decisions can have major consequences. Indeed, *Many Analysts* studies have shown that when independent teams analyze the same data and the same hypotheses, they routinely arrive at very different results.[^many-analysts]
+<div class="problem-body" markdown>
+
+<div class="problem-prose" markdown>
+Every data analysis rests on dozens of choices: which observations to include, how to code key variables, which model to fit, how to quantify uncertainty, which robustness checks to report, etc. These decisions can have major consequences. Indeed, *Many Analysts* studies show that when independent teams analyze the same data and the same hypotheses, they routinely arrive at very different results.[^many-analysts]
 
 [^many-analysts]:
     Silberzahn et al. (2018), "Many Analysts, One Data Set: Making Transparent How Variations in Analytic Choices Affect Results," *Advances in Methods and Practices in Psychological Science* 1(3): 337–356, [doi:10.1177/2515245917747646](https://doi.org/10.1177/2515245917747646).
@@ -24,17 +29,32 @@ Every data analysis rests on dozens of choices: which observations to include, h
     Breznau et al. (2022), "Observing Many Researchers Using the Same Data and Hypothesis Reveals a Hidden Universe of Uncertainty," *PNAS* 119(44): e2203150119, [doi:10.1073/pnas.2203150119](https://doi.org/10.1073/pnas.2203150119).
 
 Unfortunately, many of the choices that drive data analytic results are not surfaced in the methods sections of reports and articles. And even when an analyst makes available their full code and data, reconstructing their decisions and rationales retrospectively can often feel like an impossible archeology project.
-
-<div class="pull" markdown>
-Data analysts need a simple way to capture and communicate what was decided, why, what alternatives were considered, and what the consequences are.
 </div>
+
+<div class="pull pull--aside" markdown>
+A simple way to record what was decided, why, what alternatives were considered, and what the consequences are.
+</div>
+
+</div>
+
+</div>
+
+<div class="problem" markdown>
 
 ## Problem 2: Drift
 
-Analysts who work on complex projects can sometimes lose track of key decisions and the reasons behind them. Over time, their codebase can slowly drift away from the original intent of the project, and minor-looking coding decisions can completely change the interpretation of empirical results. This risk is especially pronounced when part of the analysis is delegated to agentic coding, which produce a lot of hard-to-review code.
+<div class="problem-body" markdown>
 
-<div class="pull" markdown>
-Data analysts need a human-readable, human-approved, auditable, and authoritative record of the key decisions made in a project.
+<div class="problem-prose" markdown>
+Analysts who work on complex projects can sometimes lose track of key decisions and the reasons behind them. Over time, their codebase can slowly drift away from the original intent of the project, and minor-looking coding decisions can completely change the interpretation of empirical results. This risk is especially pronounced when part of the analysis is delegated to agentic coding, which produces a lot of hard-to-review code.
+</div>
+
+<div class="pull pull--aside" markdown>
+A human-approved, auditable, and authoritative record of the key decisions made in a project.
+</div>
+
+</div>
+
 </div>
 
 
@@ -48,9 +68,30 @@ DADR is not meant to be a comprehensive record of every thought, but rather a fo
 
 DADR serves three audiences:
 
-1. **The researcher**, as a reminder of past decisions and the reasoning behind them.
-2. **Readers** (collaborators, reviewers, future analysts) who want to understand which analytic decisions were made and why, without having to reconstruct them from the code, data, or commit history.
-3. **LLMs** that need to verify the faithfulness of the codebase to an analyst's intent or published results.
+<div class="audience-grid" markdown>
+
+<div class="audience" markdown>
+<div class="audience-icon">👤</div>
+**Researcher**
+
+A transparent reminder of past decisions and the reasons behind them.
+</div>
+
+<div class="audience" markdown>
+<div class="audience-icon">👥</div>
+**Readers**
+
+People who want to understand which decisions were made and why, without having to reconstruct the analyst's intent from code or git commit history.
+</div>
+
+<div class="audience" markdown>
+<div class="audience-icon">🤖</div>
+**LLMs**
+
+Machines can verify if the analyst's intent is implemented faithfully in the code, a pre-analysis plan, or a report.
+</div>
+
+</div>
 
 ## Frictionless
 
@@ -65,50 +106,8 @@ A decision can be initiated in several ways:
 
 [^static-analysis]: The agent can have access to static analysis or instrumentation tools to better infer the consequences of a code chunk. Supplying these tools is on the roadmap for the **dadrock** tool.
 
-Crucially, *every candidate decision is approved or rejected by the human analyst* before it enters the permanent record.
-
-## Workflow 
-<div class="diagram" markdown>
-
-```mermaid
-%%{init: {"flowchart": {"defaultRenderer": "elk", "curve": "basis", "nodeSpacing": 70, "rankSpacing": 70}}}%%
-flowchart TD
-    analyst["Analyst"]
-    no["No decision needed"]
-    llm1["LLM agent"]
-    candidate["Candidate draft"]
-    review(["Analyst approval"])
-    accepted["Accepted decision"]
-    rejected["Rejected draft"]
-    log["Data&nbsp;Analysis&nbsp;Decision&nbsp;Records"]
-
-    analyst -- "Ask an agent to<br/>draft a decision" --> llm1
-    analyst -- "Modify code or data<br/>(Git commit hook)" --> llm1
-    analyst -- "Draft a decision manually" --> candidate
-    llm1 --> no
-    llm1 --> candidate
-    candidate --> review
-    review -- "Convert" --> accepted
-    review -- "Reject" --> rejected
-    accepted -- "Draft replacement" --> candidate
-    accepted -.-> log
-    rejected -.-> log
-    candidate -.-> log
-
-    linkStyle 9,10,11 stroke:#94a3b8,stroke-width:1px;
-
-    classDef default fill:#ffffff,stroke:#cbd5e1,stroke-width:1px,color:#0f172a;
-    classDef sReview fill:#ffffff,stroke:#0f172a,stroke-width:2px,color:#0f172a,font-weight:600,font-size:18px;
-    classDef sCandidate fill:#fefce8,stroke:#ca8a04,stroke-width:1px,color:#422006;
-    classDef sAccepted fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
-    classDef sRejected fill:#fef2f2,stroke:#dc2626,stroke-width:1px,color:#450a0a;
-
-    class review sReview;
-    class candidate sCandidate;
-    class accepted sAccepted;
-    class rejected sRejected;
-```
-
+<div class="principle" markdown>
+Every candidate decision <b>must</b> be approved by the human analyst before it enters the permanent record.
 </div>
 
 ## New possibilities
@@ -118,49 +117,100 @@ A complete, structured trace of analytic decisions is more than documentation. I
 <div class="feature-grid" markdown>
 
 <div class="feature" markdown>
-### Faithfulness
+#### Faithfulness
 Compare code, plan, and manuscript against recorded decisions to flag drift, undocumented choices, or contradictions. An LLM walks the relevant code paths and produces a discrepancy report for human triage.
 </div>
 
 <div class="feature" markdown>
-### Compliance
+#### Compliance
 Cross-check decisions against a Statistical Analysis Plan (SAP), a Pre-Analysis Plan (PAP), Pre-registration, or data cleaning plan to surface deviations and unexecuted commitments.
 </div>
 
 <div class="feature" markdown>
-### Multiverse and robustness
+#### Multiverse and robustness
 Automatically surface the choices that need to be subjected to sensitivity, robustness, or multiverse analysis.
 </div>
 
 <div class="feature" markdown>
-### Decision flow
+#### Decision flow
 Follow how analytic choices evolved: which decisions replaced which, when, and why.
 </div>
 
 <div class="feature" markdown>
-### Drafting
+#### Drafting
 Generate methods sections, appendices, and decision tables directly from the trace, with citations back to the records.
 </div>
 
 <div class="feature" markdown>
-### Onboarding
+#### Onboarding
 Hand a collaborator or new contributor a readable narrative instead of a code-archaeology assignment.
 </div>
 
 <div class="feature" markdown>
-### Replication and reuse
+#### Replication and reuse
 Give independent analysts a self-contained rationale for every consequential choice.
 </div>
 
 <div class="feature" markdown>
-### Coverage and audit
+#### Coverage and audit
 Report which analysis activities are backed by decisions, which are unreviewed, and which have gone stale.
 </div>
 
 <div class="feature" markdown>
-### Teaching
+#### Teaching
 Use real annotated analyses to show how defensible alternatives were considered and chosen.
 </div>
+
+</div>
+
+## Workflow 
+
+Candidate decisions can be drafted automatically by a LLM agent, or manually by the analyst. Every candidate decision *must* be reviewed by the human analyst before it enters the permanent record. The analyst can either accept the candidate decision, reject it, or draft a superseding decision that replaces it. Every decision (candidate, accepted, rejected, superseded) is recorded in the DADR ledger to create a complete trace of how the analysis evolved over time.
+
+<div class="diagram" markdown>
+
+```mermaid
+%%{init: {"flowchart": {"defaultRenderer": "elk", "curve": "basis", "nodeSpacing": 70, "rankSpacing": 70}}}%%
+flowchart TD
+    analyst["Analyst"]
+    no["No decision needed"]
+    llm1["LLM agent"]
+    candidate["Candidate decision"]
+    review(["Analyst approval"])
+    accepted["Accepted decision"]
+    rejected["Rejected decision"]
+    supersede["Superseding decision"]
+    log["Data&nbsp;Analysis&nbsp;Decision&nbsp;Records"]
+
+    analyst -- "Ask an agent to<br/>draft a decision" --> llm1
+    analyst -- "Modify code or data<br/>(Git commit hook)" --> llm1
+    analyst -- "Draft a decision manually" --> candidate
+    llm1 --> no
+    llm1 --> candidate
+    candidate --> review
+    review --> accepted
+    review --> rejected
+    accepted --> supersede
+    accepted -.-> log
+    rejected -.-> log
+    candidate -.-> log
+    supersede -.-> log
+
+    linkStyle 9,10,11 stroke:#94a3b8,stroke-width:1px;
+
+    classDef default fill:#ffffff,stroke:#cbd5e1,stroke-width:1px,color:#0f172a;
+    classDef sReview fill:#ffffff,stroke:#0f172a,stroke-width:2px,color:#0f172a,font-weight:600,font-size:18px;
+    classDef sCandidate fill:#fefce8,stroke:#ca8a04,stroke-width:1px,color:#422006;
+    classDef sAccepted fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
+    classDef sSuperseded fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
+    classDef sRejected fill:#fef2f2,stroke:#dc2626,stroke-width:1px,color:#450a0a;
+
+    class review sReview;
+    class candidate sCandidate;
+    class accepted sAccepted;
+    class rejected sRejected;
+    class supersede sSuperseded;
+```
 
 </div>
 

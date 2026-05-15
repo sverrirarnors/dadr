@@ -27,6 +27,7 @@
     type DiagnosticCounts,
     type ValidationPanelView,
   } from '$lib/diagnostics';
+  import { applyMutationResponse } from '$lib/query/mutation-cache';
   import { toasts } from '$lib/stores/toast.svelte';
 
   type ValidationTab = 'summary' | 'project' | 'records' | 'links' | 'settings' | 'audit';
@@ -98,10 +99,9 @@
   const validation = createMutation(() => ({
     mutationFn: (target: ValidationTarget) => api.runValidation(target),
     onSuccess: async (response) => {
-      queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
       toasts.push({ severity: 'info', message: response.message });
       pendingTarget = null;
-      await queryClient.invalidateQueries({ queryKey: ['snapshot'] });
+      await applyMutationResponse(queryClient, response);
     },
     onError: () => {
       pendingTarget = null;

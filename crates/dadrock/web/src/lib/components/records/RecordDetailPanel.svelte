@@ -4,7 +4,7 @@
   import { page } from '$app/state';
   import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
   import { ArrowLeft, Check, FilePlus2, Sparkles, X } from 'lucide-svelte';
-  import { createApi, type MutationResponse, type RecordSource, type RecordSummary, type Snapshot } from '$lib/api';
+  import { createApi, type MutationResponse, type RecordSource, type RecordSummary } from '$lib/api';
   import { ActionMenu, actionMenuItemClass, Alert, Badge, Button, InlineLinkBadge } from '$lib/components/ui';
   import RecordSelectionDialog from '$lib/components/records/RecordSelectionDialog.svelte';
   import { ActionBar, DocumentPane, MetadataStrip } from '$lib/components/workbench';
@@ -14,6 +14,7 @@
     recordStatusVariant,
     type RecordStatusFilter,
   } from '$lib/records/filters';
+  import { applyMutationResponse } from '$lib/query/mutation-cache';
   import {
     initialRecordEditorState,
     isRecordEditorDirty,
@@ -85,11 +86,7 @@
       editorState.cleanContent = savedContent;
       editorState.saveMessage = response.message;
       toasts.push({ severity: 'success', message: response.message });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['snapshot'] }),
-        queryClient.invalidateQueries({ queryKey: ['record-source', id] }),
-        queryClient.invalidateQueries({ queryKey: ['record-lifecycle', id] }),
-      ]);
+      await applyMutationResponse(queryClient, response);
       setTab('rendered');
     },
   }));
@@ -115,13 +112,8 @@
     mutationFn: (to: string[]) => api.supersedeRecords({ from: id, to }),
     onSuccess: async (response) => {
       supersedePickerOpen = false;
-      queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
       toasts.push({ severity: 'success', message: response.message });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['snapshot'] }),
-        queryClient.invalidateQueries({ queryKey: ['record-source', id] }),
-        queryClient.invalidateQueries({ queryKey: ['record-lifecycle', id] }),
-      ]);
+      await applyMutationResponse(queryClient, response);
       if (embedded) {
         await goto(resolve(`/records?status=superseded&id=${encodeURIComponent(id)}`));
       }
@@ -196,13 +188,8 @@
   }
 
   async function finishCandidateAction(response: MutationResponse, severityLabel: string) {
-    queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
     toasts.push({ severity: 'success', message: response.message, detail: `Candidate ${severityLabel}.` });
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['snapshot'] }),
-      queryClient.invalidateQueries({ queryKey: ['record-source', id] }),
-      queryClient.invalidateQueries({ queryKey: ['record-lifecycle', id] }),
-    ]);
+    await applyMutationResponse(queryClient, response);
   }
 
   function handleKeydown(event: KeyboardEvent) {

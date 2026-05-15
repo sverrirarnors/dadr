@@ -4,10 +4,11 @@
   import { page } from '$app/state';
   import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
   import { Check, X } from 'lucide-svelte';
-  import { createApi, type Snapshot } from '$lib/api';
+  import { createApi } from '$lib/api';
   import { Alert, Badge, Button, SegmentedTabs } from '$lib/components/ui';
   import { ActionBar, DocumentPane, MetadataStrip, WorkbenchPage, WorkbenchPane } from '$lib/components/workbench';
   import { renderMarkdown, stripFrontMatter } from '$lib/markdown/render';
+  import { applyMutationResponse } from '$lib/query/mutation-cache';
   import { toasts } from '$lib/stores/toast.svelte';
 
   type ReviewTab = 'rendered' | 'raw';
@@ -51,13 +52,8 @@
   }));
 
   async function finishLifecycleAction(response: Awaited<ReturnType<typeof api.acceptCandidate>>, severityLabel: string) {
-    queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
     toasts.push({ severity: 'success', message: response.message, detail: `Candidate ${severityLabel}.` });
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['snapshot'] }),
-      queryClient.invalidateQueries({ queryKey: ['record-source', id] }),
-      queryClient.invalidateQueries({ queryKey: ['record-lifecycle', id] }),
-    ]);
+    await applyMutationResponse(queryClient, response);
   }
 </script>
 

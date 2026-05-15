@@ -46,6 +46,8 @@ The successor is a full candidate with all four canonical sections. See [../reco
 - **Alternatives** — usually include the predecessor itself as a rejected alternative, with a one-line reason that mirrors the supersession trigger. Add other defensible options not chosen. If genuinely no alternative applies, write "Not applicable".
 - **Consequences** — note downstream effects, including any robustness obligation the supersession introduces, and any prior result that may need to be re-run.
 
+The successor body must link to the predecessor with a wikilink using the full UUID: `[[<predecessor-uuid>]]`. Put this in Context at minimum; if the predecessor appears in Alternatives, use the same wikilink there too.
+
 Total body 200–400 words.
 
 ### Step 4 — What carries over

@@ -5,7 +5,7 @@
   import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
   import { FilePlus2, RefreshCw, Sparkles } from 'lucide-svelte';
   import { onMount } from 'svelte';
-  import { createApi, type Snapshot } from '$lib/api';
+  import { createApi } from '$lib/api';
   import RecordDetailPanel from '$lib/components/records/RecordDetailPanel.svelte';
   import { ActionMenu, actionMenuItemClass, Alert, Badge, Button, EmptyState, ListRow } from '$lib/components/ui';
   import { PaneHeader, PaneToolbar, ResizableWorkbenchSplit, WorkbenchPane } from '$lib/components/workbench';
@@ -20,6 +20,7 @@
     type RecordSearchScope,
     type RecordStatusFilter,
   } from '$lib/records/filters';
+  import { applyMutationResponse } from '$lib/query/mutation-cache';
 
   const api = createApi();
   const queryClient = useQueryClient();
@@ -32,9 +33,8 @@
   const initialize = createMutation(() => ({
     mutationFn: () => api.initializeProject(),
     onSuccess: async (response) => {
-      queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
       toasts.push({ severity: 'success', message: response.message });
-      await queryClient.invalidateQueries({ queryKey: ['snapshot'] });
+      await applyMutationResponse(queryClient, response);
     },
   }));
 

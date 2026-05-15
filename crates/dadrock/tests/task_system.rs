@@ -1361,6 +1361,38 @@ fn run_task_prompt_includes_compact_dadr_task_guidance() {
 }
 
 #[test]
+fn supersede_task_prompt_requires_predecessor_wikilink() {
+    let root = unique_temp_dir("dadrock-task-agent-supersede-wikilink");
+    fs::create_dir_all(&root).expect("create temp dir");
+    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    let project = agent_project_context(&cwd);
+    let request = AgentRequestEnvelope::run_task(
+        "Draft a supersession proposal.".to_owned(),
+        AgentProjectSnapshot::new(&project, Vec::new()),
+        AgentTaskRequest {
+            id: "supersede-record".to_owned(),
+            run_id: "01960000000000000000000000".to_owned(),
+            title: "Supersede record".to_owned(),
+            description: "Draft a replacement candidate for an accepted DADR.".to_owned(),
+            output_kind: TaskOutputKind::SupersessionProposalV1,
+            input: json!({
+                "record_id": "01960000-0000-7000-8000-000000000000",
+                "reason": "new evidence"
+            }),
+            context: TaskContext::default(),
+            prompt: include_str!("../src/tasks/builtin/supersede-record/prompt.md").to_owned(),
+        },
+    )
+    .expect("run task request");
+
+    let prompt = run_task_prompt(&request).expect("render task prompt");
+
+    assert!(prompt.contains("[[<predecessor-uuid>]]"));
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn run_task_prompt_requests_installed_dadr_skill() {
     let root = unique_temp_dir("dadrock-task-agent-installed-skill");
     fs::create_dir_all(&root).expect("create temp dir");

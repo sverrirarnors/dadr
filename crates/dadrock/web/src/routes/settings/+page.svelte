@@ -6,6 +6,7 @@
   import { WorkbenchPage, WorkbenchPane } from '$lib/components/workbench';
   import DiagnosticPanel from '$lib/components/validation/DiagnosticPanel.svelte';
   import { diagnosticActions } from '$lib/diagnostics/actions';
+  import { applyMutationResponse } from '$lib/query/mutation-cache';
   import { toasts } from '$lib/stores/toast.svelte';
 
   const api = createApi();
@@ -19,9 +20,8 @@
   const initialize = createMutation(() => ({
     mutationFn: () => api.initializeProject(),
     onSuccess: async (response) => {
-      queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
       toasts.push({ severity: 'success', message: response.message });
-      await queryClient.invalidateQueries({ queryKey: ['snapshot'] });
+      await applyMutationResponse(queryClient, response);
     },
   }));
 

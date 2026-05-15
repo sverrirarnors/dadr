@@ -12,15 +12,16 @@ Supersession is how DADR replaces an accepted decision without editing it in pla
 
 - **The Decision section** must clearly state the new choice and how it differs from the predecessor.
 - **The Context section** must name the predecessor record and explain why supersession is happening — new evidence, plan amendment, conflict with another decision, scope clarification, etc.
+- **The predecessor link** must appear in the new body as a wikilink using the full predecessor UUID: `[[<predecessor-uuid>]]`.
 - The new record is its own candidate with a fresh title (noun phrase, not a question).
 
 ## Section conventions
 
 The new record follows the canonical four-section structure:
 
-- **Context** — 2–4 sentences. Cite the predecessor record (id or filename) and the trigger for supersession. Include the source surface (file:line, plan section) that motivates the change.
+- **Context** — 2–4 sentences. Cite the predecessor record with `[[<predecessor-uuid>]]` and state the trigger for supersession. Include the source surface (file:line, plan section) that motivates the change.
 - **Decision** — 1–3 sentences. Active voice describing the new choice. Make the *difference* from the predecessor explicit when it is non-obvious.
-- **Alternatives** — 1–3 alternatives, each with a one-line reason. The predecessor itself usually appears here as a rejected alternative with a brief rationale. If genuinely no alternative applies, write **"Not applicable"**.
+- **Alternatives** — 1–3 alternatives, each with a one-line reason. The predecessor itself usually appears here as a rejected alternative, referenced again as `[[<predecessor-uuid>]]`, with a brief rationale. If genuinely no alternative applies, write **"Not applicable"**.
 - **Consequences** — 2–4 sentences. Note downstream effects, including any robustness obligation the supersession introduces, and any prior result that may need to be re-run.
 
 Total body roughly 200–400 words.

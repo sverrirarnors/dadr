@@ -9,6 +9,7 @@
     type CommandPaletteItem,
     type CommandPaletteRoute,
   } from '$lib/command-palette/items';
+  import { applyMutationResponse } from '$lib/query/mutation-cache';
   import { palette } from '$lib/stores/palette.svelte';
   import { theme } from '$lib/stores/theme.svelte';
   import { toasts } from '$lib/stores/toast.svelte';
@@ -23,9 +24,9 @@
 
   const runValidation = createMutation(() => ({
     mutationFn: () => api.runValidation('project'),
-    onSuccess: (response) => {
-      queryClient.setQueryData(['snapshot'], response.snapshot);
+    onSuccess: async (response) => {
       toasts.push({ severity: 'info', message: response.message });
+      await applyMutationResponse(queryClient, response);
     },
     onError: (error) => {
       toasts.push({ severity: 'error', message: 'Validation failed', detail: error.message });

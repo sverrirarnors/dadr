@@ -265,6 +265,79 @@ form[data-md-component="palette"] {
   color: var(--dadr-muted);
 }
 
+/* ============ Audience row ============ */
+/* Three icon-tile cells laid side by side, breaking the prose flow between
+   "Solution" and "Frictionless". Stacks vertically below ~50rem viewports. */
+.audience-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin: 1.5rem 0 2.5rem;
+}
+
+@media (max-width: 50rem) {
+  .audience-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.audience-grid .audience {
+  text-align: center;
+  padding: 0 0.5rem;
+}
+
+.audience-grid .audience-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 0.6rem;
+  /* Cross-platform emoji rendering; keeps the glyph crisp on macOS/Win/Linux. */
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+.md-typeset .audience-grid .audience p {
+  margin: 0.2rem 0 0;
+  color: var(--dadr-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.md-typeset .audience-grid .audience strong {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--dadr-ink);
+  letter-spacing: 0.01em;
+}
+
+/* ============ Principle callout ============ */
+/* Tinted box with an accent left border. Used to highlight a key claim that
+   would otherwise get lost in the surrounding prose flow. */
+.md-typeset .principle {
+  border-left: 4px solid var(--dadr-accent);
+  background: #eff6ff;             /* blue-50, paired with --dadr-accent */
+  padding: 1rem 1.4rem;
+  margin: 2.5rem 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--dadr-ink);
+  border-radius: 0 4px 4px 0;
+}
+
+.md-typeset .principle p {
+  margin: 0;
+}
+
+.md-typeset .principle strong {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .principle {
+  background: rgba(96, 165, 250, 0.08);   /* tinted blue on dark surface */
+}
+
 /* ============ Mermaid diagram ============ */
 /* Center the rendered SVG and constrain its width so the diagram reads as a
    figure rather than a code block. Strip the default code-block chrome that
@@ -340,4 +413,58 @@ form[data-md-component="palette"] {
   font-style: italic;
   font-size: 1.1rem;
   color: var(--dadr-muted);
+}
+
+/* Margin-note variant: each problem section is a flex row with prose on the
+   left and a pull-quote aside on the right. align-items: stretch makes the
+   aside grow to match the prose column's full height, so the accent rule on
+   the pull spans the whole section regardless of quote length. */
+.problem-body {
+  display: flex;
+  gap: 2.5rem;
+  align-items: stretch;
+  margin: 1rem 0 2rem;
+}
+
+.problem-prose {
+  flex: 1;
+  min-width: 0;
+}
+
+.md-typeset .problem-prose > p:first-child {
+  margin-top: 0;
+}
+
+.md-typeset .pull--aside {
+  flex: 0 0 16rem;
+  margin: 0;
+  font-size: 1rem;
+  /* The outer div is a transparent flex container that stretches to the prose
+     height. The visible accent rule + padding lives on the inner <p>, so the
+     bar only spans the quote text — not the full section height. */
+  display: flex;
+  align-items: center;
+  border-left: none;
+  padding: 0;
+}
+
+.md-typeset .pull--aside > p {
+  border-left: 3px solid var(--dadr-accent);
+  padding: 0.6rem 1.2rem;
+  margin: 0;
+}
+
+/* Below ~50rem the side column is too narrow to be useful; stack the prose
+   and pull and fall back to the default pull-quote spacing. */
+@media (max-width: 50rem) {
+  .problem-body {
+    flex-direction: column;
+    gap: 0;
+  }
+  .md-typeset .pull--aside {
+    flex-basis: auto;
+    margin: 2rem 0;
+    font-size: 1.1rem;
+    display: block;
+  }
 }

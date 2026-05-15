@@ -9,7 +9,6 @@
     createApi,
     type MutationResponse,
     type RecordSummary,
-    type Snapshot,
     type TaskContext,
     type TaskInput,
     type TaskInputValue,
@@ -28,6 +27,7 @@
   import { Button, SegmentedTabs, StatusPanel } from '$lib/components/ui';
   import { ResizableWorkbenchSplit, WorkbenchPage, WorkbenchPane } from '$lib/components/workbench';
   import { renderMarkdown } from '$lib/markdown/render';
+  import { applyMutationResponse } from '$lib/query/mutation-cache';
   import {
     displayRecordStatus,
     type RecordStatusFilter,
@@ -67,6 +67,10 @@
     recordId: string;
     instructions: string;
     path: string;
+  }
+
+  interface LoadTaskResultOptions {
+    writeSupersessionCandidate?: boolean;
   }
 
   type TaskTab = 'tasks' | 'runs';
@@ -250,7 +254,7 @@
       if (run.status === 'succeeded') {
         runProgress = `Task ${run.task_id} finished with status ${run.status}.`;
         toasts.push({ severity: 'success', message: `task run ${run.status}` });
-        await loadTaskResult(run.id);
+        await loadTaskResult(run.id, { writeSupersessionCandidate: run.task_id === 'supersede-record' });
       } else if (run.status === 'failed') {
         runProgress = `Task ${run.task_id} failed.`;
         toasts.push({ severity: 'error', message: 'Task run failed' });
@@ -301,10 +305,12 @@
       taskResultError = '';
       taskLogOpen = false;
       runProgress = response.message;
-      queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
       queryClient.setQueryData<TaskRun[]>(['task-runs'], []);
       toasts.push({ severity: 'success', message: response.message });
-      await queryClient.invalidateQueries({ queryKey: ['task-runs'] });
+      await Promise.all([
+        applyMutationResponse(queryClient, response),
+        queryClient.invalidateQueries({ queryKey: ['task-runs'] }),
+      ]);
     },
     onError: (error) => {
       toasts.push({ severity: 'error', message: 'Clear history failed', detail: error.message });
@@ -339,7 +345,7 @@
       if (run.status === 'succeeded') {
         runProgress = `Follow-up ${run.task_id} finished with status ${run.status}.`;
         toasts.push({ severity: 'success', message: `follow-up ${run.status}` });
-        await loadTaskResult(run.id);
+        await loadTaskResult(run.id, { writeSupersessionCandidate: run.task_id === 'supersede-record' });
       } else {
         activeRunId = run.id;
         runProgress = `Follow-up ${run.task_id} started. Agent output is updating.`;
@@ -465,7 +471,7 @@
     activeRunId = '';
     stopActiveRunPolling();
     if (run.status === 'succeeded') {
-      void loadTaskResult(run.id);
+      void loadTaskResult(run.id, { writeSupersessionCandidate: run.task_id === 'supersede-record' });
     } else if (run.status === 'cancelled') {
       taskResult = null;
       taskResultRunId = run.id;
@@ -482,8 +488,8 @@
   }
 
   async function finishCandidate(response: MutationResponse) {
-    queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
     toasts.push({ severity: 'success', message: response.message });
+    await applyMutationResponse(queryClient, response);
     const destination = candidateDestination(response);
     if (destination.params) {
       await goto(resolve('/records/[id]', destination.params));
@@ -493,14 +499,9 @@
   }
 
   async function finishRecordRevision(response: MutationResponse) {
-    queryClient.setQueryData<Snapshot>(['snapshot'], response.snapshot);
     toasts.push({ severity: 'success', message: response.message });
     const selectedId = response.focus?.selected_id ?? (taskResult ? stringField(taskResult, 'record_id') : '');
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['snapshot'] }),
-      selectedId ? queryClient.invalidateQueries({ queryKey: ['record-source', selectedId] }) : Promise.resolve(),
-      selectedId ? queryClient.invalidateQueries({ queryKey: ['record-lifecycle', selectedId] }) : Promise.resolve(),
-    ]);
+    await applyMutationResponse(queryClient, response);
     if (selectedId) {
       await goto(resolve('/records/[id]', { id: selectedId }));
     } else {
@@ -753,7 +754,7 @@
     }
   }
 
-  async function loadTaskResult(runId: string) {
+  async function loadTaskResult(runId: string, options: LoadTaskResultOptions = {}) {
     selectedRunId = runId;
     taskLogOpen = false;
     taskResult = null;
@@ -767,6 +768,9 @@
       taskResult = result;
       dismissedResultItems = [];
       runProgress = `Loaded result ${shortId(runId)}.`;
+      if (options.writeSupersessionCandidate && result.kind === 'supersession_proposal.v1') {
+        writeSupersessionCandidateFromResult(result);
+      }
     } catch (error) {
       taskResultError = error instanceof Error ? error.message : String(error);
       runProgress = `Result load failed: ${taskResultError}`;
@@ -896,14 +900,24 @@
     });
   }
 
+  function supersessionCandidateProposal(result: TaskResult): CandidateProposal {
+    return {
+      title: stringField(result, 'superseding_title') || 'Superseding candidate',
+      tags: ['#writer/agent'],
+      body_markdown: stringField(result, 'superseding_body_markdown'),
+      warnings: [],
+    };
+  }
+
+  function writeSupersessionCandidateFromResult(result: TaskResult) {
+    const candidate = supersessionCandidateProposal(result);
+    if (!candidate.body_markdown.trim()) return;
+    writeCandidate.mutate(candidate);
+  }
+
   function writeSupersessionCandidate() {
     if (!taskResult) return;
-    writeCandidate.mutate({
-      title: stringField(taskResult, 'superseding_title') || 'Superseding candidate',
-      tags: ['#writer/agent'],
-      body_markdown: stringField(taskResult, 'superseding_body_markdown'),
-      warnings: [],
-    });
+    writeSupersessionCandidateFromResult(taskResult);
   }
 
   function startRecordRevisionFollowUp() {
