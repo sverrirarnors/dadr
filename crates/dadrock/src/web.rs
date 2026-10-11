@@ -297,7 +297,10 @@ fn run_agent_task_thread(
             &run,
             AcpTaskRunOptions {
                 local_agent: &local_agent,
-                permission_policy: AcpPermissionPolicy::AllowOnce,
+                // Nobody is there to answer a permission prompt, and task
+                // prompts propose rather than write: let the agent read the
+                // project, and deny edits, commands, and fetches.
+                permission_policy: AcpPermissionPolicy::AllowReads,
                 enable_dadrock_mcp: true,
                 events: None,
             },

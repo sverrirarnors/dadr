@@ -14,7 +14,7 @@ mod tests {
         env, fs,
         path::{Path, PathBuf},
         process,
-        sync::mpsc,
+        sync::{mpsc, Arc, Mutex},
         thread,
         time::{Duration, SystemTime, UNIX_EPOCH},
     };
@@ -25,8 +25,9 @@ mod tests {
 
     use super::{
         acp::{
-            run_acp_agent, run_acp_agent_json, AcpConversation, AcpPermissionOptionKind,
-            AcpPermissionPolicy, AcpPermissionRequest, AcpPromptOptions, AcpSessionEvent,
+            run_acp_agent, run_acp_agent_json, run_acp_prompt_text_with_events, AcpConversation,
+            AcpPermissionOptionKind, AcpPermissionPolicy, AcpPermissionRequest, AcpPromptEvent,
+            AcpPromptEventSink, AcpPromptOptions, AcpSessionEvent,
         },
         providers::{
             detect_local_acp_agent_in_path, known_acp_providers, parse_acp_agent_args,
@@ -497,6 +498,68 @@ Final answer:
 
     #[cfg(unix)]
     #[test]
+    fn fake_acp_prompt_allow_reads_approves_only_read_search_and_think() {
+        let fixture = FakeAcpFixture::new("permission-kinds");
+        let permission_events = Arc::new(Mutex::new(Vec::new()));
+        let sink_events = Arc::clone(&permission_events);
+        let events: AcpPromptEventSink = Arc::new(move |event| {
+            if let AcpPromptEvent::Permission { message } = event {
+                sink_events.lock().unwrap().push(message);
+            }
+        });
+
+        let text = run_acp_prompt_text_with_events(
+            &fixture.command(),
+            fixture.root.clone(),
+            "inspect the project".to_owned(),
+            AcpPromptOptions {
+                permission_policy: AcpPermissionPolicy::AllowReads,
+                enable_dadrock_mcp: false,
+                ..AcpPromptOptions::default()
+            },
+            Some(events),
+        )
+        .expect("run fake ACP agent under allow-reads");
+
+        assert_eq!(text, "permission kinds done");
+        let decisions = fs::read_to_string(fixture.decision_log()).expect("read fake decisions");
+        let outcomes: Vec<(String, String)> = decisions
+            .lines()
+            .map(|line| {
+                let (kind, response) = line.split_once(' ').expect("kind and response");
+                let response: serde_json::Value =
+                    serde_json::from_str(response).expect("permission response JSON");
+                let option = response["result"]["outcome"]["optionId"]
+                    .as_str()
+                    .unwrap_or("<none>")
+                    .to_owned();
+                (kind.to_owned(), option)
+            })
+            .collect();
+        let expected = [
+            ("read", "allow-once"),
+            ("search", "allow-once"),
+            ("think", "allow-once"),
+            ("edit", "deny-once"),
+            ("delete", "deny-once"),
+            ("move", "deny-once"),
+            ("execute", "deny-once"),
+            ("fetch", "deny-once"),
+            ("switch_mode", "deny-once"),
+            ("other", "deny-once"),
+            ("missing", "deny-once"),
+        ]
+        .map(|(kind, option)| (kind.to_owned(), option.to_owned()));
+        assert_eq!(outcomes, expected);
+
+        let permission_events = permission_events.lock().unwrap();
+        assert!(permission_events.contains(&"Approved once: read tool (read).".to_owned()));
+        assert!(permission_events.contains(&"Denied: edit tool (edit).".to_owned()));
+        assert!(permission_events.contains(&"Denied: missing tool (no tool kind).".to_owned()));
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn fake_acp_prompt_enforces_output_limit() {
         let fixture = FakeAcpFixture::new("chat");
         let request = minimal_agent_request(&fixture.root);
@@ -708,6 +771,20 @@ while IFS= read -r line; do
         else
           send "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"fake-session\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"permission granted\"}}}}"
         fi
+      elif [ "$mode" = "permission-kinds" ]; then
+        request_id=9100
+        for kind in read search think edit delete move execute fetch switch_mode other missing; do
+          request_id=$((request_id + 1))
+          kind_field=""
+          if [ "$kind" != "missing" ]; then
+            kind_field=",\"kind\":\"$kind\""
+          fi
+          send "{\"jsonrpc\":\"2.0\",\"id\":$request_id,\"method\":\"session/request_permission\",\"params\":{\"sessionId\":\"fake-session\",\"toolCall\":{\"toolCallId\":\"tool-$kind\",\"title\":\"$kind tool\"$kind_field},\"options\":[{\"optionId\":\"allow-once\",\"name\":\"Allow once\",\"kind\":\"allow_once\"},{\"optionId\":\"allow-always\",\"name\":\"Always allow\",\"kind\":\"allow_always\"},{\"optionId\":\"deny-once\",\"name\":\"Deny once\",\"kind\":\"reject_once\"}]}}"
+          if IFS= read -r decision; then
+            printf '%s %s\n' "$kind" "$decision" >> "$log.decision"
+          fi
+        done
+        send "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"fake-session\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"permission kinds done\"}}}}"
       elif [ "$mode" = "draft-raw-output" ]; then
         send "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"fake-session\",\"update\":{\"sessionUpdate\":\"tool_call_update\",\"toolCallId\":\"emit-draft\",\"title\":\"Emit Dadrock draft\",\"kind\":\"other\",\"status\":\"completed\",\"rawOutput\":{\"kind\":\"dadrock.draft_candidate.v1\",\"intent\":\"draft_candidate\",\"confidence\":\"high\",\"summary\":\"Raw output draft.\",\"frontmatter\":{\"title\":\"Use ACP rawOutput\"},\"body_markdown\":\"## Context\\nText chunks are for narration.\\n\\n## Decision\\nRead Dadrock draft envelopes from ACP tool rawOutput when present.\\n\\n## Alternatives\\nContinue scraping final agent text.\\n\\n## Consequences\\nStructured ACP output can create candidates without relying on prose parsing.\",\"source_references\":[],\"activity_observations\":[],\"warnings\":[],\"provenance\":{\"model\":\"fake-acp\",\"tool_runs\":[{\"name\":\"emit-draft\"}]}}}}}"
       else

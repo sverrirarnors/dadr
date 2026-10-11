@@ -537,8 +537,13 @@ impl Default for PreviewArgs {
 #[derive(Debug, Clone, Copy, ValueEnum)]
 #[value(rename_all = "kebab-case")]
 pub enum PermissionPolicyArg {
+    /// Deny every tool permission request.
     Deny,
+    /// Approve read, search, and think tool requests once; deny the rest.
+    AllowReads,
+    /// Approve every tool permission request once.
     AllowOnce,
+    /// Approve every tool permission request for the session.
     AllowAlways,
 }
 
@@ -546,6 +551,7 @@ impl From<PermissionPolicyArg> for AcpPermissionPolicy {
     fn from(policy: PermissionPolicyArg) -> Self {
         match policy {
             PermissionPolicyArg::Deny => Self::Deny,
+            PermissionPolicyArg::AllowReads => Self::AllowReads,
             PermissionPolicyArg::AllowOnce => Self::AllowOnce,
             PermissionPolicyArg::AllowAlways => Self::AllowAlways,
         }
@@ -984,6 +990,31 @@ mod tests {
         assert_eq!(args.agent.as_deref(), Some("codex"));
         assert_eq!(args.agent_args, ["--model=gpt-5"]);
         assert!(args.no_mcp);
+    }
+
+    #[test]
+    fn task_run_permission_defaults_to_deny_and_accepts_allow_reads() {
+        let task_run = |extra: &[&str]| {
+            let cli = Cli::try_parse_from(
+                ["dadrock", "task", "run", "custom"]
+                    .into_iter()
+                    .chain(extra.iter().copied()),
+            )
+            .unwrap();
+            let Some(Command::Task(TaskArgs {
+                command: TaskCommand::Run(args),
+            })) = cli.command
+            else {
+                panic!("expected task run command");
+            };
+            AcpPermissionPolicy::from(args.permission)
+        };
+
+        assert_eq!(task_run(&[]), AcpPermissionPolicy::Deny);
+        assert_eq!(
+            task_run(&["--permission", "allow-reads"]),
+            AcpPermissionPolicy::AllowReads
+        );
     }
 
     #[test]
