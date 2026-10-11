@@ -964,6 +964,7 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
                 "summary": "Draft a narrower successor for the broad complete-case rule.",
                 "superseded_record_id": ID_COMPLETE_CASE,
                 "superseding_title": "Use model-specific complete cases",
+                "tags": ["kind/sample", "writer/agent"],
                 "superseding_body_markdown": "## Context\n\nThe original complete-case decision was broader than the current model requires.\n\n## Decision\n\nDrop missing rows only for variables required by each model.\n\n## Alternatives\n\nKeep the broad complete-case rule for all fields.\n\n## Consequences\n\nEach model reports its own analysis sample and the old broad rule is superseded.\n",
                 "rationale": "The replacement narrows the rule and better matches the current analysis code.",
                 "suggested_actions": ["Write superseding candidate", "Review old record"]

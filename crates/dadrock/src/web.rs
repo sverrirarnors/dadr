@@ -1302,6 +1302,80 @@ mod tests {
     }
 
     #[test]
+    fn supersession_proposal_tags_reach_the_replacement_candidate() {
+        let root = Utf8PathBuf::from_path_buf(std::env::temp_dir().join(format!(
+            "dadrock-web-supersession-tags-{}",
+            RecordId::new_v7()
+        )))
+        .unwrap();
+        fs::create_dir_all(&root).unwrap();
+        initialize_project(&root).unwrap();
+        let context = context_for(&root).unwrap();
+        let body = "## Context\nOld.\n## Decision\nDrop all incomplete rows.\n## Alternatives\nImpute.\n## Consequences\nSmaller sample.\n";
+        let old = core_commands::new_record_with_body(
+            &context,
+            "Complete-case sample",
+            &["kind/sample".to_owned(), "confidence/high".to_owned()],
+            body,
+        )
+        .unwrap()
+        .data
+        .id
+        .to_string();
+        accept_candidate(&root, &old).unwrap();
+        let result = dadrock::tasks::validate_task_output(
+            dadrock::tasks::TaskOutputKind::SupersessionProposalV1,
+            serde_json::json!({
+                "kind": "supersession_proposal.v1",
+                "summary": "Narrow the rule.",
+                "superseded_record_id": old,
+                "superseding_title": "Model-specific complete cases",
+                "tags": ["kind/sample", "writer/agent"],
+                "superseding_body_markdown": "## Context\nNarrower.\n## Decision\nDrop rows per model.\n## Alternatives\nKeep the broad rule.\n## Consequences\nRe-run models.\n",
+                "rationale": "The broad rule drops too many rows."
+            }),
+        )
+        .unwrap();
+        // The inbox saves a supersession proposal with these fields (ProposalDetail.svelte).
+        let request = HttpRequest {
+            method: "POST".into(),
+            path: "/api/records".into(),
+            headers: vec![],
+            body: serde_json::to_vec(&serde_json::json!({
+                "title": result["superseding_title"],
+                "tags": result["tags"],
+                "body_markdown": result["superseding_body_markdown"],
+                "supersedes": result["superseded_record_id"],
+            }))
+            .unwrap(),
+        };
+
+        let response: serde_json::Value =
+            serde_json::from_slice(&create_record(&request, &root).unwrap().body).unwrap();
+        let next = response["focus"]["selected_id"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+
+        let lifecycle: serde_json::Value =
+            serde_json::from_slice(&record_lifecycle(&root, &next).unwrap().body).unwrap();
+        assert_eq!(lifecycle["record"]["status"], "candidate");
+        assert_eq!(
+            lifecycle["record"]["tags"],
+            serde_json::json!(["kind/sample", "writer/agent"])
+        );
+        assert_eq!(lifecycle["pending_supersedes"]["id"], old);
+        accept_candidate(&root, &next).unwrap();
+        let accepted: serde_json::Value =
+            serde_json::from_slice(&record_lifecycle(&root, &next).unwrap().body).unwrap();
+        assert_eq!(
+            accepted["record"]["tags"],
+            serde_json::json!(["kind/sample", "writer/agent"])
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn mutation_focus_serializes_for_lifecycle_selection() {
         let response = ApiMutationResponse {
             message: "accepted candidate".to_owned(),

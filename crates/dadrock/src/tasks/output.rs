@@ -102,6 +102,7 @@ static BUILTIN_OUTPUT_KINDS: &[TaskOutputKindMeta] = &[
   "summary": "string",
   "superseded_record_id": "string",
   "superseding_title": "string",
+  "tags": ["string"],
   "superseding_body_markdown": "markdown string with Context, Decision, Alternatives, Consequences sections",
   "rationale": "string",
   "suggested_actions": ["string"]
@@ -308,6 +309,8 @@ pub struct SupersessionProposalOutput {
     pub summary: String,
     pub superseded_record_id: String,
     pub superseding_title: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
     pub superseding_body_markdown: String,
     pub rationale: String,
     #[serde(default)]

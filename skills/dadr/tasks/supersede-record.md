@@ -72,6 +72,7 @@ A supersession proposal:
 - **Summary**: one sentence framing the proposal.
 - **Superseded record id**: the predecessor's full id.
 - **Title** of the replacement: a noun phrase, not a question.
+- **Tags** of the replacement: the predecessor's tags that still apply, plus `writer/agent`.
 - **Body** of the replacement: the four sections plus `## Replaces`.
 - **Rationale**: one to three sentences, for the reviewer, on why the predecessor needs replacing. This is separate from the body.
 - **Suggested actions**: ordered next steps for the reviewer, such as reviewing and accepting the replacement and re-running the analyses its Consequences name. Accepting the replacement links the predecessor, so do not add a separate supersede step.

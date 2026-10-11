@@ -83,7 +83,7 @@ describe('buildInboxGroups', () => {
         ],
       },
       'r-rev': { kind: 'record_revision.v1', record_id: 'cand-old', body_markdown: '## Decision\nnew', change_explanation: 'Clearer', summary: 'rev' },
-      'r-sup': { kind: 'supersession_proposal.v1', superseded_record_id: 'acc-1', superseding_title: 'Use DuckDB', superseding_body_markdown: '## Decision\nDuckDB', rationale: 'faster' },
+      'r-sup': { kind: 'supersession_proposal.v1', superseded_record_id: 'acc-1', superseding_title: 'Use DuckDB', tags: ['kind/data', 'writer/agent'], superseding_body_markdown: '## Decision\nDuckDB', rationale: 'faster' },
       'r-con': { kind: 'conflict_set.v1', summary: '', findings: [{ id: 'f1', title: 'Overlap', left_record_id: 'acc-1', right_record_id: 'cand-old', relationship: 'overlap', conflict_explanation: 'both', suggested_actions: [] }] },
       'r-rep': { kind: 'markdown_report.v1', title: 'Audit', body_markdown: '## Findings\nnone' },
     };
@@ -93,7 +93,7 @@ describe('buildInboxGroups', () => {
     expect(items.find((item) => item.kind === 'running')).toMatchObject({ id: 'running:r-live', title: 'Drafting a decision' });
     const proposals = items.filter((item) => item.kind === 'proposal');
     expect(proposals.map((item) => item.id)).toEqual(['proposal:r-sup:supersession', 'proposal:r-batch:a']);
-    expect(proposals[0]).toMatchObject({ proposal: { supersedes: 'acc-1', title: 'Use DuckDB' }, supersededRecord: { id: 'acc-1' } });
+    expect(proposals[0]).toMatchObject({ proposal: { supersedes: 'acc-1', title: 'Use DuckDB', tags: ['kind/data', 'writer/agent'] }, supersededRecord: { id: 'acc-1' } });
     expect(items.find((item) => item.kind === 'revision')).toMatchObject({ id: 'revision:r-rev', recordId: 'cand-old', revisedTitle: 'Older candidate', body_markdown: '## Decision\nnew' });
     expect(items.find((item) => item.kind === 'conflict')).toMatchObject({ id: 'conflict:r-con:f1', left: { id: 'acc-1' }, right: { id: 'cand-old' } });
     expect(items.find((item) => item.kind === 'report')).toMatchObject({ id: 'report:r-rep', title: 'Audit' });

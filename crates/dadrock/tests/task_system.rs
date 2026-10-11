@@ -406,6 +406,78 @@ fn validate_task_output_accepts_structured_diagnosis_summary() {
     assert_eq!(serde_json::to_value(validated).unwrap(), output);
 }
 
+fn supersession_proposal_with_tags() -> serde_json::Value {
+    json!({
+        "kind": "supersession_proposal.v1",
+        "summary": "Narrow the complete-case rule.",
+        "superseded_record_id": "01938b8e-4d70-7abc-8def-000000000001",
+        "superseding_title": "Use model-specific complete cases",
+        "tags": ["kind/sample", "writer/agent"],
+        "superseding_body_markdown": "## Context\n\nOld rule.\n\n## Decision\n\nNew rule.\n\n## Alternatives\n\nOld rule.\n\n## Consequences\n\nRe-run models.\n",
+        "rationale": "The old rule drops too many rows.",
+        "suggested_actions": ["Review and accept the replacement."]
+    })
+}
+
+#[test]
+fn supersession_proposal_contract_and_schema_carry_tags() {
+    assert!(TaskOutputKind::SupersessionProposalV1
+        .output_contract()
+        .contains(r#""tags": ["string"]"#));
+
+    let output = supersession_proposal_with_tags();
+    let validated =
+        validate_task_output(TaskOutputKind::SupersessionProposalV1, output.clone()).unwrap();
+    assert_eq!(validated, output);
+
+    let TaskOutputValue::SupersessionProposal(proposal) =
+        serde_json::from_value(validated).unwrap()
+    else {
+        panic!("expected supersession_proposal.v1 output");
+    };
+    assert_eq!(proposal.tags, ["kind/sample", "writer/agent"]);
+
+    let mut untagged = output;
+    untagged.as_object_mut().unwrap().remove("tags");
+    let TaskOutputValue::SupersessionProposal(proposal) = serde_json::from_value(
+        validate_task_output(TaskOutputKind::SupersessionProposalV1, untagged).unwrap(),
+    )
+    .unwrap() else {
+        panic!("expected supersession_proposal.v1 output");
+    };
+    assert!(proposal.tags.is_empty());
+}
+
+#[test]
+fn submitted_supersession_proposal_persists_tags() {
+    let root = unique_temp_dir("dadrock-task-run-supersession-tags");
+    init_project(&root).unwrap();
+    let user_tasks = root.join("user-tasks");
+    let _env_lock = TASK_ENV_LOCK.lock().unwrap();
+    let _env = EnvVarGuard::set_path("DADROCK_TASKS_DIR", &user_tasks);
+    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    let user_tasks = Utf8PathBuf::from_path_buf(user_tasks).expect("utf8 user tasks");
+    let task = discovered_task(&cwd, Some(&user_tasks), "supersede-record");
+    let run = create_task_run(
+        &cwd,
+        &task,
+        json!({"record_id": "01938b8e-4d70-7abc-8def-000000000001", "reason": "Too broad."}),
+    )
+    .unwrap();
+    let context = CommandContext::from_path(&root).expect("context");
+    let result = supersession_proposal_with_tags();
+
+    submit_task_result_command(&context, &run.id.to_string(), result.clone()).unwrap();
+
+    let persisted = read_json(run.run_dir.join("result.json"));
+    assert_eq!(persisted, result);
+    assert_eq!(persisted["tags"], json!(["kind/sample", "writer/agent"]));
+    let shown = show_task_result_command(&context, &run.id.to_string()).unwrap();
+    assert_eq!(shown.data["tags"], json!(["kind/sample", "writer/agent"]));
+
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn discovery_lists_built_in_starter_tasks() {
     let root = unique_temp_dir("dadrock-task-discovery-builtins");

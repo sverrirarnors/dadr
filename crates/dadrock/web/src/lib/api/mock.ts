@@ -409,6 +409,7 @@ function taskResultFor(request: RunTaskRequest): TaskResult {
         summary: 'Mock supersession proposal.',
         superseded_record_id: String(request.input.record_id ?? ''),
         superseding_title: 'Superseding candidate',
+        tags: ['#kind/sample', '#writer/agent'],
         superseding_body_markdown:
           '## Context\nA previous decision needs replacement.\n\n## Decision\nSupersede the older record.\n\n## Alternatives\nKeep both records active.\n\n## Consequences\nThe ledger has one current decision for this issue.',
         rationale: String(request.input.reason ?? 'No rationale supplied.'),
