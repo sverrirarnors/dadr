@@ -4,17 +4,17 @@ title: DADR specification
 
 # DADR specification
 
-For a short introduction, see [Data Analysis Decision Records](core.md). Suggested tag vocabularies are [documented separately](tags.md).
+For a short introduction, see [Making decisions](core.md). Suggested tag vocabularies are [documented separately](tags.md).
 
 **DADR** (Data-Analysis Decision Records) is a file-first format for recording consequential decisions in empirical and data-analysis projects. A DADR record is a Markdown file that captures one analytic decision: the context that motivated it, the decision that was made, the alternatives considered, and the consequences for the analysis. Records live alongside the analysis code, manuscript, data references, and project documentation.
 
-This page is the canonical specification of the record format. Directory layouts, inference, version-control hooks, previews, and agent workflows are tooling concerns; the reference implementation documents its own choices in the [**DADRock**](dadrock/index.md) section.
+This page is the canonical specification of the record format. Directory layouts, inference, version-control hooks, previews, and agent workflows are tooling concerns; the reference implementation documents its own choices on the [Project layout](layout.md) and [Changing decisions](changing.md) pages and in the [**DADRock**](dadrock/index.md) section.
 
 ---
 
 ## Version { #version }
 
-This document defines DADR specification version **0.1.0-alpha.2**.
+This document defines DADR specification version **0.1.0-alpha.3**.
 
 DADR uses Semantic Versioning. Versions below `1.0.0` are alpha-stage specifications: breaking changes MAY appear in minor or patch releases while the model is still being validated. Starting with `1.0.0`, breaking changes MUST increment the major version.
 
@@ -116,7 +116,7 @@ id:        01938b8e-4d70-7abc-8def-0123456789ab
 short id:  01938b8e4d70
 ```
 
-Short ids MUST be unique within a record set. Tools that create records MUST ensure this, for example by generating a fresh `id` when the short id is already taken. The short id is the recommended form for displaying a record's identity and for [linking to it](#wikilinks).
+Short ids MUST be unique within a record set. The short id encodes exactly the `id`'s 48-bit timestamp, so two `id`s created in the same millisecond share it. Tools that create records MUST ensure uniqueness, for example by generating a fresh `id` in a later millisecond when the short id is already taken. The short id is the recommended form for displaying a record's identity and for [linking to it](#wikilinks).
 
 Filenames are free. A short kebab-case slug of the title plus `.md`, such as `income-preprocessing.md`, is suggested. A filename carries no meaning: tools MUST NOT derive a record's identity or status from it, and a record keeps its `id` when it is renamed or moved.
 
