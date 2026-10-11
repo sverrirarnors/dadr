@@ -24,13 +24,11 @@ for line in sys.stdin:
         result={'sessionId':'test','configOptions':[]}
     elif method=='session/prompt':
         prompt=json.dumps(q)
-        if 'skill preflight' in prompt:
-            output={'ok':True,'evidence':'test guide'}
-        else:
-            assert 'context-to-record' in prompt
-            assert 'Remember sample exclusions' in prompt
-            assert 'Preserve sample exclusions carefully.' in prompt
-            output={'kind':'candidate_draft.v1','title':'Exclude missing income','tags':['writer/agent'], 'body_markdown':'## Context\nRationale not documented.\n\n## Decision\nExclude missing income.\n\n## Alternatives\nNot documented.\n\n## Consequences\nSmaller sample.', 'source_references':['analysis.R:2'], 'warnings':['Rationale not documented'], 'confidence':'high', 'provenance':{'model':'fake-task'}}
+        assert 'skill preflight' not in prompt, 'Builtins must work without an installed skill'
+        assert 'context-to-record' in prompt
+        assert 'Remember sample exclusions' in prompt
+        assert 'Preserve sample exclusions carefully.' in prompt
+        output={'kind':'candidate_draft.v1','title':'Exclude missing income','tags':['writer/agent'], 'body_markdown':'## Context\nRationale not documented.\n\n## Decision\nExclude missing income.\n\n## Alternatives\nNot documented.\n\n## Consequences\nSmaller sample.', 'source_references':['analysis.R:2'], 'warnings':['Rationale not documented'], 'confidence':'high', 'provenance':{'model':'fake-task'}}
         print(json.dumps({'jsonrpc':'2.0','method':'session/update','params':{'sessionId':'test','update':{'sessionUpdate':'agent_message_chunk','content':{'type':'text','text':json.dumps(output)}}}}),flush=True)
         result={'stopReason':'end_turn'}
     else:

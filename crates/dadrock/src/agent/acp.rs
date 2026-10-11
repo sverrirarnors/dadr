@@ -62,10 +62,9 @@ const ACP_ACTIVITY_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 const ACP_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
 pub const ACP_OUTPUT_LIMIT_BYTES: usize = 4 * 1024 * 1024;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AcpPermissionPolicy {
-    #[default]
     Deny,
     AllowOnce,
     AllowAlways,
@@ -78,6 +77,12 @@ impl AcpPermissionPolicy {
             Self::AllowOnce => "allow-once",
             Self::AllowAlways => "allow-always",
         }
+    }
+}
+
+impl Default for AcpPermissionPolicy {
+    fn default() -> Self {
+        Self::Deny
     }
 }
 

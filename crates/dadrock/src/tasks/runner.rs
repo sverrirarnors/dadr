@@ -559,16 +559,19 @@ fn execute_created_task_run(
     let _cancellation_registration =
         TaskCancellationRegistration::register(run.id, cancellation.clone())
             .map_err(TaskRunFailure::from)?;
-    preflight_dadr_skill_access(
-        project,
-        task,
-        local_agent,
-        permission_policy,
-        enable_dadrock_mcp,
-        run,
-        events.clone(),
-    )
-    .map_err(TaskRunFailure::from)?;
+    // Built-in tasks ship their complete instructions; external skills are optional.
+    if task.source.kind != crate::tasks::TaskSourceKind::Builtin {
+        preflight_dadr_skill_access(
+            project,
+            task,
+            local_agent,
+            permission_policy,
+            enable_dadrock_mcp,
+            run,
+            events.clone(),
+        )
+        .map_err(TaskRunFailure::from)?;
+    }
     let current_run = read_task_run(&run.run_dir).map_err(TaskRunFailure::from)?;
     if current_run.status == TaskRunStatus::Cancelled {
         return Ok(current_run);

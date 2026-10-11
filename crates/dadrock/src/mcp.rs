@@ -99,7 +99,10 @@ impl DadrockMcpServer {
         let tools = Self::tools();
         match access {
             DadrockMcpAccess::Full => tools,
-            DadrockMcpAccess::ReadOnly => tools.into_iter().filter(tool_is_read_only).collect(),
+            DadrockMcpAccess::ReadOnly => tools
+                .into_iter()
+                .filter(|tool| tool_is_read_only(tool))
+                .collect(),
         }
     }
 
