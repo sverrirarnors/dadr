@@ -1,8 +1,7 @@
 /* DADR site styles: open-source documentation pairing.
    Source Serif 4 for body (loaded by zensical from zensical.toml).
-   Open Sans for headings + UI (loaded here; zensical preloads only one
-   primary text font and Open Sans isn't it). */
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+   Open Sans for headings + UI (loaded by overrides/main.html; zensical
+   preloads only one primary text font and Open Sans isn't it). */
 
 :root {
   /* Color tokens. Neutral web-standard palette: white surfaces, slate text,
@@ -44,29 +43,33 @@ body,
   --md-primary-bg-color: var(--dadr-paper);
 }
 
-[data-md-color-scheme="slate"] {
-  --md-typeset-a-color: #60a5fa;       /* blue-400, lighter for dark bg */
-  --md-accent-fg-color: #60a5fa;
-}
-
-/* Hide the palette toggle. We keep both palettes in zensical.toml so
-   Material's Mermaid bootstrap (which keys off the palette config) stays
-   happy, but the user is never offered the dark-mode switch. */
-.md-header__option,
-form[data-md-component="palette"] {
-  display: none !important;
-}
-
 .md-typeset {
   font-size: 1rem;
   line-height: 1.65;
 }
 
-/* Header logo (the home icon partial). Force it to a fixed icon size. */
+/* Header logo (the home icon partial). Force it to a fixed icon size, and
+   undo the theme's fill:currentcolor so the outline icon isn't filled in. */
 .md-header .md-logo svg,
 .md-nav__title .md-logo svg {
   height: 1.2rem !important;
   width: 1.2rem !important;
+  fill: none !important;
+}
+
+/* zensical hides the header home icon below 76.25em, leaving the drawer as
+   the only way home. Keep it next to the hamburger at every width. */
+@media screen and (max-width: 76.234375em) {
+  .md-header__button.md-logo {
+    display: block;
+    order: 1;
+  }
+  .md-header__inner > label[for="__drawer"] {
+    order: 0;
+  }
+  .md-header__inner > :not(.md-logo):not(label[for="__drawer"]) {
+    order: 2;
+  }
 }
 
 /* Inline navbar links. The override partial replaces .md-header__title with
@@ -96,6 +99,11 @@ form[data-md-component="palette"] {
 .dadr-header-nav__link:focus {
   color: var(--md-accent-fg-color);
   border-bottom-color: var(--md-accent-fg-color);
+}
+/* Current section: keep the underline, in ink rather than accent. */
+.dadr-header-nav__link--active {
+  font-weight: 600;
+  border-bottom-color: currentcolor;
 }
 
 /* Between 60em and 76em zensical already swaps the sidebar for the drawer,
@@ -196,10 +204,6 @@ form[data-md-component="palette"] {
   height: auto;
 }
 
-[data-md-color-scheme="slate"] .md-typeset .hero-logo {
-  filter: invert(1) hue-rotate(180deg);
-}
-
 /* The Markdown parser wraps the bare hero img in a <p>. Target only that
    wrapper (a <p> whose only child is an image) so we don't clobber the
    tagline's margin/centering. */
@@ -216,7 +220,7 @@ form[data-md-component="palette"] {
   margin-right: auto;
   margin-top: 0;
   margin-bottom: 2rem;
-  text-align: center;
+  text-align: left;
   color: var(--dadr-muted);
 }
 
@@ -320,12 +324,19 @@ form[data-md-component="palette"] {
   padding: 0 0.5rem;
 }
 
-.audience-grid .audience-icon {
-  font-size: 2rem;
+.md-typeset .audience-grid .audience-icon {
   line-height: 1;
   margin-bottom: 0.6rem;
-  /* Cross-platform emoji rendering; keeps the glyph crisp on macOS/Win/Linux. */
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+.md-typeset .audience-grid .audience-icon .twemoji {
+  height: 2rem;
+}
+
+.md-typeset .audience-grid .audience-icon .twemoji svg {
+  width: 2rem;
+  max-height: none;
+  stroke-width: 1.5;
 }
 
 .md-typeset .audience-grid .audience p {
@@ -367,14 +378,30 @@ form[data-md-component="palette"] {
   letter-spacing: 0.01em;
 }
 
-[data-md-color-scheme="slate"] .md-typeset .principle {
-  background: rgba(96, 165, 250, 0.08);   /* tinted blue on dark surface */
+/* ============ Product screenshot ============ */
+.md-typeset figure.screenshot {
+  margin: 2.5rem auto;
+  max-width: 100%;
+}
+
+.md-typeset figure.screenshot img {
+  border: 1px solid var(--dadr-rule);
+  border-radius: 6px;
+  box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.25);
+}
+
+.md-typeset figure.screenshot figcaption {
+  margin-top: 0.8rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  color: var(--dadr-muted);
+  max-width: none;
 }
 
 /* ============ Mermaid diagram ============ */
-/* Center the rendered SVG and constrain its width so the diagram reads as a
-   figure rather than a code block. Strip the default code-block chrome that
-   pymdownx.superfences leaves around the <pre class="mermaid"> wrapper. */
+/* Center the diagram so it reads as a figure rather than a code block. Strip
+   the default code-block chrome that pymdownx.superfences leaves around the
+   <pre class="mermaid"> wrapper. */
 .md-typeset .diagram {
   margin: 2.5rem auto;
   text-align: center;
@@ -389,13 +416,6 @@ form[data-md-component="palette"] {
   overflow: visible;
 }
 
-.md-typeset .diagram .mermaid > svg {
-  display: block;
-  margin: 0 auto;
-  max-width: min(46rem, 100%);
-  height: auto;
-}
-
 /* On phones the diagram would shrink until its labels are unreadable. Keep
    it at a legible minimum width and let it scroll sideways instead. */
 @media (max-width: 40em) {
@@ -403,54 +423,17 @@ form[data-md-component="palette"] {
     overflow-x: auto;
     margin: 1.5rem 0;
   }
-  /* Mermaid renders into a shadow root, so size the host element; the SVG
-     inside fills it. */
   .md-typeset .diagram .mermaid {
     min-width: 28rem;
   }
 }
 
-/* Edge labels: muted secondary text, paper-colored background to mask the
-   line where they sit, with a touch of letter-spacing for the lowercase look. */
-.md-typeset .diagram .mermaid .edgeLabel,
-.md-typeset .diagram .mermaid .edgeLabel * {
-  font-family: var(--font-heading) !important;
-  color: var(--dadr-muted) !important;
-  background: var(--dadr-paper) !important;
-  letter-spacing: 0.01em;
+/* Mermaid renders the SVG into a shadow root, so selectors can't reach its
+   nodes or labels. Only inherited custom properties get through: the theme's
+   --md-mermaid-* variables drive label colors and the font. */
+.md-typeset .diagram {
+  --md-mermaid-font-family: var(--font-heading);
 }
-
-.md-typeset .diagram .mermaid .edgePath path {
-  stroke-width: 1px;
-}
-
-/* Node text in the heading font, just a hair heavier than body. */
-.md-typeset .diagram .mermaid .nodeLabel,
-.md-typeset .diagram .mermaid .nodeLabel * {
-  font-family: var(--font-heading) !important;
-  font-weight: 500 !important;
-}
-
-/* Dark-mode tints: nodes pick up the page's slate surface; the accent node
-   inverts to white-on-paper for contrast against dark surroundings. */
-[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .node rect,
-[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .node polygon,
-[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .node path {
-  fill: var(--md-default-bg-color) !important;
-  stroke: #475569 !important;
-}
-
-[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .nodeLabel,
-[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .nodeLabel * {
-  color: #e2e8f0 !important;
-}
-
-[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .edgeLabel,
-[data-md-color-scheme="slate"] .md-typeset .diagram .mermaid .edgeLabel * {
-  background: var(--md-default-bg-color) !important;
-  color: #94a3b8 !important;
-}
-
 
 /* ============ Pull-quote ============ */
 .pull {

@@ -34,16 +34,7 @@ font.text = "Source Serif 4"
 font.code = "JetBrains Mono"
 features = ["content.code.copy", "navigation.footer", "toc.follow"]
 
-[[project.theme.palette]]
+[project.theme.palette]
 scheme = "default"
 primary = "black"
 accent = "red"
-toggle.icon = "lucide/sun"
-toggle.name = "Switch to dark mode"
-
-[[project.theme.palette]]
-scheme = "slate"
-primary = "black"
-accent = "red"
-toggle.icon = "lucide/moon"
-toggle.name = "Switch to light mode"
