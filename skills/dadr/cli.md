@@ -66,7 +66,7 @@ With no command, prints this help menu.
 * `history` — Show a decision's versions as a graph, newest first, with the reason for each change.
 * `diff` — Compare two records: title, tags, and body without `## Supersedes`.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
-* `accept` — Accept a candidate decision.
+* `accept` — Accept a candidate decision, or several together with --with.
 * `reject` — Reject a candidate decision.
 * `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
 * `validate` — Run project validation, or target records, links, tags, or changes.
@@ -248,7 +248,7 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ###### **Subcommands:**
 
-* `accept` — Accept a candidate and move it to the ledger.
+* `accept` — Accept a candidate and move it to the ledger, or several together with --with.
 * `reject` — Reject a candidate and move it to the archive.
 * `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
 
@@ -260,13 +260,17 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ## `dadrock status accept`
 
-Accept a candidate and move it to the ledger.
+Accept a candidate and move it to the ledger, or several together with --with.
 
-**Usage:** `dadrock status accept <QUERY>...`
+**Usage:** `dadrock status accept [OPTIONS] <QUERY>...`
 
 ###### **Arguments:**
 
-* `<QUERY>`
+* `<QUERY>` — The candidate to accept; the words join into one query
+
+###### **Options:**
+
+* `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
 
 
 
@@ -297,13 +301,17 @@ Link accepted successors to the records they supersede and move those records to
 
 ## `dadrock accept`
 
-Accept a candidate decision.
+Accept a candidate decision, or several together with --with.
 
-**Usage:** `dadrock accept <QUERY>...`
+**Usage:** `dadrock accept [OPTIONS] <QUERY>...`
 
 ###### **Arguments:**
 
-* `<QUERY>`
+* `<QUERY>` — The candidate to accept; the words join into one query
+
+###### **Options:**
+
+* `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
 
 
 

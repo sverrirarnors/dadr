@@ -55,8 +55,8 @@ pub enum Command {
     Diff(DiffArgs),
     #[command(about = "Inspect one record's lifecycle status or run lifecycle transitions.")]
     Status(StatusArgs),
-    #[command(about = "Accept a candidate decision.")]
-    Accept(QueryArgs),
+    #[command(about = "Accept a candidate decision, or several together with --with.")]
+    Accept(AcceptArgs),
     #[command(about = "Reject a candidate decision.")]
     Reject(QueryArgs),
     #[command(
@@ -230,8 +230,10 @@ pub struct StatusArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum StatusCommand {
-    #[command(about = "Accept a candidate and move it to the ledger.")]
-    Accept(QueryArgs),
+    #[command(
+        about = "Accept a candidate and move it to the ledger, or several together with --with."
+    )]
+    Accept(AcceptArgs),
     #[command(about = "Reject a candidate and move it to the archive.")]
     Reject(QueryArgs),
     #[command(
@@ -249,6 +251,26 @@ pub struct QueryArgs {
 impl QueryArgs {
     pub fn joined(&self) -> String {
         self.query.join(" ")
+    }
+}
+
+#[derive(Debug, Args)]
+pub struct AcceptArgs {
+    /// The candidate to accept; the words join into one query.
+    #[arg(required = true, num_args = 1..)]
+    pub query: Vec<String>,
+    /// Another candidate to accept in the same operation, such as the other
+    /// half of a split. Repeat for more.
+    #[arg(long = "with", value_name = "QUERY")]
+    pub with: Vec<String>,
+}
+
+impl AcceptArgs {
+    /// Every candidate query: the positional query first, then each --with.
+    pub fn queries(&self) -> Vec<String> {
+        let mut queries = vec![self.query.join(" ")];
+        queries.extend(self.with.iter().cloned());
+        queries
     }
 }
 
@@ -555,7 +577,43 @@ mod tests {
         else {
             panic!("expected status accept command");
         };
-        assert_eq!(args.joined(), "candidate record");
+        assert_eq!(args.queries(), ["candidate record"]);
+    }
+
+    #[test]
+    fn accept_takes_more_candidates_with_repeated_with() {
+        let cli = Cli::try_parse_from([
+            "dadrock",
+            "accept",
+            "Use",
+            "imputation",
+            "--with",
+            "Complete cases for the outcome",
+            "--with",
+            "0193b2a1d117",
+        ])
+        .unwrap();
+        let Some(Command::Accept(args)) = cli.command else {
+            panic!("expected accept command");
+        };
+        assert_eq!(
+            args.queries(),
+            [
+                "Use imputation",
+                "Complete cases for the outcome",
+                "0193b2a1d117"
+            ]
+        );
+
+        let cli = Cli::try_parse_from(["dadrock", "status", "accept", "B", "--with", "C"]).unwrap();
+        let Some(Command::Status(StatusArgs {
+            command: Some(StatusCommand::Accept(args)),
+            ..
+        })) = cli.command
+        else {
+            panic!("expected status accept command");
+        };
+        assert_eq!(args.queries(), ["B", "C"]);
     }
 
     #[test]

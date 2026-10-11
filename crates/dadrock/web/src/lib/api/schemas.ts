@@ -61,8 +61,17 @@ export const diagnosticSchema = z.object({
 });
 export type Diagnostic = z.infer<typeof diagnosticSchema>;
 
+/** A predecessor named in `## Supersedes` that was superseded since. */
+export const staleSupersedesSchema = z.object({
+  predecessor: recordSummarySchema,
+  current_successors: z.array(recordSummarySchema),
+});
+export type StaleSupersedes = z.infer<typeof staleSupersedesSchema>;
+
 export const recordLifecycleSchema = z.object({
-  pending_supersedes: recordSummarySchema.nullish(),
+  /** Every record a candidate's `## Supersedes` section names. */
+  pending_supersedes: z.array(recordSummarySchema).default([]),
+  stale_supersedes: z.array(staleSupersedesSchema).default([]),
   record: recordSummarySchema,
   predecessors: z.array(recordSummarySchema),
   successors: z.array(recordSummarySchema),
@@ -145,7 +154,7 @@ export type TaskInput = z.infer<typeof taskInputSchema>;
 
 export const taskRequirementsSchema = z
   .object({
-    records: z.enum(['none', 'one', 'many']).default('none'),
+    records: z.enum(['none', 'one', 'one_or_more', 'many']).default('none'),
     record_status: z.enum(['all', 'candidate', 'accepted']).default('all'),
     paths: z.enum(['none', 'optional', 'required']).default('none'),
     notes: z.enum(['none', 'optional', 'required']).default('none'),

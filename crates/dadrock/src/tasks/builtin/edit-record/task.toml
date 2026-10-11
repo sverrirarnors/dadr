@@ -1,14 +1,14 @@
 id = "edit-record"
 title = "Edit record"
-description = "Revise any existing DADR while preserving its lifecycle status until you choose what to do next."
-version = 1
+description = "Revise a candidate DADR before it is accepted or rejected."
+version = 2
 
 [input]
 mode = "form"
 
 [[inputs]]
 name = "record_id"
-label = "Record"
+label = "Candidate"
 type = "text"
 required = true
 
@@ -20,7 +20,7 @@ required = true
 
 [requirements]
 records = "one"
-record_status = "all"
+record_status = "candidate"
 paths = "none"
 notes = "required"
 scope = "none"

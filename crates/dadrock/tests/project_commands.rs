@@ -1122,13 +1122,16 @@ fn save_record_source_rejects_status_changes_without_overwriting_file() {
 }
 
 #[test]
-fn save_record_source_rejects_invalid_accepted_record_without_overwriting_file() {
+fn save_record_source_refuses_body_changes_to_accepted_record() {
     let root = temp_project("save-source-accepted-sections");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
     let candidate =
         create_candidate_with_body(&project, "Complete accepted", &[], FILLED_SECTIONS).unwrap();
-    let accepted = accept_candidate(&project_index(&project), &candidate.id.to_string()).unwrap();
+    let accepted = accept_candidate(&project_index(&project), &candidate.id.to_string())
+        .unwrap()
+        .accepted
+        .remove(0);
     let original = fs::read_to_string(&accepted.to).unwrap();
     let context = CommandContext::from_path(&root).unwrap();
     let edited = format!(
@@ -1151,9 +1154,11 @@ fn save_record_source_rejects_invalid_accepted_record_without_overwriting_file()
     )
     .unwrap_err();
 
-    assert!(error
-        .to_string()
-        .contains("missing Decision, Alternatives, Consequences"));
+    assert!(
+        error.to_string().contains("its body cannot change"),
+        "{error}"
+    );
+    assert!(error.to_string().contains("draft a successor"), "{error}");
     assert_eq!(fs::read_to_string(&accepted.to).unwrap(), original);
 
     fs::remove_dir_all(root).unwrap();
@@ -1190,14 +1195,16 @@ fn accept_converts_candidate_into_accepted_decision() {
     )
     .unwrap();
 
-    let accepted = accept_candidate(&project_index(&project), &candidate.id.short_id()).unwrap();
+    let result = accept_candidate(&project_index(&project), &candidate.id.short_id()).unwrap();
+    assert!(result.superseded.is_empty());
+    let [accepted] = result.accepted.as_slice() else {
+        panic!("expected one accepted record: {result:?}");
+    };
     assert_eq!(accepted.id, candidate.id);
-    assert_eq!(accepted.status, RecordStatus::Accepted);
     assert!(!candidate.path.exists());
     assert_eq!(accepted.from, candidate.path);
     assert!(accepted.to.is_file());
     assert_eq!(accepted.to.parent(), Some(project.ledger_dir().as_path()));
-    assert!(accepted.superseded.is_empty());
 
     let accepted_content = fs::read_to_string(&accepted.to).unwrap();
     assert!(accepted_content.contains("status: accepted"));
@@ -1968,9 +1975,12 @@ fn validate_links_reports_wikilink_and_markdown_link_issues() {
 const SUPERSEDES_A: &str = "0193fb1f-a3a0-7000-8000-000000000001";
 const SUPERSEDES_B: &str = "0193fb1f-a3a0-7000-8000-000000000002";
 
-fn accepted_record(project: &ProjectContext, title: &str) -> dadrock::records::AcceptRecordResult {
+fn accepted_record(project: &ProjectContext, title: &str) -> dadrock::records::RecordMove {
     let candidate = create_candidate_with_body(project, title, &[], FILLED_SECTIONS).unwrap();
-    accept_candidate(&project_index(project), &candidate.id.to_string()).unwrap()
+    accept_candidate(&project_index(project), &candidate.id.to_string())
+        .unwrap()
+        .accepted
+        .remove(0)
 }
 
 fn successor_body(predecessors: &[RecordId]) -> String {
@@ -2003,25 +2013,32 @@ fn supersedes_acceptance_links_moves_and_preserves_predecessor_body() {
         create_candidate_with_body(&project, "New choice", &[], &successor_body(&[old.id]))
             .unwrap();
     let index = project_index(&project);
+    let pending = dadrock::records::pending_supersedes(&index, &candidate.id.to_string()).unwrap();
     assert_eq!(
-        dadrock::records::pending_supersedes(&index, &candidate.id.to_string())
-            .unwrap()
-            .unwrap()
-            .id,
-        old.id
+        pending
+            .predecessors
+            .iter()
+            .map(|record| record.id)
+            .collect::<Vec<_>>(),
+        vec![old.id]
     );
+    assert!(pending.stale.is_empty());
 
     let accepted = accept_candidate(&index, &candidate.id.to_string()).unwrap();
     let archived = project.archive_dir().join(old.to.file_name().unwrap());
-    assert_eq!(accepted.to.parent(), Some(project.ledger_dir().as_path()));
+    assert_eq!(
+        accepted.accepted[0].to.parent(),
+        Some(project.ledger_dir().as_path())
+    );
     assert!(!candidate.path.exists());
     assert!(!old.to.exists());
     assert_eq!(
         accepted.superseded,
-        vec![dadrock::records::RecordMove {
+        vec![dadrock::records::SupersededRecordMove {
             id: old.id,
             from: old.to.clone(),
             to: archived.clone(),
+            successors: vec![candidate.id],
         }]
     );
 
@@ -2038,7 +2055,8 @@ fn supersedes_acceptance_links_moves_and_preserves_predecessor_body() {
     assert!(
         dadrock::records::pending_supersedes(&index, &candidate.id.to_string())
             .unwrap()
-            .is_none()
+            .predecessors
+            .is_empty()
     );
     let report = validate_project_index(&index);
     assert!(report.ok, "{:?}", report.issues);
@@ -2072,7 +2090,7 @@ fn accept_record_command_reports_both_moves() {
         envelope.changed_paths,
         vec![
             candidate.path.clone(),
-            envelope.data.to.clone(),
+            envelope.data.accepted[0].to.clone(),
             old.to,
             archived
         ]
@@ -2094,44 +2112,6 @@ fn invalid_supersedes_does_not_accept_or_modify_either_record() {
     assert!(accept_candidate(&project_index(&project), &candidate.id.to_string()).is_err());
     assert_eq!(fs::read_to_string(&old.path).unwrap(), original);
     assert_eq!(fs::read_to_string(&candidate.path).unwrap(), proposed);
-    fs::remove_dir_all(root).unwrap();
-}
-
-#[test]
-fn accept_refuses_supersedes_naming_several_records() {
-    let root = temp_project("supersedes-several");
-    init_project(&root).unwrap();
-    let project = discover_from(&root).unwrap();
-    let first = accepted_record(&project, "First rule");
-    let second = accepted_record(&project, "Second rule");
-    let candidate = create_candidate_with_body(
-        &project,
-        "Merged rule",
-        &[],
-        &successor_body(&[first.id, second.id]),
-    )
-    .unwrap();
-    let before = [
-        fs::read_to_string(&first.to).unwrap(),
-        fs::read_to_string(&second.to).unwrap(),
-        fs::read_to_string(&candidate.path).unwrap(),
-    ];
-
-    let error = accept_candidate(&project_index(&project), &candidate.id.to_string()).unwrap_err();
-    assert!(
-        error
-            .to_string()
-            .contains("superseding several records at once is not supported yet"),
-        "{error}"
-    );
-    let after = [
-        fs::read_to_string(&first.to).unwrap(),
-        fs::read_to_string(&second.to).unwrap(),
-        fs::read_to_string(&candidate.path).unwrap(),
-    ];
-    assert_eq!(before, after);
-    assert!(md_files(&archive_dir(&root)).is_empty());
-
     fs::remove_dir_all(root).unwrap();
 }
 
@@ -2255,7 +2235,7 @@ fn body_without_supersedes_removes_only_the_section() {
 fn with_supersedes_section_puts_the_section_first() {
     use dadrock::records::{body_without_supersedes, supersedes_section, with_supersedes_section};
     let id = RecordId::parse(SUPERSEDES_A).unwrap();
-    let body = with_supersedes_section("\n## Context\nWhy.\n", id, "Odd [[title]]");
+    let body = with_supersedes_section("\n## Context\nWhy.\n", &[(id, "Odd [[title]]")], None);
     assert_eq!(
         body,
         format!("## Supersedes\n\n[[{SUPERSEDES_A}|Odd [title]]]\n\n## Context\nWhy.\n")

@@ -78,7 +78,7 @@ describe('resolveDraftIntent', () => {
       intent: {
         taskId: 'supersede-record',
         label: 'Draft a successor for “Use Polars”',
-        request: { input: { record_id: 'acc-1', reason: 'Moved to DuckDB' } },
+        request: { input: { record_ids: 'acc-1', requested_changes: 'Moved to DuckDB' } },
       },
     });
   });

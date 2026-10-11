@@ -97,7 +97,9 @@ For a disposable example instead of your own analysis, run `dadrock demo --examp
 
 ## Changing a decision
 
-An accepted decision is not rewritten. When an accepted choice changes, draft a successor: a new candidate that supersedes the old record, its predecessor. Use **Supersede** on the record in the web interface, or write the candidate yourself. The successor names its predecessor in a `## Supersedes` section:
+An accepted decision is never rewritten, not even to fix a typo. Its `id`, `status`, `title`, body, and `successors` are frozen, and so are those of a rejected record; only tags and front-matter keys outside DADR can change. Dadrock refuses any other change to an accepted or rejected record, from the web editor or an agent revision, and suggests drafting a successor instead. Bodies are compared with normalized line endings. The `edit-record` agent task revises candidates only.
+
+To change a decision, however slightly, draft a successor: a new candidate that supersedes the old record, its predecessor. Use **Supersede** on the record in the web interface, run the `supersede-record` task, or write the candidate yourself. The successor names its predecessors in a `## Supersedes` section, followed by the reason for the change:
 
 ```markdown
 ## Supersedes
@@ -107,11 +109,33 @@ An accepted decision is not rewritten. When an accepted choice changes, draft a 
 Winsorizing at p99 still left implausible incomes in two waves.
 ```
 
-The section starts with a record link to the predecessor by its full UUID, `[[uuid]]` or `[[uuid|label]]`. Any text after the link is the reason for the change, in ordinary Markdown. A record has at most one `## Supersedes` section. When Dadrock writes the section, it is the first section of the body, and the link is labeled with the predecessor's title. For now, a successor supersedes exactly one predecessor.
+The section starts with one or more lines, each exactly one record link by full UUID, `[[uuid]]` or `[[uuid|label]]`. The text after the links is the reason, in ordinary Markdown. A record has at most one `## Supersedes` section, and a section without a link is an error. When Dadrock writes the section, from the web interface, a `supersede-record` result, or MCP, it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links. The section stays in the successor's body after acceptance as the record of why the decision changed. It is a Dadrock convention, not an additional required section of the DADR format.
 
-On acceptance, Dadrock checks that the predecessor is accepted and not already superseded, adds the successor's `id` to the predecessor's `successors`, and moves the predecessor to `dadr/archive/` with its body unchanged. The section stays in the successor's body as the record of why the decision changed. It is a Dadrock convention, not an additional required section of the DADR format.
+The `supersede-record` task takes one or more accepted records and the change you want. The agent starts from the predecessor's exact text and changes only what the request requires, so the successor reads as a small diff; for several predecessors it combines them into one decision. It returns the reason separately, and Dadrock writes it into `## Supersedes` when you save the proposal as a candidate.
 
-For two records that are already accepted, `dadrock supersede --from OLD --to NEW` links them explicitly and moves `OLD` to `dadr/archive/`. Records linked this way have no `## Supersedes` section.
+### Accepting successors
+
+Accepting a successor adds its `id` to each predecessor's `successors` and moves each predecessor to `dadr/archive/` with its body unchanged.
+
+- **One-to-one:** the successor names one predecessor.
+- **Merge:** one successor names several predecessors, and each gains the successor's `id`.
+- **Split:** several successors name the same predecessor. Accept them together so that the predecessor gains all of their ids at once.
+
+```sh
+dadrock accept "Impute income" --with "Complete cases for the outcome"
+```
+
+`--with` repeats, and the positional words still join into one query. In general, accepting a set of candidates adds, for each predecessor named in the set, every candidate in the set that names it. Candidates without `## Supersedes` are simply accepted.
+
+Dadrock checks the whole set before writing anything: every candidate must meet the acceptance requirements, and every named predecessor must exist, be accepted, not already be superseded, and not be in the set. A predecessor that is already superseded is refused with the names of its current successors. If a write fails partway, every record is restored.
+
+### Stale successors
+
+Two candidates that name the same predecessor may be the halves of a split or competing alternatives; you decide by what you accept together. Once one of them is accepted alone, the other is stale: its predecessor was superseded after it was drafted, like a branch whose base has moved. `dadrock validate` warns about a stale candidate (`stale_supersedes`) and names the decisions now in force, and acceptance refuses it. Point its `## Supersedes` link at the current decision, or reject it. Dadrock never retargets a link on its own.
+
+Validation also warns when an accepted record's `## Supersedes` section names a predecessor that does not list it in `successors` (`unlinked_supersedes`), for example after a record was accepted by hand.
+
+For two records that are already accepted, `dadrock supersede --from OLD --to NEW` links them explicitly and moves `OLD` to `dadr/archive/`. Records linked this way have no `## Supersedes` section, so no reason is recorded.
 
 ## History
 
@@ -169,6 +193,7 @@ Current validation checks:
 - YAML fields, UUIDv7 IDs, four sections each appearing exactly once with text, and status/location consistency;
 - duplicate full IDs and short IDs, and filename collisions;
 - missing or invalid successors and cycles in supersession relationships;
+- stale successor candidates, and accepted records whose `## Supersedes` predecessors do not list them in `successors`;
 - broken or ambiguous record wikilinks and missing local Markdown-link targets;
 - malformed tags and unreadable candidate templates.
 
@@ -339,7 +364,7 @@ With no command, prints this help menu.
 * `history` — Show a decision's versions as a graph, newest first, with the reason for each change.
 * `diff` — Compare two records: title, tags, and body without `## Supersedes`.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
-* `accept` — Accept a candidate decision.
+* `accept` — Accept a candidate decision, or several together with --with.
 * `reject` — Reject a candidate decision.
 * `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
 * `validate` — Run project validation, or target records, links, tags, or changes.
@@ -495,7 +520,7 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ###### **Subcommands:**
 
-* `accept` — Accept a candidate and move it to the ledger.
+* `accept` — Accept a candidate and move it to the ledger, or several together with --with.
 * `reject` — Reject a candidate and move it to the archive.
 * `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
 
@@ -505,13 +530,17 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ### `dadrock status accept`
 
-Accept a candidate and move it to the ledger.
+Accept a candidate and move it to the ledger, or several together with --with.
 
-**Usage:** `dadrock status accept <QUERY>...`
+**Usage:** `dadrock status accept [OPTIONS] <QUERY>...`
 
 ###### **Arguments:**
 
-* `<QUERY>`
+* `<QUERY>` — The candidate to accept; the words join into one query
+
+###### **Options:**
+
+* `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
 
 ### `dadrock status reject`
 
@@ -536,13 +565,17 @@ Link accepted successors to the records they supersede and move those records to
 
 ### `dadrock accept`
 
-Accept a candidate decision.
+Accept a candidate decision, or several together with --with.
 
-**Usage:** `dadrock accept <QUERY>...`
+**Usage:** `dadrock accept [OPTIONS] <QUERY>...`
 
 ###### **Arguments:**
 
-* `<QUERY>`
+* `<QUERY>` — The candidate to accept; the words join into one query
+
+###### **Options:**
+
+* `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
 
 ### `dadrock reject`
 

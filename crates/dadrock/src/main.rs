@@ -306,9 +306,8 @@ fn status_reject(args: cli::QueryArgs) -> Result<ExitCode> {
     print_json_envelope(&envelope)
 }
 
-fn status_accept(args: cli::QueryArgs) -> Result<ExitCode> {
-    let query = args.joined();
-    let envelope = core_commands::accept_record(&command_context()?, &query)?;
+fn status_accept(args: cli::AcceptArgs) -> Result<ExitCode> {
+    let envelope = core_commands::accept_records(&command_context()?, &args.queries())?;
     print_json_envelope(&envelope)
 }
 

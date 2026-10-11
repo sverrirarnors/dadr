@@ -24,6 +24,16 @@ use crate::{
     text::ascii_slug,
 };
 
+mod frozen;
+mod supersession;
+
+pub use frozen::check_frozen_rewrite;
+pub(crate) use supersession::record_list;
+pub use supersession::{
+    accept_candidate, accept_candidates, current_successors, pending_supersedes,
+    successor_candidate_body, PendingSupersedes, StaleSupersedes,
+};
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScannedRecord {
     pub path: Utf8PathBuf,
@@ -137,15 +147,26 @@ pub struct RecordMove {
     pub to: Utf8PathBuf,
 }
 
+/// The result of accepting a set of candidates in one operation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AcceptRecordResult {
+    /// Each accepted candidate's move from the inbox to the ledger, in the
+    /// order the candidates were given.
+    pub accepted: Vec<RecordMove>,
+    /// Each predecessor named in a `## Supersedes` section of the set, moved
+    /// to the archive.
+    #[serde(default)]
+    pub superseded: Vec<SupersededRecordMove>,
+}
+
+/// A predecessor superseded by accepting its successors.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SupersededRecordMove {
     pub id: RecordId,
     pub from: Utf8PathBuf,
     pub to: Utf8PathBuf,
-    pub status: RecordStatus,
-    /// The predecessor named in `## Supersedes`, moved to the archive.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub superseded: Vec<RecordMove>,
+    /// The accepted records added to its `successors`.
+    pub successors: Vec<RecordId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -402,50 +423,6 @@ pub struct Supersedes {
 
 const SUPERSEDES_HEADING: &str = "## Supersedes";
 
-/// The record a candidate's `## Supersedes` section names, if any.
-///
-/// The section is ordinary Markdown, so the intent survives restarts and other
-/// clients. Only a standalone `## Supersedes` section is a lifecycle request;
-/// other references to records have no effect.
-pub fn pending_supersedes(
-    index: &ProjectIndex,
-    query: &str,
-) -> Result<Option<ScannedRecordSummary>, DadrError> {
-    let found = index.resolve_one(query)?;
-    if found.record.status != RecordStatus::Candidate {
-        return Ok(None);
-    }
-    let record = require_record_status(
-        index,
-        &found.record,
-        RecordStatus::Candidate,
-        "accepted",
-        "a `## Supersedes` section requires a candidate",
-    )?;
-    let Some(supersedes) = supersedes_section(&record.body.raw_markdown)? else {
-        return Ok(None);
-    };
-    let [id] = supersedes.ids.as_slice() else {
-        return Err(DadrError::InvalidLifecycleTransition(
-            "superseding several records at once is not supported yet; name one record in `## Supersedes`",
-        ));
-    };
-    let predecessor = index.resolve_one(&id.to_string())?.record;
-    if predecessor.id == found.record.id {
-        return Err(DadrError::InvalidLifecycleTransition(
-            "a record cannot supersede itself",
-        ));
-    }
-    supersedable_record(index, &predecessor)?;
-    if predecessor.superseded {
-        return Err(DadrError::InvalidLifecycleTransition(format!(
-            "`{}` is already superseded; name its current successor in `## Supersedes`",
-            predecessor.title
-        )));
-    }
-    Ok(Some(predecessor))
-}
-
 /// Parse the optional `## Supersedes` section of a record body.
 ///
 /// The section starts with one or more lines that are each exactly one record
@@ -529,16 +506,30 @@ pub fn body_without_supersedes(body: &str) -> String {
     output
 }
 
-/// Prefix a body with a `## Supersedes` section linking one predecessor,
-/// labelled with its title.
-pub fn with_supersedes_section(body: &str, predecessor: RecordId, title: &str) -> String {
-    // A label cannot contain the link delimiters.
-    let label = title.replace("[[", "[").replace("]]", "]");
-    format!(
-        "{SUPERSEDES_HEADING}\n\n[[{predecessor}|{}]]\n\n{}",
-        label.trim(),
-        body.trim_start()
-    )
+/// Prefix a body with a `## Supersedes` section: one link per predecessor,
+/// labelled with its title, then the reason, if any.
+pub fn with_supersedes_section(
+    body: &str,
+    predecessors: &[(RecordId, &str)],
+    reason: Option<&str>,
+) -> String {
+    let mut section = format!("{SUPERSEDES_HEADING}\n\n");
+    for (id, title) in predecessors {
+        // A label is one line and cannot contain the link delimiters.
+        let label = title
+            .replace(['\r', '\n'], " ")
+            .replace("[[", "[")
+            .replace("]]", "]");
+        section.push_str(&format!("[[{id}|{}]]\n", label.trim()));
+    }
+    if let Some(reason) = reason.map(str::trim).filter(|reason| !reason.is_empty()) {
+        section.push('\n');
+        section.push_str(reason);
+        section.push('\n');
+    }
+    section.push('\n');
+    section.push_str(body.trim_start());
+    section
 }
 
 /// How a body line reads for the `## Supersedes` grammar.
@@ -644,65 +635,6 @@ fn supersedes_link_id(link: &str) -> Result<RecordId, DadrError> {
         DadrError::InvalidInput(format!(
             "`## Supersedes` link `[[{link}]]` must name a record by its full id, such as [[<uuid>|<title>]]"
         ))
-    })
-}
-
-pub fn accept_candidate(
-    index: &ProjectIndex,
-    query: &str,
-) -> Result<AcceptRecordResult, DadrError> {
-    let project = index.project();
-    let found = index.resolve_one(query)?;
-    let record = require_record_status(
-        index,
-        &found.record,
-        RecordStatus::Candidate,
-        "accepted",
-        "accept requires status `candidate`",
-    )?;
-
-    let sections = check_required_sections(&record.body.raw_markdown);
-    if !sections.is_complete() {
-        return Err(DadrError::InvalidLifecycleTransition(format!(
-            "accept requires each standard section exactly once and with text: {}",
-            sections.problems().join("; ")
-        )));
-    }
-
-    let predecessor = pending_supersedes(index, query)?;
-    let accepted_path = project
-        .ledger_dir()
-        .join(record_filename(found.record.id, &record.front_matter.title));
-    let mut writes = vec![RecordWrite::read(
-        &found.record.path,
-        accepted_path.clone(),
-        rewrite_for_converted_decision,
-    )?];
-    // The predecessor gains the successor and leaves the ledger in the same
-    // operation, so either both records change or neither does.
-    if let Some(old) = &predecessor {
-        let archived_path = project.archive_dir().join(record_file_name(&old.path)?);
-        writes.push(RecordWrite::read(&old.path, archived_path, |content| {
-            rewrite_for_superseded_record(content, &[found.record.id])
-        })?);
-    }
-    apply_record_writes(&writes)?;
-
-    let superseded = predecessor
-        .iter()
-        .zip(&writes[1..])
-        .map(|(old, write)| RecordMove {
-            id: old.id,
-            from: write.from.clone(),
-            to: write.to.clone(),
-        })
-        .collect();
-    Ok(AcceptRecordResult {
-        id: found.record.id,
-        from: found.record.path,
-        to: accepted_path,
-        status: RecordStatus::Accepted,
-        superseded,
     })
 }
 

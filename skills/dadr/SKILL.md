@@ -74,7 +74,7 @@ The decision-handling workflows require:
 
 - **Acceptance is a human approval boundary** — never auto-accept candidates.
 - **UUIDv7 only.** Always go through Dadrock's candidate-writing surface (`dadrock.create_candidate` in MCP or `dadrock new` in the CLI); never hand-write the `id` field.
-- **Never overwrite or edit accepted records** without explicit user permission. New choices that contradict an accepted record are drafted as successor candidates with a `## Supersedes` section (or linked later with `dadrock supersede`).
+- **Never edit accepted or rejected records.** Their `id`, `status`, `title`, body, and `successors` are frozen, and Dadrock refuses such edits; only tags and keys outside DADR can change. Any change to an accepted decision, however small, is drafted as a successor candidate with a `## Supersedes` section (or linked later with `dadrock supersede`).
 - **One file per decision.** A single piece of code may embed two distinct choices; draft (or implement) them as two records.
 
 ## Reflect and improve

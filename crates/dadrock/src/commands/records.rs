@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, fs};
 
 use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
@@ -8,13 +8,14 @@ use crate::{
     file_store,
     links::{check_project_links, LinkCheckReport},
     records::{
-        accept_candidate, check_required_sections, create_candidate, create_candidate_with_body,
-        parse_record_str, reject_candidate, scan_input, status_record, supersede_record,
-        supersede_records as supersede_records_impl, AcceptRecordResult, NewRecordResult,
-        RecordMove, RecordStatusResult, RejectRecordResult, ScannedRecordSummary,
+        accept_candidates, check_frozen_rewrite, create_candidate, create_candidate_with_body,
+        parse_record_str, reject_candidate, scan_input, status_record, successor_candidate_body,
+        supersede_record, supersede_records as supersede_records_impl, AcceptRecordResult,
+        NewRecordResult, RecordMove, RecordStatusResult, RejectRecordResult, ScannedRecordSummary,
         SupersedeRecordResult, SupersedeRecordsResult,
     },
     tags::{build_tag_report, record_ids_for_tag, TagReport},
+    templates::candidate_template_body,
     validation::{validate_project_index, ProjectValidationReport},
     RecordId, RecordStatus,
 };
@@ -156,6 +157,14 @@ pub fn save_record_source(
             "record markdown is invalid: missing record front matter".to_owned(),
         ));
     };
+    // Accepted and rejected records keep their id, status, title, body, and
+    // successors; only tags and keys outside DADR can change.
+    let current = parse_record_str(&fs::read_to_string(found.record.path.as_std_path())?)
+        .record
+        .ok_or_else(|| {
+            DadrError::ProjectInvariant(format!("failed to parse `{}`", found.record.path))
+        })?;
+    check_frozen_rewrite(&current, &record)?;
     if record.front_matter.id != found.record.id {
         return Err(DadrError::InvalidInput(
             "record id cannot be changed in the web editor".to_owned(),
@@ -165,15 +174,6 @@ pub fn save_record_source(
         return Err(DadrError::InvalidInput(
             "record status cannot be changed in the web editor".to_owned(),
         ));
-    }
-    if record.front_matter.status == RecordStatus::Accepted {
-        let sections = check_required_sections(&record.body.raw_markdown);
-        if !sections.is_complete() {
-            return Err(DadrError::InvalidInput(format!(
-                "accepted record needs each standard section exactly once and with text: {}",
-                sections.problems().join("; ")
-            )));
-        }
     }
 
     file_store::write_replace(&found.record.path, &request.content)?;
@@ -199,9 +199,21 @@ pub fn accept_record(
     context: &CommandContext,
     query: &str,
 ) -> Result<CommandEnvelope<AcceptRecordResult>, DadrError> {
+    accept_records(context, &[query.to_owned()])
+}
+
+/// Accept a set of candidates in one operation: a single candidate, a merge,
+/// or the halves of a split. See [`crate::records::accept_candidates`].
+pub fn accept_records(
+    context: &CommandContext,
+    queries: &[String],
+) -> Result<CommandEnvelope<AcceptRecordResult>, DadrError> {
     let (_, index) = context.initialized_index()?;
-    let result = accept_candidate(&index, query)?;
-    let mut changed_paths = moved_paths(&result.from, &result.to);
+    let result = accept_candidates(&index, queries)?;
+    let mut changed_paths = Vec::new();
+    for moved in &result.accepted {
+        changed_paths.extend(moved_paths(&moved.from, &moved.to));
+    }
     for moved in &result.superseded {
         changed_paths.extend(moved_paths(&moved.from, &moved.to));
     }
@@ -361,6 +373,45 @@ pub fn new_record_with_body(
 ) -> Result<CommandEnvelope<NewRecordResult>, DadrError> {
     let project = context.discover_project()?;
     let result = create_candidate_with_body(&project, title, tags, body_markdown)?;
+    let changed_paths = vec![result.path.clone()];
+    Ok(CommandEnvelope::new("new", result).with_changed_paths(changed_paths))
+}
+
+/// A new candidate that supersedes one or more current decisions.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewSuccessorRequest {
+    pub title: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    /// The body without `## Supersedes`; the candidate template when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body_markdown: Option<String>,
+    /// Queries for the records the candidate supersedes.
+    pub supersedes: Vec<String>,
+    /// Why the decision changed, written after the links in `## Supersedes`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+/// Create a successor candidate. Dadrock writes its `## Supersedes` section
+/// first in the body: one link per predecessor, labelled with its title, then
+/// the reason. Accepting the candidate supersedes the predecessors.
+pub fn new_successor_record(
+    context: &CommandContext,
+    request: NewSuccessorRequest,
+) -> Result<CommandEnvelope<NewRecordResult>, DadrError> {
+    let (project, index) = context.initialized_index()?;
+    let body = match request.body_markdown {
+        Some(body) => body,
+        None => candidate_template_body(&project)?.body,
+    };
+    let body = successor_candidate_body(
+        &index,
+        &request.supersedes,
+        request.reason.as_deref(),
+        &body,
+    )?;
+    let result = create_candidate_with_body(&project, &request.title, &request.tags, &body)?;
     let changed_paths = vec![result.path.clone()];
     Ok(CommandEnvelope::new("new", result).with_changed_paths(changed_paths))
 }
