@@ -3,7 +3,8 @@
 
 use std::{
     fs,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Read},
+    net::TcpStream,
     path::{Path, PathBuf},
     process::{Command, Output, Stdio},
 };
@@ -232,5 +233,41 @@ fn stdout_closed_before_any_output_ends_commands_quietly() {
         assert_quiet(args, &output, exit_code);
     }
 
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn preview_keeps_serving_when_stdout_is_closed() {
+    let root = temp_project("preview");
+    let (reader, writer) = std::io::pipe().unwrap();
+    drop(reader);
+    let mut child = dadrock(&root)
+        .args(["preview", "--port", "0"])
+        .env_remove("DADROCK_PREVIEW_EXIT_ON_STDIN_EOF")
+        .stdin(Stdio::null())
+        .stdout(writer)
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let mut stderr = BufReader::new(child.stderr.take().unwrap());
+    let mut line = String::new();
+    stderr.read_line(&mut line).unwrap();
+    let Some(address) = line
+        .trim_end()
+        .strip_prefix("dadrock-preview: listening on http://")
+    else {
+        child.kill().ok();
+        let mut rest = String::new();
+        stderr.read_to_string(&mut rest).ok();
+        panic!("dadrock preview did not start:\n{line}{rest}");
+    };
+    let connected = TcpStream::connect(address);
+    let running = child.try_wait().unwrap().is_none();
+    child.kill().unwrap();
+    child.wait().unwrap();
+
+    connected.unwrap();
+    assert!(running, "dadrock preview exited");
     fs::remove_dir_all(root).unwrap();
 }

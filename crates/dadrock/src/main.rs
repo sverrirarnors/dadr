@@ -23,14 +23,13 @@ use dadrock::{
 };
 use serde::Serialize;
 
-mod cli;
-mod web;
+// Defined before the modules so `web` can use them too.
 
 /// Like `print!`, but returns an error instead of panicking when stdout
 /// fails; see [`StdoutClosed`].
 macro_rules! out {
     ($($arg:tt)*) => {
-        write_stdout(format_args!($($arg)*))
+        $crate::write_stdout(format_args!($($arg)*))
     };
 }
 
@@ -38,12 +37,15 @@ macro_rules! out {
 /// fails; see [`StdoutClosed`].
 macro_rules! outln {
     () => {
-        write_stdout(format_args!("\n"))
+        $crate::write_stdout(format_args!("\n"))
     };
     ($($arg:tt)*) => {
-        write_stdout(format_args!("{}\n", format_args!($($arg)*)))
+        $crate::write_stdout(format_args!("{}\n", format_args!($($arg)*)))
     };
 }
+
+mod cli;
+mod web;
 
 fn main() -> ExitCode {
     match run() {
@@ -95,14 +97,20 @@ fn stdout_error(err: io::Error) -> anyhow::Error {
     }
 }
 
+/// `printed`, except that a closed stdout is not an error.
+fn tolerate_stdout_closed(printed: Result<()>) -> Result<()> {
+    match printed {
+        Err(err) if err.is::<StdoutClosed>() => Ok(()),
+        printed => printed,
+    }
+}
+
 /// `code`, once the command's output is printed and flushed. A closed stdout
 /// does not change it: `dadrock validate | head -2` still fails when
 /// validation does.
 fn finish_output(printed: Result<()>, code: ExitCode) -> Result<ExitCode> {
-    match printed.and_then(|()| io::stdout().flush().map_err(stdout_error)) {
-        Err(err) if !err.is::<StdoutClosed>() => Err(err),
-        _ => Ok(code),
-    }
+    tolerate_stdout_closed(printed.and_then(|()| io::stdout().flush().map_err(stdout_error)))?;
+    Ok(code)
 }
 
 fn dispatch_command(command: cli::Command) -> Result<ExitCode> {
