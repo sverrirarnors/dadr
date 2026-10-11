@@ -22,96 +22,47 @@ tools:
     mode: read
 ---
 
-# Context -> record
+# Context to record
 
-Capture a single consequential analytic choice as a DADR candidate, drawing on the context the user has supplied directly (a plan paragraph, code excerpt, manuscript passage, meeting summary, or freeform description). Unlike [code-to-record.md](code-to-record.md), this skill does not crawl the project — the user has already pointed at what matters.
+Draft one candidate DADR from context the user supplies: a plan paragraph, a code excerpt, a manuscript passage, a meeting summary, or a plain description of the choice. Unlike [code-to-record](code-to-record.md), this task does not survey the project; the user has already pointed at what matters.
 
-Trigger phrases:
+## Inputs
 
-- "draft a DADR for this"
-- "capture this decision"
-- "make a candidate from this plan paragraph"
-- "log this choice as a candidate"
+- `context`: the description of the decision to capture.
+- Optionally, files or folders the context refers to.
 
-## Preconditions
+Interactively, these come from the user's request and any files they point at.
 
-Shared preconditions in [../SKILL.md](../SKILL.md) apply. In addition:
+## Check that it is a decision
 
-- `dadrock dir` must succeed. If the project is not initialized, run `dadrock init` after confirming with the user.
-- You need enough context to fill all four canonical sections. If the supplied context covers only `Decision` (the what), ask for at least one anchor for `Context` (where in the code, plan, or paper this lives) before drafting.
+A DADR records one **consequential analytic choice**. Before drafting, check that the context describes one:
 
-## What to capture
+- **Could it have gone another way?** A tooling default or a formatting preference is not a decision.
+- **Does it affect a reported result?** If nothing downstream depends on it, say so.
+- **Is it independently reviewable?** A reviewer should be able to accept or reject this one choice without deciding adjacent ones.
 
-A DADR records one **consequential analytic choice**. Before drafting, sanity-check that the user's request actually describes a decision:
+If the context is too thin to support a real decision, say so in the warnings rather than filling gaps with invented facts. If it bundles two independent choices (for example, "drop missing treatment and impute baseline covariates"), draft the principal one and say in the warnings that the other needs its own candidate.
 
-- **Could it have gone another way?** A tooling default or formatting choice is not a decision.
-- **Does it affect a reported result?** If nothing downstream depends on it, decline politely and explain.
-- **Is it independently reviewable?** A reviewer should be able to accept or reject this one choice without forcing decisions on adjacent choices.
+## Drafting
 
-If the request bundles two choices (e.g., "drop missing treatment AND impute baseline covariates"), draft them as two separate candidates and tell the user why you split.
+Write the candidate to the [record reference](../record.md): a noun-phrase title and the four sections. In addition:
 
-## Workflow
-
-### Step 1 — Confirm the choice and anchor
-
-Restate the choice in one sentence and identify the anchor — the file:line, plan section, or paper passage that grounds it. If the anchor is ambiguous, ask before drafting; a candidate without a source link is incomplete.
-
-### Step 2 — Draft the four sections
-
-See [../record.md](../record.md) for the full anatomy. Briefly:
-
-- **Context** (2–4 sentences) — what motivates the choice. Always include a markdown link to the source surface.
-- **Decision** (1–3 sentences) — what is done, active voice ("Drop the 47 respondents…"), present tense.
-- **Alternatives** (1–3 items) — defensible options not chosen, with a one-line reason each. Write "Not applicable" if no real alternative exists. **Do not fabricate.**
-- **Consequences** (2–4 sentences) — downstream effects, quantified when possible.
-
-The total body should land in the 200–400 word window. Below ~100 means a section is too thin; above ~600 usually means two decisions bundled.
-
-### Step 3 — Scaffold via `dadrock new`
-
-Never hand-write the record file — `dadrock new` allocates the UUIDv7 and canonical filename:
-
-```bash
-dadrock new "Drop observations with missing treatment assignment" \
-  --tag kind/sample \
-  --tag writer/agent \
-  --quiet
-```
-
-- Title is a noun phrase, not a question.
-- Pass tags via repeated `--tag` (no `#` prefix on the CLI).
-- Capture the printed path; you will edit the file's four sections next.
-
-### Step 4 — Fill the sections via Edit
-
-Replace the empty `## Context`, `## Decision`, `## Alternatives`, `## Consequences` with substantive prose grounded in the supplied context. Preserve the front-matter as `dadrock new` generated it.
-
-### Step 5 — Tag and validate
-
-Every candidate carries `kind/<surface>` and `writer/agent` at minimum. See
-[../tags.md](../tags.md) for optional namespaces (`confidence/`, `topic/`,
-`plan/`).
-
-```bash
-dadrock validate
-```
-
-Fix any reported issues. Then surface the new path to the user and remind them the next step is review (`dadrock status accept <id>` or `dadrock status reject <id>`).
+- **Anchor it.** Context cites a specific source: a file with a line range, a plan section, or a document anchor. Look for it in the supplied context and the files it refers to. Do not invent paths or line numbers; if no anchor can be found, say so in the warnings.
+- **Stay within the evidence.** When the context says what was done but not why, write the exact phrase "Rationale not documented" in Context, repeat it in the warnings, and ask the reviewer to supply the reason. Never infer motivation from code alone.
+- **Real alternatives only.** Use alternatives the context or its sources name. If none is identifiable, write "Not applicable" rather than inventing one.
+- **Tags.** Give the candidate `writer/agent` and one `kind/` tag from the project's vocabulary or the [tag reference](../tags.md). Add `topic/`, `plan/`, or `confidence/` tags when they apply. Suggest `people/decider/` or `people/approver/` tags only when the context names those people.
 
 ## Constraints
 
-- **One choice per candidate.** If the supplied context describes two decisions, draft two candidates and explain the split.
-- **No fabricated alternatives.** "Not applicable" is a valid answer.
-- **No source links you cannot verify.** Every Context link should resolve to a real file, plan section, or paper anchor.
-- **Acceptance is a human boundary.** Never auto-accept; report the path and the review command.
+- Draft exactly one candidate, and do not change existing records.
+- Never accept the candidate. Acceptance is the analyst's decision.
 
-## Example
+## Result
 
-User: "log this — we decided to winsorize income at the 1st and 99th percentiles before fitting the wage model. The reasoning is in `docs/sap.md` §4.1, implemented in `analysis/clean.R:88-104`."
+One candidate:
 
-1. Confirm: one decision, anchored at `analysis/clean.R:88-104` and `docs/sap.md§4.1`.
-2. Draft Context, Decision, Alternatives (e.g., "trim instead of winsorize", "no transformation"), Consequences.
-3. `dadrock new "Winsorize income at 1st and 99th percentiles" --tag kind/transformation --tag writer/agent --quiet`.
-4. Edit the four sections of the generated file.
-5. `dadrock validate` → clean.
-6. Report path + `dadrock status accept <id>`.
+- **Title**: a noun phrase describing the choice, not a question.
+- **Tags**, including `writer/agent` and a `kind/` tag.
+- **Body** with Context, Decision, Alternatives, and Consequences.
+- **Source references**: the files, line ranges, plan sections, or document anchors behind each claim.
+- **Warnings**: thin evidence, missing rationale, a missing anchor, ambiguity, or a second choice that needs its own candidate.
