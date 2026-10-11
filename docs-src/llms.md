@@ -48,7 +48,7 @@ dadrock agent check
 dadrock agent skills
 ```
 
-Built-in tasks include their own instructions; no separately installed skill is required. `agent skills` lists optional local instructions.
+Every task carries its own instructions; no separately installed skill is required. `agent skills` lists optional local instructions.
 
 DADRock attaches its own [MCP server](#mcp) to its agent sessions by default. `--no-mcp` disables that attachment for providers where it is unsuitable.
 
@@ -74,7 +74,9 @@ dadrock task runs
 dadrock task result RUN_ID
 ```
 
-Built-in workflows include drafting, editing candidates, proposing replacements, merging drafts, finding conflicts, and synthesizing accepted decisions. Project overrides live in `dadr/tasks/<task-id>/`, with a `task.toml` manifest and a prompt file. Inspect an existing task before customizing it. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
+Built-in workflows include drafting, editing candidates, proposing replacements, merging drafts, finding conflicts, and synthesizing accepted decisions into a spec. The built-in tasks are the task guides of the `dadr` skill, the files in `skills/dadr/tasks/` of this repository. Each is one Markdown file: its YAML front matter is the task manifest (id, inputs, requirements, output kind, and `mcp_access`, which is `full` or `read_only`) and its body is the prompt. `dadrock task show <task-id>` prints a task's prompt, and `--json` adds its manifest.
+
+To customize a task, copy its guide to `dadr/tasks/<task-id>.md` and adapt it. A project task replaces a user task in `~/.dadrock/tasks/<task-id>.md` (or `$DADROCK_TASKS_DIR`), which replaces the built-in task with the same id. The file name must match the `id` in the front matter; `dadrock task list` reports files that do not load, including task directories in the old `task.toml` layout. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
 
 Runs are persisted under `dadr/runs/`, which is ignored by default and may contain source excerpts or model transcripts. Output kinds determine how results are rendered. Protocol and run metadata stay outside record front matter.
 

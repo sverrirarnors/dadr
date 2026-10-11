@@ -1,114 +1,89 @@
-# Decisions -> spec
+---
+id: decisions-to-spec
+title: "Decisions to spec"
+description: "Synthesize accepted DADRs into an implementation, analysis, or reporting spec for downstream work."
+version: 1
+inputs:
+  - name: focus
+    label: "Spec focus"
+    type: textarea
+    required: false
+requirements:
+  records: none
+  record_status: accepted
+  paths: none
+  notes: optional
+  scope: accepted
+output:
+  kind: markdown_report.v1
+mcp_access: read_only
+tools:
+  - name: dadrock.list_records
+    mode: read
+---
 
-Read the accepted DADRs in a project's `dadr/` directory and synthesize a written implementation or analysis specification from them. The decisions remain the source of truth, and the spec summarizes what downstream code, analysis, or writing should follow.
+# Decisions to spec
 
-## Preconditions
+Synthesize the project's accepted decisions into a written specification (an analysis plan, an implementation plan, a methods or reporting spec) for downstream code, analysis, or writing to follow. The decisions remain the source of truth; the spec is derived documentation.
 
-The shared preconditions in [../SKILL.md](../SKILL.md) apply. In addition:
+## Inputs
 
-1. `dadr/` must contain at least one accepted record:
-   ```bash
-   dadrock list --status accepted --json
-   ```
-   If empty, stop and ask the user what decision set or draft material should drive the spec.
+- `focus`: optional; the kind of spec wanted and any subset of decisions to cover, such as "reporting spec", "sample construction only", or "decisions tagged `plan/sap-2026`". Without it, write a general analysis spec covering all current decisions.
 
-2. The user should identify the intended spec surface when it is not obvious: analysis plan, implementation plan, methods spec, reporting spec, robustness spec, or a project-specific document.
+Interactively, this comes from the user's request.
 
-## Workflow
+## Which decisions
 
-### Step 1 - Enumerate accepted decisions
+Use accepted records that have not been superseded; a superseded decision has been replaced by its successor and no longer binds. Ignore candidates and rejected records. If there are no accepted records, say so and stop rather than drafting from candidates.
 
-```bash
-dadrock list --status accepted --json
-```
+From each decision, take:
 
-The JSON envelope's `data` array gives `{id, title, path, tags, ...}` for each record. Read the file at `path` to get the four sections.
+- the **Decision**: the binding requirement the spec must preserve;
+- the **Context**: the sources, datasets, plans, or prior records behind it;
+- the **Alternatives**: rejected options the spec must not reintroduce;
+- the **Consequences**: downstream obligations, checks, and reporting caveats;
+- the **tags**: grouping signals such as `kind/`, `topic/`, and `plan/`.
 
-To narrow the spec, filter by tag:
+## Organize
 
-```bash
-dadrock list --status accepted --tag kind/sample --json
-dadrock list --status accepted --tag kind/modeling --json
-dadrock list --status accepted --tag plan/sap-2026 --json
-```
+Group requirements by the surface the spec needs. A typical analysis spec has:
 
-### Step 2 - Parse each decision
-
-For each accepted record, extract:
-
-- **Title** - the noun phrase summarizing the choice.
-- **Context** - source links, constraints, datasets, plans, or prior records that motivate the choice.
-- **Decision** - the binding requirement the spec must preserve.
-- **Alternatives** - rejected options that the spec must not silently reintroduce.
-- **Consequences** - downstream obligations, checks, or reporting caveats.
-- **Tags** - grouping signals such as `kind/`, `topic/`, and `plan/`.
-
-If a decision is too vague to specify an action, include it in an "Open questions" section rather than inventing missing requirements.
-
-### Step 3 - Organize the spec
-
-Group decisions by the surface the user needs:
-
-| Tags or content | Spec section |
+| Section | Decisions about |
 |---|---|
-| `kind/sample`, cohort filters, joins, exclusions | Sample and data construction |
-| `kind/measurement`, recodes, scale construction | Variables and measurement |
-| `kind/transformation`, imputation, winsorization | Transformations |
-| `kind/modeling`, estimands, fixed effects, priors | Models and estimands |
-| `kind/inference`, standard errors, intervals, multiplicity | Inference |
-| `kind/robustness`, `axis/`, sensitivity choices | Robustness and sensitivity |
-| `kind/communication`, tables, figures, claims | Reporting |
-| plan deviation sections, amendments | Deviations from prior plans |
+| Sample and data construction | inclusion rules, cohort filters, joins, exclusions (`kind/sample`) |
+| Variables and measurement | outcome and treatment definitions, recodes, scales |
+| Transformations | imputation, winsorization, rescaling |
+| Models and estimands | estimands, formulas, fixed effects, priors (`kind/modeling`) |
+| Inference | standard errors, intervals, multiplicity (`kind/inference`) |
+| Robustness and sensitivity | alternative specifications, `axis/` and `robustness/` choices |
+| Reporting | tables, figures, claims |
+| Deviations from prior plans | plan deviations and amendments (`plan/`) |
 
-Within each section, write requirements in active voice and cite the DADR id or file path for traceability.
+Follow the project's own tags where they exist, and adapt the sections to `focus`.
 
-### Step 4 - Draft the spec
+## Draft
 
-Use this structure unless the user requests a different format:
+Unless `focus` asks for another format, use this structure:
 
-1. **Purpose and scope** - what decisions this spec covers and which tags or statuses were included.
-2. **Decision-derived requirements** - grouped by section, with each requirement tied to one or more accepted DADRs.
-3. **Constraints and non-goals** - alternatives that must not be implemented or reported as current choices.
-4. **Downstream checks** - validation, reruns, robustness checks, descriptive-stat updates, or manuscript updates implied by consequences.
-5. **Open questions** - accepted records that lack enough detail for a precise requirement, conflicts, or missing source links.
+1. **Purpose and scope**: what the spec covers and which decisions it includes.
+2. **Decision-derived requirements**, grouped as above. Write each requirement in active voice and cite the records behind it with a record link (`[[<short-id>]]`) and title.
+3. **Constraints and non-goals**: rejected alternatives that must not be implemented or reported as current choices.
+4. **Downstream checks**: validation, reruns, robustness checks, and manuscript updates implied by the Consequences.
+5. **Open questions**: decisions too vague to turn into a precise requirement, conflicts between decisions, and missing source links.
 
-Do not rewrite the accepted DADRs. The spec is derived documentation, not a lifecycle transition.
-
-### Step 5 - Verify
-
-Before reporting:
-
-1. Re-scan the accepted decision list and confirm every included record appears in the spec or in "Open questions."
-2. Check that no rejected `Alternative` is phrased as an active requirement.
-3. Run `dadrock validate` if the spec links to DADR files or source anchors.
-4. If the spec is written to a file, report the path and summarize the decision count covered.
+Before finishing, check that every included decision appears in a requirement or under Open questions, and that no rejected alternative reads as an active requirement.
 
 ## Constraints
 
-- **Accepted decisions are binding.** Do not soften or reinterpret the `Decision` section to make the spec easier to write.
-- **Alternatives stay alternatives.** Mention them only as non-goals or rejected options.
-- **Stop on conflict.** If two accepted records prescribe incompatible requirements, do not choose one silently. Put the conflict in "Open questions" and ask the user to resolve it through supersession.
-- **No lifecycle changes.** This task does not accept, reject, supersede, or edit records.
-- **Traceability matters.** Each substantive requirement should point back to a DADR id, path, or title.
+- Accepted decisions are binding. Do not soften or reinterpret a Decision to make the spec easier to write, and do not add requirements no decision states.
+- Alternatives stay alternatives: mention them only as non-goals.
+- If two accepted decisions prescribe incompatible requirements, do not choose between them. List the conflict under Open questions; resolving it takes a replacement record and supersession.
+- The spec does not change any record.
 
-## Quick reference
+## Result
 
-| Goal | Command |
-|---|---|
-| List accepted decisions | `dadrock list --status accepted` |
-| Same, JSON for scripting | `dadrock list --status accepted --json` |
-| Filter by tag | `dadrock list --status accepted --tag kind/sample` |
-| Validate links | `dadrock validate` |
-| Inspect one record | `dadrock status <query>` |
+A Markdown report:
 
-## Example end-to-end
-
-User: "turn the accepted decisions into an analysis spec"
-
-1. `dadrock list --status accepted --json` -> 12 accepted records.
-2. Read each record and group by `kind/`, `topic/`, and `plan/` when those tags
-   exist.
-3. Draft sections for sample construction, variables, models, inference, robustness, and reporting.
-4. For the accepted record "Cluster standard errors at the school level", write: "All primary models use school-clustered standard errors. Source: dadr/accepted/<id>-cluster-standard-errors.md."
-5. Put an accepted but vague "Use conservative robustness checks" record under "Open questions" because it does not specify the robustness axes.
-6. Report that the spec covers 11 records and leaves 1 open question for supersession or clarification.
+- **Title**: the spec's name.
+- **Summary**: one or two sentences giving the number of decisions covered and the number of open questions.
+- **Body**: the spec itself.

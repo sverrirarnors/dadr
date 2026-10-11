@@ -93,6 +93,14 @@ Dadrock revision request:
     ))
 }
 
+/// The `dadr` skill's shared record anatomy reference. Task guides link to it
+/// as `../record.md`.
+const SKILL_RECORD_REFERENCE: &str = include_str!("../../../../skills/dadr/record.md");
+
+/// The `dadr` skill's shared tag reference. Task guides link to it as
+/// `../tags.md`.
+const SKILL_TAG_REFERENCE: &str = include_str!("../../../../skills/dadr/tags.md");
+
 pub fn run_task_prompt(request: &AgentRequestEnvelope) -> Result<String, DadrError> {
     let task = request.task.as_ref().ok_or_else(|| {
         DadrError::Acp("run_task agent request is missing task payload".to_owned())
@@ -100,21 +108,35 @@ pub fn run_task_prompt(request: &AgentRequestEnvelope) -> Result<String, DadrErr
     let output_kind = task.output_kind.as_str();
     let output_contract = task.output_kind.output_contract();
     let task_id = task.id.as_str();
-    let dadr_guidance = dadr_task_guidance();
+    let record_reference = SKILL_RECORD_REFERENCE.trim();
+    let tag_reference = SKILL_TAG_REFERENCE.trim();
     let prompt_packs = render_prompt_packs(&request.prompt_packs);
     let request_json = serde_json::to_string_pretty(request)?;
     Ok(format!(
         r###"You are running a Dadrock task.
 
-Use the task prompt, task input, and project snapshot below.
+The task guide for task id `{task_id}` is the `task.prompt` field of the Dadrock task request at the end. Use it with the task input, context, and project snapshot in that request.
 
 {prompt_packs}
 
-The supplied instructions for task id `{task_id}` are sufficient. If an installed `dadr` skill is available, you may consult its matching task guide for additional context, but an external skill is not required for built-in tasks.
+Task mode rules:
+- The task guide says WHAT to produce; dadrock decides how it is delivered.
+- Do not create, edit, move, accept, reject, or supersede records or other files. Return everything as the result object; dadrock turns it into proposals that a human reviews.
+- Where the task guide mentions writing or editing records, put that content in the result instead.
 
-{dadr_guidance}
+Links in the task guide to `../record.md` and `../tags.md` refer to the "Record anatomy" and "Tags" sections below.
 
-The supplied task prompt is authoritative for tool use. Follow its instructions about whether to propose changes or write files; a general skill guide must not turn a proposal-only task into a file-writing task. The `dadrock.submit_task_result` tool may be used with the task `run_id` when available. After a successful submission, your final message may be brief plain text. If you do not submit through the tool, your final message must be the result JSON object.
+## Record anatomy
+
+{record_reference}
+
+## Tags
+
+{tag_reference}
+
+## Result
+
+The `dadrock.submit_task_result` tool may be used with the task `run_id` when available. After a successful submission, your final message may be brief plain text. If you do not submit through the tool, your final message must be the result JSON object.
 
 Any result JSON object must include `"kind": "{output_kind}"`. Do not return a JSON array, string, null, markdown fence, or explanatory text outside the JSON object.
 
@@ -129,16 +151,6 @@ Dadrock task request:
 ```
 "###
     ))
-}
-
-fn dadr_task_guidance() -> &'static str {
-    r###"DADR task guidance:
-- A DADR candidate records one consequential analytic choice: a choice that could plausibly change results, interpretation, or the scope of a claim.
-- Candidate bodies should use these four sections exactly once: Context, Decision, Alternatives, Consequences.
-- Ground candidate proposals in evidence. Include Markdown links to sources when available, and use warnings or low confidence when evidence is thin. Relative link paths resolve from the record's directory (`dadr/candidates/`), so a repository file is `../../path/to/file`. Link other records with short-id wikilinks such as `[[01938b8e4d70]]`.
-- Agent-drafted candidate tags should include kind/<surface> and writer/agent. Common kind values are sample, model, estimand, measurement, transformation, inference, report, and robustness.
-- Do not fabricate alternatives. If no real alternative is supported, say so plainly in the candidate body or warning.
-- Do not accept, reject, or supersede records. Those lifecycle transitions are human approval boundaries."###
 }
 
 pub fn task_output_repair_prompt(

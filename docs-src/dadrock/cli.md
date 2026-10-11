@@ -405,7 +405,7 @@ Run one resolved task package with a local ACP agent.
 * `--input-json <INPUT_JSON>`
 * `--path <PATH>` — File or directory to inspect
 * `--context <CONTEXT>` — Describe the decision to capture
-* `--focus <FOCUS>` — Focus the code review on a topic
+* `--focus <FOCUS>` — Topic to concentrate on (code-to-record, decisions-to-spec)
 * `--limit <LIMIT>` — Maximum initial candidates (code-to-record defaults to 5)
 * `--json`
 * `--permission <PERMISSION>`

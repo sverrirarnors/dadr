@@ -11,8 +11,8 @@ pub use discovery::{
     TaskPackage, TaskSource, TaskSourceKind,
 };
 pub use manifest::{
-    parse_task_manifest, TaskExecutionMode, TaskInput, TaskInputType, TaskManifest,
-    TaskNoteRequirement, TaskOutput, TaskPathRequirement, TaskPrompt, TaskRecordRequirement,
+    parse_task_document, TaskDocument, TaskExecutionMode, TaskInput, TaskInputType, TaskManifest,
+    TaskNoteRequirement, TaskOutput, TaskPathRequirement, TaskRecordRequirement,
     TaskRecordStatusRequirement, TaskRequirements, TaskScopeRequirement, TaskTool, TaskToolMode,
 };
 pub use output::{
