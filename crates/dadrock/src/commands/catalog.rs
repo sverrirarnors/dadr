@@ -358,8 +358,8 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["task", "show"],
-        usage: "task show <task-id> [--json]",
-        description: "Show one resolved task package, including manifest, source, and prompt.",
+        usage: "task show <task-id> [--json | --raw]",
+        description: "Show one resolved task package, including manifest, source, and prompt; --raw prints its task file exactly as written.",
         mutation: CommandMutation::ReadOnly,
         supports_json: true,
         exit_behavior: "Exits non-zero when the task id is empty or no task resolves.",

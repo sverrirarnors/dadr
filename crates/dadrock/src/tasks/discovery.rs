@@ -17,6 +17,11 @@ pub struct TaskPackage {
     pub manifest: TaskManifest,
     pub source: TaskSource,
     pub prompt: String,
+    /// The task document exactly as written: the embedded skill guide for a
+    /// built-in task, the file's text for a user or project task. It is not
+    /// serialized; JSON output carries the parsed manifest and prompt.
+    #[serde(skip)]
+    pub document: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -189,6 +194,7 @@ fn collect_builtin_tasks(
                 },
                 manifest,
                 prompt,
+                document: spec.document.to_owned(),
             },
         );
     }
@@ -352,6 +358,7 @@ fn read_filesystem_task(
             path: Some(task_file.to_path_buf()),
         },
         prompt,
+        document: content,
     })
 }
 

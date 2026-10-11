@@ -2098,6 +2098,143 @@ fn show_task_command_rejects_missing_task_id() {
     let _ = fs::remove_dir_all(root);
 }
 
+const CODE_TO_RECORD_GUIDE: &str = include_str!("../../../skills/dadr/tasks/code-to-record.md");
+
+fn dadrock_task_show(cwd: &Path, user_tasks: &Path, args: &[&str]) -> std::process::Output {
+    std::process::Command::new(env!("CARGO_BIN_EXE_dadrock"))
+        .args(["task", "show"])
+        .args(args)
+        .current_dir(cwd)
+        .env("DADROCK_TASKS_DIR", user_tasks)
+        .output()
+        .expect("run dadrock task show")
+}
+
+#[test]
+fn show_task_command_keeps_the_document_out_of_json() {
+    let root = unique_temp_dir("dadrock-task-command-show-document");
+    fs::create_dir_all(&root).expect("create temp dir");
+    let user_tasks = root.join("user-tasks");
+    let _env_lock = TASK_ENV_LOCK.lock().unwrap();
+    let _env = EnvVarGuard::set_path("DADROCK_TASKS_DIR", &user_tasks);
+    let context = CommandContext::from_path(&root).expect("context");
+
+    let envelope = show_task_command(&context, "code-to-record").unwrap();
+
+    assert_eq!(envelope.data.document, CODE_TO_RECORD_GUIDE);
+    let json = serde_json::to_value(&envelope).unwrap();
+    let keys = json["data"]
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(keys, ["manifest", "prompt", "source"].into());
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn task_show_raw_prints_the_builtin_skill_guide_verbatim() {
+    let root = unique_temp_dir("dadrock-task-show-raw-builtin");
+    init_project(&root).unwrap();
+
+    let output = dadrock_task_show(
+        &root,
+        &root.join("user-tasks"),
+        &["code-to-record", "--raw"],
+    );
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        CODE_TO_RECORD_GUIDE
+    );
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn raw_builtin_task_copied_to_project_loads_as_the_same_task() {
+    let root = unique_temp_dir("dadrock-task-show-raw-copy");
+    init_project(&root).unwrap();
+    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    let user_tasks = cwd.join("user-tasks");
+    let builtin = discovered_task(&cwd, Some(&user_tasks), "code-to-record");
+    assert_eq!(builtin.source.kind, TaskSourceKind::Builtin);
+
+    let output = dadrock_task_show(
+        &root,
+        user_tasks.as_std_path(),
+        &["code-to-record", "--raw"],
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    fs::create_dir_all(root.join("dadr/tasks")).expect("create project task dir");
+    fs::write(root.join("dadr/tasks/code-to-record.md"), &output.stdout)
+        .expect("write project task");
+
+    let project = discovered_task(&cwd, Some(&user_tasks), "code-to-record");
+    assert_eq!(project.source.kind, TaskSourceKind::Project);
+    assert_eq!(project.manifest, builtin.manifest);
+    assert_eq!(project.prompt, builtin.prompt);
+    assert_eq!(project.document, builtin.document);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn task_show_raw_prints_a_project_task_file_verbatim() {
+    let root = unique_temp_dir("dadrock-task-show-raw-project");
+    init_project(&root).unwrap();
+    let document = "---\n# Local tweak of a report task.\nid: local-report\ntitle:   \"Local report\"\ndescription: \"Report on the ledger.\"\nversion: 2\noutput:\n  kind: markdown_report.v1   # rendered as a report\n---\n\nReturn a Markdown report.\n\n<!-- keep this comment -->";
+    fs::create_dir_all(root.join("dadr/tasks")).expect("create project task dir");
+    fs::write(root.join("dadr/tasks/local-report.md"), document).expect("write project task");
+    let nested = root.join("analysis");
+    fs::create_dir_all(&nested).expect("create nested cwd");
+
+    let output = dadrock_task_show(
+        &nested,
+        &root.join("user-tasks"),
+        &["local-report", "--raw"],
+    );
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8(output.stdout).unwrap(), document);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn task_show_rejects_raw_with_json() {
+    let root = unique_temp_dir("dadrock-task-show-raw-json");
+    init_project(&root).unwrap();
+
+    let output = dadrock_task_show(
+        &root,
+        &root.join("user-tasks"),
+        &["code-to-record", "--raw", "--json"],
+    );
+
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("cannot be used with"), "{stderr}");
+
+    let _ = fs::remove_dir_all(root);
+}
+
 fn tasks_by_id(
     tasks: &[dadrock::tasks::TaskPackage],
 ) -> BTreeMap<&str, &dadrock::tasks::TaskPackage> {
