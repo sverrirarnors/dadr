@@ -74,7 +74,7 @@ dadrock task runs
 dadrock task result RUN_ID
 ```
 
-Built-in workflows include drafting, editing candidates, proposing replacements, merging drafts, finding conflicts, and synthesizing accepted decisions into a spec. The built-in tasks are the task guides of the `dadr` skill, the files in `skills/dadr/tasks/` of this repository. Each is one Markdown file: its YAML front matter is the task manifest (id, inputs, requirements, output kind, and `mcp_access`, which is `full` or `read_only`) and its body is the prompt. `dadrock task show <task-id>` prints a task's prompt, and `--json` adds its manifest.
+Built-in workflows include drafting, editing candidates, proposing replacements, merging drafts, finding conflicts, and synthesizing accepted decisions into a spec. The built-in tasks are the task guides of the `dadr` skill, the files in `skills/dadr/tasks/` of this repository. Each is one Markdown file: its YAML front matter is the task manifest (id, inputs, requirements, and output kind) and its body is the prompt. Every task run gets read-only access to the [MCP server](#mcp) plus task-result submission. `dadrock task show <task-id>` prints a task's prompt, and `--json` adds its manifest.
 
 To customize a task, copy its guide to `dadr/tasks/<task-id>.md` and adapt it. A project task replaces a user task in `~/.dadrock/tasks/<task-id>.md` (or `$DADROCK_TASKS_DIR`), which replaces the built-in task with the same id. The file name must match the `id` in the front matter; `dadrock task list` reports files that do not load, including task directories in the old `task.toml` layout. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
 

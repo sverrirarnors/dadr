@@ -246,6 +246,77 @@ async fn dadrock_mcp_stdio_lists_and_calls_tools() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[tokio::test(flavor = "current_thread")]
+async fn dadrock_mcp_stdio_task_run_access_only_submits_results() {
+    let root = temp_project("dadrock-mcp-stdio-task-run");
+    init_project(&root).expect("initialize project");
+    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 project root");
+    let user_tasks_dir =
+        Utf8PathBuf::from_path_buf(root.join("user-tasks")).expect("utf8 user tasks directory");
+    let tasks = discover_tasks(&cwd, Some(&user_tasks_dir));
+    let task = tasks
+        .tasks
+        .iter()
+        .find(|task| task.manifest.id == "find-conflicts")
+        .expect("built-in find-conflicts task");
+    let run = create_task_run(&cwd, task, json!({})).expect("create task run");
+
+    let mut command = Command::new(env!("CARGO_BIN_EXE_dadrock"));
+    command.arg("mcp").arg("serve").arg("--task-run").arg(&root);
+    let transport = TokioChildProcess::new(command).expect("spawn dadrock mcp serve --task-run");
+    let mut client = ().serve(transport).await.expect("initialize MCP client");
+
+    let tools = client.peer().list_all_tools().await.expect("list tools");
+    let writable: BTreeSet<_> = tools
+        .iter()
+        .filter(|tool| {
+            tool.annotations
+                .as_ref()
+                .and_then(|annotations| annotations.read_only_hint)
+                != Some(true)
+        })
+        .map(|tool| tool.name.to_string())
+        .collect();
+    assert_eq!(
+        writable,
+        BTreeSet::from(["dadrock.submit_task_result".to_owned()])
+    );
+    assert!(tools.iter().any(|tool| tool.name == "dadrock.list_records"));
+
+    let error = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("dadrock.create_candidate")
+                .with_arguments(json_object(json!({ "title": "Created by a task run" }))),
+        )
+        .await
+        .expect_err("task runs cannot create candidates");
+    let ServiceError::McpError(error) = error else {
+        panic!("expected an MCP error, got {error:?}");
+    };
+    assert_eq!(error.code, ErrorCode::INVALID_PARAMS);
+    assert!(is_empty_or_missing(&root.join("dadr/candidates")));
+
+    let submitted = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("dadrock.submit_task_result").with_arguments(json_object(
+                json!({
+                    "run_id": run.id.to_string(),
+                    "result": {"kind": "conflict_set.v1", "summary": "None.", "findings": []}
+                }),
+            )),
+        )
+        .await
+        .expect("task runs submit their result");
+    let submitted = submitted.structured_content.expect("submit envelope");
+    assert_eq!(submitted["ok"], true);
+    assert_eq!(submitted["data"]["status"], "succeeded");
+
+    let _ = tokio::time::timeout(Duration::from_secs(2), client.close()).await;
+    let _ = fs::remove_dir_all(root);
+}
+
 fn is_empty_or_missing(dir: &std::path::Path) -> bool {
     dir.read_dir()
         .map(|mut entries| entries.next().is_none())

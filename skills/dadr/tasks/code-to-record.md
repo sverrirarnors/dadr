@@ -25,7 +25,6 @@ requirements:
   scope: none
 output:
   kind: candidate_batch.v1
-mcp_access: full
 tools:
   - name: dadrock.project_snapshot
     mode: read

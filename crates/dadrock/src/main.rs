@@ -506,6 +506,8 @@ fn mcp(args: cli::McpArgs) -> Result<ExitCode> {
 fn mcp_serve(args: cli::McpServeArgs) -> Result<ExitCode> {
     let access = if args.read_only {
         core_mcp::DadrockMcpAccess::ReadOnly
+    } else if args.task_run {
+        core_mcp::DadrockMcpAccess::TaskRun
     } else {
         core_mcp::DadrockMcpAccess::Full
     };

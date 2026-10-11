@@ -281,6 +281,10 @@ pub enum McpCommand {
 pub struct McpServeArgs {
     #[arg(long)]
     pub read_only: bool,
+    /// Serve the access level Dadrock gives its own task runs: read tools
+    /// plus task-result submission. Internal; set by the task runner.
+    #[arg(long, hide = true, conflicts_with = "read_only")]
+    pub task_run: bool,
     pub directory: Option<Utf8PathBuf>,
 }
 
@@ -474,7 +478,7 @@ impl From<PermissionPolicyArg> for AcpPermissionPolicy {
 
 #[cfg(test)]
 mod tests {
-    use clap::{error::ErrorKind, Parser};
+    use clap::{error::ErrorKind, CommandFactory, Parser};
 
     use super::*;
 
@@ -615,7 +619,36 @@ mod tests {
             panic!("expected mcp serve command");
         };
         assert!(args.read_only);
+        assert!(!args.task_run);
         assert_eq!(args.directory, Some(Utf8PathBuf::from("example")));
+    }
+
+    #[test]
+    fn parses_hidden_mcp_serve_task_run_flag() {
+        let cli =
+            Cli::try_parse_from(["dadrock", "mcp", "serve", "--task-run", "example"]).unwrap();
+
+        let Some(Command::Mcp(McpArgs {
+            command: McpCommand::Serve(args),
+        })) = cli.command
+        else {
+            panic!("expected mcp serve command");
+        };
+        assert!(args.task_run);
+        assert!(!args.read_only);
+        assert_eq!(args.directory, Some(Utf8PathBuf::from("example")));
+
+        let conflict =
+            Cli::try_parse_from(["dadrock", "mcp", "serve", "--read-only", "--task-run"])
+                .unwrap_err();
+        assert_eq!(conflict.kind(), ErrorKind::ArgumentConflict);
+
+        let mut command = Cli::command();
+        let serve = command
+            .find_subcommand_mut("mcp")
+            .and_then(|mcp| mcp.find_subcommand_mut("serve"))
+            .expect("mcp serve command");
+        assert!(!serve.render_long_help().to_string().contains("--task-run"));
     }
 
     #[test]

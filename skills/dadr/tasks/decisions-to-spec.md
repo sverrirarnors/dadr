@@ -16,7 +16,6 @@ requirements:
   scope: accepted
 output:
   kind: markdown_report.v1
-mcp_access: read_only
 tools:
   - name: dadrock.list_records
     mode: read

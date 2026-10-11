@@ -20,7 +20,6 @@ use dadrock::{
     },
     error::DomainErrorKind,
     index::ProjectIndex,
-    mcp::DadrockMcpAccess,
     project::{init_project, DiscoverySource, ProjectContext},
     tasks::{
         append_or_extend_task_run_log, append_task_run_log, create_task_run,
@@ -107,7 +106,6 @@ Return conflicts as JSON.
     assert_eq!(manifest.requirements.notes, TaskNoteRequirement::Optional);
     assert_eq!(manifest.requirements.scope, TaskScopeRequirement::Live);
     assert_eq!(manifest.output.kind, TaskOutputKind::ConflictSetV1);
-    assert_eq!(manifest.mcp_access, DadrockMcpAccess::Full);
     assert_eq!(manifest.tools[0].mode, TaskToolMode::Read);
     assert_eq!(
         document.prompt,
@@ -116,13 +114,13 @@ Return conflicts as JSON.
 }
 
 #[test]
-fn task_document_reads_mcp_access_and_scalar_input_defaults() {
+fn task_document_reads_scalar_input_defaults() {
     let document = parse_task_document(
-        "project:read-only-task",
+        "project:ledger-summary",
         r#"---
-id: read-only-task
-title: Read-only task
-description: Reads the ledger without changing it.
+id: ledger-summary
+title: Ledger summary
+description: Summarizes the ledger.
 version: 2
 inputs:
   - name: limit
@@ -135,14 +133,12 @@ inputs:
     default: false
 output:
   kind: markdown_report.v1
-mcp_access: read_only
 ---
 Summarize the ledger.
 "#,
     )
     .unwrap();
 
-    assert_eq!(document.manifest.mcp_access, DadrockMcpAccess::ReadOnly);
     assert_eq!(document.manifest.inputs[0].default.as_deref(), Some("5"));
     assert_eq!(
         document.manifest.inputs[1].default.as_deref(),
@@ -150,7 +146,6 @@ Summarize the ledger.
     );
     assert_eq!(document.prompt, "Summarize the ledger.");
     let serialized = serde_json::to_value(&document.manifest).unwrap();
-    assert_eq!(serialized["mcp_access"], json!("read_only"));
     assert!(serialized.get("prompt").is_none());
 }
 
@@ -165,24 +160,28 @@ fn task_document_requires_front_matter() {
 }
 
 #[test]
-fn task_document_rejects_unknown_mcp_access() {
-    let error = parse_task_document(
-        "project:bad-access",
+fn task_document_ignores_retired_mcp_access_key() {
+    // Task files written before MCP access became fixed for every task run
+    // still load; the old key grants nothing and is not echoed back.
+    let document = parse_task_document(
+        "project:older-task",
         r#"---
-id: bad-access
-title: Bad access
-description: Uses an unknown MCP access level.
+id: older-task
+title: Older task
+description: Declares the retired per-task MCP access.
 version: 1
 output:
   kind: markdown_report.v1
-mcp_access: write_everything
+mcp_access: full
 ---
 Prompt.
 "#,
     )
-    .unwrap_err();
+    .unwrap();
 
-    assert!(error.to_string().contains("mcp_access"));
+    let serialized = serde_json::to_value(&document.manifest).unwrap();
+    assert!(serialized.get("mcp_access").is_none());
+    assert_eq!(document.prompt, "Prompt.");
 }
 
 #[test]
@@ -501,17 +500,8 @@ fn discovery_lists_built_in_starter_tasks() {
             task.manifest.id
         );
         assert!(
-            !task.prompt.starts_with("---") && !task.prompt.contains("\nmcp_access:"),
+            !task.prompt.starts_with("---") && !task.prompt.contains("\nversion:"),
             "{} prompt still contains front matter",
-            task.manifest.id
-        );
-        let expected_access = match task.manifest.id.as_str() {
-            "context-to-record" | "decisions-to-spec" => DadrockMcpAccess::ReadOnly,
-            _ => DadrockMcpAccess::Full,
-        };
-        assert_eq!(
-            task.manifest.mcp_access, expected_access,
-            "{} MCP access",
             task.manifest.id
         );
     }
@@ -2193,34 +2183,64 @@ fn run_task_with_recording_agent(root: &Path, task_id: &str) -> String {
     fs::read_to_string(log).expect("read recorded sessions")
 }
 
+/// The Dadrock MCP servers attached by each recorded `session/new` request.
+fn attached_mcp_servers(sessions: &str) -> Vec<serde_json::Value> {
+    let servers: Vec<_> = sessions
+        .lines()
+        .flat_map(|line| {
+            let params: serde_json::Value = serde_json::from_str(line).expect("session params");
+            params["mcpServers"]
+                .as_array()
+                .cloned()
+                .expect("mcpServers array")
+        })
+        .collect();
+    assert!(!servers.is_empty(), "no session attached an MCP server");
+    servers
+}
+
 #[test]
-fn task_runs_attach_dadrock_mcp_with_manifest_access() {
+fn every_task_run_attaches_task_run_dadrock_mcp() {
     let _env_lock = TASK_ENV_LOCK.lock().unwrap();
     let root = unique_temp_dir("dadrock-task-mcp-access");
     init_project(&root).unwrap();
     let _env = EnvVarGuard::set_path("DADROCK_TASKS_DIR", root.join("user-tasks"));
+    let cwd = root.to_str().expect("utf8 root").to_owned();
     write_task(
         &root.join("dadr/tasks"),
         "lab-report",
         "Lab report",
-        "Project task that relies on the default MCP access.",
+        "Project task without any MCP declaration.",
         "markdown_report.v1",
         "Write a lab report.\n",
     );
+    fs::write(
+        root.join("dadr/tasks/older-report.md"),
+        r#"---
+id: older-report
+title: Older report
+description: Project task that still declares the retired full MCP access.
+version: 1
+output:
+  kind: markdown_report.v1
+mcp_access: full
+---
+Write a report.
+"#,
+    )
+    .expect("write task with retired mcp_access");
 
-    let read_only_sessions = run_task_with_recording_agent(&root, "decisions-to-spec");
-    assert!(read_only_sessions.contains("mcp"));
-    assert!(
-        read_only_sessions.contains("--read-only"),
-        "decisions-to-spec should attach a read-only Dadrock MCP server: {read_only_sessions}"
-    );
-
-    let full_sessions = run_task_with_recording_agent(&root, "lab-report");
-    assert!(full_sessions.contains("mcp"));
-    assert!(
-        !full_sessions.contains("--read-only"),
-        "tasks default to full Dadrock MCP access: {full_sessions}"
-    );
+    for task_id in ["decisions-to-spec", "lab-report", "older-report"] {
+        let sessions = run_task_with_recording_agent(&root, task_id);
+        for server in attached_mcp_servers(&sessions) {
+            assert_eq!(server["name"], json!("dadrock"), "{task_id}: {server}");
+            assert_eq!(
+                server["args"],
+                json!(["mcp", "serve", "--task-run", cwd]),
+                "{task_id} must attach a task-run Dadrock MCP server"
+            );
+        }
+    }
 
     let _ = fs::remove_dir_all(root);
 }

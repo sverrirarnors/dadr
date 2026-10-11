@@ -59,15 +59,29 @@ pub struct DadrockMcpServer {
     access: DadrockMcpAccess,
 }
 
-/// How much of the Dadrock MCP server an ACP agent session may use. Task
-/// manifests declare it as `mcp_access: full` or `mcp_access: read_only`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+/// How much of the Dadrock MCP server a session may use. No level exposes
+/// accepting, rejecting, or superseding records: those lifecycle actions are
+/// human decisions taken in the web UI, the CLI, or an editor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum DadrockMcpAccess {
-    #[default]
+    /// Read tools, plus creating candidates and submitting task results.
     Full,
-    #[serde(alias = "read-only")]
+    /// Read tools only.
     ReadOnly,
+    /// Read tools plus `dadrock.submit_task_result`. Task runs only propose:
+    /// a human reviews their result before anything changes.
+    TaskRun,
+}
+
+impl DadrockMcpAccess {
+    fn allows(self, tool: &Tool) -> bool {
+        match self {
+            Self::Full => true,
+            Self::ReadOnly => tool_is_read_only(tool),
+            Self::TaskRun => tool_is_read_only(tool) || tool.name == TOOL_SUBMIT_TASK_RESULT,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -91,19 +105,20 @@ impl DadrockMcpServer {
     }
 
     pub fn tools() -> Vec<Tool> {
-        static TOOLS: OnceLock<Vec<Tool>> = OnceLock::new();
-        TOOLS.get_or_init(Self::build_tools).clone()
+        Self::tool_definitions().to_vec()
     }
 
     pub fn tools_for_access(access: DadrockMcpAccess) -> Vec<Tool> {
-        let tools = Self::tools();
-        match access {
-            DadrockMcpAccess::Full => tools,
-            DadrockMcpAccess::ReadOnly => tools
-                .into_iter()
-                .filter(|tool| tool_is_read_only(tool))
-                .collect(),
-        }
+        Self::tool_definitions()
+            .iter()
+            .filter(|tool| access.allows(tool))
+            .cloned()
+            .collect()
+    }
+
+    fn tool_definitions() -> &'static [Tool] {
+        static TOOLS: OnceLock<Vec<Tool>> = OnceLock::new();
+        TOOLS.get_or_init(Self::build_tools)
     }
 
     fn build_tools() -> Vec<Tool> {
@@ -291,9 +306,22 @@ impl DadrockMcpServer {
         name: &str,
         arguments: Option<JsonObject>,
     ) -> Result<Value, DadrError> {
-        if self.access == DadrockMcpAccess::ReadOnly && !Self::tool_name_is_read_only(name) {
+        let Some(tool) = Self::tool_definitions()
+            .iter()
+            .find(|tool| tool.name == name)
+        else {
+            return Err(unknown_tool(name));
+        };
+        if !self.access.allows(tool) {
+            let scope = match self.access {
+                DadrockMcpAccess::ReadOnly => "in read-only mode",
+                DadrockMcpAccess::TaskRun => {
+                    "to task runs, which propose changes only through `dadrock.submit_task_result`"
+                }
+                DadrockMcpAccess::Full => "in this session",
+            };
             return Err(DadrError::InvalidInput(format!(
-                "Dadrock MCP tool `{name}` is not available in read-only mode"
+                "Dadrock MCP tool `{name}` is not available {scope}"
             )));
         }
         match name {
@@ -337,9 +365,7 @@ impl DadrockMcpServer {
             TOOL_PROJECT_SNAPSHOT => {
                 serde_json::to_value(self.project_snapshot()?).map_err(Into::into)
             }
-            other => Err(DadrError::InvalidInput(format!(
-                "unknown Dadrock MCP tool `{other}`"
-            ))),
+            other => Err(unknown_tool(other)),
         }
     }
 
@@ -554,8 +580,10 @@ pub fn dadrock_mcp_server_config_with_access(
     let executable = std::env::current_exe()
         .map_err(|err| DadrError::Mcp(format!("failed to resolve current executable: {err}")))?;
     let mut args = vec!["mcp".to_owned(), "serve".to_owned()];
-    if access == DadrockMcpAccess::ReadOnly {
-        args.push("--read-only".to_owned());
+    match access {
+        DadrockMcpAccess::Full => {}
+        DadrockMcpAccess::ReadOnly => args.push("--read-only".to_owned()),
+        DadrockMcpAccess::TaskRun => args.push("--task-run".to_owned()),
     }
     args.push(cwd.to_string());
     Ok(agent_client_protocol::schema::McpServer::Stdio(
@@ -563,13 +591,8 @@ pub fn dadrock_mcp_server_config_with_access(
     ))
 }
 
-impl DadrockMcpServer {
-    fn tool_name_is_read_only(name: &str) -> bool {
-        Self::tools()
-            .iter()
-            .find(|tool| tool.name == name)
-            .is_some_and(tool_is_read_only)
-    }
+fn unknown_tool(name: &str) -> DadrError {
+    DadrError::InvalidInput(format!("unknown Dadrock MCP tool `{name}`"))
 }
 
 fn tool_is_read_only(tool: &Tool) -> bool {
@@ -767,8 +790,22 @@ fn dadr_error_to_mcp(error: DadrError) -> ErrorData {
 
 #[cfg(test)]
 mod tests {
-    use super::{DadrockMcpAccess, DadrockMcpServer};
-    use crate::commands::CommandContext;
+    use std::collections::BTreeSet;
+
+    use rmcp::{model::ErrorCode, ServerHandler};
+    use serde_json::json;
+
+    use super::{
+        dadr_error_to_mcp, dadrock_mcp_server_config_with_access, DadrockMcpAccess,
+        DadrockMcpServer,
+    };
+    use crate::{
+        commands::CommandContext,
+        error::DomainErrorKind,
+        project::init_project,
+        tasks::{create_task_run, discover_tasks, read_task_run, TaskRunStatus},
+        RecordId,
+    };
 
     #[test]
     fn dadrock_mcp_tools_mark_read_and_write_capabilities() {
@@ -810,32 +847,188 @@ mod tests {
         );
     }
 
-    #[test]
-    fn read_only_dadrock_mcp_omits_write_tools() {
-        let tools = DadrockMcpServer::tools_for_access(DadrockMcpAccess::ReadOnly);
+    const READ_TOOLS: &[&str] = &[
+        "dadrock.command_catalog",
+        "dadrock.list_records",
+        "dadrock.get_record",
+        "dadrock.search_records",
+        "dadrock.resolve_record",
+        "dadrock.status",
+        "dadrock.list_tags",
+        "dadrock.list_tasks",
+        "dadrock.get_task",
+        "dadrock.list_task_runs",
+        "dadrock.get_task_run",
+        "dadrock.validate_project",
+        "dadrock.validate_records",
+        "dadrock.validate_links",
+        "dadrock.validate_tags",
+        "dadrock.project_snapshot",
+    ];
+    const LIFECYCLE_TOOLS: &[&str] = &[
+        "dadrock.accept_record",
+        "dadrock.reject_record",
+        "dadrock.supersede_records",
+    ];
+    const ACCESS_LEVELS: [DadrockMcpAccess; 3] = [
+        DadrockMcpAccess::Full,
+        DadrockMcpAccess::ReadOnly,
+        DadrockMcpAccess::TaskRun,
+    ];
 
-        assert!(tools.iter().any(|tool| tool.name == "dadrock.list_records"));
-        assert!(!tools
+    fn tool_names(access: DadrockMcpAccess) -> BTreeSet<String> {
+        DadrockMcpServer::tools_for_access(access)
+            .into_iter()
+            .map(|tool| tool.name.into_owned())
+            .collect()
+    }
+
+    fn names(groups: &[&[&str]]) -> BTreeSet<String> {
+        groups
             .iter()
-            .any(|tool| tool.name == "dadrock.create_candidate"));
-        assert!(!tools
-            .iter()
-            .any(|tool| tool.name == "dadrock.accept_record"));
+            .flat_map(|group| group.iter().map(|name| (*name).to_owned()))
+            .collect()
+    }
+
+    fn temp_project(label: &str) -> (std::path::PathBuf, CommandContext) {
+        let root = std::env::temp_dir().join(format!("dadrock-mcp-{label}-{}", RecordId::new_v7()));
+        init_project(&root).expect("initialize project");
+        let context = CommandContext::from_path(&root).expect("command context");
+        (root, context)
     }
 
     #[test]
-    fn read_only_dadrock_mcp_rejects_write_tool_calls() {
-        let server = DadrockMcpServer::new_with_access(
-            CommandContext {
-                cwd: camino::Utf8PathBuf::from("/tmp"),
-            },
-            DadrockMcpAccess::ReadOnly,
+    fn each_access_level_lists_exactly_its_tools() {
+        assert_eq!(
+            tool_names(DadrockMcpAccess::Full),
+            names(&[
+                READ_TOOLS,
+                &["dadrock.create_candidate", "dadrock.submit_task_result"]
+            ])
+        );
+        assert_eq!(tool_names(DadrockMcpAccess::ReadOnly), names(&[READ_TOOLS]));
+        assert_eq!(
+            tool_names(DadrockMcpAccess::TaskRun),
+            names(&[READ_TOOLS, &["dadrock.submit_task_result"]])
+        );
+        assert_eq!(
+            tool_names(DadrockMcpAccess::Full),
+            DadrockMcpServer::tools()
+                .into_iter()
+                .map(|tool| tool.name.into_owned())
+                .collect::<BTreeSet<_>>()
+        );
+    }
+
+    #[test]
+    fn no_access_level_exposes_lifecycle_tools() {
+        for access in ACCESS_LEVELS {
+            let listed = tool_names(access);
+            let server = DadrockMcpServer::new_with_access(
+                CommandContext {
+                    cwd: camino::Utf8PathBuf::from("/tmp"),
+                },
+                access,
+            );
+            for name in LIFECYCLE_TOOLS {
+                assert!(!listed.contains(*name), "{access:?} lists {name}");
+                assert!(
+                    server.get_tool(name).is_none(),
+                    "{access:?} resolves {name}"
+                );
+                let error = dadr_error_to_mcp(
+                    server
+                        .call_tool_value(name, None)
+                        .expect_err("lifecycle tools are not served"),
+                );
+                assert_eq!(error.code, ErrorCode::INVALID_PARAMS, "{access:?} {name}");
+                assert_eq!(
+                    error.message,
+                    format!("unknown Dadrock MCP tool `{name}`"),
+                    "{access:?} {name}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn restricted_access_refuses_unlisted_write_tools_before_running_them() {
+        let (root, context) = temp_project("refuse-create");
+        let arguments = json!({"title": "Created by an agent"}).as_object().cloned();
+        for access in [DadrockMcpAccess::ReadOnly, DadrockMcpAccess::TaskRun] {
+            let server = DadrockMcpServer::new_with_access(context.clone(), access);
+            let error = server
+                .call_tool_value("dadrock.create_candidate", arguments.clone())
+                .expect_err("restricted access must refuse create_candidate");
+            assert!(
+                error.is_domain_kind(DomainErrorKind::InvalidInput),
+                "{access:?}: {error}"
+            );
+            let (_, index) = context.initialized_index().expect("project index");
+            assert!(
+                index.list_records(None).is_empty(),
+                "{access:?} created a record"
+            );
+        }
+
+        let server = DadrockMcpServer::new_with_access(context.clone(), DadrockMcpAccess::Full);
+        server
+            .call_tool_value("dadrock.create_candidate", arguments)
+            .expect("full access creates candidates");
+        let (_, index) = context.initialized_index().expect("project index");
+        assert_eq!(index.list_records(None).len(), 1);
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn task_run_access_submits_task_results() {
+        let (root, context) = temp_project("task-run-submit");
+        let user_tasks = context.cwd.join("user-tasks");
+        let tasks = discover_tasks(&context.cwd, Some(&user_tasks));
+        let task = tasks
+            .tasks
+            .iter()
+            .find(|task| task.manifest.id == "find-conflicts")
+            .expect("built-in find-conflicts task");
+        let run = create_task_run(&context.cwd, task, json!({})).expect("create task run");
+        let server = DadrockMcpServer::new_with_access(context.clone(), DadrockMcpAccess::TaskRun);
+
+        let submitted = server
+            .call_tool_value(
+                "dadrock.submit_task_result",
+                json!({
+                    "run_id": run.id.to_string(),
+                    "result": {"kind": "conflict_set.v1", "summary": "None.", "findings": []}
+                })
+                .as_object()
+                .cloned(),
+            )
+            .expect("task runs may submit their result");
+
+        assert_eq!(submitted["data"]["status"], json!("succeeded"));
+        assert_eq!(
+            read_task_run(&run.run_dir).expect("read run").status,
+            TaskRunStatus::Succeeded
         );
 
-        let error = server
-            .call_tool_value("dadrock.create_candidate", None)
-            .expect_err("read-only MCP must reject write tools");
+        let _ = std::fs::remove_dir_all(root);
+    }
 
-        assert!(error.to_string().contains("not available in read-only"));
+    #[test]
+    fn server_config_passes_access_level_to_mcp_serve() {
+        let cwd = camino::Utf8PathBuf::from("/tmp/dadrock-project");
+        for (access, flag) in [
+            (DadrockMcpAccess::Full, None),
+            (DadrockMcpAccess::ReadOnly, Some("--read-only")),
+            (DadrockMcpAccess::TaskRun, Some("--task-run")),
+        ] {
+            let config = dadrock_mcp_server_config_with_access(&cwd, access).expect("config");
+            let args = serde_json::to_value(config).expect("serialize config")["args"].clone();
+            let mut expected = vec!["mcp", "serve"];
+            expected.extend(flag);
+            expected.push(cwd.as_str());
+            assert_eq!(args, json!(expected), "{access:?}");
+        }
     }
 }

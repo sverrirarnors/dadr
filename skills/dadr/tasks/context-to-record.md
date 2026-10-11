@@ -16,7 +16,6 @@ requirements:
   scope: none
 output:
   kind: candidate_draft.v1
-mcp_access: read_only
 tools:
   - name: dadrock.project_snapshot
     mode: read

@@ -17,7 +17,6 @@ requirements:
   scope: live
 output:
   kind: conflict_set.v1
-mcp_access: full
 tools:
   - name: dadrock.list_records
     mode: read

@@ -11,7 +11,6 @@ requirements:
   scope: none
 output:
   kind: markdown_report.v1
-mcp_access: full
 tools:
   - name: dadrock.project_snapshot
     mode: read

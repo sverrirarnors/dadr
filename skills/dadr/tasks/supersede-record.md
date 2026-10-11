@@ -20,7 +20,6 @@ requirements:
   scope: none
 output:
   kind: supersession_proposal.v1
-mcp_access: full
 tools:
   - name: dadrock.get_record
     mode: read
