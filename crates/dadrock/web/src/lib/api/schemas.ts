@@ -62,6 +62,7 @@ export const diagnosticSchema = z.object({
 export type Diagnostic = z.infer<typeof diagnosticSchema>;
 
 export const recordLifecycleSchema = z.object({
+  pending_supersedes: recordSummarySchema.nullish(),
   record: recordSummarySchema,
   predecessors: z.array(recordSummarySchema),
   successors: z.array(recordSummarySchema),

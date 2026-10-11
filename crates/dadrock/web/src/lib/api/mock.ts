@@ -146,6 +146,7 @@ const taskRuns: TaskRun[] = [];
 const taskResults = new Map<string, TaskResult>();
 const taskLogs = new Map<string, TaskRunLogEntry[]>();
 const taskRunPollsUntilSuccess = new Map<string, number>();
+const pendingReplacements = new Map<string, string>();
 const supersessionEdges = new Map<string, Set<string>>([
   [
     '0193fb1f-a3a0-7000-8000-000000000001',
@@ -550,6 +551,7 @@ export class MockApi implements DadrApi {
         record,
         predecessors,
         successors,
+        pending_supersedes: mockRecords.find((item) => item.id === pendingReplacements.get(record.id)) ?? null,
         diagnostics: [],
       }),
     ) as RecordLifecycle;
@@ -591,6 +593,7 @@ export class MockApi implements DadrApi {
 
   async createCandidate(request: CreateCandidateRequest): Promise<MutationResponse> {
     const record = newCandidateRecord(request.title, request.tags, request.body_markdown);
+    if (request.supersedes) pendingReplacements.set(record.id, request.supersedes);
     return {
       message: `created candidate ${record.id}`,
       changed_paths: [record.path],
@@ -755,6 +758,13 @@ export class MockApi implements DadrApi {
     const record = mockRecords.find((item) => item.id === id);
     if (!record) {
       throw new Error(`mock record ${id} not found`);
+    }
+    if (status === 'accepted' && pendingReplacements.has(id)) {
+      const old = mockRecords.find((item) => item.id === pendingReplacements.get(id));
+      if (!old || old.status !== 'accepted' || old.superseded) throw new Error('Previous decision is no longer current');
+      old.superseded = true;
+      supersessionEdges.set(old.id, new Set([id]));
+      pendingReplacements.delete(id);
     }
     record.status = status;
     record.path =

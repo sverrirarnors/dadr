@@ -82,14 +82,14 @@ test('records route uses shared action menus for new, edit, and supersede famili
   );
 
   await page.goto(`/records?id=${acceptedId}`);
-  const supersedeMenu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Supersede' }) });
-  await supersedeMenu.getByRole('button', { name: 'Supersede' }).click();
-  await expect(supersedeMenu.getByRole('menuitem', { name: 'Supersede with existing records' })).toBeVisible();
-  await expect(supersedeMenu.getByRole('menuitem', { name: 'Supersede with new record' })).toHaveAttribute(
+  const supersedeMenu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Change this decision' }) });
+  await supersedeMenu.getByRole('button', { name: 'Change this decision' }).click();
+  await expect(supersedeMenu.getByRole('menuitem', { name: 'Replace with existing decisions' })).toBeVisible();
+  await expect(supersedeMenu.getByRole('menuitem', { name: 'Draft a replacement', exact: true })).toHaveAttribute(
     'href',
     `/candidates/new?supersedes=${acceptedId}`,
   );
-  await expect(supersedeMenu.getByRole('menuitem', { name: 'Supersede with agent' })).toHaveAttribute(
+  await expect(supersedeMenu.getByRole('menuitem', { name: 'Draft a replacement with agent' })).toHaveAttribute(
     'href',
     `/tasks?task=supersede-record&record=${acceptedId}`,
   );
@@ -132,7 +132,7 @@ test('records route updates detail actions after accepting a candidate', async (
   await expect(page).toHaveURL(`/records?id=${candidateId}`);
   await expect(page.getByRole('button', { name: 'Accept', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Reject', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Supersede', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Change this decision', exact: true })).toBeVisible();
 });
 
 test('records route links candidate records to the revise task', async ({ page }) => {
@@ -156,9 +156,9 @@ test('records route links accepted records to the supersession task', async ({ p
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/records?id=${acceptedId}`);
 
-  const menu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Supersede' }) });
-  await menu.getByRole('button', { name: 'Supersede' }).click();
-  const action = menu.getByRole('menuitem', { name: 'Supersede with agent' });
+  const menu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Change this decision' }) });
+  await menu.getByRole('button', { name: 'Change this decision' }).click();
+  const action = menu.getByRole('menuitem', { name: 'Draft a replacement with agent' });
   await expect(action).toBeVisible();
   await expect(action.locator('.lucide-sparkles')).toBeVisible();
   await expect(action).toHaveAttribute('href', `/tasks?task=supersede-record&record=${acceptedId}`);
@@ -181,12 +181,12 @@ test('records route groups edit and supersede actions consistently', async ({ pa
   await expect(page.getByRole('menuitem', { name: 'Edit with agent' })).toBeVisible();
 
   await page.goto(`/records?id=${acceptedId}`);
-  const supersedeMenuButton = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Supersede' }) }).getByRole('button', { name: 'Supersede' });
+  const supersedeMenuButton = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Change this decision' }) }).getByRole('button', { name: 'Change this decision' });
   await expect(supersedeMenuButton).toBeVisible();
   await supersedeMenuButton.click();
-  const supersedeExisting = page.getByRole('menuitem', { name: 'Supersede with existing records' });
-  const supersedeNew = page.getByRole('menuitem', { name: 'Supersede with new record' });
-  const supersedeAgent = page.getByRole('menuitem', { name: 'Supersede with agent' });
+  const supersedeExisting = page.getByRole('menuitem', { name: 'Replace with existing decisions' });
+  const supersedeNew = page.getByRole('menuitem', { name: 'Draft a replacement', exact: true });
+  const supersedeAgent = page.getByRole('menuitem', { name: 'Draft a replacement with agent' });
   await expect(supersedeNew).toHaveAttribute('href', `/candidates/new?supersedes=${acceptedId}`);
   await expect(supersedeExisting).toBeVisible();
   await expect(supersedeAgent).toBeVisible();
@@ -197,11 +197,11 @@ test('records route can supersede with existing accepted records', async ({ page
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/records?id=${acceptedId}`);
 
-  const menu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Supersede' }) });
-  await menu.getByRole('button', { name: 'Supersede' }).click();
-  await menu.getByRole('menuitem', { name: 'Supersede with existing records' }).click();
+  const menu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Change this decision' }) });
+  await menu.getByRole('button', { name: 'Change this decision' }).click();
+  await menu.getByRole('menuitem', { name: 'Replace with existing decisions' }).click();
 
-  const dialog = page.getByRole('dialog', { name: 'Supersede with existing records' });
+  const dialog = page.getByRole('dialog', { name: 'Replace with existing decisions' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Cancel' })).toHaveCount(1);
   await expect(dialog.getByLabel('Search scope')).toBeVisible();
@@ -220,9 +220,9 @@ test('records route starts a new candidate from supersede with new record', asyn
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/records?id=${acceptedId}`);
 
-  const menu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Supersede' }) });
-  await menu.getByRole('button', { name: 'Supersede' }).click();
-  await menu.getByRole('menuitem', { name: 'Supersede with new record' }).click();
+  const menu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Change this decision' }) });
+  await menu.getByRole('button', { name: 'Change this decision' }).click();
+  await menu.getByRole('menuitem', { name: 'Draft a replacement', exact: true }).click();
 
   await expect(page).toHaveURL(`/candidates/new?supersedes=${acceptedId}`);
   await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue(/Use Polars lazy frames/);
@@ -235,11 +235,11 @@ test('shared record picker focuses search and closes without committing', async 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/records?id=${acceptedId}`);
 
-  const menu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Supersede' }) });
-  await menu.getByRole('button', { name: 'Supersede' }).click();
-  await menu.getByRole('menuitem', { name: 'Supersede with existing records' }).click();
+  const menu = page.locator('[data-action-menu]').filter({ has: page.getByRole('button', { name: 'Change this decision' }) });
+  await menu.getByRole('button', { name: 'Change this decision' }).click();
+  await menu.getByRole('menuitem', { name: 'Replace with existing decisions' }).click();
 
-  const dialog = page.getByRole('dialog', { name: 'Supersede with existing records' });
+  const dialog = page.getByRole('dialog', { name: 'Replace with existing decisions' });
   const search = dialog.getByRole('searchbox', { name: 'Search records' });
   await expect(search).toBeFocused();
 
@@ -247,8 +247,8 @@ test('shared record picker focuses search and closes without committing', async 
   await expect(dialog).not.toBeVisible();
   await expect(page.getByText('record superseded')).not.toBeVisible();
 
-  await menu.getByRole('button', { name: 'Supersede' }).click();
-  await menu.getByRole('menuitem', { name: 'Supersede with existing records' }).click();
+  await menu.getByRole('button', { name: 'Change this decision' }).click();
+  await menu.getByRole('menuitem', { name: 'Replace with existing decisions' }).click();
   await expect(dialog).toBeVisible();
   await page.mouse.click(12, 12);
   await expect(dialog).not.toBeVisible();
@@ -362,16 +362,16 @@ test('records route lets users drag resize the split panes', async ({ page }) =>
 });
 
 test('records route opens full-screen detail on narrow screens', async ({ page }) => {
-  await page.setViewportSize({ width: 900, height: 700 });
+  await page.setViewportSize({ width: 600, height: 700 });
   await page.goto('/records');
 
   await expect(page.getByLabel('Search scope')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Use Polars over pandas' })).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Use Polars over pandas' }).first()).not.toBeVisible();
 
   const listPane = page.locator('[data-workbench-pane]').first();
   const listBox = await listPane.boundingBox();
   if (!listBox) throw new Error('expected records list pane box');
-  expect(listBox.width).toBeGreaterThan(860);
+  expect(listBox.width).toBeGreaterThan(560);
 
   await page.getByRole('link', { name: /Use Polars over pandas/ }).click();
 

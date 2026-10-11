@@ -189,3 +189,14 @@ function isDetailInput(input: TaskPresentationField): boolean {
     'decision_hint',
   ].includes(input.name);
 }
+
+/** Stable task IDs stay available to integrations; labels describe the user's action. */
+export function taskActionLabel(task: { manifest: { id: string; title: string } }): string {
+  const labels: Record<string, string> = {
+    'code-to-record': 'Find decisions in my code',
+    'context-to-record': 'Draft a decision',
+    'find-conflicts': 'Check for conflicting decisions',
+    'supersede-record': 'Change this decision',
+  };
+  return labels[task.manifest.id] ?? task.manifest.title;
+}

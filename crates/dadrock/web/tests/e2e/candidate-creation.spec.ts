@@ -5,9 +5,8 @@ test('manual candidate creation loads the template and opens the new record', as
 
   await expect(page.locator('[data-workbench-page][data-layout="single"]')).toBeVisible();
   await expect(page.getByText('Candidate editor')).toHaveCount(0);
-  await expect(page.getByText('Create a candidate decision manually or from an agent draft.')).toHaveCount(1);
+  await expect(page.getByText('Write a proposed decision, then review and accept it.')).toHaveCount(1);
   await expect(page.locator('[data-ui-panel-section]')).toBeVisible();
-  await expect(page.locator('[data-ui-segmented-tabs]')).toBeVisible();
   await expect(page.locator('[data-ui-text-input]').first()).toBeVisible();
   await expect(page.locator('[data-ui-textarea-input]').first()).toBeVisible();
   await expect(page.locator('[data-ui-button]').getByText('Create candidate')).toBeVisible();
@@ -24,24 +23,15 @@ test('manual candidate creation loads the template and opens the new record', as
   await expect(page.getByRole('article')).toContainText(title);
 });
 
-test('agent candidate creation writes a candidate from a prompt', async ({ page }) => {
+test('agent drafting uses the common task workflow', async ({ page }) => {
   await page.goto('/candidates/new');
-
-  await page.getByRole('tab', { name: 'Agent draft' }).click();
-  await page.getByLabel('Draft Prompt').fill('Draft a candidate about using DuckDB for local joins.');
-  await page.getByLabel('Prompt Packs').fill('dadr');
-  await page.getByRole('button', { name: 'Draft candidate' }).click();
-
-  await expect(page).toHaveURL(/\/records\/0193fb1f-a3a0-7000-8000-[0-9a-f]{12}$/);
-  await expect(page.getByRole('article')).toContainText('Agent draft');
+  await page.getByRole('link', { name: 'Draft a decision with an agent' }).click();
+  await expect(page).toHaveURL(/tasks\?task=context-to-record$/);
 });
 
-test('new with agent opens the candidate editor in agent mode', async ({ page }) => {
+test('legacy agent creation link redirects to the common workflow', async ({ page }) => {
   await page.goto('/candidates/new?mode=agent');
-
-  await expect(page.getByRole('tab', { name: 'Agent draft' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByLabel('Draft Prompt')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Draft candidate' })).toBeVisible();
+  await expect(page).toHaveURL(/tasks\?task=context-to-record$/);
 });
 
 test('manual candidate creation scrolls to the submit action on short viewports', async ({ page }) => {

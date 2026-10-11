@@ -1,5 +1,5 @@
 import type { RecordSummary } from '$lib/api';
-import { primaryNavItems, type PrimaryNavHref } from '$lib/navigation/routes';
+import { allNavItems, type PrimaryNavHref } from '$lib/navigation/routes';
 import { recordSearchText } from '$lib/records/filters';
 
 export type CommandPaletteSection = 'Navigation' | 'Records' | 'Actions';
@@ -23,7 +23,7 @@ export interface CommandPaletteItem {
   action?: CommandPaletteAction;
 }
 
-const NAVIGATION: CommandPaletteItem[] = primaryNavItems.map((item) =>
+const NAVIGATION: CommandPaletteItem[] = allNavItems.map((item) =>
   navigationItem(item.href, `Go to ${item.label}`),
 );
 

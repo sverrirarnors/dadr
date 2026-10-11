@@ -13,6 +13,7 @@ import type {
 } from './schemas';
 
 export interface CreateCandidateRequest {
+  supersedes?: string | undefined;
   title: string;
   tags: string[];
   body_markdown: string;

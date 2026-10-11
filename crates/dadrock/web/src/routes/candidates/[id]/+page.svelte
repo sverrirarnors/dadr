@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { hasMissingRationale } from '$lib/candidates/review';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
@@ -108,10 +109,24 @@
         {/if}
       </div>
 
+      {#each lifecycle.data.diagnostics as diagnostic}
+        <Alert class="mt-4" variant="danger" title="Decision needs attention">{diagnostic.message}</Alert>
+      {/each}
+
       {#if accept.isError || reject.isError}
         <Alert class="mt-4" variant="danger" title="Candidate action failed">
           {accept.error?.message ?? reject.error?.message}
         </Alert>
+      {/if}
+
+      {#if isCandidate}
+        <Alert class="mt-4" variant="neutral" title={hasMissingRationale(source.data.content) ? 'Reason for this choice is missing' : 'Review this decision'}>
+          Check both what was done and why. Accepting means you endorse the decision and its explanation.
+          <a class="text-accent underline" href={resolve(`/records/${id}?tab=edit`)}>Edit the explanation</a>
+        </Alert>
+        {#if lifecycle.data.pending_supersedes}
+          <Alert class="mt-2" variant="neutral" title="Proposed replacement">Accepting will replace {lifecycle.data.pending_supersedes.title} and preserve its explanation.</Alert>
+        {/if}
       {/if}
 
       <SegmentedTabs class="mt-6" items={tabs} value={tab} ariaLabel="Candidate review view" onselect={(value) => (tab = value)} />

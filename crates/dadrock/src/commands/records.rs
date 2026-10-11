@@ -200,12 +200,16 @@ pub fn accept_record(
     query: &str,
 ) -> Result<CommandEnvelope<AcceptRecordResult>, DadrError> {
     let (_, index) = context.initialized_index()?;
+    let predecessor = crate::records::pending_replacement(&index, query)?;
     let result = accept_candidate(&index, query)?;
-    let changed_paths = if result.from == result.to {
+    let mut changed_paths = if result.from == result.to {
         vec![result.to.clone()]
     } else {
         vec![result.from.clone(), result.to.clone()]
     };
+    if let Some(old) = predecessor {
+        changed_paths.push(old.path);
+    }
     Ok(CommandEnvelope::new("status accept", result).with_changed_paths(changed_paths))
 }
 
