@@ -439,13 +439,15 @@ pub struct TaskShowArgs {
 
 #[derive(Debug, Args)]
 pub struct TaskRunArgs {
+    /// Task to run, by id (see `dadrock task list`).
     pub task_id: String,
-    #[arg(long = "input-json", conflicts_with_all = ["path", "context", "focus", "limit"])]
+    /// Task inputs as a JSON object, for tasks without friendly input flags.
+    #[arg(long = "input-json", value_name = "JSON", conflicts_with_all = ["path", "context", "focus", "limit"])]
     pub input_json: Option<String>,
-    /// File or directory to inspect.
+    /// File or directory to inspect (code-to-record).
     #[arg(long)]
     pub path: Option<String>,
-    /// Describe the decision to capture.
+    /// Describe the decision to capture (context-to-record).
     #[arg(long)]
     pub context: Option<String>,
     /// Topic to concentrate on (code-to-record, decisions-to-spec).
@@ -463,14 +465,19 @@ pub struct TaskRunArgs {
     /// File or folder for the agent to read, as task context; repeatable.
     #[arg(long, value_name = "PATH")]
     pub attach: Vec<String>,
+    /// Print the run as a JSON command envelope.
     #[arg(long)]
     pub json: bool,
+    /// How to answer the agent's tool permission requests.
     #[arg(long, value_enum, default_value_t = PermissionPolicyArg::Deny)]
     pub permission: PermissionPolicyArg,
-    #[arg(long)]
+    /// ACP agent executable to run instead of the configured or detected one.
+    #[arg(long, value_name = "PROGRAM")]
     pub agent: Option<String>,
-    #[arg(long = "agent-arg", allow_hyphen_values = true)]
+    /// Extra argument for the ACP agent; repeatable.
+    #[arg(long = "agent-arg", value_name = "ARG", allow_hyphen_values = true)]
     pub agent_args: Vec<String>,
+    /// Do not attach Dadrock's MCP server to the agent session.
     #[arg(long = "no-mcp")]
     pub no_mcp: bool,
 }
