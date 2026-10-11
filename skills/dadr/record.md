@@ -68,7 +68,7 @@ report the exclusion count and the missingness pattern.
 | `title` | Noun phrase describing the choice. **Not a question.** |
 | `status` | One of `candidate \| accepted \| rejected`. Set on creation; changed only via `dadrock status` lifecycle commands. |
 | `id` | UUIDv7 allocated by `dadrock new`. **Never write by hand.** |
-| `tags` | Must include the mandatory tags (see [tags.md](tags.md)). |
+| `tags` | Optional; follow project conventions (see [tags.md](tags.md)). |
 | `successors` | Optional list of UUIDv7 ids. Names accepted replacements; a non-empty list makes an accepted record superseded. Written only by `dadrock supersede`. |
 | `bibliography` | Optional list of bibliographic references. |
 
@@ -127,7 +127,7 @@ tags:
                         # communication | robustness | ...
 ```
 
-Agent-drafted records additionally carry:
+Agent-drafted records may additionally carry:
 
 ```yaml
   - writer/agent        # provenance: drafted by an agent, not the analyst
@@ -157,7 +157,7 @@ A well-formed record is **roughly 200–400 words of body prose** — long enoug
 
 ## Minimum viable record
 
-When a decision is genuinely terse — e.g., a reporting choice with no real alternatives — the floor still has all four sections, the mandatory `kind/` tag, and a source link:
+When a decision is genuinely terse — e.g., a reporting choice with no real alternatives — the floor still has all four sections, a source link, and optional tags:
 
 ```markdown
 ---

@@ -46,8 +46,10 @@ web-deps: ## Install Python deps (zensical) into .venv via uv
 build: web-deps cli-docs ## Build the static documentation site to docs/
 	uv run zensical build
 
-serve: web-deps ## Serve the docs site locally with live reload
-	uv run zensical serve
+DOCS_PORT ?= 8001
+
+serve: web-deps ## Serve the docs site locally with live reload (DOCS_PORT=8001)
+	uv run zensical serve --dev-addr 127.0.0.1:$(DOCS_PORT)
 
 clean: ## Remove the generated docs/ directory
 	rm -rf docs

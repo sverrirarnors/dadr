@@ -24,8 +24,8 @@ One guide per `dadrock` task or task-like workflow:
 
 ## References
 
-- [record.md](record.md) — anatomy of a single DADR record (front matter, four sections, length envelope, mandatory tags, lifecycle, common pitfalls).
-- [tags.md](tags.md) — tag format, mandatory tags, and recommended namespaces.
+- [record.md](record.md) — anatomy of a single DADR record (front matter, four sections, length envelope, optional tags, lifecycle, common pitfalls).
+- [tags.md](tags.md) — tag format, optional tags, and recommended namespaces.
 - [cli.md](cli.md) — `dadrock` command reference (mirrors `dadrock help`).
 
 ## Routing
