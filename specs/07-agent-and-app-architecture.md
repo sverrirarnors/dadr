@@ -20,9 +20,9 @@ Future application surfaces should preserve these constraints:
 
 - Record files remain canonical; derived indexes, rendered views, task outputs,
   and agent transcripts are operational state.
-- Lifecycle changes to accepted records remain explicit actions. Agents may
-  propose lifecycle mutations or call permission-gated tools, but they must not
-  silently accept, reject, supersede, or rewrite records.
+- Lifecycle changes remain explicit human actions. Agents may propose them, but
+  no agent tool accepts, rejects, or supersedes a record, and agents must not
+  rewrite accepted records.
 - Local-first operation remains the default. Networked, team, or hosted features
   must be opt-in and should not be required for ordinary project use.
 - Task packages remain the preferred extension point for new agent-assisted

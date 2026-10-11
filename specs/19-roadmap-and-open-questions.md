@@ -13,9 +13,9 @@ in `docs-src/` or generated references, not repeated here.
 | Code tags | Future RFC | Implement extraction of `#dadr/...` source comments, source-range binding, and optional validation. See [06-code-tags.md](06-code-tags.md). |
 | Git hooks | Future RFC | Advisory staged-diff detection for consequential analysis changes. Should reuse inference/task detectors. See [10-git-hooks.md](10-git-hooks.md). |
 | Plan/manuscript drafting | Future RFC | Add `plan-to-record` and `manuscript-to-record` task packages for drafting candidates from governing plans and reporting artifacts. See [09-plan-to-record.md](09-plan-to-record.md) and [11-manuscript-to-record.md](11-manuscript-to-record.md). |
-| Code-derived drafting | Future improvements | Extend the existing code-to-record/code-to-decisions task skill with richer detectors, source-reference scoring, and combined deduplication. |
+| Code-derived drafting | Future improvements | Extend the existing `code-to-record` task with richer detectors, source-reference scoring, and combined deduplication. |
 | Faithfulness | Future RFC | Plan/code/manuscript drift checks should start as task/report workflows. See specs 12-14. |
-| Conflict resolution | Future improvements | Persistent dismissals and richer cross-run triage remain future work. |
+| Conflict resolution | Future improvements | Project-level persistent dismissals and richer cross-run triage for the existing `find-conflicts` task remain future work. |
 | Reports and publishing | Future product work | Static publishing/report generation needs a refreshed product spec before implementation. |
 | Pipeline integrations | Future product work | Link DADRs to `targets`, DVC, Snakemake, and similar workflow metadata without copying full workflow definitions. |
 | Team features | Future product work | Notifications, RBAC, scheduled checks, metrics, and shared review surfaces. |
@@ -47,17 +47,18 @@ successors, reject a candidate, or block candidate creation on its own.
 
 ## Conflict Detection Helper
 
+The `find-conflicts` task already scans accepted records and live candidates,
+reports each conflicting pair with its relationship and suggested follow-up
+actions, and changes nothing; resolution goes through normal lifecycle actions.
+The Inbox remembers a dismissed finding only in the reviewer's browser.
+
 Future conflict triage should be durable across runs:
 
-- scan accepted records and live candidates for pairs and clusters classified
-  as `conflict`, `contradiction`, or `possible-supersession`;
+- classify findings with the labels above (`conflict`, `contradiction`,
+  `possible-supersession`);
 - rank findings by tag overlap, recency, and strength of disagreement;
-- present each finding with the records, proposed relationship, and explicit
-  follow-up actions;
-- route real resolution through normal lifecycle transitions rather than
-  applying graph changes automatically;
-- persist dismissals so a reviewer can mark a finding as "not a conflict" and
-  avoid seeing the same pair every run.
+- persist dismissals in the project so a reviewer can mark a finding as "not a
+  conflict" and avoid seeing the same pair every run.
 
 The helper must remain read-only until a human invokes a lifecycle action.
 

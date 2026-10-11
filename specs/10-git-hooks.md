@@ -6,6 +6,12 @@ Future RFC. Dadrock does not currently expose `dadrock hooks` commands. Hook
 logic should share detectors and candidate-writing behavior with task-based
 inference workflows rather than becoming an independent lifecycle path.
 
+Checking changes to accepted and rejected records, in CI or a pre-commit hook,
+is already implemented as `dadrock validate changes`; see
+[`docs-src/changing.md`](../docs-src/changing.md). This RFC covers a different
+check: detecting consequential changes to analysis code that no record
+documents yet.
+
 ## Purpose
 
 Define how DADR can use Git commit hooks to detect consequential analysis
@@ -319,7 +325,8 @@ Local hooks improve authoring discipline but are not enforceable by themselves.
 CI should run equivalent checks with explicit commands:
 
 Future CI could run `dadrock hooks check --range origin/main..HEAD` alongside
-ordinary record and link validation.
+ordinary record and link validation and the existing
+`dadrock validate changes --base origin/main` check on accepted records.
 
 CI may use stricter policy than local hooks, such as failing when
 high-confidence consequential changes lack DADR coverage.

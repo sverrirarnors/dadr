@@ -5,7 +5,7 @@ are not yet fully covered by the implementation or public documentation. The
 normative record format, lifecycle rules, links, tags, and conformance language
 live in [`docs-src/specification.md`](../docs-src/specification.md). Dadrock's
 project layout is documented in
-[`docs-src/dadrock/cli.md`](../docs-src/dadrock/cli.md). Existing Dadrock
+[`docs-src/layout.md`](../docs-src/layout.md). Existing Dadrock
 behavior belongs in `docs-src/` or generated CLI docs, not in this directory.
 
 ## Spec Index
@@ -21,6 +21,7 @@ behavior belongs in `docs-src/` or generated CLI docs, not in this directory.
 | [13-faithfulness-code.md](13-faithfulness-code.md) | Future RFC | Checks for drift between records and code/config/notebooks/workflows. |
 | [14-faithfulness-manuscript.md](14-faithfulness-manuscript.md) | Future RFC | Checks for drift between records and manuscript or report claims. |
 | [19-roadmap-and-open-questions.md](19-roadmap-and-open-questions.md) | Living roadmap | Cross-cutting future improvements and open product questions. |
+| [20-screencasts.md](20-screencasts.md) | Recording plan | UI-only screencast series: episodes, demo examples, and fixture requirements. |
 
 `library.bib` is supporting reference material for DADR rationale and examples.
 

@@ -5,7 +5,7 @@
 Future RFC. The code-tag syntax (`#dadr/<short-id>` links and `#dadr/<tag>`
 annotations) is documented in
 [`docs-src/specification.md`](../docs-src/specification.md#code-tags), and the
-suggested namespaces in [`docs-src/tags.md`](../docs-src/tags.md#code-tags).
+suggested namespaces in [`docs-src/tags.md`](../docs-src/tags.md#optional-code-annotations).
 The public spec deliberately leaves the covered code range to tools. This spec
 defines that range, the `#dadr/ignore` directive, and future extraction and
 code-tag-driven inference or faithfulness checks.

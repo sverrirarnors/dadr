@@ -109,7 +109,7 @@ The report's machine-readable form names a follow-up action per finding:
 
 Code-faithfulness is a review aid. It must not edit accepted DADRs, approve deviations, or mutate locked plans. Ambiguous findings stay as `unverified`; the tool surfaces them for a human to triage rather than guessing.
 
-The check operates on the current working tree. It does not analyze historical commits except as needed to find the project-validation immutability baseline or to recover renamed files.
+The check operates on the current working tree. It does not analyze historical commits except as needed to recover renamed files. Comparing accepted records with an earlier revision is a separate, implemented check, `dadrock validate changes`.
 
 ## Relationship to Other Faithfulness Checks
 
