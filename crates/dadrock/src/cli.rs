@@ -857,10 +857,7 @@ mod tests {
             }
             for subcommand in command.get_subcommands() {
                 let path = format!("{path} {}", subcommand.get_name());
-                // `task run` is skipped until its options get help text.
-                if path != "dadrock task run" {
-                    collect_missing(subcommand, &path, missing);
-                }
+                collect_missing(subcommand, &path, missing);
             }
         }
 

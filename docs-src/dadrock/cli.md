@@ -391,7 +391,15 @@ Ask a local ACP agent to draft a candidate decision.
 
   Default value: `deny`
 
-  Possible values: `deny`, `allow-once`, `allow-always`
+  Possible values:
+  - `deny`:
+    Deny every tool permission request
+  - `allow-reads`:
+    Approve read, search, and think tool requests once; deny the rest
+  - `allow-once`:
+    Approve every tool permission request once
+  - `allow-always`:
+    Approve every tool permission request for the session
 
 * `--agent <AGENT>` — The ACP agent program to start (defaults to `DADROCK_ACP_AGENT`, then an installed provider)
 * `--agent-arg <AGENT_ARGS>` — An extra argument for the agent program; repeat for more
@@ -455,25 +463,36 @@ Run one resolved task package with a local ACP agent.
 
 **Arguments**
 
-* `<TASK_ID>`
+* `<TASK_ID>` — Task to run, by id (see `dadrock task list`)
 
 **Options**
 
-* `--input-json <INPUT_JSON>`
-* `--path <PATH>` — File or directory to inspect
-* `--context <CONTEXT>` — Describe the decision to capture
+* `--input-json <JSON>` — Task inputs as a JSON object, for tasks without friendly input flags
+* `--path <PATH>` — File or directory to inspect (code-to-record)
+* `--context <CONTEXT>` — Describe the decision to capture (context-to-record)
 * `--focus <FOCUS>` — Topic to concentrate on (code-to-record, decisions-to-spec)
 * `--limit <LIMIT>` — Maximum initial candidates (code-to-record defaults to 5)
-* `--json`
-* `--permission <PERMISSION>`
+* `--instructions <INSTRUCTIONS>` — What the agent should do, as task context (required by custom)
+* `--record <QUERY>` — Record for the agent to work on, by id, short id, or title; repeatable
+* `--attach <PATH>` — File or folder for the agent to read, as task context; repeatable
+* `--json` — Print the run as a JSON command envelope
+* `--permission <PERMISSION>` — How to answer the agent's tool permission requests
 
   Default value: `deny`
 
-  Possible values: `deny`, `allow-once`, `allow-always`
+  Possible values:
+  - `deny`:
+    Deny every tool permission request
+  - `allow-reads`:
+    Approve read, search, and think tool requests once; deny the rest
+  - `allow-once`:
+    Approve every tool permission request once
+  - `allow-always`:
+    Approve every tool permission request for the session
 
-* `--agent <AGENT>`
-* `--agent-arg <AGENT_ARGS>`
-* `--no-mcp`
+* `--agent <PROGRAM>` — ACP agent executable to run instead of the configured or detected one
+* `--agent-arg <ARG>` — Extra argument for the ACP agent; repeatable
+* `--no-mcp` — Do not attach Dadrock's MCP server to the agent session
 
 ### `dadrock task runs`
 
