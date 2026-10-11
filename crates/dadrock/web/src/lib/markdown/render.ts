@@ -136,6 +136,7 @@ function isSafeLinkUrl(url: string): boolean {
 }
 
 function decodedSchemeCandidate(url: string): string {
+  // eslint-disable-next-line no-control-regex -- Strip leading controls that can conceal an unsafe URL scheme.
   let candidate = url.replace(/^[\u0000-\u0020\u007f]+/, '');
   for (let i = 0; i < 3; i += 1) {
     try {
@@ -146,5 +147,6 @@ function decodedSchemeCandidate(url: string): string {
       break;
     }
   }
+  // eslint-disable-next-line no-control-regex -- Strip decoded controls before checking URL scheme safety.
   return candidate.replace(/[\u0000-\u0020\u007f]+/g, '');
 }

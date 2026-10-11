@@ -303,21 +303,6 @@
     </div>
   {/if}
 
-  {#if isCandidate}
-    <Alert class="mt-3" variant="neutral" title={hasMissingRationale(source.data.content) ? 'Reason for this choice is missing' : 'Review this decision'}>
-      {#if hasMissingRationale(source.data.content)}
-        The draft describes what the code does, but does not document why. Edit the decision to add or correct your reason before accepting it.
-      {:else}
-        Check both what was done and why. Accepting means you endorse this decision and its explanation.
-      {/if}
-    </Alert>
-    {#if lifecycle.data.pending_supersedes}
-      <Alert class="mt-2" variant="neutral" title="Proposed replacement">
-        Accepting will replace <a class="text-accent underline" href={resolve(recordLink(lifecycle.data.pending_supersedes))}>{lifecycle.data.pending_supersedes.title}</a> and preserve its explanation.
-      </Alert>
-    {/if}
-  {/if}
-
   <ActionBar class="mt-2 border-0 bg-transparent px-0">
     <div class="flex flex-wrap items-center gap-2">
       {#if selectedTab === 'edit'}
@@ -436,6 +421,21 @@
       {/if}
     </div>
   </ActionBar>
+
+  {#if isCandidate}
+    <Alert class="mt-3" variant="neutral" title={hasMissingRationale(source.data.content) ? 'Reason for this choice is missing' : 'Review this decision'}>
+      {#if hasMissingRationale(source.data.content)}
+        The draft describes what the code does, but does not document why. Edit the decision to add or correct your reason before accepting it.
+      {:else}
+        Check both what was done and why. Accepting means you endorse this decision and its explanation.
+      {/if}
+    </Alert>
+    {#if lifecycle.data.pending_supersedes}
+      <Alert class="mt-2" variant="neutral" title="Proposed replacement">
+        Accepting will replace <a class="text-accent underline" href={resolve(recordLink(lifecycle.data.pending_supersedes))}>{lifecycle.data.pending_supersedes.title}</a> and preserve its explanation.
+      </Alert>
+    {/if}
+  {/if}
 
   {#if supersedePickerOpen && snapshot.data}
     <RecordSelectionDialog
