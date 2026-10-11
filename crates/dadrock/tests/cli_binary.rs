@@ -3,8 +3,9 @@
 
 use std::{
     fs,
+    io::{BufRead, BufReader},
     path::{Path, PathBuf},
-    process::{Command, Output},
+    process::{Command, Output, Stdio},
 };
 
 use dadrock::{project::init_project, RecordId};
@@ -99,6 +100,107 @@ fn new_accepts_options_before_the_title() {
         let record = listed_record(&root, tag, "Report the ATE");
         assert_eq!(record["title"], "Report the ATE");
         assert_eq!(record["id"], envelope["data"]["id"]);
+    }
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+/// Accepted records with no sections: each lists in `dadrock list` and fails
+/// `dadrock validate`, so both print far more than a pipe buffers (64 KiB).
+fn write_many_records(root: &Path, count: u32) {
+    let ledger = root.join("dadr").join("ledger");
+    for i in 0..count {
+        let id = format!("0193{i:04x}-0000-7000-8000-{i:012x}");
+        let content = format!(
+            "---\ntitle: Padding decision number {i} with a long enough title\n\
+             status: accepted\nid: {id}\n---\n"
+        );
+        fs::write(ledger.join(format!("padding-{i:04}.md")), content).unwrap();
+    }
+}
+
+/// Run `dadrock <args>` with stdout read by a reader that stops after one
+/// line, the way `dadrock <args> | head -1` does.
+fn run_with_early_closed_stdout(root: &Path, args: &[&str]) -> (Output, String) {
+    let mut child = dadrock(root)
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut first_line = String::new();
+    {
+        let mut reader = BufReader::new(child.stdout.take().unwrap());
+        reader.read_line(&mut first_line).unwrap();
+    }
+    (child.wait_with_output().unwrap(), first_line)
+}
+
+fn assert_quiet(args: &[&str], output: &Output, exit_code: i32) {
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.is_empty(),
+        "dadrock {args:?} wrote to stderr:\n{stderr}"
+    );
+    // A closed stdout keeps the command's own outcome: `list` succeeds,
+    // `validate` still fails on the records' errors.
+    assert_eq!(
+        output.status.code(),
+        Some(exit_code),
+        "dadrock {args:?} exited with {:?}",
+        output.status
+    );
+}
+
+#[test]
+fn reader_that_stops_after_one_line_ends_commands_quietly() {
+    let root = temp_project("head");
+    write_many_records(&root, 800);
+
+    for (args, first_line, exit_code) in [
+        (&["list"][..], "{", 0),
+        (&["validate"][..], "dadrock validate: ", 1),
+    ] {
+        let (output, line) = run_with_early_closed_stdout(&root, args);
+        assert!(
+            line.starts_with(first_line),
+            "dadrock {args:?} printed {line:?} first"
+        );
+        assert_quiet(args, &output, exit_code);
+    }
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn stdout_closed_before_any_output_ends_commands_quietly() {
+    let root = temp_project("no-reader");
+    write_many_records(&root, 3);
+
+    for (args, exit_code) in [
+        (&[][..], 0),
+        (&["help", "validate", "changes"][..], 0),
+        (&["commands"][..], 0),
+        (&["commands", "--json"][..], 0),
+        (&["completions", "zsh"][..], 0),
+        (&["gen-cli-docs"][..], 0),
+        (&["dir"][..], 0),
+        (&["config"][..], 0),
+        (&["list"][..], 0),
+        (&["validate"][..], 1),
+        (&["validate", "links"][..], 0),
+        (&["tags", "list", "--json"][..], 0),
+        (&["new", "--quiet", "Closed", "stdout"][..], 0),
+    ] {
+        let (reader, writer) = std::io::pipe().unwrap();
+        drop(reader);
+        let output = dadrock(&root)
+            .args(args)
+            .stdout(writer)
+            .stderr(Stdio::piped())
+            .output()
+            .unwrap();
+        assert_quiet(args, &output, exit_code);
     }
 
     fs::remove_dir_all(root).unwrap();
