@@ -31,7 +31,7 @@ df <- df[!is.na(df$treatment), ]
 ## Format rules
 
 - Unicode letters, digits, emoji, underscore, hyphen, forward slash.
-- `/` denotes hierarchy: `kind/sample` is a child of `kind`.
+- `/` denotes hierarchy: `kind/sample` is a child of `kind`. No empty levels (`a//b`, `a/`, `/a`).
 - Case-insensitive (`Kind` ≡ `kind`); use the project's existing casing.
 - Must contain at least one character other than a digit, `_`, `-`, or `/`.
 - No whitespace; combine words with `kebab-case`, `snake_case`, `camelCase`, or `PascalCase`.
@@ -42,7 +42,7 @@ Tags are optional. Respect existing project vocabularies and user preferences. W
 
 ### Kinds
 
-`kind/` is the main classification: which part of the analysis a decision is about. It drives downstream filtering and review routing.
+`kind/` is the main classification: which part of the analysis a decision is about. It drives downstream filtering and grouping.
 
 | Tag | Decisions about |
 |---|---|
@@ -107,4 +107,4 @@ When annotating source code (not record files), use the `#dadr/` prefix:
 | `#dadr/multiverse/<axis>/<value>` | Robustness/specification axis and the value implemented here. |
 | `#dadr/ignore` | Dadrock convention: do not draft candidates from the surrounding code. |
 
-The prefix is recommended **only in code comments** — tags inside DADR record files do not need it. Dadrock does not yet scan or validate code tags; agents reading code can still honor them.
+The prefix belongs **only in code comments** — tags inside DADR record files do not use it. Dadrock does not yet scan or validate code tags; agents reading code can still honor them.
