@@ -40,6 +40,7 @@ use dadrock::{
 };
 use serde::{Deserialize, Serialize};
 
+mod history;
 mod http;
 mod routing;
 mod static_assets;

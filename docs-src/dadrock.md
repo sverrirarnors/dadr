@@ -113,6 +113,49 @@ On acceptance, Dadrock checks that the predecessor is accepted and not already s
 
 For two records that are already accepted, `dadrock supersede --from OLD --to NEW` links them explicitly and moves `OLD` to `dadr/archive/`. Records linked this way have no `## Supersedes` section.
 
+## History
+
+A decision's history is its chain of versions. Dadrock derives it from `successors` alone, so it needs no extra front matter and no Git.
+
+```sh
+dadrock history QUERY            # versions as a graph, newest first
+dadrock history QUERY --patch    # with the diff of each change
+dadrock history QUERY --json
+dadrock diff OLD NEW             # compare any two records
+```
+
+`QUERY` is any version: a full id, an id prefix, a filename, or a title. The history of a record contains:
+
+- **versions**: the record, its predecessors back to the first version, and its successors forward to the current ones;
+- **current versions**: the versions without successors;
+- **links**: each supersession between two records, with its reason, the text after the links in the successor's `## Supersedes` section. Records linked with `dadrock supersede` alone have no reason;
+- **neighbors**: records at the other end of a link that are not versions, listed on one line without their own history.
+
+Versions are listed newest first, and a record always appears above its predecessors, even when it was created earlier. `◉` marks the record you asked for. A decision superseded by several records is a split; several decisions superseded by one record are a merge:
+
+```text
+●   0193b2a1d117  Multiple imputation for income  current
+│ ● 0193b2a1c0f4  Complete cases for the outcome  current
+├─╯ Outcome and covariates need different treatment.
+●   01938c20a3b4  Listwise deletion
+│   Complete cases lose a third of the sample.
+◉   01938a77e310  Pairwise deletion
+```
+
+```text
+◉   0193c4e1a2b0  One outlier rule for all covariates  current
+├─╮ The two rules disagreed at the 99th percentile.
+● │ 0193a0b7e911  Winsorize income at p99
+│ ● 01939f2c4d07  Drop implausible ages
+●   01938f11aa02  Trim income at p95
+```
+
+The history from one half of a split shows the other half as a neighbor ("also became …"), and the history from one input of a merge shows the other input as a neighbor ("merged with …").
+
+Diffs compare the title, the tags, and the body without `## Supersedes`, after normalizing line endings; other front matter is not compared. `--patch` prints each link's diff under it: the title change, the tag changes (`+topic/missing-data −topic/attrition`), and the changed lines with a few lines of context. `dadrock diff OLD NEW` prints the same comparison for any two records, linked or not. Diffs are computed when shown and never stored.
+
+The history ignores successor ids that match no record and stops at cycles, with a warning; `dadrock validate` reports both. The local web server serves the same JSON at `/api/records/{id}/history` (`?patch=1` for diffs) and `/api/records/{id}/diff?against={other}`, which compares `{other}` to `{id}`.
+
 ## Validation
 
 ```sh
@@ -244,6 +287,8 @@ Generated from the CLI definition by `make cli-docs`; it mirrors `dadrock help`.
 * [`dadrock demo`↴](#dadrock-demo)
 * [`dadrock new`↴](#dadrock-new)
 * [`dadrock list`↴](#dadrock-list)
+* [`dadrock history`↴](#dadrock-history)
+* [`dadrock diff`↴](#dadrock-diff)
 * [`dadrock status`↴](#dadrock-status)
 * [`dadrock status accept`↴](#dadrock-status-accept)
 * [`dadrock status reject`↴](#dadrock-status-reject)
@@ -291,6 +336,8 @@ With no command, prints this help menu.
 * `demo` — Seed a new project with a named DADR example.
 * `new` — Create a candidate decision record from the active candidate template.
 * `list` — List records, optionally filtered by lifecycle status, tag, or query.
+* `history` — Show a decision's versions as a graph, newest first, with the reason for each change.
+* `diff` — Compare two records: title, tags, and body without `## Supersedes`.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
 * `accept` — Accept a candidate decision.
 * `reject` — Reject a candidate decision.
@@ -409,6 +456,36 @@ List records, optionally filtered by lifecycle status, tag, or query.
 * `--tag <TAG>`
 * `--query <QUERY>`
 * `--unique`
+
+### `dadrock history`
+
+Show a decision's versions as a graph, newest first, with the reason for each change.
+
+**Usage:** `dadrock history [OPTIONS] <QUERY>...`
+
+###### **Arguments:**
+
+* `<QUERY>` — Any version of the decision: full id, id prefix, filename, or title
+
+###### **Options:**
+
+* `--patch` — Print each change's diff under its link
+* `--json`
+
+### `dadrock diff`
+
+Compare two records: title, tags, and body without `## Supersedes`.
+
+**Usage:** `dadrock diff [OPTIONS] <OLD> <NEW>`
+
+###### **Arguments:**
+
+* `<OLD>` — The record to compare from: full id, id prefix, filename, or title
+* `<NEW>` — The record to compare to
+
+###### **Options:**
+
+* `--json`
 
 ### `dadrock status`
 

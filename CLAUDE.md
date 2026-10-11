@@ -74,6 +74,7 @@ Key `dadrock` modules:
 | `project` | Project discovery (nearest ancestor `dadr/`, searching up to the git root), `init` |
 | `records` | Record scanning, candidate creation (unique short ids), accept/reject/supersede |
 | `index` | `ProjectIndex`: scanned records, CLI queries, record-link resolution |
+| `history` | `dadrock history`/`diff`: versions, links with reasons, neighbors, record diffs, the text lane graph |
 | `validation` | `dadrock validate`: sections, ids, short-id collisions, successor graph, links, tags |
 | `changes` | `dadrock validate changes`: accepted and rejected records against a Git base revision |
 | `links` | Wikilink and Markdown-link checks |

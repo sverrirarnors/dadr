@@ -13,6 +13,7 @@ mod agent;
 mod catalog;
 mod changes;
 mod diff;
+mod history;
 mod project;
 mod records;
 mod task;
@@ -28,7 +29,9 @@ pub use catalog::{
     CommandMutation, COMMANDS,
 };
 pub use changes::{validate_changes, ValidateChangesRequest};
+pub(crate) use diff::text_diff_lines;
 pub use diff::{TextDiffKind, TextDiffLine};
+pub use history::{diff, history};
 pub use project::{
     demo_project, demo_project_with_example, initialize_project, show_config, show_dir,
 };
