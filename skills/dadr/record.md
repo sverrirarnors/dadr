@@ -118,7 +118,7 @@ Downstream effects on sample size, estimand, robustness obligations, or reportin
 
 ## Suggested tags
 
-Every record carries at minimum:
+Tags are optional. When useful and consistent with the project vocabulary, a record may carry:
 
 ```yaml
 tags:
