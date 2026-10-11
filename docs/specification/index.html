@@ -1205,12 +1205,12 @@
 
 
 <h1 id="dadr-specification">DADR specification<a class="headerlink" href="#dadr-specification" title="Permanent link">&para;</a></h1>
-<p>For a short introduction, see <a href="../core/">Data Analysis Decision Records</a>. Suggested tag vocabularies are <a href="../tags/">documented separately</a>.</p>
+<p>For a short introduction, see <a href="../core/">Making decisions</a>. Suggested tag vocabularies are <a href="../tags/">documented separately</a>.</p>
 <p><strong>DADR</strong> (Data-Analysis Decision Records) is a file-first format for recording consequential decisions in empirical and data-analysis projects. A DADR record is a Markdown file that captures one analytic decision: the context that motivated it, the decision that was made, the alternatives considered, and the consequences for the analysis. Records live alongside the analysis code, manuscript, data references, and project documentation.</p>
-<p>This page is the canonical specification of the record format. Directory layouts, inference, version-control hooks, previews, and agent workflows are tooling concerns; the reference implementation documents its own choices in the <a href="../dadrock/"><strong>DADRock</strong></a> section.</p>
+<p>This page is the canonical specification of the record format. Directory layouts, inference, version-control hooks, previews, and agent workflows are tooling concerns; the reference implementation documents its own choices on the <a href="../layout/">Project layout</a> and <a href="../changing/">Changing decisions</a> pages and in the <a href="../dadrock/"><strong>DADRock</strong></a> section.</p>
 <hr />
 <h2 id="version">Version<a class="headerlink" href="#version" title="Permanent link">&para;</a></h2>
-<p>This document defines DADR specification version <strong>0.1.0-alpha.2</strong>.</p>
+<p>This document defines DADR specification version <strong>0.1.0-alpha.3</strong>.</p>
 <p>DADR uses Semantic Versioning. Versions below <code>1.0.0</code> are alpha-stage specifications: breaking changes MAY appear in minor or patch releases while the model is still being validated. Starting with <code>1.0.0</code>, breaking changes MUST increment the major version.</p>
 <hr />
 <h2 id="terms">1. Conventions<a class="headerlink" href="#terms" title="Permanent link">&para;</a></h2>
@@ -1304,7 +1304,7 @@
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>id:        01938b8e-4d70-7abc-8def-0123456789ab
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>short id:  01938b8e4d70
 </span></code></pre></div>
-<p>Short ids MUST be unique within a record set. Tools that create records MUST ensure this, for example by generating a fresh <code>id</code> when the short id is already taken. The short id is the recommended form for displaying a record's identity and for <a href="#wikilinks">linking to it</a>.</p>
+<p>Short ids MUST be unique within a record set. The short id encodes exactly the <code>id</code>'s 48-bit timestamp, so two <code>id</code>s created in the same millisecond share it. Tools that create records MUST ensure uniqueness, for example by generating a fresh <code>id</code> in a later millisecond when the short id is already taken. The short id is the recommended form for displaying a record's identity and for <a href="#wikilinks">linking to it</a>.</p>
 <p>Filenames are free. A short kebab-case slug of the title plus <code>.md</code>, such as <code>income-preprocessing.md</code>, is suggested. A filename carries no meaning: tools MUST NOT derive a record's identity or status from it, and a record keeps its <code>id</code> when it is renamed or moved.</p>
 <p>Authors drafting by hand can take an <code>id</code> from the <a href="../uuidv7/">UUID v7 generator</a>. A file without an <code>id</code> is not a valid record; tools MAY repair it by assigning a fresh <code>id</code>.</p>
 <hr />

@@ -440,6 +440,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#recommended-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Recommended vocabulary
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recommended vocabulary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kinds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Kinds
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-namespaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Other namespaces
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#inspect-and-validate" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -799,6 +838,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#recommended-vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Recommended vocabulary
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recommended vocabulary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kinds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Kinds
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-namespaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Other namespaces
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#inspect-and-validate" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -852,39 +930,31 @@
 <tbody>
 <tr>
 <td><code>kind/sample</code></td>
-<td>Sample definition or inclusion rules</td>
+<td>Which observations enter the analysis</td>
 </tr>
 <tr>
 <td><code>kind/modeling</code></td>
-<td>Model choices</td>
+<td>Model specification and estimator</td>
 </tr>
 <tr>
 <td><code>kind/inference</code></td>
-<td>Uncertainty and tests</td>
+<td>Uncertainty, tests, and intervals</td>
 </tr>
 <tr>
 <td><code>writer/agent</code></td>
-<td>An agent helped draft the record</td>
+<td>An agent drafted the record</td>
+</tr>
+<tr>
+<td><code>confidence/low</code></td>
+<td>The choice is tentative or weakly supported</td>
 </tr>
 <tr>
 <td><code>people/decider/alice</code></td>
 <td>Person responsible for the choice</td>
 </tr>
 <tr>
-<td><code>people/approver/bob</code></td>
-<td>Person who reviewed and approved it</td>
-</tr>
-<tr>
-<td><code>people/reviewer/bob</code></td>
-<td>Optional project convention for a reviewer</td>
-</tr>
-<tr>
 <td><code>axis/sample/complete-case</code></td>
 <td>A choice along a robustness or specification axis</td>
-</tr>
-<tr>
-<td><code>multiverse/model/ols</code></td>
-<td>Another project convention for an alternative specification</td>
 </tr>
 <tr>
 <td><code>rejected/duplicate</code></td>
@@ -903,6 +973,148 @@
 <div class="language-markdown highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>The exclusion rule is one sensitivity-analysis option. <span class="ni">#axis/sample/complete</span>-case
 </span></code></pre></div>
 <p>Use one spelling per concept and avoid near-duplicates. See the <a href="../specification/#tags">specification</a> for exact syntax and normalization rules.</p>
+<h2 id="recommended-vocabulary">Recommended vocabulary<a class="headerlink" href="#recommended-vocabulary" title="Permanent link">&para;</a></h2>
+<p>When a few tags are not enough, use this vocabulary. The DADR agent skill and DADRock's task prompts follow it. It is still a suggestion: DADRock does not enforce it, and a project's own conventions take precedence.</p>
+<h3 id="kinds">Kinds<a class="headerlink" href="#kinds" title="Permanent link">&para;</a></h3>
+<p><code>kind/</code> is the main classification: which part of the analysis a decision is about. Most records need one <code>kind/</code> value: pick the closest match.</p>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Decisions about</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind/setup</code></td>
+<td>The computing environment: software and package versions, random seeds, configuration</td>
+</tr>
+<tr>
+<td><code>kind/input</code></td>
+<td>Data sources: which datasets, versions, and extracts are used, and how they are obtained</td>
+</tr>
+<tr>
+<td><code>kind/sample</code></td>
+<td>Which units and observations enter the analysis: inclusion and exclusion rules, filters, joins, time windows</td>
+</tr>
+<tr>
+<td><code>kind/measurement</code></td>
+<td>How constructs become variables: outcome, treatment, and covariate definitions, coding, scales, derived scores</td>
+</tr>
+<tr>
+<td><code>kind/transformation</code></td>
+<td>How values are processed: cleaning, transforms, winsorizing, standardizing, imputation</td>
+</tr>
+<tr>
+<td><code>kind/exploration</code></td>
+<td>Exploratory analysis: descriptive checks and diagnostics that inform later choices</td>
+</tr>
+<tr>
+<td><code>kind/modeling</code></td>
+<td>Model specification: estimand, estimator, formula, fixed or random effects, priors</td>
+</tr>
+<tr>
+<td><code>kind/inference</code></td>
+<td>Uncertainty and testing: standard errors, intervals, tests, multiple-comparison adjustments</td>
+</tr>
+<tr>
+<td><code>kind/robustness</code></td>
+<td>Sensitivity analysis: alternative specifications, placebo and falsification checks</td>
+</tr>
+<tr>
+<td><code>kind/visualization</code></td>
+<td>Figures: plot types, encodings, scales</td>
+</tr>
+<tr>
+<td><code>kind/communication</code></td>
+<td>Reporting to readers: which results appear, tables, captions, labels, rounding, wording</td>
+</tr>
+<tr>
+<td><code>kind/output</code></td>
+<td>Produced artifacts: which result files and datasets are written, in what format, and where</td>
+</tr>
+<tr>
+<td><code>kind/governance</code></td>
+<td>Process: preregistration, plan deviations, ethics and data-access constraints, sign-off</td>
+</tr>
+<tr>
+<td><code>kind/quality</code></td>
+<td>Checks: data validation rules, assertions, tests, reproducibility checks</td>
+</tr>
+<tr>
+<td><code>kind/orchestration</code></td>
+<td>Pipeline execution: step order, dependencies, caching, parallelization</td>
+</tr>
+</tbody>
+</table>
+<h3 id="other-namespaces">Other namespaces<a class="headerlink" href="#other-namespaces" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>Use it for</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>writer/</code></td>
+<td>Who drafted the record</td>
+<td><code>writer/agent</code>, <code>writer/analyst</code></td>
+</tr>
+<tr>
+<td><code>confidence/</code></td>
+<td>How settled the choice or its supporting evidence is</td>
+<td><code>confidence/low</code>, <code>confidence/medium</code>, <code>confidence/high</code></td>
+</tr>
+<tr>
+<td><code>topic/</code></td>
+<td>A free-form subject that cuts across kinds</td>
+<td><code>topic/missingness</code>, <code>topic/winsorization</code>, <code>topic/multiple-testing</code></td>
+</tr>
+<tr>
+<td><code>plan/</code></td>
+<td>The plan a decision implements or deviates from</td>
+<td><code>plan/sap-2026</code>, <code>plan/pap-main</code></td>
+</tr>
+<tr>
+<td><code>axis/&lt;axis&gt;/&lt;value&gt;</code></td>
+<td>A choice along a robustness or specification axis</td>
+<td><code>axis/sample/complete-case</code>, <code>axis/model/ols</code></td>
+</tr>
+<tr>
+<td><code>multiverse/&lt;axis&gt;/&lt;value&gt;</code></td>
+<td>The same idea, for projects that call their axes a multiverse</td>
+<td><code>multiverse/sample/complete-case</code>, <code>multiverse/se-type/cluster-robust</code></td>
+</tr>
+<tr>
+<td><code>robustness/</code></td>
+<td>The specific robustness check a record covers</td>
+<td><code>robustness/placebo</code>, <code>robustness/leave-one-out</code></td>
+</tr>
+<tr>
+<td><code>people/decider/</code></td>
+<td>Person responsible for the choice</td>
+<td><code>people/decider/alice</code></td>
+</tr>
+<tr>
+<td><code>people/approver/</code></td>
+<td>Person who reviewed and approved it</td>
+<td><code>people/approver/bob</code></td>
+</tr>
+<tr>
+<td><code>people/reviewer/</code></td>
+<td>Optional project convention for a reviewer</td>
+<td><code>people/reviewer/carol</code></td>
+</tr>
+<tr>
+<td><code>rejected/</code></td>
+<td>Why a candidate was closed; rejected records only</td>
+<td><code>rejected/duplicate</code>, <code>rejected/merged</code>, <code>rejected/withdrawn</code>, <code>rejected/no-longer-relevant</code></td>
+</tr>
+</tbody>
+</table>
+<p>Pick one of <code>axis/</code> and <code>multiverse/</code> per project.</p>
 <h2 id="inspect-and-validate">Inspect and validate<a class="headerlink" href="#inspect-and-validate" title="Permanent link">&para;</a></h2>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadrock<span class="w"> </span>tags<span class="w"> </span>list
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>tags
