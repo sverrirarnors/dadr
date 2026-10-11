@@ -1,4 +1,4 @@
-.PHONY: help install web-deps build serve clean cli-docs kill window version bump release vscode positron editors vscode-sync-version vscode-stage-binary vscode-package-target vscode-package-universal vscode-publish
+.PHONY: help install web-deps build serve clean cli-docs demo kill window version bump release vscode positron editors vscode-sync-version vscode-stage-binary vscode-package-target vscode-package-universal vscode-publish
 
 .DEFAULT_GOAL := help
 
@@ -53,6 +53,18 @@ serve: web-deps ## Serve the docs site locally with live reload (DOCS_PORT=8001)
 
 clean: ## Remove the generated docs/ directory
 	rm -rf docs
+
+DEMO_DIR ?= /tmp/dadr-demo
+DEMO_EXAMPLE ?= candidate-review
+DEMO_PORT ?= 4004
+
+demo: ## Seed a throwaway demo project and open it in the web UI (DEMO_EXAMPLE=candidate-review DEMO_DIR=/tmp/dadr-demo DEMO_PORT=4004)
+	@if [ -e "$(DEMO_DIR)" ] && [ ! -d "$(DEMO_DIR)/dadr" ]; then \
+		echo "refusing to replace $(DEMO_DIR): it is not a dadrock demo project"; exit 1; \
+	fi
+	@rm -rf "$(DEMO_DIR)"
+	cargo run --quiet -p dadrock --bin dadrock -- demo --example $(DEMO_EXAMPLE) "$(DEMO_DIR)"
+	cargo run --quiet -p dadrock --bin dadrock -- preview --port $(DEMO_PORT) "$(DEMO_DIR)"
 
 kill: ## Kill running dadrock preview servers
 	@pkill -f '[d]adrock.*preview' || true
