@@ -7,7 +7,7 @@ resolver = "2"
 
 [workspace.package]
 edition = "2021"
-version = "0.0.1"
+version = "0.0.2"
 description = "Data Analysis Decision Records tooling and local review UI."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/vincentarelbundock/dadr"
@@ -22,7 +22,7 @@ categories = ["command-line-utilities", "development-tools"]
 # puts on dadr moves in step with the workspace version.
 [workspace.dependencies.dadr]
 path = "crates/dadr"
-version = "0.0.1"
+version = "0.0.2"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
