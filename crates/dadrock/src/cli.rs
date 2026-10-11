@@ -162,7 +162,9 @@ pub struct NewArgs {
     pub tags: Vec<String>,
     #[arg(long)]
     pub quiet: bool,
-    #[arg(required = true, num_args = 1.., trailing_var_arg = true)]
+    /// The record's title; the words join into one title. Options can come
+    /// before or after it; put `--` before a title that starts with `-`.
+    #[arg(required = true, num_args = 1..)]
     pub title: Vec<String>,
 }
 
@@ -580,6 +582,53 @@ mod tests {
         assert_eq!(args.tags, ["cli"]);
         assert!(args.quiet);
         assert_eq!(args.title, ["Move to clap"]);
+    }
+
+    fn parse_new(args: &[&str]) -> NewArgs {
+        let cli = Cli::try_parse_from(["dadrock", "new"].into_iter().chain(args.iter().copied()))
+            .unwrap();
+        let Some(Command::New(args)) = cli.command else {
+            panic!("expected new command");
+        };
+        args
+    }
+
+    #[test]
+    fn parses_new_options_after_the_title() {
+        let args = parse_new(&["Move to clap", "--tag", "cli", "--quiet"]);
+        assert_eq!(args.title, ["Move to clap"]);
+        assert_eq!(args.tags, ["cli"]);
+        assert!(args.quiet);
+
+        let args = parse_new(&["Drop", "missing", "rows", "--tag", "kind/sample"]);
+        assert_eq!(args.title, ["Drop", "missing", "rows"]);
+        assert_eq!(args.tags, ["kind/sample"]);
+        assert!(!args.quiet);
+    }
+
+    #[test]
+    fn parses_new_options_on_both_sides_of_an_unquoted_title() {
+        let args = parse_new(&[
+            "--tag",
+            "kind/sample",
+            "Drop",
+            "missing",
+            "rows",
+            "--tag",
+            "writer/agent",
+        ]);
+        assert_eq!(args.title, ["Drop", "missing", "rows"]);
+        assert_eq!(args.tags, ["kind/sample", "writer/agent"]);
+    }
+
+    #[test]
+    fn new_title_starting_with_a_hyphen_needs_a_separator() {
+        let args = parse_new(&["--tag", "kind/sample", "--", "-1", "codes", "missing"]);
+        assert_eq!(args.title, ["-1", "codes", "missing"]);
+        assert_eq!(args.tags, ["kind/sample"]);
+
+        assert!(Cli::try_parse_from(["dadrock", "new", "-1", "codes", "missing"]).is_err());
+        assert!(Cli::try_parse_from(["dadrock", "new", "--quiet"]).is_err());
     }
 
     #[test]
