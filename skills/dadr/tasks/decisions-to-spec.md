@@ -1,3 +1,27 @@
+---
+id: decisions-to-spec
+title: "Decisions to spec"
+description: "Synthesize accepted DADRs into an implementation, analysis, or reporting spec for downstream work."
+version: 1
+inputs:
+  - name: focus
+    label: "Spec focus"
+    type: textarea
+    required: false
+requirements:
+  records: none
+  record_status: accepted
+  paths: none
+  notes: optional
+  scope: accepted
+output:
+  kind: markdown_report.v1
+mcp_access: read_only
+tools:
+  - name: dadrock.list_records
+    mode: read
+---
+
 # Decisions -> spec
 
 Read the accepted DADRs in a project's `dadr/` directory and synthesize a written implementation or analysis specification from them. The decisions remain the source of truth, and the spec summarizes what downstream code, analysis, or writing should follow.

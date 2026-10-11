@@ -1,6 +1,25 @@
 ---
-name: dadr-context-to-record
-description: Draft a single DADR candidate from supplied context — a plan section, code excerpt, paper paragraph, meeting note, or freeform description. Use when the user has one specific decision to capture and the relevant context is already on hand.
+id: context-to-record
+title: "Context to record"
+description: "Turn supplied context into one candidate DADR when you already know the decision to capture."
+version: 1
+inputs:
+  - name: context
+    label: "Context"
+    type: textarea
+    required: true
+requirements:
+  records: none
+  record_status: all
+  paths: optional
+  notes: required
+  scope: none
+output:
+  kind: candidate_draft.v1
+mcp_access: read_only
+tools:
+  - name: dadrock.project_snapshot
+    mode: read
 ---
 
 # Context -> record

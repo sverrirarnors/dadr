@@ -1,6 +1,20 @@
 ---
-name: dadr-custom
-description: Run a custom DADR-aware instruction against the project, using selected records, paths, and notes as context. Use as an escape hatch when none of the other dadr-* task skills fit — for ad-hoc questions, one-off transformations, or experimental workflows.
+id: custom
+title: "Custom"
+description: "Use a freeform prompt with selected records, files, folders, or notes when no dedicated DADR workflow fits."
+version: 1
+requirements:
+  records: many
+  record_status: all
+  paths: optional
+  notes: required
+  scope: none
+output:
+  kind: markdown_report.v1
+mcp_access: full
+tools:
+  - name: dadrock.project_snapshot
+    mode: read
 ---
 
 # Custom DADR task

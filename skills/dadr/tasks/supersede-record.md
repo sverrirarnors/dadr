@@ -1,6 +1,29 @@
 ---
-name: dadr-supersede-record
-description: Propose a candidate that supersedes an existing accepted DADR. Use when an accepted decision needs replacing because of new evidence, plan amendment, or a downstream conflict — without editing the original record in place.
+id: supersede-record
+title: "Supersede record"
+description: "Draft a replacement candidate for an accepted DADR when the project decision has changed."
+version: 1
+inputs:
+  - name: record_id
+    label: "Record to supersede"
+    type: text
+    required: true
+  - name: reason
+    label: "Reason"
+    type: textarea
+    required: true
+requirements:
+  records: one
+  record_status: accepted
+  paths: none
+  notes: required
+  scope: none
+output:
+  kind: supersession_proposal.v1
+mcp_access: full
+tools:
+  - name: dadrock.get_record
+    mode: read
 ---
 
 # Supersede record

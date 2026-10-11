@@ -1,6 +1,29 @@
 ---
-name: dadr-merge-records
-description: Consolidate two or more overlapping candidate DADRs into a single candidate that preserves the strongest evidence from each source. Use after bootstrapping an existing project (often via dadr-code-to-record) when the candidate list contains drafts that describe the same choice.
+id: merge-records
+title: "Merge records"
+description: "Combine overlapping candidate DADRs into one clearer candidate while leaving source records unchanged."
+version: 1
+inputs:
+  - name: record_ids
+    label: "Candidate records"
+    type: textarea
+    required: true
+  - name: merge_goal
+    label: "Merge goal"
+    type: textarea
+    required: false
+requirements:
+  records: many
+  record_status: candidate
+  paths: none
+  notes: optional
+  scope: none
+output:
+  kind: candidate_draft.v1
+mcp_access: full
+tools:
+  - name: dadrock.get_record
+    mode: read
 ---
 
 # Merge records

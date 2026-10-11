@@ -1,6 +1,34 @@
 ---
-name: dadr-code-to-record
-description: Bootstrap an existing analysis project — crawl the codebase, identify consequential analytic choices, and draft a candidate DADR for each. Use when the user says "bootstrap DADR", "seed dadr/", "find analytic choices in this project", "scaffold candidates", "onboard this analysis to DADR".
+id: code-to-record
+title: "Code to records"
+description: "Scan selected project files and draft candidate DADRs for consequential choices to review."
+version: 1
+inputs:
+  - name: path
+    label: "Path"
+    type: path
+    default: "."
+  - name: focus
+    label: "Focus"
+    type: textarea
+    required: false
+  - name: limit
+    label: "Maximum decisions"
+    type: number
+    default: "5"
+    required: false
+requirements:
+  records: none
+  record_status: all
+  paths: required
+  notes: optional
+  scope: none
+output:
+  kind: candidate_batch.v1
+mcp_access: full
+tools:
+  - name: dadrock.project_snapshot
+    mode: read
 ---
 
 # Code -> record

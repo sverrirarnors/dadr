@@ -1,6 +1,26 @@
 ---
-name: dadr-find-conflicts
-description: Detect pairs of DADR records whose Decision sections contradict each other and scaffold their resolution via supersession or rejection. Use when the user says "find conflicting DADRs", "resolve duplicate decisions", "clean up the dadr/ backlog", "check dadr/ for inconsistencies".
+id: find-conflicts
+title: "Find conflicting decisions"
+description: "Audit selected DADRs for contradictions, duplicates, or unresolved overlap that need follow-up."
+version: 1
+inputs:
+  - name: status_scope
+    label: "Records to scan"
+    type: select
+    default: "live"
+    options: ["live", "candidates", "accepted", "all"]
+requirements:
+  records: none
+  record_status: all
+  paths: none
+  notes: optional
+  scope: live
+output:
+  kind: conflict_set.v1
+mcp_access: full
+tools:
+  - name: dadrock.list_records
+    mode: read
 ---
 
 # Find conflicts

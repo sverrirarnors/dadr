@@ -1,6 +1,29 @@
 ---
-name: dadr-edit-record
-description: Revise an existing DADR candidate to apply reviewer-requested changes while preserving its intent and valid evidence. Use when a reviewer has feedback on a candidate before accepting, or when the candidate's body needs to be sharpened in response to new information.
+id: edit-record
+title: "Edit record"
+description: "Revise any existing DADR while preserving its lifecycle status until you choose what to do next."
+version: 1
+inputs:
+  - name: record_id
+    label: "Record"
+    type: text
+    required: true
+  - name: requested_changes
+    label: "Requested changes"
+    type: textarea
+    required: true
+requirements:
+  records: one
+  record_status: all
+  paths: none
+  notes: required
+  scope: none
+output:
+  kind: record_revision.v1
+mcp_access: full
+tools:
+  - name: dadrock.get_record
+    mode: read
 ---
 
 # Edit record
