@@ -11,7 +11,7 @@ DADROCK_REQUIRE_JS_BUILD=1 cargo install --path crates/dadrock --bin dadrock
 dadrock --version
 ```
 
-Tagged releases publish installer scripts and packages, but they can trail the source. When the project relies on recent features, check `dadrock --version` against what it needs, or build from source as above. A CLI-only build may use `--features no-js-build`, but cannot provide the full web review interface. Explain that limitation if choosing it.
+Tagged GitHub releases publish installer scripts, a Homebrew tap, a Scoop bucket, and Linux packages, but they can trail the source. When the project relies on recent features, check `dadrock --version` and `dadrock commands` against what it needs, or build from source as above. A CLI-only build may use `--features no-js-build`, but cannot provide the full web review interface. Explain that limitation if choosing it.
 
 Initialize the user's analysis project with `dadrock init`. Manual writing and review require no model provider.
 
