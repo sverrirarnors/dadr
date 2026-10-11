@@ -33,4 +33,4 @@ These targets need the editor CLI, Rust, Bun, and Node. The extension they build
 | `dadrock.binaryPath` | `""` | Absolute path to the `dadrock` binary. Empty means the bundled binary, then `dadrock` on `PATH`. |
 | `dadrock.autoStart` | `false` | Start DADRock automatically when a workspace containing `dadr/inbox`, `dadr/ledger`, or `dadr/archive` opens. |
 
-This does not imply published marketplace packages or separate official extensions for Cursor, RStudio, or Neovim.
+The extension is not published on the Visual Studio Marketplace or Open VSX. GitHub releases attach its VSIX files: one per platform with the `dadrock` binary bundled (macOS arm64 and x64, Linux x64, Windows x64), and a universal one that needs `dadrock` on `PATH` or `dadrock.binaryPath`. Install one with the editor's `--install-extension` option. There are no separate official extensions for Cursor, RStudio, or Neovim.

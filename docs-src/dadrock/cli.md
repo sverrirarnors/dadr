@@ -1,6 +1,6 @@
 # Command line
 
-<!-- Generated from the CLI definition by `make cli-docs`; it mirrors `dadrock help`. -->
+<!-- Generated from the CLI definition by `make cli-docs`; it mirrors `dadrock <command> --help`. -->
 
 <!-- cli-docs:start -->
 
