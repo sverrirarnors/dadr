@@ -66,8 +66,17 @@ pub enum DiagnosticCode {
     InvalidFieldType,
     InvalidStatus,
     InvalidRecordId,
+    /// An `id` or `successors` entry that is a valid UUIDv7 but not in the
+    /// lowercase hyphenated form records must use (spec §3, §5).
+    NonCanonicalRecordId,
     DateInFrontMatter,
+    /// The file starts with a UTF-8 byte-order mark (spec §2).
+    ByteOrderMark,
     UnreadableRecord,
+    /// A `## Supersedes` section that DADRock cannot read: repeated, not
+    /// starting with a link, or with a link that is not a full id. This is a
+    /// DADRock convention, not part of the DADR format; `dadr` never emits it.
+    InvalidSupersedes,
 }
 
 impl DiagnosticCode {
@@ -81,8 +90,11 @@ impl DiagnosticCode {
             Self::InvalidFieldType => "invalid_field_type",
             Self::InvalidStatus => "invalid_status",
             Self::InvalidRecordId => "invalid_record_id",
+            Self::NonCanonicalRecordId => "non_canonical_record_id",
             Self::DateInFrontMatter => "date_in_front_matter",
+            Self::ByteOrderMark => "byte_order_mark",
             Self::UnreadableRecord => "unreadable_record",
+            Self::InvalidSupersedes => "invalid_supersedes",
         }
     }
 }

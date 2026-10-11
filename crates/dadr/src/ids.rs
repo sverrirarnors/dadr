@@ -15,6 +15,11 @@ impl RecordId {
         Self(Uuid::now_v7())
     }
 
+    /// Parse a UUIDv7 in any form the `uuid` crate reads: hyphenated,
+    /// unhyphenated, braced, or `urn:uuid:`, in either case. This suits ids
+    /// that people type in queries; a record must write the lowercase
+    /// hyphenated form (spec §5), which [`fmt::Display`] produces and record
+    /// parsing checks.
     pub fn parse(input: &str) -> Result<Self, DadrError> {
         let uuid =
             Uuid::parse_str(input).map_err(|_| DadrError::InvalidRecordId(input.to_owned()))?;
