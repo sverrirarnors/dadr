@@ -75,6 +75,7 @@ Key `dadrock` modules:
 | `records` | Record scanning, candidate creation (unique short ids), accept/reject/supersede |
 | `index` | `ProjectIndex`: scanned records, CLI queries, record-link resolution |
 | `validation` | `dadrock validate`: sections, ids, short-id collisions, successor graph, links, tags |
+| `changes` | `dadrock validate changes`: accepted and rejected records against a Git base revision |
 | `links` | Wikilink and Markdown-link checks |
 | `tags` | Tag normalization, listing, validation |
 | `templates` | Candidate template with built-in fallback |
@@ -111,4 +112,4 @@ Agent tasks return proposals for human review. Do not invent an analyst's ration
 
 Use `dadrock accept`, `dadrock reject`, and `dadrock supersede` for everyday lifecycle actions; the `status` subcommands remain compatible. A successor candidate names its predecessor in an optional `## Supersedes` section: a record link by full UUID (`[[uuid]]` or `[[uuid|label]]`), then optionally the reason in ordinary Markdown. When Dadrock writes the section, it is the first section of the body and the link is labeled with the predecessor's title. Acceptance supports exactly one predecessor for now; it validates and links the predecessor and moves it to `dadr/archive/` while preserving its body. The related diagnostic code is `invalid_supersedes`.
 
-Document only behavior implemented in source. Keep planned features in `docs-src/roadmap.md`, with detailed future-work RFCs under `specs/`. Current validation does not establish code faithfulness or compare accepted files against Git history. Do not promise release binaries, registry packages, or editor integrations without checking their availability.
+Document only behavior implemented in source. Keep planned features in `docs-src/roadmap.md`, with detailed future-work RFCs under `specs/`. Current validation does not establish code faithfulness. `dadrock validate changes` compares accepted and rejected records with a Git base revision (by running `git`): their `id`, `status`, `title`, and body must not change, and `successors` entries must not be removed. Do not promise release binaries, registry packages, or editor integrations without checking their availability.

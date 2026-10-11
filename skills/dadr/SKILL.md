@@ -41,7 +41,7 @@ Pick the workflow that matches the request:
 | "supersede decision X", "change the accepted choice", "draft a successor" | [tasks/supersede-record.md](tasks/supersede-record.md) |
 | "merge these candidates", "consolidate the duplicate drafts" | [tasks/merge-records.md](tasks/merge-records.md) |
 | "find conflicting decisions", "resolve duplicate DADRs", "any decisions contradict each other?", "clean up dadr/" | [tasks/find-conflicts.md](tasks/find-conflicts.md) |
-| "diagnose dadr/", "health-check the DADR ledger", "audit the ledger", "what's broken in dadr/?" | Use the validation page or `dadrock validate`; deterministic diagnostics do not go through agent tasks. |
+| "diagnose dadr/", "health-check the DADR ledger", "audit the ledger", "what's broken in dadr/?" | Use the validation page or `dadrock validate`; deterministic diagnostics do not go through agent tasks. `dadrock validate changes` reports edits to accepted or rejected records since a Git revision. |
 | "turn accepted decisions into a spec", "write a spec from dadr/", "decisions to spec" | [tasks/decisions-to-spec.md](tasks/decisions-to-spec.md) |
 | Ad-hoc DADR request that doesn't match the rows above | [tasks/custom.md](tasks/custom.md) |
 | "what does a record look like?", "what does a candidate look like?", "how long should a DADR be?" | [record.md](record.md) |

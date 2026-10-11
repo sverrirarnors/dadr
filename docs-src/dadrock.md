@@ -131,11 +131,44 @@ Current validation checks:
 
 Focused commands are `dadrock validate records`, `dadrock validate links`, and `dadrock validate tags`. Use labeled links such as `[[01938c20a3b4|sampling rule]]` to make raw Markdown easier to read.
 
-Validation checks the records' structure and internal references. It does not compare accepted records with Git history, resolve bibliography citations, detect `TBD` prose, enforce plan-deviation sections, or determine whether code follows a decision. Those checks are [roadmap work](roadmap.md). Human review remains necessary.
+### Changes since a Git revision
+
+Once a record is accepted or rejected, its `id`, `status`, `title`, and body do not change, and entries are not removed from its `successors`. `dadrock validate changes` checks this against Git history:
+
+```sh
+dadrock validate changes                      # working tree against HEAD
+dadrock validate changes --staged             # staged changes against HEAD
+dadrock validate changes --base origin/main   # everything since another revision
+```
+
+For each record file in `dadr/inbox/`, `dadr/ledger/`, or `dadr/archive/` that changed since the base revision, Dadrock reads the file's version at the base. If that version was accepted or rejected, the current version must have the same `id`, `status`, `title`, and body (line endings aside), and its `successors` must still list every earlier entry. `tags`, keys outside DADR, and new `successors` entries may change. A record that moved between folders, by being accepted, rejected, or superseded, is followed through Git's rename detection or by its `id`, and passes when these rules hold.
+
+A violation is an error that names the record and suggests drafting a successor instead (`record_id_changed`, `record_status_changed`, `record_title_changed`, `record_body_changed`, `successor_removed`, or `invalid_record` when the new version no longer parses). Deleting an accepted or rejected record is a warning (`record_deleted`). Candidates change freely, new files have no earlier version to compare, and a repository without commits passes. Outside a Git repository, or when the base revision does not resolve, the command fails. Ordinary `dadrock validate` does not use Git.
+
+Validation checks the records' structure, their internal references, and, with `validate changes`, their history in Git. It does not resolve bibliography citations, detect `TBD` prose, enforce plan-deviation sections, or determine whether code follows a decision. Those checks are [roadmap work](roadmap.md). Human review remains necessary.
 
 ## Continuous integration
 
 Once Dadrock is installed in your CI environment, run `dadrock validate` from the analysis project root. A nonzero exit status signals an error; `--json` provides structured diagnostics. Install from a pinned source revision for reproducibility; a CLI-only CI build can use the [`no-js-build` feature](install.md#without-the-web-interface).
+
+To check that a pull request leaves accepted and rejected records unchanged, compare it with its target branch. The checkout needs that branch's history:
+
+```sh
+git fetch origin main
+dadrock validate
+dadrock validate changes --base origin/main
+```
+
+`--base origin/main` compares with the tip of `main`. That is right when the checkout already includes `main`, such as the merge commit many CI services check out for a pull request. For a branch that `main` has moved past, compare with the point where the branch started: `--base "$(git merge-base origin/main HEAD)"`.
+
+To catch changes before they are committed, run the check on the staged changes in a pre-commit hook, `.git/hooks/pre-commit`, made executable:
+
+```sh
+#!/bin/sh
+exec dadrock validate changes --staged
+```
+
+Git runs hooks from the repository root. If the project lives in a subdirectory, such as `analysis/dadr/`, change into that subdirectory first: `cd analysis && exec dadrock validate changes --staged`.
 
 ## Web interface
 
@@ -222,6 +255,7 @@ Generated from the CLI definition by `make cli-docs`; it mirrors `dadrock help`.
 * [`dadrock validate records`↴](#dadrock-validate-records)
 * [`dadrock validate links`↴](#dadrock-validate-links)
 * [`dadrock validate tags`↴](#dadrock-validate-tags)
+* [`dadrock validate changes`↴](#dadrock-validate-changes)
 * [`dadrock tags`↴](#dadrock-tags)
 * [`dadrock tags list`↴](#dadrock-tags-list)
 * [`dadrock mcp`↴](#dadrock-mcp)
@@ -261,7 +295,7 @@ With no command, prints this help menu.
 * `accept` — Accept a candidate decision.
 * `reject` — Reject a candidate decision.
 * `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
-* `validate` — Run project validation, or target records, links, or tags.
+* `validate` — Run project validation, or target records, links, tags, or changes.
 * `tags` — Inspect DADR tag usage.
 * `mcp` — Serve Dadrock MCP tools over stdio.
 * `agent` — Call a configured local ACP agent for candidate drafting.
@@ -456,7 +490,7 @@ Link accepted successors to the records they supersede and move those records to
 
 ### `dadrock validate`
 
-Run project validation, or target records, links, or tags.
+Run project validation, or target records, links, tags, or changes.
 
 **Usage:** `dadrock validate [OPTIONS] [COMMAND]`
 
@@ -465,6 +499,7 @@ Run project validation, or target records, links, or tags.
 * `records` — Validate record front matter and structure.
 * `links` — Report broken or ambiguous wikilinks and local Markdown links.
 * `tags` — Report malformed YAML and inline tags.
+* `changes` — Check that accepted and rejected records changed since a Git revision only where allowed.
 
 ###### **Options:**
 
@@ -502,6 +537,20 @@ Report malformed YAML and inline tags.
 
 ###### **Options:**
 
+* `--json`
+
+### `dadrock validate changes`
+
+Check that accepted and rejected records changed since a Git revision only where allowed.
+
+**Usage:** `dadrock validate changes [OPTIONS]`
+
+###### **Options:**
+
+* `--base <BASE>` — Git revision to compare with
+
+  Default value: `HEAD`
+* `--staged` — Compare the index (staged changes) instead of the working tree
 * `--json`
 
 ### `dadrock tags`

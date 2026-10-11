@@ -25,6 +25,7 @@ This document contains the help content for the `dadrock` command-line program.
 * [`dadrock validate records`↴](#dadrock-validate-records)
 * [`dadrock validate links`↴](#dadrock-validate-links)
 * [`dadrock validate tags`↴](#dadrock-validate-tags)
+* [`dadrock validate changes`↴](#dadrock-validate-changes)
 * [`dadrock tags`↴](#dadrock-tags)
 * [`dadrock tags list`↴](#dadrock-tags-list)
 * [`dadrock mcp`↴](#dadrock-mcp)
@@ -64,7 +65,7 @@ With no command, prints this help menu.
 * `accept` — Accept a candidate decision.
 * `reject` — Reject a candidate decision.
 * `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
-* `validate` — Run project validation, or target records, links, or tags.
+* `validate` — Run project validation, or target records, links, tags, or changes.
 * `tags` — Inspect DADR tag usage.
 * `mcp` — Serve Dadrock MCP tools over stdio.
 * `agent` — Call a configured local ACP agent for candidate drafting.
@@ -295,7 +296,7 @@ Link accepted successors to the records they supersede and move those records to
 
 ## `dadrock validate`
 
-Run project validation, or target records, links, or tags.
+Run project validation, or target records, links, tags, or changes.
 
 **Usage:** `dadrock validate [OPTIONS] [COMMAND]`
 
@@ -304,6 +305,7 @@ Run project validation, or target records, links, or tags.
 * `records` — Validate record front matter and structure.
 * `links` — Report broken or ambiguous wikilinks and local Markdown links.
 * `tags` — Report malformed YAML and inline tags.
+* `changes` — Check that accepted and rejected records changed since a Git revision only where allowed.
 
 ###### **Options:**
 
@@ -347,6 +349,22 @@ Report malformed YAML and inline tags.
 
 ###### **Options:**
 
+* `--json`
+
+
+
+## `dadrock validate changes`
+
+Check that accepted and rejected records changed since a Git revision only where allowed.
+
+**Usage:** `dadrock validate changes [OPTIONS]`
+
+###### **Options:**
+
+* `--base <BASE>` — Git revision to compare with
+
+  Default value: `HEAD`
+* `--staged` — Compare the index (staged changes) instead of the working tree
 * `--json`
 
 

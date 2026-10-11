@@ -8,6 +8,6 @@ These are proposed directions, not currently available guarantees or delivery co
 - **Reporting:** draft methods sections and decision narratives with references to records.
 - **Coverage and robustness:** identify undocumented choices and possible sensitivity analyses.
 - **Process metrics:** compute review latency, coverage, and follow-through from appropriate lifecycle data.
-- **Additional validation:** citation resolution, plan-deviation requirements, placeholder detection, and history-based checks for substantive changes to accepted records.
+- **Additional validation:** citation resolution, plan-deviation requirements, and placeholder detection.
 
 Future checks should help people investigate discrepancies. A missing link does not establish that an analysis is wrong, and a clean validation report does not establish scientific correctness.
