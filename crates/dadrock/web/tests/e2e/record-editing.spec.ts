@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { editorValue, fillEditor } from './editor';
 
 const supersededId = '0193fb1f-a3a0-7000-8000-000000000001';
 const candidateId = '0193fb1f-a3a0-7000-8000-000000000002';
@@ -9,13 +10,23 @@ async function openEditor(page: Page) {
   await expect(page.getByLabel('Raw Markdown')).toBeVisible();
 }
 
+test('the raw editor is CodeMirror with the record loaded', async ({ page }) => {
+  await page.goto(`/ledger/${supersededId}`);
+  await openEditor(page);
+  const editor = page.getByLabel('Raw Markdown');
+  await expect(editor).toHaveAttribute('contenteditable', 'true');
+  await expect(page.locator('[data-record-editor-pane] .cm-editor')).toBeVisible();
+  expect(await editorValue(editor)).toContain(`id: ${supersededId}`);
+  await expect(editor).toBeFocused();
+});
+
 test('record editor resets dirty markdown to the loaded source', async ({ page }) => {
   await page.goto(`/ledger/${supersededId}`);
   await openEditor(page);
   const editor = page.getByLabel('Raw Markdown');
-  const original = await editor.inputValue();
+  const original = await editorValue(editor);
 
-  await editor.fill(`${original}\n\nLocal dirty edit.`);
+  await fillEditor(editor, `${original}\n\nLocal dirty edit.`);
 
   await expect(page.getByText('Unsaved')).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
@@ -61,10 +72,10 @@ test('record editor saves markdown and keeps it available during SPA navigation'
   await page.goto(`/ledger/${acceptedId}`);
   await openEditor(page);
   const editor = page.getByLabel('Raw Markdown');
-  const original = await editor.inputValue();
+  const original = await editorValue(editor);
   const edited = `${original}\n\nSaved through Playwright.`;
 
-  await editor.fill(edited);
+  await fillEditor(editor, edited);
   await page.getByRole('button', { name: 'Save' }).click();
 
   await expect(page.getByRole('status').filter({ hasText: `saved ${acceptedId}` })).toBeVisible();
@@ -78,17 +89,16 @@ test('record editor saves markdown and keeps it available during SPA navigation'
   await page.locator('[data-ledger-list]').getByRole('link', { name: /Use Polars lazy frames/ }).click();
   await page.locator('[data-record-detail-pane]').getByRole('button', { name: 'Edit' }).click();
 
-  await expect(page.getByLabel('Raw Markdown')).toHaveValue(edited);
+  await expect.poll(() => editorValue(page.getByLabel('Raw Markdown'))).toBe(edited);
 });
 
 test('record editor saves with the keyboard shortcut', async ({ page }) => {
   await page.goto(`/ledger/${candidateId}`);
   await openEditor(page);
   const editor = page.getByLabel('Raw Markdown');
-  const original = await editor.inputValue();
-  const edited = `${original}\n\nSaved with keyboard shortcut.`;
+  const original = await editorValue(editor);
 
-  await editor.fill(edited);
+  await fillEditor(editor, `${original}\n\nSaved with keyboard shortcut.`);
   await page.keyboard.press('Control+S');
 
   await expect(page.getByRole('status').filter({ hasText: `saved ${candidateId}` })).toBeVisible();
@@ -101,8 +111,7 @@ test('record editor loads the next record when same-route navigation changes ids
 }) => {
   await page.goto(`/ledger/${acceptedId}`);
   await openEditor(page);
-  const editor = page.getByLabel('Raw Markdown');
-  await editor.fill('dirty markdown for the accepted record');
+  await fillEditor(page.getByLabel('Raw Markdown'), 'dirty markdown for the accepted record');
 
   await page.evaluate((nextId) => {
     const link = document.createElement('a');
@@ -113,8 +122,8 @@ test('record editor loads the next record when same-route navigation changes ids
   await page.getByRole('link', { name: 'Switch to candidate record' }).click();
 
   await expect(page).toHaveURL(new RegExp(`/ledger/${candidateId}\\?tab=edit$`));
-  await expect(editor).toHaveValue(/Adopt pre-registration for studies/);
-  await expect(editor).not.toHaveValue(/dirty markdown for the accepted record/);
+  await expect.poll(() => editorValue(page.getByLabel('Raw Markdown'))).toMatch(/Adopt pre-registration for studies/);
+  expect(await editorValue(page.getByLabel('Raw Markdown'))).not.toMatch(/dirty markdown for the accepted record/);
 });
 
 test('a tab=edit deep link opens the editor and leaving clears it', async ({ page }) => {
@@ -143,11 +152,11 @@ test('typing in the search box keeps the editor open', async ({ page }) => {
   const detail = page.locator('[data-record-detail-pane]');
   await detail.getByRole('button', { name: 'Edit' }).click();
   const editor = detail.getByLabel('Raw Markdown');
-  await editor.fill('still editing');
+  await fillEditor(editor, 'still editing');
 
   await page.getByLabel('Search ledger').fill('lazy');
 
   await expect(page).toHaveURL(new RegExp(`/ledger\\?q=lazy&id=${acceptedId}$`));
   await expect(editor).toBeVisible();
-  await expect(editor).toHaveValue('still editing');
+  expect(await editorValue(editor)).toBe('still editing');
 });

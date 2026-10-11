@@ -3,7 +3,8 @@
   import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
   import { createApi } from '$lib/api';
   import { parseListInput } from '$lib/candidates/form';
-  import { Alert, Button, DisclosureRow, SegmentedTabs, TextInput, TextareaInput } from '$lib/components/ui';
+  import MarkdownEditor from '$lib/components/editor/MarkdownEditor.svelte';
+  import { Alert, Button, DisclosureRow, SegmentedTabs, TextInput } from '$lib/components/ui';
   import { ActionBar, MetadataStrip } from '$lib/components/workbench';
   import { diffStats, hasChanges, lineDiff } from '$lib/inbox/diff';
   import type { RevisionItem } from '$lib/inbox/items';
@@ -137,10 +138,10 @@
           <span class="block text-xs font-medium uppercase tracking-wide text-fg-subtle">Revision tags</span>
           <TextInput bind:value={tagsInput} placeholder="#dadr/data/processing #dadr/methodology" />
         </label>
-        <label class="block space-y-1.5">
+        <div class="block space-y-1.5">
           <span class="block text-xs font-medium uppercase tracking-wide text-fg-subtle">Revised record markdown</span>
-          <TextareaInput bind:value={body} rows={18} spellcheck="false" class="font-mono text-xs" />
-        </label>
+          <MarkdownEditor bind:value={body} ariaLabel="Revised record markdown" class="h-[28rem] resize-y" />
+        </div>
       </div>
     {/if}
   </div>

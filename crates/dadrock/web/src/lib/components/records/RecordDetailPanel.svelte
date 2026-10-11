@@ -7,6 +7,7 @@
   import { untrack } from 'svelte';
   import { createApi, type MutationResponse, type RecordSource } from '$lib/api';
   import { hasMissingRationale } from '$lib/candidates/review';
+  import MarkdownEditor from '$lib/components/editor/MarkdownEditor.svelte';
   import { Alert, Badge, Button, InlineLinkBadge } from '$lib/components/ui';
   import { ActionBar, DocumentPane, MetadataStrip } from '$lib/components/workbench';
   import { candidateItemId } from '$lib/inbox/items';
@@ -364,18 +365,17 @@
   {/if}
 
   {#if editing}
-    <label class={embedded ? 'mt-4 flex min-h-0 flex-1 flex-col' : 'mt-4 block'}>
+    <div class={embedded ? 'mt-4 flex min-h-0 flex-1 flex-col' : 'mt-4 block'}>
       <span class="mb-2 block text-sm font-medium text-fg">Raw Markdown</span>
-      <textarea
+      <MarkdownEditor
         data-record-editor-pane
         bind:value={editorState.editor}
-        spellcheck="false"
-        class={`w-full rounded-md border border-border bg-surface p-4 font-mono text-xs leading-6 text-fg focus:outline-none focus:ring-2 focus:ring-accent ${
-          embedded ? 'min-h-0 flex-1 resize-none overflow-auto' : 'min-h-[28rem] resize-y'
-        }`}
-        aria-label="Raw Markdown"
-      ></textarea>
-    </label>
+        ariaLabel="Raw Markdown"
+        onsave={saveEditor}
+        autofocus
+        class={embedded ? 'min-h-0 flex-1' : 'h-[28rem] resize-y'}
+      />
+    </div>
   {:else}
     <DocumentPane
       data-record-rendered-pane

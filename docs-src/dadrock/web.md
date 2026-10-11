@@ -19,7 +19,9 @@ The Inbox is the home screen and the work queue. Everything that needs a human l
 
 Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply the missing rationale before accepting.
 
-An empty Inbox is the goal. Use `j` and `k` to move through items, `a` and `r` for the primary and secondary action, `e` to edit, and `o` to open the record in the Ledger.
+An empty Inbox is the goal. The search box narrows the queue to matching titles, tags, paths, and messages. Use `j` and `k` to move through items, `a` and `r` for the primary and secondary action, `e` to edit, and `o` to open the record in the Ledger.
+
+Record text is edited in a CodeMirror editor with Markdown and front-matter highlighting, search (`Ctrl+F`), and `Ctrl+S` to save.
 
 ## Ledger
 
@@ -40,7 +42,7 @@ The link uses the original record's full UUID. Keep this section if the candidat
 
 ## Draft
 
-**Draft** opens a composer from anywhere. Describe the decision in the text box, or attach files and folders to have a [configured agent](../llms.md) look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same composer revises or replaces that record. Results land in the Inbox as proposals.
+**Draft** is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a [configured agent](../llms.md) look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises or replaces that record. Results land in the Inbox as proposals.
 
 Without an agent, **Write it by hand** gives you a plain form with the candidate template. **Replace with existing decisions instead** links an accepted record to records that already exist.
 
