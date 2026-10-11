@@ -4,7 +4,9 @@
   import Header from '$lib/components/shell/Header.svelte';
   import ToastRegion from '$lib/components/shell/ToastRegion.svelte';
   import CommandPalette from '$lib/components/shell/CommandPalette.svelte';
+  import DraftComposer from '$lib/components/draft/DraftComposer.svelte';
   import { createQueryClient } from '$lib/query';
+  import { openComposerFromUrl } from '$lib/navigation/deep-links';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import type { Snippet } from 'svelte';
@@ -12,11 +14,12 @@
   let { children }: { children: Snippet } = $props();
   const queryClient = createQueryClient();
   const workbenchSurface = $derived(
-    ['/records', '/validation', '/tags', '/settings', '/candidates'].some((prefix) =>
-      page.url.pathname.startsWith(prefix),
-    ) ||
-      (page.url.pathname.startsWith('/tasks') && page.url.searchParams.get('tab') === 'runs'),
+    ['/inbox', '/ledger'].some((prefix) => page.url.pathname.startsWith(prefix)),
   );
+
+  $effect(() => {
+    openComposerFromUrl(page.url);
+  });
 
   onMount(() => {
     const html = document.documentElement;
@@ -54,4 +57,5 @@
   </div>
   <ToastRegion />
   <CommandPalette />
+  <DraftComposer />
 </QueryClientProvider>

@@ -1,14 +1,9 @@
 import type { RecordSummary } from '$lib/api';
-import { allNavItems, type PrimaryNavHref } from '$lib/navigation/routes';
+import { primaryNavItems, type PrimaryNavHref } from '$lib/navigation/routes';
 import { recordSearchText } from '$lib/records/filters';
 
 export type CommandPaletteSection = 'Navigation' | 'Records' | 'Actions';
-export type CommandPaletteAction =
-  | 'new-candidate'
-  | 'run-validation'
-  | 'toggle-theme'
-  | 'reload-snapshot'
-  | 'open-settings';
+export type CommandPaletteAction = 'draft' | 'toggle-theme' | 'reload-snapshot';
 
 export type CommandPaletteRoute = PrimaryNavHref;
 
@@ -23,16 +18,14 @@ export interface CommandPaletteItem {
   action?: CommandPaletteAction;
 }
 
-const NAVIGATION: CommandPaletteItem[] = allNavItems.map((item) =>
+const NAVIGATION: CommandPaletteItem[] = primaryNavItems.map((item) =>
   navigationItem(item.href, `Go to ${item.label}`),
 );
 
 const ACTIONS: CommandPaletteItem[] = [
-  actionItem('new-candidate', 'New Candidate', 'Draft a decision manually'),
-  actionItem('run-validation', 'Run Validation', 'Run project validation'),
+  actionItem('draft', 'Draft', 'Describe a decision or attach files to scan'),
   actionItem('toggle-theme', 'Toggle Theme', 'Cycle system, light, and dark'),
-  actionItem('reload-snapshot', 'Reload Snapshot', 'Refresh records and diagnostics'),
-  actionItem('open-settings', 'Open Settings', 'Project and agent settings'),
+  actionItem('reload-snapshot', 'Reload', 'Refresh records and diagnostics'),
 ];
 
 export function buildCommandPaletteItems(records: RecordSummary[]): CommandPaletteItem[] {

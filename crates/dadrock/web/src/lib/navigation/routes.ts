@@ -1,35 +1,47 @@
-export const candidateInboxHref = '/records?status=candidate' as const;
-export const homeHref = candidateInboxHref;
+export const inboxHref = '/inbox' as const;
+export const ledgerHref = '/ledger' as const;
+export const homeHref = inboxHref;
 
 export const primaryNavItems = [
-  { id: 'inbox', href: candidateInboxHref, label: 'To review', ariaLabel: 'To review' },
-  { id: 'records', href: '/records', label: 'Decisions', ariaLabel: 'Decisions' },
+  { id: 'inbox', href: inboxHref, label: 'Inbox', ariaLabel: 'Inbox' },
+  { id: 'ledger', href: ledgerHref, label: 'Ledger', ariaLabel: 'Ledger' },
 ] as const;
 
-export const secondaryNavItems = [
-  { id: 'tags', href: '/tags', label: 'Tags', ariaLabel: 'Browse tag list' },
-  { id: 'tasks', href: '/tasks', label: 'Tools', ariaLabel: 'Task runner' },
-  { id: 'validation', href: '/validation', label: 'Validation', ariaLabel: 'Project validation' },
-  { id: 'settings', href: '/settings', label: 'Settings', ariaLabel: 'Project settings' },
-] as const;
-
-export const allNavItems = [...primaryNavItems, ...secondaryNavItems] as const;
-export type PrimaryNavItem = (typeof allNavItems)[number];
+export type PrimaryNavItem = (typeof primaryNavItems)[number];
 export type PrimaryNavId = PrimaryNavItem['id'];
 export type PrimaryNavHref = PrimaryNavItem['href'];
 
 export function isPrimaryNavItemActive(item: PrimaryNavItem, url: URL): boolean {
-  if (item.id === 'inbox') {
-    return url.pathname === '/records' && url.searchParams.get('status') === 'candidate';
-  }
-  if (item.id === 'records') {
-    return (url.pathname === '/records' && url.searchParams.get('status') !== 'candidate') || url.pathname.startsWith('/records/');
-  }
-
-  const path = pathFromHref(item.href);
-  return url.pathname === path || url.pathname.startsWith(`${path}/`);
+  return url.pathname === item.href || url.pathname.startsWith(`${item.href}/`);
 }
 
-function pathFromHref(href: string): string {
-  return href.split('?')[0] ?? href;
+export type LedgerHref = '/ledger' | `/ledger?${string}` | `/ledger/${string}`;
+export type InboxHref = '/inbox' | `/inbox?${string}`;
+
+export interface LedgerQuery {
+  id?: string | null | undefined;
+  q?: string | null | undefined;
+  tag?: string | null | undefined;
+  history?: boolean | undefined;
+  tab?: 'edit' | null | undefined;
+}
+
+/** Builds a Ledger URL; empty values are omitted so URLs stay canonical. */
+export function ledgerUrl(query: LedgerQuery = {}): LedgerHref {
+  const params = new URLSearchParams();
+  if (query.q) params.set('q', query.q);
+  if (query.tag) params.set('tag', query.tag);
+  if (query.history) params.set('history', '1');
+  if (query.id) params.set('id', query.id);
+  if (query.tab) params.set('tab', query.tab);
+  const search = params.toString();
+  return (search ? `/ledger?${search}` : '/ledger') as LedgerHref;
+}
+
+export function ledgerRecordUrl(id: string): `/ledger/${string}` {
+  return `/ledger/${encodeURIComponent(id)}`;
+}
+
+export function inboxUrl(itemId?: string | null): InboxHref {
+  return itemId ? (`/inbox?item=${encodeURIComponent(itemId)}` as InboxHref) : '/inbox';
 }

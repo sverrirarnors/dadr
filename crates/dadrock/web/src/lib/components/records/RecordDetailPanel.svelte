@@ -1,47 +1,44 @@
 <script lang="ts">
-  import { hasMissingRationale } from '$lib/candidates/review';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
-  import { ArrowLeft, Check, FilePlus2, Sparkles, X } from 'lucide-svelte';
-  import { createApi, type MutationResponse, type RecordSource, type RecordSummary } from '$lib/api';
-  import { ActionMenu, actionMenuItemClass, Alert, Badge, Button, InlineLinkBadge } from '$lib/components/ui';
-  import RecordSelectionDialog from '$lib/components/records/RecordSelectionDialog.svelte';
+  import { Check, Pencil, Replace, Sparkles, X } from 'lucide-svelte';
+  import { untrack } from 'svelte';
+  import { createApi, type MutationResponse, type RecordSource } from '$lib/api';
+  import { hasMissingRationale } from '$lib/candidates/review';
+  import { Alert, Badge, Button, InlineLinkBadge } from '$lib/components/ui';
   import { ActionBar, DocumentPane, MetadataStrip } from '$lib/components/workbench';
+  import { candidateItemId } from '$lib/inbox/items';
   import { renderMarkdown, stripFrontMatter } from '$lib/markdown/render';
-  import { detailActionRecord } from '$lib/records/detail-state';
-  import {
-    displayRecordStatus,
-    recordStatusVariant,
-    type RecordStatusFilter,
-  } from '$lib/records/filters';
+  import { inboxUrl, ledgerRecordUrl, ledgerUrl } from '$lib/navigation/routes';
   import { applyMutationResponse } from '$lib/query/mutation-cache';
+  import { detailActionRecord, detailActions, type DetailSurface } from '$lib/records/detail-state';
   import {
     initialRecordEditorState,
     isRecordEditorDirty,
     syncRecordEditorSource,
   } from '$lib/records/editor-state';
+  import { displayRecordStatus, recordStatusVariant } from '$lib/records/filters';
+  import { composer } from '$lib/stores/composer.svelte';
   import { toasts } from '$lib/stores/toast.svelte';
-
-  type DetailTab = 'rendered' | 'edit';
-  type DetailTarget =
-    | '/records'
-    | `/records?${string}`
-    | `/records/${string}`
-    | `/records/${string}?tab=${DetailTab}`;
 
   type StatusVariant = 'candidate' | 'accepted' | 'rejected' | 'superseded';
 
-  let { id, showBackLink = true, embedded = false } = $props<{
+  let {
+    id,
+    surface,
+    embedded = false,
+  }: {
     id: string;
-    showBackLink?: boolean;
+    /** The Inbox reviews candidates; the Ledger reads and supersedes decisions. */
+    surface: DetailSurface;
+    /** True when the panel sits inside a split pane and should scroll internally. */
     embedded?: boolean;
-  }>();
+  } = $props();
 
   const api = createApi();
   const queryClient = useQueryClient();
-  const selectedTab = $derived(readTab(page.url.searchParams.get('tab')));
 
   const source = createQuery(() => ({
     queryKey: ['record-source', id],
@@ -55,22 +52,33 @@
     enabled: Boolean(id),
   }));
 
-  let editorState = $state(initialRecordEditorState());
-  let supersedePickerOpen = $state(false);
-  let supersedeSearchQuery = $state('');
-  let supersedeStatusFilter = $state<RecordStatusFilter>('accepted');
-
-  const dirty = $derived(isRecordEditorDirty(editorState));
-  const renderedHtml = $derived(source.data ? renderMarkdown(stripFrontMatter(source.data.content)) : '');
-
   const snapshot = createQuery(() => ({
     queryKey: ['snapshot'],
     queryFn: () => api.getSnapshot(),
   }));
 
-  const detailRecord = $derived(detailActionRecord(lifecycle.data?.record, snapshot.data?.records));
-  const isCandidate = $derived(detailRecord?.status === 'candidate');
-  const canSupersede = $derived(detailRecord ? displayRecordStatus(detailRecord) === 'accepted' : false);
+  let editorState = $state(initialRecordEditorState());
+  let editing = $state(false);
+
+  const dirty = $derived(isRecordEditorDirty(editorState));
+  const renderedHtml = $derived(source.data ? renderMarkdown(stripFrontMatter(source.data.content)) : '');
+
+  const record = $derived(detailActionRecord(lifecycle.data?.record, snapshot.data?.records));
+  const status = $derived(record ? displayRecordStatus(record) : 'accepted');
+  const isCandidate = $derived(status === 'candidate');
+  const agentAvailable = $derived(snapshot.data?.settings.agent_available ?? false);
+  const actions = $derived(detailActions({ surface, status, agentAvailable }));
+
+  // Links from Inbox issues open the editor with `tab=edit`; the Inbox itself never uses the URL.
+  const requestedTab = $derived(surface === 'ledger' ? page.url.searchParams.get('tab') : null);
+
+  $effect(() => {
+    const wantsEdit = requestedTab === 'edit';
+    void id;
+    untrack(() => {
+      editing = wantsEdit;
+    });
+  });
 
   $effect(() => {
     if (source.data) {
@@ -92,98 +100,50 @@
       editorState.saveMessage = response.message;
       toasts.push({ severity: 'success', message: response.message });
       await applyMutationResponse(queryClient, response);
-      setTab('rendered');
+      leaveEditMode();
     },
   }));
 
   const accept = createMutation(() => ({
     mutationFn: () => api.acceptCandidate(id),
-    onSuccess: async (response) => {
-      await finishCandidateAction(response, 'accepted');
-      const selectedId = response.focus?.selected_id ?? id;
-      await goto(resolve(embedded ? `/records?id=${selectedId}` : `/records/${selectedId}`));
-    },
+    onSuccess: (response) => finishCandidateAction(response, 'accepted'),
   }));
 
   const reject = createMutation(() => ({
     mutationFn: () => api.rejectCandidate(id),
-    onSuccess: async (response) => {
-      await finishCandidateAction(response, 'rejected');
-      await goto(resolve('/records?status=candidate'));
-    },
+    onSuccess: (response) => finishCandidateAction(response, 'rejected'),
   }));
 
-  const supersedeExisting = createMutation(() => ({
-    mutationFn: (to: string[]) => api.supersedeRecords({ from: id, to }),
-    onSuccess: async (response) => {
-      supersedePickerOpen = false;
-      toasts.push({ severity: 'success', message: response.message });
-      await applyMutationResponse(queryClient, response);
-      if (embedded) {
-        await goto(resolve(`/records?status=superseded&id=${encodeURIComponent(id)}`));
-      }
-    },
-  }));
-
-  function readTab(value: string | null): DetailTab {
-    return value === 'edit' ? 'edit' : 'rendered';
+  function fileName(path: string): string {
+    return path.split(/[\\/]/).pop() ?? path;
   }
 
-  function setTab(tab: DetailTab) {
-    const target = embedded ? embeddedTarget(tab) : detailTarget(tab);
-    goto(resolve(target), {
+  function recordHref(recordId: string) {
+    return embedded && surface === 'ledger'
+      ? ledgerUrl({ id: recordId, history: true })
+      : ledgerRecordUrl(recordId);
+  }
+
+  function enterEditMode() {
+    editing = true;
+  }
+
+  function leaveEditMode() {
+    editing = false;
+    if (surface !== 'ledger' || !page.url.searchParams.has('tab')) return;
+    const next = new URL(page.url);
+    next.searchParams.delete('tab');
+    void goto(resolve(`${next.pathname}${next.search}` as '/ledger'), {
       replaceState: true,
       noScroll: true,
       keepFocus: true,
     });
   }
 
-  function embeddedTarget(tab: DetailTab): DetailTarget {
-    const next = new URL(page.url);
-    next.searchParams.set('id', id);
-    if (tab === 'rendered') {
-      next.searchParams.delete('tab');
-    } else {
-      next.searchParams.set('tab', tab);
-    }
-    const target = (next.search ? `/records${next.search}` : '/records') as
-      | '/records'
-      | `/records?${string}`;
-    return target;
-  }
-
-  function detailTarget(tab: DetailTab): DetailTarget {
-    const base = `/records/${encodeURIComponent(id)}`;
-    return (tab === 'rendered' ? base : `${base}?tab=${tab}`) as DetailTarget;
-  }
-
-  function fileName(path: string): string {
-    return path.split(/[\\/]/).pop() ?? path;
-  }
-
-  function recordLink(record: RecordSummary): DetailTarget {
-    if (embedded) {
-      return `/records?id=${record.id}`;
-    }
-    return `/records/${record.id}`;
-  }
-
-  function taskLink(taskId: string, recordId: string): '/tasks' | `/tasks?${string}` {
-    return `/tasks?task=${encodeURIComponent(taskId)}&record=${encodeURIComponent(recordId)}`;
-  }
-
-  function tagSearchLink(tag: string): DetailTarget {
-    return `/records?scope=tag&q=${encodeURIComponent(tag)}`;
-  }
-
-  function supersedeConfirmLabel(): string {
-    return 'Save';
-  }
-
   function resetEditor() {
     editorState.editor = editorState.cleanContent;
     editorState.saveMessage = '';
-    setTab('rendered');
+    leaveEditMode();
   }
 
   function saveEditor() {
@@ -192,12 +152,13 @@
     save.mutate(editorState.editor);
   }
 
-  async function finishCandidateAction(response: MutationResponse, severityLabel: string) {
-    toasts.push({ severity: 'success', message: response.message, detail: `Candidate ${severityLabel}.` });
+  async function finishCandidateAction(response: MutationResponse, outcome: string) {
+    toasts.push({ severity: 'success', message: response.message, detail: `Candidate ${outcome}.` });
     await applyMutationResponse(queryClient, response);
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    if (!editing) return;
     if ((event.metaKey || event.ctrlKey) && (event.key.toLowerCase() === 's' || event.code === 'KeyS')) {
       event.preventDefault();
       saveEditor();
@@ -207,38 +168,34 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if showBackLink}
-  <a href={resolve('/records')} class="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg">
-    <ArrowLeft class="h-4 w-4" aria-hidden="true" />
-    <span>Back to records</span>
-  </a>
-{/if}
-
 {#if !id}
-  <Alert variant="neutral">Select a record to read its content.</Alert>
+  <Alert variant="neutral">Select a decision to read it.</Alert>
 {:else if source.isPending || lifecycle.isPending}
-  <p class={showBackLink ? 'mt-6 text-sm text-fg-muted' : 'text-sm text-fg-muted'}>Loading record...</p>
+  <p class="text-sm text-fg-muted">Loading record...</p>
 {:else if source.isError || lifecycle.isError}
-  <Alert class={showBackLink ? 'mt-6' : ''} variant="danger" title="Failed to load record">
+  <Alert variant="danger" title="Failed to load record">
     {source.error?.message ?? lifecycle.error?.message ?? 'Unknown record loading error'}
   </Alert>
-{:else if source.data && lifecycle.data}
-  <div class={showBackLink ? 'mt-6 flex flex-wrap items-start justify-between gap-4' : 'flex flex-wrap items-start justify-between gap-4'}>
+{:else if source.data && lifecycle.data && record}
+  <div data-record-detail-header class="flex flex-wrap items-start justify-between gap-4">
     <div class="min-w-0">
       <div class="flex flex-wrap items-center gap-2">
-        <Badge variant={recordStatusVariant(detailRecord ?? lifecycle.data.record) as StatusVariant} mono class="uppercase">
-          {displayRecordStatus(detailRecord ?? lifecycle.data.record).slice(0, 3)}
+        <Badge variant={recordStatusVariant(record) as StatusVariant} mono class="uppercase">
+          {status.slice(0, 3)}
         </Badge>
-        <h1 class={embedded ? 'text-xl font-semibold' : 'text-2xl font-semibold'}>{(detailRecord ?? lifecycle.data.record).title}</h1>
+        <svelte:element
+          this={embedded ? 'h2' : 'h1'}
+          class={embedded ? 'text-xl font-semibold' : 'text-2xl font-semibold'}
+        >
+          {record.title}
+        </svelte:element>
       </div>
       <div class="mt-2">
-        <Badge mono>{fileName((detailRecord ?? lifecycle.data.record).path)}</Badge>
-        {#if (detailRecord ?? lifecycle.data.record).tags.length}
+        <Badge mono>{fileName(record.path)}</Badge>
+        {#if record.tags.length}
           <MetadataStrip class="mt-1">
-            {#each (detailRecord ?? lifecycle.data.record).tags as tag (tag)}
-              <InlineLinkBadge href={resolve(tagSearchLink(tag))}>
-                {tag}
-              </InlineLinkBadge>
+            {#each record.tags as tag (tag)}
+              <InlineLinkBadge href={resolve(ledgerUrl({ tag }))}>{tag}</InlineLinkBadge>
             {/each}
           </MetadataStrip>
         {/if}
@@ -260,31 +217,27 @@
     <Alert class="mt-4" variant="danger" title="Candidate action failed">
       {accept.error?.message ?? reject.error?.message}
     </Alert>
-  {:else if supersedeExisting.isError}
-    <Alert class="mt-4" variant="danger" title="Supersede failed">
-      {supersedeExisting.error.message}
-    </Alert>
   {/if}
 
   {#if lifecycle.data.predecessors.length || lifecycle.data.successors.length || lifecycle.data.diagnostics.length}
-    <div class="mt-4 space-y-1 text-xs text-fg-subtle">
+    <div data-record-supersession class="mt-4 space-y-1 text-xs text-fg-subtle">
       {#if lifecycle.data.predecessors.length}
-        <div class="flex flex-wrap items-center gap-1.5">
+        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span>Supersedes</span>
-          {#each lifecycle.data.predecessors as record (record.id)}
-            <a class="font-mono text-accent hover:underline" href={resolve(recordLink(record))}>
-              {record.id_prefix}
+          {#each lifecycle.data.predecessors as predecessor (predecessor.id)}
+            <a class="text-accent hover:underline" href={resolve(recordHref(predecessor.id))}>
+              {predecessor.title}
             </a>
           {/each}
         </div>
       {/if}
 
       {#if lifecycle.data.successors.length}
-        <div class="flex flex-wrap items-center gap-1.5">
+        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span>Superseded by</span>
-          {#each lifecycle.data.successors as record (record.id)}
-            <a class="font-mono text-accent hover:underline" href={resolve(recordLink(record))}>
-              {record.id_prefix}
+          {#each lifecycle.data.successors as successor (successor.id)}
+            <a class="text-accent hover:underline" href={resolve(recordHref(successor.id))}>
+              {successor.title}
             </a>
           {/each}
         </div>
@@ -303,167 +256,114 @@
     </div>
   {/if}
 
-  <ActionBar class="mt-2 border-0 bg-transparent px-0">
+  <ActionBar data-record-actions class="mt-2 border-0 bg-transparent px-0">
     <div class="flex flex-wrap items-center gap-2">
-      {#if selectedTab === 'edit'}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={save.isPending}
-          onclick={resetEditor}
-        >
+      {#if editing}
+        <Button type="button" variant="outline" size="sm" disabled={save.isPending} onclick={resetEditor}>
           Cancel
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          disabled={!dirty || save.isPending}
-          onclick={saveEditor}
-        >
+        <Button type="button" size="sm" disabled={!dirty || save.isPending} onclick={saveEditor}>
           {save.isPending ? 'Saving...' : 'Save'}
         </Button>
-      {:else if isCandidate}
-        <ActionMenu label="Edit" align="start">
-          <button
-            role="menuitem"
-            type="button"
-            class={actionMenuItemClass}
-            onclick={() => setTab('edit')}
-          >
-            <span>Edit</span>
-          </button>
-          <a
-            role="menuitem"
-            class={actionMenuItemClass}
-            href={resolve(taskLink('edit-record', lifecycle.data.record.id))}
-          >
-            <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Edit with agent</span>
-          </a>
-        </ActionMenu>
       {:else}
-        <ActionMenu label="Edit" align="start">
-          <button
-            role="menuitem"
-            type="button"
-            class={actionMenuItemClass}
-            onclick={() => setTab('edit')}
-          >
-            <span>Edit</span>
-          </button>
-          <a
-            role="menuitem"
-            class={actionMenuItemClass}
-            href={resolve(taskLink('edit-record', lifecycle.data.record.id))}
-          >
-            <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Edit with agent</span>
-          </a>
-        </ActionMenu>
+        {#each actions.primary as action (action)}
+          {#if action === 'edit'}
+            <Button type="button" variant="outline" size="sm" data-record-action="edit" onclick={enterEditMode}>
+              <Pencil class="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Edit</span>
+            </Button>
+          {:else if action === 'revise'}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-record-action="revise"
+              onclick={() => composer.show({ mode: 'revise', recordIds: [id] })}
+            >
+              <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Revise with agent</span>
+            </Button>
+          {/if}
+        {/each}
       {/if}
     </div>
 
-    <div class="ml-auto flex flex-wrap items-center gap-2">
-      {#if isCandidate}
-        <Button
-          type="button"
-          variant="danger"
-          size="sm"
-          disabled={reject.isPending || accept.isPending}
-          onclick={() => reject.mutate()}
-        >
-          <X class="h-3.5 w-3.5" />
-          <span>{reject.isPending ? 'Rejecting' : 'Reject'}</span>
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          class="border-success/40 bg-success/10 text-success hover:bg-success/20"
-          disabled={accept.isPending || reject.isPending || dirty || save.isPending}
-          onclick={() => accept.mutate()}
-        >
-          <Check class="h-3.5 w-3.5" />
-          <span>{accept.isPending ? 'Accepting' : 'Accept'}</span>
-        </Button>
-      {:else if canSupersede}
-        <ActionMenu label="Change this decision">
-          <button
-            role="menuitem"
-            type="button"
-            class={actionMenuItemClass}
-            disabled={supersedeExisting.isPending || snapshot.isPending}
-            onclick={() => {
-              supersedePickerOpen = true;
-              supersedeStatusFilter = 'accepted';
-            }}
-          >
-            <span>{supersedeExisting.isPending ? 'Superseding' : 'Replace with existing decisions'}</span>
-          </button>
-          <a
-            role="menuitem"
-            class={actionMenuItemClass}
-            href={resolve(`/candidates/new?supersedes=${encodeURIComponent((detailRecord ?? lifecycle.data.record).id)}`)}
-          >
-            <FilePlus2 class="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Draft a replacement</span>
-          </a>
-          <a
-            role="menuitem"
-            class={actionMenuItemClass}
-            href={resolve(taskLink('supersede-record', (detailRecord ?? lifecycle.data.record).id))}
-          >
-            <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Draft a replacement with agent</span>
-          </a>
-        </ActionMenu>
-      {/if}
-    </div>
+    {#if !editing && actions.lifecycle.length}
+      <div class="ml-auto flex flex-wrap items-center gap-2">
+        {#each actions.lifecycle as action (action)}
+          {#if action === 'reject'}
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              data-record-action="reject"
+              disabled={reject.isPending || accept.isPending}
+              onclick={() => reject.mutate()}
+            >
+              <X class="h-3.5 w-3.5" aria-hidden="true" />
+              <span>{reject.isPending ? 'Rejecting' : 'Reject'}</span>
+            </Button>
+          {:else if action === 'accept'}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-record-action="accept"
+              class="border-success/40 bg-success/10 text-success hover:bg-success/20"
+              disabled={accept.isPending || reject.isPending || dirty || save.isPending}
+              onclick={() => accept.mutate()}
+            >
+              <Check class="h-3.5 w-3.5" aria-hidden="true" />
+              <span>{accept.isPending ? 'Accepting' : 'Accept'}</span>
+            </Button>
+          {:else if action === 'supersede'}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-record-action="supersede"
+              onclick={() => composer.show({ mode: 'supersede', recordIds: [id] })}
+            >
+              <Replace class="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Supersede</span>
+            </Button>
+          {/if}
+        {/each}
+      </div>
+    {/if}
   </ActionBar>
 
   {#if isCandidate}
-    <Alert class="mt-3" variant="neutral" title={hasMissingRationale(source.data.content) ? 'Reason for this choice is missing' : 'Review this decision'}>
-      {#if hasMissingRationale(source.data.content)}
-        The draft describes what the code does, but does not document why. Edit the decision to add or correct your reason before accepting it.
-      {:else}
-        Check both what was done and why. Accepting means you endorse this decision and its explanation.
+    {#if surface === 'inbox'}
+      <Alert
+        class="mt-3"
+        variant="neutral"
+        title={hasMissingRationale(source.data.content) ? 'Reason for this choice is missing' : 'Review this decision'}
+      >
+        {#if hasMissingRationale(source.data.content)}
+          The draft describes what the code does, but does not document why. Edit the decision to add or correct your reason before accepting it.
+        {:else}
+          Check both what was done and why. Accepting means you endorse this decision and its explanation.
+        {/if}
+      </Alert>
+      {#if lifecycle.data.pending_supersedes}
+        <Alert class="mt-2" variant="neutral" title="Proposed replacement">
+          Accepting will replace
+          <a class="text-accent underline" href={resolve(recordHref(lifecycle.data.pending_supersedes.id))}>
+            {lifecycle.data.pending_supersedes.title}
+          </a>
+          and preserve its explanation.
+        </Alert>
       {/if}
-    </Alert>
-    {#if lifecycle.data.pending_supersedes}
-      <Alert class="mt-2" variant="neutral" title="Proposed replacement">
-        Accepting will replace <a class="text-accent underline" href={resolve(recordLink(lifecycle.data.pending_supersedes))}>{lifecycle.data.pending_supersedes.title}</a> and preserve its explanation.
+    {:else}
+      <Alert class="mt-3" variant="info" data-record-candidate-notice>
+        This is a candidate.
+        <a class="underline" href={resolve(inboxUrl(candidateItemId(id)))}>Review it in the Inbox.</a>
       </Alert>
     {/if}
   {/if}
 
-  {#if supersedePickerOpen && snapshot.data}
-    <RecordSelectionDialog
-      title="Replace with existing decisions"
-      records={snapshot.data.records}
-      selectedIds={[]}
-      excludedIds={[lifecycle.data.record.id]}
-      bind:query={supersedeSearchQuery}
-      bind:status={supersedeStatusFilter}
-      confirmLabel={supersedeConfirmLabel}
-      onconfirm={(recordIds) => supersedeExisting.mutate(recordIds)}
-      oncancel={() => {
-        supersedePickerOpen = false;
-      }}
-    />
-  {/if}
-
-  {#if selectedTab === 'rendered'}
-    <DocumentPane
-      data-record-rendered-pane
-      class={`record-markdown mt-4 rounded-md border border-border bg-bg p-6 ${
-        embedded ? 'min-h-0 flex-1 overflow-auto' : ''
-      }`}
-    >
-      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {@html renderedHtml}
-    </DocumentPane>
-  {:else}
+  {#if editing}
     <label class={embedded ? 'mt-4 flex min-h-0 flex-1 flex-col' : 'mt-4 block'}>
       <span class="mb-2 block text-sm font-medium text-fg">Raw Markdown</span>
       <textarea
@@ -476,6 +376,16 @@
         aria-label="Raw Markdown"
       ></textarea>
     </label>
+  {:else}
+    <DocumentPane
+      data-record-rendered-pane
+      class={`record-markdown mt-4 rounded-md border border-border bg-bg p-6 ${
+        embedded ? 'min-h-0 flex-1 overflow-auto' : ''
+      }`}
+    >
+      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+      {@html renderedHtml}
+    </DocumentPane>
   {/if}
 {/if}
 

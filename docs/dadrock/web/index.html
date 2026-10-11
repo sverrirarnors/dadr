@@ -443,10 +443,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#optional-drafting" class="md-nav__link">
+  <a href="#inbox" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Optional drafting
+        Inbox
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ledger
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#draft" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Draft
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Project
       </span>
     </span>
   </a>
@@ -751,10 +784,43 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#optional-drafting" class="md-nav__link">
+  <a href="#inbox" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Optional drafting
+        Inbox
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ledger
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#draft" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Draft
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Project
       </span>
     </span>
   </a>
@@ -783,18 +849,36 @@
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dadrock<span class="w"> </span>preview
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>dadrock<span class="w"> </span>preview<span class="w"> </span>--port<span class="w"> </span><span class="m">4005</span><span class="w"> </span>path/to/project
 </span></code></pre></div>
-<p>Open the local URL printed in the terminal. Use <strong>Decisions</strong> to find existing records and <strong>To review</strong> to work through candidates. Open a candidate, edit its explanation, save it, and accept or reject it.</p>
-<p>Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply missing rationale before endorsing the decision.</p>
-<p>When an accepted choice changes, use <strong>Change this decision</strong> to prepare a replacement and link it to the original. The original stays available as history. The replacement starts as a candidate; accepting it also links the original to its replacement.</p>
-<p>Dadrock records this intention in an optional Markdown section:</p>
+<p>Open the local URL printed in the terminal. The interface has two places and one button.</p>
+<h2 id="inbox">Inbox<a class="headerlink" href="#inbox" title="Permanent link">&para;</a></h2>
+<p>The Inbox is the home screen and the work queue. Everything that needs a human lands here, grouped by kind:</p>
+<ul>
+<li><strong>Candidates</strong> wait for a decision. Read the record, fix its explanation if needed, then <strong>Accept</strong> or <strong>Reject</strong>. <strong>Revise with agent</strong> sends it back to a local agent with your instructions.</li>
+<li><strong>Agent proposals</strong> are decisions a local agent drafted from your notes or your code. <strong>Save as candidate</strong> writes the file so you can review it like any other candidate; <strong>Discard</strong> drops it.</li>
+<li><strong>Proposed revisions</strong> show an agent's edit to an existing record as a diff. <strong>Apply</strong> writes it; <strong>Discard</strong> drops it.</li>
+<li><strong>Conflicts</strong> come from <strong>Check for conflicts</strong>, which asks the agent to look for overlapping or contradictory decisions. From a conflict you can <strong>Merge</strong> two candidates, <strong>Replace</strong> an accepted decision, or <strong>Dismiss</strong> the finding.</li>
+<li><strong>Issues</strong> are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. <strong>Open record</strong> jumps to the editor; <strong>Fix with agent</strong> asks for a revision; warnings and notes can be dismissed.</li>
+</ul>
+<p>Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply the missing rationale before accepting.</p>
+<p>An empty Inbox is the goal. Use <code>j</code> and <code>k</code> to move through items, <code>a</code> and <code>r</code> for the primary and secondary action, <code>e</code> to edit, and <code>o</code> to open the record in the Ledger.</p>
+<h2 id="ledger">Ledger<a class="headerlink" href="#ledger" title="Permanent link">&para;</a></h2>
+<p>The Ledger is what has been decided. It lists accepted records, newest first, with one search box and a tag facet. <strong>Show history</strong> reveals superseded and rejected records. Each record shows its supersession chain, an inline editor, and two verbs:</p>
+<ul>
+<li><strong>Supersede</strong> prepares a replacement when a choice changes. The original stays as history, and accepting the replacement links the two.</li>
+<li><strong>Revise with agent</strong> asks a local agent to rewrite the record from your instructions. The result appears in the Inbox as a proposed revision.</li>
+</ul>
+<p>Dadrock records a pending replacement in an optional Markdown section:</p>
 <div class="language-markdown highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gu">## Replaces</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>[[01938c20-a3b4-7000-8000-111122223333|Previous decision]]
 </span></code></pre></div>
 <p>The link uses the original record's full UUID. Keep this section if the candidate should replace that decision: it preserves the intended relationship after reloading or accepting through the CLI. On acceptance, Dadrock validates the predecessor and updates its successors together with accepting the replacement, preserving the old body. This is a Dadrock convention, not an additional required section of the DADR format.</p>
-<h2 id="optional-drafting">Optional drafting<a class="headerlink" href="#optional-drafting" title="Permanent link">&para;</a></h2>
-<p>With a <a href="../../llms/">configured agent</a>, use drafting actions to propose decisions from code or supplied context. Start with a small batch and review it before asking for more. Agent outputs remain proposals.</p>
-<p>Advanced controls provide tags, validation, agent workflow configuration, and run history. Local run state is stored under <code>dadr/runs/</code> and ignored by default because it may contain pasted context, source excerpts, and model transcripts.</p>
+<h2 id="draft">Draft<a class="headerlink" href="#draft" title="Permanent link">&para;</a></h2>
+<p><strong>Draft</strong> opens a composer from anywhere. Describe the decision in the text box, or attach files and folders to have a <a href="../../llms/">configured agent</a> look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same composer revises or replaces that record. Results land in the Inbox as proposals.</p>
+<p>Without an agent, <strong>Write it by hand</strong> gives you a plain form with the candidate template. <strong>Replace with existing decisions instead</strong> links an accepted record to records that already exist.</p>
+<h2 id="project">Project<a class="headerlink" href="#project" title="Permanent link">&para;</a></h2>
+<p>The project name in the header opens a small panel with the project root, the detected agent, and three actions: initialize a new project, run validation now, and clear the agent's run history. Local run state is stored under <code>dadr/runs/</code> and ignored by default because it may contain pasted context, source excerpts, and model transcripts.</p>
+<p>Old links still work: <code>/records</code>, <code>/candidates/new</code>, <code>/tasks</code>, <code>/validation</code>, <code>/tags</code>, and <code>/settings</code> redirect to the Inbox, the Ledger, or the composer.</p>
 
 
 

@@ -37,7 +37,7 @@ function snapshot(records: RecordSummary[]): Snapshot {
     project_validation: { counts: {}, diagnostics: [] },
     record_validation: { counts: {}, diagnostics: [] },
     link_health: { counts: {}, diagnostics: [] },
-    settings: { config: [], templates: [], agent: [], tags: [], tag_counts: {}, diagnostics: [] },
+    settings: { config: [], templates: [], agent: [], agent_available: false, tags: [], tag_counts: {}, diagnostics: [] },
     command_catalog: {},
   };
 }

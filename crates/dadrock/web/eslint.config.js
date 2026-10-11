@@ -32,17 +32,4 @@ export default [
   {
     ignores: ['build/', '.svelte-kit/', 'dist/', 'node_modules/', 'test-results/'],
   },
-  {
-    files: ['src/routes/tags/+page.svelte'],
-    rules: {
-      'svelte/no-navigation-without-resolve': 'off',
-    },
-  },
-  {
-    files: ['src/routes/records/*/+page.svelte', 'src/routes/candidates/*/+page.svelte'],
-    rules: {
-      'svelte/no-navigation-without-resolve': 'off',
-      'svelte/no-at-html-tags': 'off',
-    },
-  },
 ];

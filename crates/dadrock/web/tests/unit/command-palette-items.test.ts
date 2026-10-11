@@ -4,7 +4,7 @@ import {
   buildCommandPaletteItems,
   filterCommandPaletteItems,
 } from '../../src/lib/command-palette/items';
-import { allNavItems } from '../../src/lib/navigation/routes';
+import { primaryNavItems } from '../../src/lib/navigation/routes';
 
 const records: RecordSummary[] = [
   {
@@ -25,7 +25,7 @@ describe('buildCommandPaletteItems', () => {
   it('includes navigation, record, and action items', () => {
     const items = buildCommandPaletteItems(records);
 
-    expect(items.some((item) => item.label === 'Go to Decisions' && item.section === 'Navigation')).toBe(true);
+    expect(items.some((item) => item.label === 'Go to Ledger' && item.section === 'Navigation')).toBe(true);
     expect(
       items.some(
         (item) =>
@@ -35,11 +35,9 @@ describe('buildCommandPaletteItems', () => {
       ),
     ).toBe(true);
     expect(items.filter((item) => item.section === 'Actions').map((item) => item.label)).toEqual([
-      'New Candidate',
-      'Run Validation',
+      'Draft',
       'Toggle Theme',
-      'Reload Snapshot',
-      'Open Settings',
+      'Reload',
     ]);
   });
 
@@ -50,7 +48,7 @@ describe('buildCommandPaletteItems', () => {
       items
         .filter((item) => item.section === 'Navigation')
         .map((item) => ({ label: item.label, route: item.route })),
-    ).toEqual(allNavItems.map((item) => ({ label: `Go to ${item.label}`, route: item.href })));
+    ).toEqual(primaryNavItems.map((item) => ({ label: `Go to ${item.label}`, route: item.href })));
   });
 });
 
@@ -58,17 +56,10 @@ describe('filterCommandPaletteItems', () => {
   it('matches records by title, path, id, and tag', () => {
     const items = buildCommandPaletteItems(records);
 
-    expect(filterCommandPaletteItems(items, 'polars').map((item) => item.label)).toContain(
-      'Use Polars over pandas',
-    );
-    expect(filterCommandPaletteItems(items, '0001-use-polars').map((item) => item.label)).toContain(
-      'Use Polars over pandas',
-    );
-    expect(filterCommandPaletteItems(items, '0193fb1f').map((item) => item.label)).toContain(
-      'Use Polars over pandas',
-    );
-    expect(filterCommandPaletteItems(items, '#dadr/data').map((item) => item.label)).toContain(
-      'Use Polars over pandas',
-    );
+    for (const query of ['polars', '0001-use-polars', '0193fb1f', '#dadr/data']) {
+      expect(filterCommandPaletteItems(items, query).map((item) => item.label)).toContain(
+        'Use Polars over pandas',
+      );
+    }
   });
 });

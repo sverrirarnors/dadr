@@ -7,7 +7,7 @@ test('preview launch prompts to initialize an uninitialized project', async ({ p
 
   await page.goto('/');
 
-  await expect(page).toHaveURL(/\/records\?status=candidate$/);
+  await expect(page).toHaveURL(/\/inbox$/);
   await expect(page.getByRole('heading', { name: 'Initialize Dadrock here?' })).toBeVisible();
   await expect(page.getByText('No Dadrock project was found in')).toBeVisible();
   await expect(page.getByText('/tmp/dadr-mock', { exact: true })).toHaveCount(2);
@@ -15,9 +15,13 @@ test('preview launch prompts to initialize an uninitialized project', async ({ p
   await expect(page.getByText('dadr/rejected/')).toBeVisible();
   await expect(page.getByText('dadr/runs/')).toBeVisible();
 
+  const draft = page.locator('[data-app-header]').getByRole('button', { name: 'Draft' });
+  await expect(draft).toBeDisabled();
+
   await page.getByRole('button', { name: 'Initialize here' }).click();
 
   await expect(page.getByRole('status').filter({ hasText: 'created 8 paths, reused 0 paths' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Initialize Dadrock here?' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: /Adopt pre-registration for studies/ })).toBeVisible();
+  await expect(page.getByText('Adopt pre-registration for studies').first()).toBeVisible();
+  await expect(draft).toBeEnabled();
 });

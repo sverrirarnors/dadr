@@ -913,7 +913,7 @@
 </table>
 <p>Use <code>dadrock config</code> to inspect the resolved layout. Keep the record directories in version control. Run state may include pasted context and source excerpts and is ignored by default.</p>
 <h2 id="changing-a-decision">Changing a decision<a class="headerlink" href="#changing-a-decision" title="Permanent link">&para;</a></h2>
-<p>Use <strong>Change this decision</strong> in the web interface to create a replacement candidate. Its optional <code>## Replaces</code> section contains a labeled link to the original full UUID. Keep that section to preserve replacement intent. Acceptance validates the predecessor and links the accepted replacement while preserving the original body, including when accepting through the CLI. See <a href="web/">the web workflow</a> for an example.</p>
+<p>Use <strong>Supersede</strong> on an accepted record in the web interface to create a replacement candidate. Its optional <code>## Replaces</code> section contains a labeled link to the original full UUID. Keep that section to preserve replacement intent. Acceptance validates the predecessor and links the accepted replacement while preserving the original body, including when accepting through the CLI. See <a href="web/">the web workflow</a> for an example.</p>
 <p>For two records that are already accepted, <code>dadrock supersede --from OLD --to NEW</code> links the replacement explicitly.</p>
 <h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h2>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dadrock<span class="w"> </span>validate

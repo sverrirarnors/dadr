@@ -27,7 +27,7 @@ Use `dadrock config` to inspect the resolved layout. Keep the record directories
 
 ## Changing a decision
 
-Use **Change this decision** in the web interface to create a replacement candidate. Its optional `## Replaces` section contains a labeled link to the original full UUID. Keep that section to preserve replacement intent. Acceptance validates the predecessor and links the accepted replacement while preserving the original body, including when accepting through the CLI. See [the web workflow](web.md) for an example.
+Use **Supersede** on an accepted record in the web interface to create a replacement candidate. Its optional `## Replaces` section contains a labeled link to the original full UUID. Keep that section to preserve replacement intent. Acceptance validates the predecessor and links the accepted replacement while preserving the original body, including when accepting through the CLI. See [the web workflow](web.md) for an example.
 
 For two records that are already accepted, `dadrock supersede --from OLD --to NEW` links the replacement explicitly.
 

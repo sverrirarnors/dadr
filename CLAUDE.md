@@ -41,6 +41,8 @@ bun run lint
 
 `web/build/` is gitignored and embedded into the binary with `rust-embed`; building without Bun (or with `--features no-js-build`) falls back to a no-assets page.
 
+The UI has two routes, `/inbox` (everything that needs a human decision) and `/ledger` (what was decided), plus a Draft composer sheet and a project popover; legacy routes (`/records`, `/tasks`, `/validation`, `/tags`, `/settings`, `/candidates/*`) redirect through `src/lib/navigation/legacy.ts`. The design vocabulary lives in `crates/dadrock/web/docs/web-ui-vocabulary.md`.
+
 ### Docs site
 
 ```bash
