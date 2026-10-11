@@ -98,9 +98,17 @@ form[data-md-component="palette"] {
   border-bottom-color: var(--md-accent-fg-color);
 }
 
-/* On narrow viewports the drawer (hamburger) replaces the inline links so
-   they don't crowd the search box. */
+/* Between 60em and 76em zensical already swaps the sidebar for the drawer,
+   but there is still room for the inline links; tighten the spacing there.
+   Below 60em the drawer (hamburger) replaces them so they don't crowd the
+   search box. */
 @media (max-width: 76.1875em) {
+  .dadr-header-nav {
+    gap: 1.1rem;
+    margin: 0 0.6rem;
+  }
+}
+@media (max-width: 60em) {
   .dadr-header-nav {
     display: none;
   }
@@ -181,7 +189,9 @@ form[data-md-component="palette"] {
 .md-typeset .hero-logo {
   display: block;
   margin: 0 auto .4rem;
-  width: auto;
+  /* The SVG has a fixed 915px intrinsic width; size it to the column so it
+     shrinks on phones instead of overflowing the viewport. */
+  width: 100%;
   max-width: 30rem;
   height: auto;
 }
@@ -216,6 +226,25 @@ form[data-md-component="palette"] {
   flex-wrap: wrap;
   gap: 0.6rem;
   margin-top: 1.5rem;
+}
+
+/* On phones the hero shrinks: less padding, a smaller tagline, and stacked
+   full-width buttons of equal size instead of a ragged wrap. */
+@media (max-width: 30em) {
+  .hero {
+    padding: 0.5rem 0 2rem;
+  }
+  .md-typeset .hero-tagline {
+    font-size: 1.05rem;
+    margin-bottom: 1rem;
+  }
+  .hero-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .md-typeset .hero-buttons .md-button {
+    text-align: center;
+  }
 }
 
 /* Editorial button: square corners, thin rule, all-caps label. Both buttons
@@ -255,8 +284,12 @@ form[data-md-component="palette"] {
   padding-top: 0.8rem;
 }
 
-.feature-grid .feature h3 {
+.md-typeset .feature-grid .feature h3,
+.md-typeset .feature-grid .feature h4 {
   margin: 0 0 0.4rem;
+}
+
+.md-typeset .feature-grid .feature h3 {
   font-size: 1.2rem;
 }
 
@@ -363,6 +396,20 @@ form[data-md-component="palette"] {
   height: auto;
 }
 
+/* On phones the diagram would shrink until its labels are unreadable. Keep
+   it at a legible minimum width and let it scroll sideways instead. */
+@media (max-width: 40em) {
+  .md-typeset .diagram {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+  /* Mermaid renders into a shadow root, so size the host element; the SVG
+     inside fills it. */
+  .md-typeset .diagram .mermaid {
+    min-width: 28rem;
+  }
+}
+
 /* Edge labels: muted secondary text, paper-colored background to mask the
    line where they sit, with a touch of letter-spacing for the lowercase look. */
 .md-typeset .diagram .mermaid .edgeLabel,
@@ -463,7 +510,7 @@ form[data-md-component="palette"] {
   }
   .md-typeset .pull--aside {
     flex-basis: auto;
-    margin: 2rem 0;
+    margin: 1.5rem 0;
     font-size: 1.1rem;
     display: block;
   }
