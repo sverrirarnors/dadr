@@ -132,7 +132,7 @@ A successor candidate names the accepted records it supersedes in an optional `#
 Winsorizing at p99 still left implausible incomes in two waves.
 ```
 
-Several links make a merge. A record has at most one `## Supersedes` section, and a section without a link is an error. Accepting the candidate links every predecessor and moves each predecessor to the archive; the section stays in the body as the record of why the decision changed. Several candidates that name the same predecessor (a split) are accepted together with `dadrock accept <id> --with <id>`. See [tasks/supersede-record.md](tasks/supersede-record.md).
+Several links make a merge. A record has at most one `## Supersedes` section, and it must start with a link; acceptance refuses a candidate that breaks either rule, although `dadrock validate` does not report it. Accepting the candidate links every predecessor and moves each predecessor to the archive; the section stays in the body as the record of why the decision changed. Several candidates that name the same predecessor (a split) are accepted together with `dadrock accept <id> --with <id>`. See [tasks/supersede-record.md](tasks/supersede-record.md).
 
 ## Suggested tags
 
