@@ -17,6 +17,13 @@ readme = "README.md"
 keywords = ["data-analysis", "decision-records", "reproducibility", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 
+# A table with its own `version =` line on purpose: `make bump` rewrites every
+# line of this file that starts with `version = `, so the requirement dadrock
+# puts on dadr moves in step with the workspace version.
+[workspace.dependencies.dadr]
+path = "crates/dadr"
+version = "0.0.1"
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
