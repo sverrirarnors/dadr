@@ -24,7 +24,7 @@ dadr/
 | `dadr/ledger/` | Decisions in force: accepted records without successors |
 | `dadr/archive/` | Records kept but no longer in force: rejected records and superseded records |
 | `dadr/templates/` | Optional template overrides for new candidates |
-| `dadr/tasks/` | Optional project-specific agent workflows (`dadr/tasks/<task-id>.md`: YAML front matter for the manifest, Markdown body for the prompt) |
+| `dadr/tasks/` | Optional project-specific agent workflows and [overrides of built-in tasks](llms.md#custom-workflows-and-runs) (`dadr/tasks/<task-id>.md`: YAML front matter for the manifest, Markdown body for the prompt) |
 | `dadr/runs/` | Agent-run inputs, results, and logs; ignored by version control |
 
 `dadrock accept` changes a candidate's `status` to `accepted` and moves the file from `dadr/inbox/` to `dadr/ledger/`. `dadrock reject` changes it to `rejected` and moves it to `dadr/archive/`. The `id` never changes. Superseding a decision, by [accepting its successor](changing.md#accepting-a-successor) or with `dadrock supersede`, appends the successor's `id` to the predecessor's `successors` and moves the predecessor to `dadr/archive/`; its `status` stays `accepted`.

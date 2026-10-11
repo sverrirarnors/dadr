@@ -6,7 +6,7 @@ The original remains accepted, and its `successors` field names the records that
 
 ## Correcting a record
 
-To correct a decided record, edit it. In the [web interface](dadrock/web.md) or the [standalone app](dadrock/app.md), **Edit** opens the record's Markdown in place, on every record; on a decided record, a note above the editor says the edit is for corrections. You can also open the file in your usual [editor](dadrock/editors.md). The record keeps its ID and stays in its folder. When you save from the web interface, DADRock refuses to change the `id`, `status`, or `successors` of an accepted, superseded, or rejected record, and an accepted record must keep its four required sections; the title, body, tags, and front-matter keys outside DADR can change.
+To correct a decided record, edit it. In the [web interface](dadrock/web.md) or the [standalone app](dadrock/app.md), **Edit** opens the record's Markdown in place, on every record; on a decided record, a note above the editor says the edit is for corrections. You can also open the file in your usual [editor](dadrock/editors.md). The record keeps its ID and stays in its folder. When you save from the web interface, DADRock refuses to change the `id`, `status`, or `successors` of an accepted, superseded, or rejected record, and an accepted record must keep its four required sections, each once and with text; the title, body, tags, and front-matter keys outside DADR can change.
 
 Whether an edit corrects a record or changes the decision is a judgment no rule can make ([specification §6.3](specification.md#immutability)), so DADRock makes every edit visible instead of forbidding it. The record's [history](#history) lists the edits Git recorded to its title and body since it was accepted or rejected, including changes not committed yet, and [`dadrock validate changes`](#checking-changes) reports them with their diffs.
 
@@ -16,8 +16,8 @@ Agents never edit decided text. The `edit-record` agent task revises candidates 
 
 To change what was decided, draft a successor: a new candidate that supersedes the old record, its predecessor. The predecessor stays in force until you accept the successor.
 
-- **Supersede** on a record in the Ledger opens a full-page successor draft on the Draft page. It starts from the record's exact title, tags, and body and asks "Why does this decision change?"; the reason is optional. Attach more decisions in force to supersede them together with one successor (a merge); the draft then starts from every predecessor's sections. Saving creates the successor candidate and opens it in the Inbox. **Supersede with existing decisions instead** links an accepted record to successors that already exist.
-- **Revise with agent** on the record, or the `supersede-record` [task](llms.md#custom-workflows-and-runs), asks a local agent to draft the successor. The task takes one or more accepted records and the change you want. The agent starts from the predecessor's exact text and changes only what the request requires, so the successor reads as a small diff; for several predecessors it combines them into one decision. It returns the reason separately, and DADRock writes it into `## Supersedes` when you save the proposal as a candidate.
+- **Supersede** on a record in the Ledger opens a full-page successor draft on the Draft page. It starts from the record's exact title, tags, and body and asks "Why does this decision change?"; the reason is optional. **Add a decision to merge** attaches more decisions in force to supersede them together with one successor (a merge); the draft then starts untitled, from every predecessor's sections and tags. **Create candidate** saves the successor candidate and opens it in the Inbox. **Supersede with existing decisions instead** links an accepted record to successors that already exist.
+- **Revise with agent** on the record opens the Draft page, which asks "What changed, and why?" and sends your answer to the `supersede-record` [task](llms.md#custom-workflows-and-runs); the task asks a local agent to draft the successor. The task takes one or more accepted records and the change you want. The agent starts from the predecessor's exact text and changes only what the request requires, so the successor reads as a small diff; for several predecessors it combines them into one decision. It returns the reason separately, and DADRock writes it into `## Supersedes` when you save the proposal as a candidate.
 - You can also write the candidate yourself.
 
 The successor names its predecessors in a `## Supersedes` section, optionally followed by the reason for the change:
@@ -30,7 +30,7 @@ The successor names its predecessors in a `## Supersedes` section, optionally fo
 Winsorizing at p99 still left implausible incomes in two waves.
 ```
 
-The section starts with one or more lines, each exactly one record link by full UUID, `[[uuid]]` or `[[uuid|label]]`. The text after the links, if any, is the reason, in ordinary Markdown. A record has at most one `## Supersedes` section, and a section without a link is an error. When DADRock writes the section, from the web interface, a `supersede-record` result, or [MCP](llms.md#mcp), it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links.
+The section starts with one or more lines, each exactly one record link by full UUID, `[[uuid]]` or `[[uuid|label]]`. The text after the links, if any, is the reason, in ordinary Markdown. A record has at most one `## Supersedes` section, and the section must start with a link; acceptance refuses a candidate that breaks either rule, although `dadrock validate` does not report it. When DADRock writes the section, from the web interface, a `supersede-record` result, or [MCP](llms.md#mcp), it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links.
 
 ## Accepting a successor
 
@@ -66,7 +66,7 @@ Validation also warns when an accepted record's `## Supersedes` section names a 
 
 A decision's history is its chain of versions, linked by supersession, plus the corrections made to each version. DADRock derives the versions from `successors` alone, so they need no extra front matter and no Git. Corrections stay in the record itself, and DADRock reads them from Git.
 
-In the web interface, a record's **History** tab shows the decision's versions newest first, the opened one highlighted and the current ones labeled. Lanes join where a decision was split and fork where several were merged. Each change shows its reason and, on request, its diff. Records at the other end of a split or merge appear on one line ("Also became …", "Merged with …") and link to their own history. Under each version, "Edited 2 times since accepted" lists its [text edits](#text-edits) newest first: the date, the author, and the commit subject, each with its diff. An edit that is not committed yet comes first, marked "Not committed yet". A record whose text changed after acceptance shows "Edited since acceptance" ("Edited since rejection" for a rejected record) next to its file name, which opens the History tab. Outside a Git repository, History shows the versions without edits.
+In the web interface, a record's **History** tab shows the decision's versions newest first, the opened one highlighted and the current ones labeled. Lanes join where a decision was split and fork where several were merged. Each change shows its reason and, on request, its diff. Records at the other end of a split or merge appear on one line ("Also became …", "Merged with …") and link to the record. Under each version, "Edited 2 times since accepted" lists its [text edits](#text-edits) newest first: the date, the author, and the commit subject, each with its diff. An edit that is not committed yet comes first, marked "Not committed yet". A record whose text changed after acceptance shows "Edited since acceptance" ("Edited since rejection" for a rejected record) next to its file name, which opens the History tab. Outside a Git repository, History shows the versions without edits.
 
 From a terminal:
 
@@ -142,13 +142,14 @@ dadrock validate changes --strict             # title and body edits are errors 
 
 For each record file in `dadr/inbox/`, `dadr/ledger/`, or `dadr/archive/` that changed since the base revision, DADRock reads the file's version at the base. If that version was accepted or rejected, DADRock compares the current version with it. A record that moved between folders, by being accepted, rejected, or superseded, is followed through Git's rename detection or by its `id`.
 
-- **Errors:** a changed `id` (`record_id_changed`) or `status` (`record_status_changed`), a removed `successors` entry (`successor_removed`), or a file that no longer parses (`invalid_record`). The message names the record and suggests [drafting a successor](#drafting-a-successor) instead.
-- **Warnings, with the diff:** an edited title (`record_title_edited`) or body (`record_body_edited`; line endings aside). The message names the record and says to supersede it instead if the edit changes the decision. The text output prints the diff under the warning: the old and new title, or the changed body lines with a few lines of context. In JSON, the issue's `diff` carries the same change: `title` with `old` and `new`, or the body's `lines`, each `{kind, text}` with `kind` one of `context`, `added`, or `removed`.
+- **Errors:** a changed `id` (`record_id_changed`) or `status` (`record_status_changed`), a removed `successors` entry (`successor_removed`), or a file that no longer parses (`invalid_record`). The message names the record; for a changed `id` or `status`, it suggests [drafting a successor](#drafting-a-successor) instead, or a new candidate for a rejected record.
+- **Warnings, with the diff:** an edited title (`record_title_edited`) or body (`record_body_edited`; line endings aside). The message names the record and says what to do instead if the edit changes the decision: supersede it, or draft a new candidate for a rejected record. The text output prints the diff under the warning: the old and new title, or the changed body lines with a few lines of context. In JSON, the issue's `diff` carries the same change: `title` with `old` and `new`, or the body's `lines`, each `{kind, text}` with `kind` one of `context`, `added`, or `removed`.
 - Deleting an accepted or rejected record is a warning (`record_deleted`).
 
 ```text
 dadrock validate changes: 0 error(s), 1 warning(s) (working tree against HEAD (5309d425ba44))
 [warning] record_body_edited /home/me/analysis/dadr/ledger/winsorize-income-at-p99.md: the body of accepted record `Winsorize income at p99` (01938c20a3b4) was edited since HEAD. If this changes the decision, supersede the record instead.
+
       ## Consequences
 
     - Estimates are less sensitive to outliers.
