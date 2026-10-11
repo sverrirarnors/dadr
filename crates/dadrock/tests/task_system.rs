@@ -1549,6 +1549,31 @@ fn run_task_prompt_includes_skill_record_and_tag_references() {
 }
 
 #[test]
+fn skill_tag_reference_mirrors_docs_tag_vocabulary() {
+    fn table<'a>(text: &'a str, header: &str) -> Vec<&'a str> {
+        text.lines()
+            .skip_while(|line| *line != header)
+            .take_while(|line| line.starts_with('|'))
+            .collect()
+    }
+
+    let docs = include_str!("../../../docs-src/tags.md");
+    let skill = include_str!("../../../skills/dadr/tags.md");
+    for header in [
+        "| Tag | Decisions about |",
+        "| Namespace | Use it for | Examples |",
+    ] {
+        let docs_table = table(docs, header);
+        assert!(docs_table.len() > 2, "docs-src/tags.md lacks `{header}`");
+        assert_eq!(
+            docs_table,
+            table(skill, header),
+            "skills/dadr/tags.md must mirror the `{header}` table in docs-src/tags.md"
+        );
+    }
+}
+
+#[test]
 fn run_task_prompt_embeds_builtin_task_guide() {
     let root = unique_temp_dir("dadrock-task-agent-builtin-guide");
     fs::create_dir_all(&root).expect("create temp dir");

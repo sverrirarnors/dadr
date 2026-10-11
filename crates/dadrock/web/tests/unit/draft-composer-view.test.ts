@@ -36,7 +36,7 @@ function record(
   };
 }
 
-const accepted = record('acc-1', 'accepted', 'Use Polars', { tags: ['#dadr/data', '#kind/tool'] });
+const accepted = record('acc-1', 'accepted', 'Use Polars', { tags: ['#dadr/data', '#kind/setup'] });
 const candidate = record('cand-1', 'candidate', 'First draft');
 const superseded = record('acc-0', 'accepted', 'Use pandas', { superseded: true });
 const records = [accepted, candidate, superseded];
@@ -123,7 +123,7 @@ const polarsSource = [
   'id: acc-1',
   'tags:',
   '  - "#dadr/data"',
-  '  - kind/tool',
+  '  - kind/setup',
   '---',
   '',
   '## Supersedes',
@@ -147,24 +147,24 @@ describe('successorPrefill', () => {
     expect(successorStartingBody(polarsSource)).toBe('## Context\n\nData frames.\n\n## Decision\n\nUse Polars.\n');
     expect(successorPrefill([{ record: accepted, source: polarsSource }])).toEqual({
       title: 'Use Polars',
-      tags: '#dadr/data kind/tool',
+      tags: '#dadr/data kind/setup',
       body: '## Context\n\nData frames.\n\n## Decision\n\nUse Polars.\n',
     });
   });
 
   it('falls back to the summary tags when the file has none', () => {
     const plain = '---\ntitle: Use Polars\nstatus: accepted\nid: acc-1\n---\n\nBody.\n';
-    expect(successorPrefill([{ record: accepted, source: plain }]).tags).toBe('#dadr/data #kind/tool');
+    expect(successorPrefill([{ record: accepted, source: plain }]).tags).toBe('#dadr/data #kind/setup');
   });
 
   it('starts a merge untitled, with every tag and each section from every predecessor', () => {
-    const other = '---\ntitle: Use pandas\nstatus: accepted\nid: acc-0\ntags: [kind/tool, topic/memory]\n---\n\n## Context\n\nMemory.\n\n## Decision\n\nUse pandas.\n';
+    const other = '---\ntitle: Use pandas\nstatus: accepted\nid: acc-0\ntags: [kind/setup, topic/memory]\n---\n\n## Context\n\nMemory.\n\n## Decision\n\nUse pandas.\n';
     const merged = successorPrefill([
       { record: accepted, source: polarsSource },
       { record: superseded, source: other },
     ]);
     expect(merged.title).toBe('');
-    expect(merged.tags).toBe('#dadr/data kind/tool topic/memory');
+    expect(merged.tags).toBe('#dadr/data kind/setup topic/memory');
     expect(merged.body).toBe(
       '## Context\n\nData frames.\n\nMemory.\n\n## Decision\n\nUse Polars.\n\nUse pandas.\n\n## Alternatives\n\n## Consequences\n',
     );

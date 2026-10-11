@@ -137,7 +137,7 @@
         </label>
         <label class="block space-y-1.5">
           <span class="block text-xs font-medium uppercase tracking-wide text-fg-subtle">Revision tags</span>
-          <TextInput bind:value={tagsInput} placeholder="#dadr/data/processing #dadr/methodology" />
+          <TextInput bind:value={tagsInput} placeholder="#kind/sample #topic/missingness" />
         </label>
         <div class="block space-y-1.5">
           <span class="block text-xs font-medium uppercase tracking-wide text-fg-subtle">Revised record markdown</span>

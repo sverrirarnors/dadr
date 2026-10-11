@@ -708,7 +708,7 @@ fn tags_validate_ignores_numeric_hash_references_in_prose() {
          status: accepted\n\
          id: 01938b8e-4d70-7abc-8def-0123456789ab\n\
          tags:\n\
-           - kind/model\n\
+           - kind/modeling\n\
          ---\n\n\
          ## Context\n\
          Per-coder rankings compare RA #4 vs. Kimi K2.\n\n\
@@ -761,11 +761,12 @@ fn record_ids_for_tag_accepts_hash_or_plain_filter() {
     let root = temp_project("tags-filter");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
-    let model = create_candidate(&project, "Model candidate", &["#kind/model".to_owned()]).unwrap();
+    let model =
+        create_candidate(&project, "Model candidate", &["#kind/modeling".to_owned()]).unwrap();
     let sample =
         create_candidate(&project, "Sample candidate", &["kind/sample".to_owned()]).unwrap();
 
-    let model_ids = record_ids_for_tag(&project_index(&project), "#kind/model").unwrap();
+    let model_ids = record_ids_for_tag(&project_index(&project), "#kind/modeling").unwrap();
     assert!(model_ids.contains(&model.id));
     assert!(!model_ids.contains(&sample.id));
 
@@ -773,7 +774,10 @@ fn record_ids_for_tag_accepts_hash_or_plain_filter() {
     assert!(sample_ids.contains(&sample.id));
     assert!(!sample_ids.contains(&model.id));
 
-    assert_eq!(normalize_tag_filter("#Kind/Model").unwrap(), "kind/model");
+    assert_eq!(
+        normalize_tag_filter("#Kind/Modeling").unwrap(),
+        "kind/modeling"
+    );
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -1178,7 +1182,7 @@ fn accept_converts_candidate_into_accepted_decision() {
     let candidate = create_candidate_with_body(
         &project,
         "Acceptable candidate",
-        &["#kind/model".to_owned()],
+        &["#kind/modeling".to_owned()],
         FILLED_SECTIONS,
     )
     .unwrap();

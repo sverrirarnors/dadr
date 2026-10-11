@@ -4,9 +4,9 @@ import type { MutationResponse } from '../../src/lib/api';
 
 describe('parseListInput', () => {
   it('splits comma and whitespace separated values while preserving hashes', () => {
-    expect(parseListInput(' #dadr/data/processing, #kind/model\n#team ')).toEqual([
+    expect(parseListInput(' #dadr/data/processing, #kind/modeling\n#team ')).toEqual([
       '#dadr/data/processing',
-      '#kind/model',
+      '#kind/modeling',
       '#team',
     ]);
   });

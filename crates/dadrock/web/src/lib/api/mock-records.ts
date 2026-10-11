@@ -236,7 +236,7 @@ function historyRecords(): MockRecord[] {
       'Use pandas for every data frame.',
       'Use Polars.',
       'The team already knows pandas.',
-    ), { tags: ['kind/tooling'], successors: [4002] }),
+    ), { tags: ['kind/setup'], successors: [4002] }),
     seed(4002, 'Use Polars for data frames', 'accepted', supersedes(
       [[4001, 'Use pandas for data frames']],
       'Polars is faster on the full panel.',
@@ -245,7 +245,7 @@ function historyRecords(): MockRecord[] {
       'Use Polars for every data frame.',
       'Keep pandas.',
       'The full panel fits in memory.',
-    ), { tags: ['kind/tooling'] }),
+    ), { tags: ['kind/setup'] }),
     seed(4003, 'Use pandas with Arrow dtypes', 'candidate', supersedes(
       [[4001, 'Use pandas for data frames']],
       'Arrow dtypes fix the memory blow-up.',
@@ -254,13 +254,13 @@ function historyRecords(): MockRecord[] {
       'Use pandas with Arrow-backed dtypes for every data frame.',
       'Use Polars.',
       'The team already knows pandas, and memory use drops.',
-    ), { tags: ['kind/tooling'] }),
+    ), { tags: ['kind/setup'] }),
     seed(5001, 'Use SAS for estimation', 'rejected', sections(
       'The estimation step needs a statistics package.',
       'Use SAS for every model.',
       'Use R.',
       'Licenses would be needed for every analyst.',
-    ), { tags: ['kind/tooling'] }),
+    ), { tags: ['kind/setup'] }),
   ];
 }
 

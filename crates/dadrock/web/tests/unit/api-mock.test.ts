@@ -242,7 +242,7 @@ describe('mock text edits', () => {
 
   it('lists a correction saved in place as not committed yet, but not a change of tags alone', async () => {
     const { content } = await api.getRecordSource(POLARS);
-    await api.saveRecordSource(POLARS, content.replace(/^tags:\n(?: {2}- .*\n)*/m, 'tags:\n  - kind/library\n'));
+    await api.saveRecordSource(POLARS, content.replace(/^tags:\n(?: {2}- .*\n)*/m, 'tags:\n  - topic/dataframes\n'));
     expect((await api.getRecordHistory(POLARS)).versions[0]?.edits).toEqual([]);
 
     await api.saveRecordSource(POLARS, content.replace('The full panel fits in memory.', 'The full panel fits in memory (32 GB).'));
