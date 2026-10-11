@@ -394,6 +394,7 @@ pub fn run_task_with_acp(
         enable_dadrock_mcp,
     } = request;
     let task = validate_task_run(project, &task_id, &input, &context, None)?;
+    let context = resolve_context_records(project, context)?;
     match task.manifest.execution {
         TaskExecutionMode::Agent => {
             // Find the agent before creating the run: a run that no agent
@@ -421,6 +422,34 @@ pub fn run_task_with_acp(
             run_created_local_task(project, &task, input, context, &run)
         }
     }
+}
+
+/// Selected records may be named by any record query; the agent gets each
+/// one's full id, once.
+fn resolve_context_records(
+    project: &ProjectContext,
+    mut context: TaskContext,
+) -> Result<TaskContext, DadrError> {
+    let queries: Vec<&str> = context
+        .records
+        .iter()
+        .map(|query| query.trim())
+        .filter(|query| !query.is_empty())
+        .collect();
+    if queries.is_empty() {
+        context.records.clear();
+        return Ok(context);
+    }
+    let index = ProjectIndex::scan(project)?;
+    let mut ids = Vec::new();
+    for query in queries {
+        let id = index.resolve_one(query)?.record.id.to_string();
+        if !ids.contains(&id) {
+            ids.push(id);
+        }
+    }
+    context.records = ids;
+    Ok(context)
 }
 
 struct TaskRunFailure {

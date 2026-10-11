@@ -348,7 +348,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["agent", "draft"],
-        usage: "agent draft [--write] [--json] [--permission <deny|allow-once|allow-always>] [--agent <program>] [--agent-arg <arg>] [--skill <name-or-path>] [--no-mcp] <prompt>",
+        usage: "agent draft [--write] [--json] [--permission <deny|allow-reads|allow-once|allow-always>] [--agent <program>] [--agent-arg <arg>] [--skill <name-or-path>] [--no-mcp] <prompt>",
         description: "Ask a local ACP agent to draft a candidate decision.",
         mutation: CommandMutation::WritesWithWrite,
         supports_json: true,
@@ -399,11 +399,11 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["task", "run"],
-        usage: "task run <task-id> [--path <path>] [--context <text>] [--focus <text>] [--limit <n>] [--input-json <json>] [--json] [--permission <deny|allow-once|allow-always>] [--agent <program>] [--agent-arg <arg>] [--no-mcp]",
+        usage: "task run <task-id> [--path <path>] [--context <text>] [--focus <text>] [--limit <n>] [--input-json <json>] [--instructions <text>] [--record <query>]... [--attach <path>]... [--json] [--permission <deny|allow-reads|allow-once|allow-always>] [--agent <program>] [--agent-arg <arg>] [--no-mcp]",
         description: "Run a resolved task package with a local ACP agent.",
         mutation: CommandMutation::Writes,
         supports_json: true,
-        exit_behavior: "Exits non-zero when the task id, input JSON, ACP agent, task output, or run directory is invalid.",
+        exit_behavior: "Exits non-zero when the task id, input JSON, task context, ACP agent, task output, or run directory is invalid; no run is created when no ACP agent is found.",
         subcommands: &[],
     },
     CommandInfo {
