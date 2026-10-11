@@ -48,8 +48,8 @@ cargo install --path crates/dadrock --bin dadrock --features no-js-build
 
 ## Optional: a local agent
 
-Drafting and conflict checks use a local agent speaking the Agent Client Protocol, such as `claude-agent-acp`. DADRock detects one on `PATH` automatically; see [LLM agents](llms.md#acp) to configure a specific provider. Nothing else in DADRock depends on it.
+Drafting and conflict checks use a local agent speaking the Agent Client Protocol, such as `claude-agent-acp`. DADRock detects one on `PATH` automatically; see [LLM agents](../llms.md#acp) to configure a specific provider. Nothing else in DADRock depends on it.
 
 ## Next
 
-[Record your first decision](web.md#first-decision) in the web interface, set up your [editor](editors.md), or read what a [Data Analysis Decision Record](../core.md) is.
+Open the [web interface](web.md) or the [standalone app](app.md), set up your [editor](editors.md), or read what a [Data Analysis Decision Record](../core.md) is.

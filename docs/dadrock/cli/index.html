@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://vincentarelbundock.github.io/dadr/dadrock/cli/">
       
       
-        <link rel="prev" href="../llms/">
+        <link rel="prev" href="../editors/">
       
       
-        <link rel="next" href="../../roadmap/">
+        <link rel="next" href="../../llms/">
       
       
         
@@ -262,7 +262,59 @@
   <span class="md-ellipsis">
     
   
-  DADR
+  Making decisions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Changing decisions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project layout
 
     
   </span>
@@ -330,32 +382,6 @@
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../../uuidv7/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  UUID v7
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -369,10 +395,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -389,8 +415,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -460,14 +486,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../editors/" class="md-nav__link">
+      <a href="../app/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Editors
+  Standalone app
 
     
   </span>
@@ -487,14 +513,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../llms/" class="md-nav__link">
+      <a href="../editors/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  LLM agents
+  Editors
 
     
   </span>
@@ -573,10 +599,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
+  <a href="#commands" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Project layout
+        Commands
       </span>
     </span>
   </a>
@@ -584,10 +610,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#validation" class="md-nav__link">
+  <a href="#dadrock-init" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Validation
+        <code>dadrock init</code>
       </span>
     </span>
   </a>
@@ -595,10 +621,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#continuous-integration" class="md-nav__link">
+  <a href="#dadrock-demo" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Continuous integration
+        <code>dadrock demo</code>
       </span>
     </span>
   </a>
@@ -606,130 +632,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reference" class="md-nav__link">
+  <a href="#dadrock-preview" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Reference
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dadrock" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#subcommands" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
+        <code>dadrock preview</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-help" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-config" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>dadrock help</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock help">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
+        <code>dadrock config</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock commands</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-completions" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock completions</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock completions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-dir" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -739,103 +663,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock config</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock config">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-init" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock init</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock init">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-demo" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock demo</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock demo">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-new" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -844,37 +673,9 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock new">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#options_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-list" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -883,26 +684,42 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock list">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_4" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-accept" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <strong>Options:</strong>
+        <code>dadrock accept</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-reject" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock reject</code>
+      </span>
+    </span>
+  </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-supersede" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock supersede</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dadrock-status" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -915,33 +732,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#arguments_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-status-accept" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -949,23 +739,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock status accept">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -978,23 +751,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock status reject">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1006,110 +762,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock status supersede">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
         
       </ul>
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-accept" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock accept</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock accept">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-reject" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock reject</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock reject">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_9" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-supersede" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock supersede</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock supersede">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-validate" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1122,33 +782,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-validate-records" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1156,34 +789,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock validate records">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_10" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1196,23 +801,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock validate links">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_9" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1224,26 +812,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock validate tags">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_10" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
         
       </ul>
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-tags" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1256,22 +832,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-tags-list" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1280,93 +840,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock tags list">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_11" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
         
       </ul>
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-mcp" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock mcp</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock mcp">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#subcommands_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-mcp-serve" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock mcp serve</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock mcp serve">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_11" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_12" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-agent" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1379,22 +860,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-agent-check" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1402,23 +867,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock agent check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_13" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1431,34 +879,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock agent draft">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_12" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_14" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1470,26 +890,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock agent skills">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_15" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
         
       </ul>
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-task" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1502,22 +910,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-task-list" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1525,23 +917,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock task list">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_16" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1554,34 +929,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock task show">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_13" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_17" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1592,34 +939,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock task run">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_14" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_18" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1632,23 +951,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock task runs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_19" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1660,25 +962,30 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock task result">
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock mcp</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="dadrock mcp">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_15" class="md-nav__link">
+  <a href="#dadrock-mcp-serve" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_20" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
+        <code>dadrock mcp serve</code>
       </span>
     </span>
   </a>
@@ -1689,48 +996,37 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-preview" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-help" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>dadrock preview</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock preview">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_16" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
+        <code>dadrock help</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#options_21" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-commands" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <strong>Options:</strong>
+        <code>dadrock commands</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-completions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock completions</code>
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -1746,6 +1042,58 @@
           </ul>
         </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  LLM agents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../uuidv7/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  UUID v7
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1817,10 +1165,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
+  <a href="#commands" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Project layout
+        Commands
       </span>
     </span>
   </a>
@@ -1828,10 +1176,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#validation" class="md-nav__link">
+  <a href="#dadrock-init" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Validation
+        <code>dadrock init</code>
       </span>
     </span>
   </a>
@@ -1839,10 +1187,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#continuous-integration" class="md-nav__link">
+  <a href="#dadrock-demo" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Continuous integration
+        <code>dadrock demo</code>
       </span>
     </span>
   </a>
@@ -1850,130 +1198,28 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reference" class="md-nav__link">
+  <a href="#dadrock-preview" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Reference
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#dadrock" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#subcommands" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
+        <code>dadrock preview</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-help" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-config" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>dadrock help</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock help">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
+        <code>dadrock config</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock commands</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-completions" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock completions</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock completions">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-dir" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1983,103 +1229,8 @@
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock config</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock config">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-init" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock init</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock init">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-demo" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock demo</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock demo">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-new" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2088,37 +1239,9 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock new">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#options_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-list" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2127,26 +1250,42 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock list">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_4" class="md-nav__link">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-accept" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <strong>Options:</strong>
+        <code>dadrock accept</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-reject" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock reject</code>
+      </span>
+    </span>
+  </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-supersede" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock supersede</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dadrock-status" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2159,33 +1298,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#arguments_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-status-accept" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2193,23 +1305,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock status accept">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2222,23 +1317,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock status reject">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -2250,110 +1328,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock status supersede">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
         
       </ul>
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-accept" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock accept</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock accept">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-reject" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock reject</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock reject">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_9" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-supersede" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock supersede</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock supersede">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-validate" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2366,33 +1348,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_7" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-validate-records" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2400,34 +1355,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock validate records">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_10" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_8" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2440,23 +1367,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock validate links">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_9" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -2468,26 +1378,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock validate tags">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_10" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
         
       </ul>
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-tags" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2500,22 +1398,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-tags-list" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2524,93 +1406,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock tags list">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_11" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
         
       </ul>
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-mcp" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock mcp</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock mcp">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#subcommands_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-mcp-serve" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>dadrock mcp serve</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock mcp serve">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_11" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_12" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-agent" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2623,22 +1426,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-agent-check" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2646,23 +1433,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock agent check">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_13" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2675,34 +1445,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock agent draft">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_12" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_14" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -2714,26 +1456,14 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock agent skills">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_15" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
 </li>
         
       </ul>
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#dadrock-task" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2746,22 +1476,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#subcommands_6" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Subcommands:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#dadrock-task-list" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2769,23 +1483,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock task list">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_16" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2798,34 +1495,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock task show">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_13" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_17" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -2836,34 +1505,6 @@
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="dadrock task run">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_14" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_18" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -2876,23 +1517,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock task runs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#options_19" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -2904,25 +1528,30 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="dadrock task result">
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock mcp</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="dadrock mcp">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_15" class="md-nav__link">
+  <a href="#dadrock-mcp-serve" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <strong>Arguments:</strong>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#options_20" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Options:</strong>
+        <code>dadrock mcp serve</code>
       </span>
     </span>
   </a>
@@ -2933,48 +1562,37 @@
     </nav>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#dadrock-preview" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-help" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>dadrock preview</code>
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="dadrock preview">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arguments_16" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <strong>Arguments:</strong>
+        <code>dadrock help</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#options_21" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-commands" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <strong>Options:</strong>
+        <code>dadrock commands</code>
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-completions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock completions</code>
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -2997,214 +1615,203 @@
 
 
 <h1 id="command-line">Command line<a class="headerlink" href="#command-line" title="Permanent link">&para;</a></h1>
-<p><code>dadrock</code> is one command with subcommands. Running it without a subcommand prints help; <code>dadrock help COMMAND</code> describes one command, and <code>dadrock completions bash|zsh|fish</code> prints a shell completion script.</p>
-<h2 id="project-layout">Project layout<a class="headerlink" href="#project-layout" title="Permanent link">&para;</a></h2>
-<p>The DADR format does not mandate a directory structure. <strong>DADRock</strong> uses this one, created by <code>dadrock init</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dadr/
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  accepted/
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    01938b8e4d70-income-preprocessing.md
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    01938b8f9d71-drop-missing-treatment.md
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  candidates/
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    01938ba1c4f3-country-exclusions.md
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  rejected/
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    01938b8d9c10-deprecated-cohort-filter.md
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  templates/
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    candidate.md                                    # optional
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  tasks/
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>  runs/
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    .gitignore
-</span></code></pre></div>
+<!-- Generated from the CLI definition by `make cli-docs`; it mirrors `dadrock help`. -->
+
+<!-- cli-docs:start -->
+
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
+<p><strong>Projects</strong></p>
 <table>
 <thead>
 <tr>
-<th>Directory</th>
-<th>Contents</th>
+<th>Command</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>dadr/candidates/</code></td>
-<td>Proposals awaiting review</td>
+<td><a href="#dadrock-init"><code>init</code></a></td>
+<td>Create a Dadrock dadr/ directory.</td>
 </tr>
 <tr>
-<td><code>dadr/accepted/</code></td>
-<td>Accepted decisions, including those later replaced</td>
+<td><a href="#dadrock-demo"><code>demo</code></a></td>
+<td>Seed a new project with a named DADR example.</td>
 </tr>
 <tr>
-<td><code>dadr/rejected/</code></td>
-<td>Rejected proposals</td>
+<td><a href="#dadrock-preview"><code>preview</code></a></td>
+<td>Serve the local web review UI.</td>
 </tr>
 <tr>
-<td><code>dadr/templates/</code></td>
-<td>Optional template overrides for new candidates</td>
+<td><a href="#dadrock-config"><code>config</code></a></td>
+<td>Print the resolved project layout.</td>
 </tr>
 <tr>
-<td><code>dadr/tasks/</code></td>
-<td>Optional project-specific agent workflows (<code>dadr/tasks/&lt;task-id&gt;/task.toml</code> plus its prompt file)</td>
-</tr>
-<tr>
-<td><code>dadr/runs/</code></td>
-<td>Agent-run inputs, results, and logs; ignored by version control</td>
+<td><a href="#dadrock-dir"><code>dir</code></a></td>
+<td>Print the discovered accepted records directory.</td>
 </tr>
 </tbody>
 </table>
-<p><code>dadrock accept</code> changes a candidate's <code>status</code> to <code>accepted</code> and moves the file to <code>dadr/accepted/</code>. <code>dadrock reject</code> changes it to <code>rejected</code> and moves it to <code>dadr/rejected/</code>. The <code>id</code> never changes. <code>dadrock supersede</code> appends the new record's <code>id</code> to the old record's <code>successors</code> and leaves both files in <code>dadr/accepted/</code>.</p>
-<p>The directory is a convenience: <code>status</code> in the front matter is authoritative. <code>dadrock validate</code> warns when a record sits in a directory that does not match its status. Use <code>dadrock config</code> to inspect the resolved layout. Keep the record directories in version control; run state may contain pasted context and source excerpts and is ignored by default.</p>
-<h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h2>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dadrock<span class="w"> </span>validate
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>--json
-</span></code></pre></div>
-<p>Current validation checks:</p>
-<ul>
-<li>no <code>date</code> key or ISO 8601 date/time values in front matter;</li>
-<li>YAML fields, UUIDv7 IDs, four sections each appearing exactly once with text, and status/location consistency;</li>
-<li>duplicate full IDs and short IDs, and filename collisions;</li>
-<li>missing or invalid successors and cycles in replacement relationships;</li>
-<li>broken or ambiguous record wikilinks and missing local Markdown-link targets;</li>
-<li>malformed tags and unreadable candidate templates.</li>
-</ul>
-<p>Focused commands are <code>dadrock validate records</code>, <code>dadrock validate links</code>, and <code>dadrock validate tags</code>. Use labeled links such as <code>[[01938c20a3b4|sampling rule]]</code> to make raw Markdown easier to read.</p>
-<p>Validation checks the records' structure and internal references. It does not compare accepted records with Git history, resolve bibliography citations, detect <code>TBD</code> prose, enforce plan-deviation sections, or determine whether code follows a decision. Those checks are <a href="../../roadmap/">roadmap work</a>. Human review remains necessary.</p>
-<h2 id="continuous-integration">Continuous integration<a class="headerlink" href="#continuous-integration" title="Permanent link">&para;</a></h2>
-<p>Once DADRock is installed in your CI environment, run <code>dadrock validate</code> from the analysis project root. A nonzero exit status signals an error; <code>--json</code> provides structured diagnostics. Install from a pinned source revision for reproducibility; a CLI-only CI build can use the <a href="../#without-the-web-interface"><code>no-js-build</code> feature</a>.</p>
-<h2 id="reference">Reference<a class="headerlink" href="#reference" title="Permanent link">&para;</a></h2>
-<p>Generated from the CLI definition by <code>make cli-docs</code>; it mirrors <code>dadrock help</code>.</p>
-<!-- cli-docs:start -->
-
-<p><strong>Command Overview:</strong></p>
-<ul>
-<li><a href="#dadrock"><code>dadrock</code>↴</a></li>
-<li><a href="#dadrock-help"><code>dadrock help</code>↴</a></li>
-<li><a href="#dadrock-commands"><code>dadrock commands</code>↴</a></li>
-<li><a href="#dadrock-completions"><code>dadrock completions</code>↴</a></li>
-<li><a href="#dadrock-dir"><code>dadrock dir</code>↴</a></li>
-<li><a href="#dadrock-config"><code>dadrock config</code>↴</a></li>
-<li><a href="#dadrock-init"><code>dadrock init</code>↴</a></li>
-<li><a href="#dadrock-demo"><code>dadrock demo</code>↴</a></li>
-<li><a href="#dadrock-new"><code>dadrock new</code>↴</a></li>
-<li><a href="#dadrock-list"><code>dadrock list</code>↴</a></li>
-<li><a href="#dadrock-status"><code>dadrock status</code>↴</a></li>
-<li><a href="#dadrock-status-accept"><code>dadrock status accept</code>↴</a></li>
-<li><a href="#dadrock-status-reject"><code>dadrock status reject</code>↴</a></li>
-<li><a href="#dadrock-status-supersede"><code>dadrock status supersede</code>↴</a></li>
-<li><a href="#dadrock-accept"><code>dadrock accept</code>↴</a></li>
-<li><a href="#dadrock-reject"><code>dadrock reject</code>↴</a></li>
-<li><a href="#dadrock-supersede"><code>dadrock supersede</code>↴</a></li>
-<li><a href="#dadrock-validate"><code>dadrock validate</code>↴</a></li>
-<li><a href="#dadrock-validate-records"><code>dadrock validate records</code>↴</a></li>
-<li><a href="#dadrock-validate-links"><code>dadrock validate links</code>↴</a></li>
-<li><a href="#dadrock-validate-tags"><code>dadrock validate tags</code>↴</a></li>
-<li><a href="#dadrock-tags"><code>dadrock tags</code>↴</a></li>
-<li><a href="#dadrock-tags-list"><code>dadrock tags list</code>↴</a></li>
-<li><a href="#dadrock-mcp"><code>dadrock mcp</code>↴</a></li>
-<li><a href="#dadrock-mcp-serve"><code>dadrock mcp serve</code>↴</a></li>
-<li><a href="#dadrock-agent"><code>dadrock agent</code>↴</a></li>
-<li><a href="#dadrock-agent-check"><code>dadrock agent check</code>↴</a></li>
-<li><a href="#dadrock-agent-draft"><code>dadrock agent draft</code>↴</a></li>
-<li><a href="#dadrock-agent-skills"><code>dadrock agent skills</code>↴</a></li>
-<li><a href="#dadrock-task"><code>dadrock task</code>↴</a></li>
-<li><a href="#dadrock-task-list"><code>dadrock task list</code>↴</a></li>
-<li><a href="#dadrock-task-show"><code>dadrock task show</code>↴</a></li>
-<li><a href="#dadrock-task-run"><code>dadrock task run</code>↴</a></li>
-<li><a href="#dadrock-task-runs"><code>dadrock task runs</code>↴</a></li>
-<li><a href="#dadrock-task-result"><code>dadrock task result</code>↴</a></li>
-<li><a href="#dadrock-preview"><code>dadrock preview</code>↴</a></li>
-</ul>
-<h3 id="dadrock"><code>dadrock</code><a class="headerlink" href="#dadrock" title="Permanent link">&para;</a></h3>
-<p>DADR decision records and web review UI.</p>
-<p>With no command, prints this help menu.</p>
-<p><strong>Usage:</strong> <code>dadrock [COMMAND]</code></p>
-<h6 id="subcommands"><strong>Subcommands:</strong><a class="headerlink" href="#subcommands" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>help</code> — Show top-level help or detailed metadata for one command.</li>
-<li><code>commands</code> — List command metadata for automation and command discovery.</li>
-<li><code>completions</code> — Generate a shell completion script.</li>
-<li><code>dir</code> — Print the discovered accepted records directory.</li>
-<li><code>config</code> — Print the resolved project layout.</li>
-<li><code>init</code> — Create a Dadrock dadr/ directory.</li>
-<li><code>demo</code> — Seed a new project with a named DADR example.</li>
-<li><code>new</code> — Create a candidate decision record from the active candidate template.</li>
-<li><code>list</code> — List records, optionally filtered by lifecycle status, tag, or query.</li>
-<li><code>status</code> — Inspect one record's lifecycle status or run lifecycle transitions.</li>
-<li><code>accept</code> — Accept a candidate decision.</li>
-<li><code>reject</code> — Reject a candidate decision.</li>
-<li><code>supersede</code> — Link replacement decisions to the decisions they replace.</li>
-<li><code>validate</code> — Run project validation, or target records, links, or tags.</li>
-<li><code>tags</code> — Inspect DADR tag usage.</li>
-<li><code>mcp</code> — Serve Dadrock MCP tools over stdio.</li>
-<li><code>agent</code> — Call a configured local ACP agent for candidate drafting.</li>
-<li><code>task</code> — Discover, inspect, and run Dadrock task packages.</li>
-<li><code>preview</code> — Serve the local web review UI.</li>
-</ul>
-<h3 id="dadrock-help"><code>dadrock help</code><a class="headerlink" href="#dadrock-help" title="Permanent link">&para;</a></h3>
-<p>Show top-level help or detailed metadata for one command.</p>
-<p><strong>Usage:</strong> <code>dadrock help [TOPIC]...</code></p>
-<h6 id="arguments"><strong>Arguments:</strong><a class="headerlink" href="#arguments" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>&lt;TOPIC&gt;</code></li>
-</ul>
-<h3 id="dadrock-commands"><code>dadrock commands</code><a class="headerlink" href="#dadrock-commands" title="Permanent link">&para;</a></h3>
-<p>List command metadata for automation and command discovery.</p>
-<p><strong>Usage:</strong> <code>dadrock commands [OPTIONS]</code></p>
-<h6 id="options"><strong>Options:</strong><a class="headerlink" href="#options" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>--json</code></li>
-</ul>
-<h3 id="dadrock-completions"><code>dadrock completions</code><a class="headerlink" href="#dadrock-completions" title="Permanent link">&para;</a></h3>
-<p>Generate a shell completion script.</p>
-<p><strong>Usage:</strong> <code>dadrock completions &lt;SHELL&gt;</code></p>
-<h6 id="arguments_1"><strong>Arguments:</strong><a class="headerlink" href="#arguments_1" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>&lt;SHELL&gt;</code></li>
-</ul>
-<p>Possible values: <code>bash</code>, <code>zsh</code>, <code>fish</code></p>
-<h3 id="dadrock-dir"><code>dadrock dir</code><a class="headerlink" href="#dadrock-dir" title="Permanent link">&para;</a></h3>
-<p>Print the discovered accepted records directory.</p>
-<p><strong>Usage:</strong> <code>dadrock dir</code></p>
-<h3 id="dadrock-config"><code>dadrock config</code><a class="headerlink" href="#dadrock-config" title="Permanent link">&para;</a></h3>
-<p>Print the resolved project layout.</p>
-<p><strong>Usage:</strong> <code>dadrock config [OPTIONS]</code></p>
-<h6 id="options_1"><strong>Options:</strong><a class="headerlink" href="#options_1" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>--json</code></li>
-</ul>
-<h3 id="dadrock-init"><code>dadrock init</code><a class="headerlink" href="#dadrock-init" title="Permanent link">&para;</a></h3>
+<p><strong>Records</strong></p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#dadrock-new"><code>new</code></a></td>
+<td>Create a candidate decision record from the active candidate template.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-list"><code>list</code></a></td>
+<td>List records, optionally filtered by lifecycle status, tag, or query.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-accept"><code>accept</code></a></td>
+<td>Accept a candidate decision.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-reject"><code>reject</code></a></td>
+<td>Reject a candidate decision.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-supersede"><code>supersede</code></a></td>
+<td>Link replacement decisions to the decisions they replace.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-status"><code>status</code></a></td>
+<td>Inspect one record's lifecycle status or run lifecycle transitions.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Validation</strong></p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#dadrock-validate"><code>validate</code></a></td>
+<td>Run project validation, or target records, links, or tags.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-tags"><code>tags</code></a></td>
+<td>Inspect DADR tag usage.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Agents</strong></p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#dadrock-agent"><code>agent</code></a></td>
+<td>Call a configured local ACP agent for candidate drafting.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-task"><code>task</code></a></td>
+<td>Discover, inspect, and run Dadrock task packages.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-mcp"><code>mcp</code></a></td>
+<td>Serve Dadrock MCP tools over stdio.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Help</strong></p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#dadrock-help"><code>help</code></a></td>
+<td>Show top-level help or detailed metadata for one command.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-commands"><code>commands</code></a></td>
+<td>List command metadata for automation and command discovery.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-completions"><code>completions</code></a></td>
+<td>Generate a shell completion script.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="dadrock-init"><code>dadrock init</code><a class="headerlink" href="#dadrock-init" title="Permanent link">&para;</a></h2>
 <p>Create a Dadrock dadr/ directory.</p>
 <p><strong>Usage:</strong> <code>dadrock init [DIRECTORY]</code></p>
-<h6 id="arguments_2"><strong>Arguments:</strong><a class="headerlink" href="#arguments_2" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;DIRECTORY&gt;</code></li>
 </ul>
-<h3 id="dadrock-demo"><code>dadrock demo</code><a class="headerlink" href="#dadrock-demo" title="Permanent link">&para;</a></h3>
+<h2 id="dadrock-demo"><code>dadrock demo</code><a class="headerlink" href="#dadrock-demo" title="Permanent link">&para;</a></h2>
 <p>Seed a new project with a named DADR example.</p>
 <p><strong>Usage:</strong> <code>dadrock demo [OPTIONS] [DIRECTORY]</code></p>
-<h6 id="arguments_3"><strong>Arguments:</strong><a class="headerlink" href="#arguments_3" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;DIRECTORY&gt;</code></li>
 </ul>
-<h6 id="options_2"><strong>Options:</strong><a class="headerlink" href="#options_2" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 <li><code>--example &lt;EXAMPLE&gt;</code></li>
 </ul>
 <p>Default value: <code>lifecycle</code></p>
 <p>Possible values: <code>lifecycle</code>, <code>candidate-review</code>, <code>penguins</code>, <code>broken</code>, <code>conflicts</code>, <code>task-history</code></p>
-<h3 id="dadrock-new"><code>dadrock new</code><a class="headerlink" href="#dadrock-new" title="Permanent link">&para;</a></h3>
+<h2 id="dadrock-preview"><code>dadrock preview</code><a class="headerlink" href="#dadrock-preview" title="Permanent link">&para;</a></h2>
+<p>Serve the local web review UI.</p>
+<p><strong>Usage:</strong> <code>dadrock preview [OPTIONS] [DIRECTORY]</code></p>
+<p><strong>Arguments</strong></p>
+<ul>
+<li><code>&lt;DIRECTORY&gt;</code></li>
+</ul>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--port &lt;PORT&gt;</code></li>
+</ul>
+<p>Default value: <code>4004</code>
+* <code>--host &lt;HOST&gt;</code></p>
+<p>Default value: <code>127.0.0.1</code></p>
+<h2 id="dadrock-config"><code>dadrock config</code><a class="headerlink" href="#dadrock-config" title="Permanent link">&para;</a></h2>
+<p>Print the resolved project layout.</p>
+<p><strong>Usage:</strong> <code>dadrock config [OPTIONS]</code></p>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--json</code></li>
+</ul>
+<h2 id="dadrock-dir"><code>dadrock dir</code><a class="headerlink" href="#dadrock-dir" title="Permanent link">&para;</a></h2>
+<p>Print the discovered accepted records directory.</p>
+<p><strong>Usage:</strong> <code>dadrock dir</code></p>
+<h2 id="dadrock-new"><code>dadrock new</code><a class="headerlink" href="#dadrock-new" title="Permanent link">&para;</a></h2>
 <p>Create a candidate decision record from the active candidate template.</p>
 <p><strong>Usage:</strong> <code>dadrock new [OPTIONS] &lt;TITLE&gt;...</code></p>
-<h6 id="arguments_4"><strong>Arguments:</strong><a class="headerlink" href="#arguments_4" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;TITLE&gt;</code></li>
 </ul>
-<h6 id="options_3"><strong>Options:</strong><a class="headerlink" href="#options_3" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--tag &lt;TAGS&gt;</code></li>
 <li><code>--quiet</code></li>
 </ul>
-<h3 id="dadrock-list"><code>dadrock list</code><a class="headerlink" href="#dadrock-list" title="Permanent link">&para;</a></h3>
+<h2 id="dadrock-list"><code>dadrock list</code><a class="headerlink" href="#dadrock-list" title="Permanent link">&para;</a></h2>
 <p>List records, optionally filtered by lifecycle status, tag, or query.</p>
 <p><strong>Usage:</strong> <code>dadrock list [OPTIONS]</code></p>
-<h6 id="options_4"><strong>Options:</strong><a class="headerlink" href="#options_4" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--status &lt;STATUS&gt;</code></li>
 </ul>
@@ -3214,146 +1821,128 @@
 <li><code>--query &lt;QUERY&gt;</code></li>
 <li><code>--unique</code></li>
 </ul>
-<h3 id="dadrock-status"><code>dadrock status</code><a class="headerlink" href="#dadrock-status" title="Permanent link">&para;</a></h3>
+<h2 id="dadrock-accept"><code>dadrock accept</code><a class="headerlink" href="#dadrock-accept" title="Permanent link">&para;</a></h2>
+<p>Accept a candidate decision.</p>
+<p><strong>Usage:</strong> <code>dadrock accept &lt;QUERY&gt;...</code></p>
+<p><strong>Arguments</strong></p>
+<ul>
+<li><code>&lt;QUERY&gt;</code></li>
+</ul>
+<h2 id="dadrock-reject"><code>dadrock reject</code><a class="headerlink" href="#dadrock-reject" title="Permanent link">&para;</a></h2>
+<p>Reject a candidate decision.</p>
+<p><strong>Usage:</strong> <code>dadrock reject &lt;QUERY&gt;...</code></p>
+<p><strong>Arguments</strong></p>
+<ul>
+<li><code>&lt;QUERY&gt;</code></li>
+</ul>
+<h2 id="dadrock-supersede"><code>dadrock supersede</code><a class="headerlink" href="#dadrock-supersede" title="Permanent link">&para;</a></h2>
+<p>Link replacement decisions to the decisions they replace.</p>
+<p><strong>Usage:</strong> <code>dadrock supersede [OPTIONS]</code></p>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--from &lt;FROM&gt;</code></li>
+<li><code>--to &lt;TO&gt;</code></li>
+</ul>
+<h2 id="dadrock-status"><code>dadrock status</code><a class="headerlink" href="#dadrock-status" title="Permanent link">&para;</a></h2>
 <p>Inspect one record's lifecycle status or run lifecycle transitions.</p>
 <p><strong>Usage:</strong> <code>dadrock status [QUERY]... [COMMAND]</code></p>
-<h6 id="subcommands_1"><strong>Subcommands:</strong><a class="headerlink" href="#subcommands_1" title="Permanent link">&para;</a></h6>
+<p><strong>Subcommands</strong></p>
 <ul>
-<li><code>accept</code> — Accept a candidate by converting it into an accepted decision.</li>
-<li><code>reject</code> — Reject a candidate and move it into the rejected records directory.</li>
-<li><code>supersede</code> — Link accepted successors to the records they supersede.</li>
+<li><a href="#dadrock-status-accept"><code>accept</code></a> — Accept a candidate by converting it into an accepted decision.</li>
+<li><a href="#dadrock-status-reject"><code>reject</code></a> — Reject a candidate and move it into the rejected records directory.</li>
+<li><a href="#dadrock-status-supersede"><code>supersede</code></a> — Link accepted successors to the records they supersede.</li>
 </ul>
-<h6 id="arguments_5"><strong>Arguments:</strong><a class="headerlink" href="#arguments_5" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;QUERY&gt;</code></li>
 </ul>
 <h3 id="dadrock-status-accept"><code>dadrock status accept</code><a class="headerlink" href="#dadrock-status-accept" title="Permanent link">&para;</a></h3>
 <p>Accept a candidate by converting it into an accepted decision.</p>
 <p><strong>Usage:</strong> <code>dadrock status accept &lt;QUERY&gt;...</code></p>
-<h6 id="arguments_6"><strong>Arguments:</strong><a class="headerlink" href="#arguments_6" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;QUERY&gt;</code></li>
 </ul>
 <h3 id="dadrock-status-reject"><code>dadrock status reject</code><a class="headerlink" href="#dadrock-status-reject" title="Permanent link">&para;</a></h3>
 <p>Reject a candidate and move it into the rejected records directory.</p>
 <p><strong>Usage:</strong> <code>dadrock status reject &lt;QUERY&gt;...</code></p>
-<h6 id="arguments_7"><strong>Arguments:</strong><a class="headerlink" href="#arguments_7" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;QUERY&gt;</code></li>
 </ul>
 <h3 id="dadrock-status-supersede"><code>dadrock status supersede</code><a class="headerlink" href="#dadrock-status-supersede" title="Permanent link">&para;</a></h3>
 <p>Link accepted successors to the records they supersede.</p>
 <p><strong>Usage:</strong> <code>dadrock status supersede [OPTIONS]</code></p>
-<h6 id="options_5"><strong>Options:</strong><a class="headerlink" href="#options_5" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--from &lt;FROM&gt;</code></li>
 <li><code>--to &lt;TO&gt;</code></li>
 </ul>
-<h3 id="dadrock-accept"><code>dadrock accept</code><a class="headerlink" href="#dadrock-accept" title="Permanent link">&para;</a></h3>
-<p>Accept a candidate decision.</p>
-<p><strong>Usage:</strong> <code>dadrock accept &lt;QUERY&gt;...</code></p>
-<h6 id="arguments_8"><strong>Arguments:</strong><a class="headerlink" href="#arguments_8" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>&lt;QUERY&gt;</code></li>
-</ul>
-<h3 id="dadrock-reject"><code>dadrock reject</code><a class="headerlink" href="#dadrock-reject" title="Permanent link">&para;</a></h3>
-<p>Reject a candidate decision.</p>
-<p><strong>Usage:</strong> <code>dadrock reject &lt;QUERY&gt;...</code></p>
-<h6 id="arguments_9"><strong>Arguments:</strong><a class="headerlink" href="#arguments_9" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>&lt;QUERY&gt;</code></li>
-</ul>
-<h3 id="dadrock-supersede"><code>dadrock supersede</code><a class="headerlink" href="#dadrock-supersede" title="Permanent link">&para;</a></h3>
-<p>Link replacement decisions to the decisions they replace.</p>
-<p><strong>Usage:</strong> <code>dadrock supersede [OPTIONS]</code></p>
-<h6 id="options_6"><strong>Options:</strong><a class="headerlink" href="#options_6" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>--from &lt;FROM&gt;</code></li>
-<li><code>--to &lt;TO&gt;</code></li>
-</ul>
-<h3 id="dadrock-validate"><code>dadrock validate</code><a class="headerlink" href="#dadrock-validate" title="Permanent link">&para;</a></h3>
+<h2 id="dadrock-validate"><code>dadrock validate</code><a class="headerlink" href="#dadrock-validate" title="Permanent link">&para;</a></h2>
 <p>Run project validation, or target records, links, or tags.</p>
 <p><strong>Usage:</strong> <code>dadrock validate [OPTIONS] [COMMAND]</code></p>
-<h6 id="subcommands_2"><strong>Subcommands:</strong><a class="headerlink" href="#subcommands_2" title="Permanent link">&para;</a></h6>
+<p><strong>Subcommands</strong></p>
 <ul>
-<li><code>records</code> — Validate record front matter and structure.</li>
-<li><code>links</code> — Report broken or ambiguous wikilinks and local Markdown links.</li>
-<li><code>tags</code> — Report malformed YAML and inline tags.</li>
+<li><a href="#dadrock-validate-records"><code>records</code></a> — Validate record front matter and structure.</li>
+<li><a href="#dadrock-validate-links"><code>links</code></a> — Report broken or ambiguous wikilinks and local Markdown links.</li>
+<li><a href="#dadrock-validate-tags"><code>tags</code></a> — Report malformed YAML and inline tags.</li>
 </ul>
-<h6 id="options_7"><strong>Options:</strong><a class="headerlink" href="#options_7" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h3 id="dadrock-validate-records"><code>dadrock validate records</code><a class="headerlink" href="#dadrock-validate-records" title="Permanent link">&para;</a></h3>
 <p>Validate record front matter and structure.</p>
 <p><strong>Usage:</strong> <code>dadrock validate records [OPTIONS] [PATHS]...</code></p>
-<h6 id="arguments_10"><strong>Arguments:</strong><a class="headerlink" href="#arguments_10" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;PATHS&gt;</code></li>
 </ul>
-<h6 id="options_8"><strong>Options:</strong><a class="headerlink" href="#options_8" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h3 id="dadrock-validate-links"><code>dadrock validate links</code><a class="headerlink" href="#dadrock-validate-links" title="Permanent link">&para;</a></h3>
 <p>Report broken or ambiguous wikilinks and local Markdown links.</p>
 <p><strong>Usage:</strong> <code>dadrock validate links [OPTIONS]</code></p>
-<h6 id="options_9"><strong>Options:</strong><a class="headerlink" href="#options_9" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h3 id="dadrock-validate-tags"><code>dadrock validate tags</code><a class="headerlink" href="#dadrock-validate-tags" title="Permanent link">&para;</a></h3>
 <p>Report malformed YAML and inline tags.</p>
 <p><strong>Usage:</strong> <code>dadrock validate tags [OPTIONS]</code></p>
-<h6 id="options_10"><strong>Options:</strong><a class="headerlink" href="#options_10" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
-<h3 id="dadrock-tags"><code>dadrock tags</code><a class="headerlink" href="#dadrock-tags" title="Permanent link">&para;</a></h3>
+<h2 id="dadrock-tags"><code>dadrock tags</code><a class="headerlink" href="#dadrock-tags" title="Permanent link">&para;</a></h2>
 <p>Inspect DADR tag usage.</p>
 <p><strong>Usage:</strong> <code>dadrock tags &lt;COMMAND&gt;</code></p>
-<h6 id="subcommands_3"><strong>Subcommands:</strong><a class="headerlink" href="#subcommands_3" title="Permanent link">&para;</a></h6>
+<p><strong>Subcommands</strong></p>
 <ul>
-<li><code>list</code> — List normalized YAML and inline tags.</li>
+<li><a href="#dadrock-tags-list"><code>list</code></a> — List normalized YAML and inline tags.</li>
 </ul>
 <h3 id="dadrock-tags-list"><code>dadrock tags list</code><a class="headerlink" href="#dadrock-tags-list" title="Permanent link">&para;</a></h3>
 <p>List normalized YAML and inline tags.</p>
 <p><strong>Usage:</strong> <code>dadrock tags list [OPTIONS]</code></p>
-<h6 id="options_11"><strong>Options:</strong><a class="headerlink" href="#options_11" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
-<h3 id="dadrock-mcp"><code>dadrock mcp</code><a class="headerlink" href="#dadrock-mcp" title="Permanent link">&para;</a></h3>
-<p>Serve Dadrock MCP tools over stdio.</p>
-<p><strong>Usage:</strong> <code>dadrock mcp &lt;COMMAND&gt;</code></p>
-<h6 id="subcommands_4"><strong>Subcommands:</strong><a class="headerlink" href="#subcommands_4" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>serve</code> — Serve Dadrock MCP tools over stdio.</li>
-</ul>
-<h3 id="dadrock-mcp-serve"><code>dadrock mcp serve</code><a class="headerlink" href="#dadrock-mcp-serve" title="Permanent link">&para;</a></h3>
-<p>Serve Dadrock MCP tools over stdio.</p>
-<p><strong>Usage:</strong> <code>dadrock mcp serve [OPTIONS] [DIRECTORY]</code></p>
-<h6 id="arguments_11"><strong>Arguments:</strong><a class="headerlink" href="#arguments_11" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>&lt;DIRECTORY&gt;</code></li>
-</ul>
-<h6 id="options_12"><strong>Options:</strong><a class="headerlink" href="#options_12" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>--read-only</code></li>
-</ul>
-<h3 id="dadrock-agent"><code>dadrock agent</code><a class="headerlink" href="#dadrock-agent" title="Permanent link">&para;</a></h3>
+<h2 id="dadrock-agent"><code>dadrock agent</code><a class="headerlink" href="#dadrock-agent" title="Permanent link">&para;</a></h2>
 <p>Call a configured local ACP agent for candidate drafting.</p>
 <p><strong>Usage:</strong> <code>dadrock agent &lt;COMMAND&gt;</code></p>
-<h6 id="subcommands_5"><strong>Subcommands:</strong><a class="headerlink" href="#subcommands_5" title="Permanent link">&para;</a></h6>
+<p><strong>Subcommands</strong></p>
 <ul>
-<li><code>check</code> — Check that a local ACP agent can start a Dadrock session.</li>
-<li><code>draft</code> — Ask a local ACP agent to draft a candidate decision.</li>
-<li><code>skills</code> — List available Dadrock agent skills and prompt packs.</li>
+<li><a href="#dadrock-agent-check"><code>check</code></a> — Check that a local ACP agent can start a Dadrock session.</li>
+<li><a href="#dadrock-agent-draft"><code>draft</code></a> — Ask a local ACP agent to draft a candidate decision.</li>
+<li><a href="#dadrock-agent-skills"><code>skills</code></a> — List available Dadrock agent skills and prompt packs.</li>
 </ul>
 <h3 id="dadrock-agent-check"><code>dadrock agent check</code><a class="headerlink" href="#dadrock-agent-check" title="Permanent link">&para;</a></h3>
 <p>Check that a local ACP agent can start a Dadrock session.</p>
 <p><strong>Usage:</strong> <code>dadrock agent check [OPTIONS]</code></p>
-<h6 id="options_13"><strong>Options:</strong><a class="headerlink" href="#options_13" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--agent &lt;AGENT&gt;</code></li>
 <li><code>--agent-arg &lt;AGENT_ARGS&gt;</code></li>
@@ -3362,11 +1951,11 @@
 <h3 id="dadrock-agent-draft"><code>dadrock agent draft</code><a class="headerlink" href="#dadrock-agent-draft" title="Permanent link">&para;</a></h3>
 <p>Ask a local ACP agent to draft a candidate decision.</p>
 <p><strong>Usage:</strong> <code>dadrock agent draft [OPTIONS] &lt;PROMPT&gt;...</code></p>
-<h6 id="arguments_12"><strong>Arguments:</strong><a class="headerlink" href="#arguments_12" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;PROMPT&gt;</code></li>
 </ul>
-<h6 id="options_14"><strong>Options:</strong><a class="headerlink" href="#options_14" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--write</code></li>
 <li><code>--json</code></li>
@@ -3383,47 +1972,47 @@
 <h3 id="dadrock-agent-skills"><code>dadrock agent skills</code><a class="headerlink" href="#dadrock-agent-skills" title="Permanent link">&para;</a></h3>
 <p>List available Dadrock agent skills and prompt packs.</p>
 <p><strong>Usage:</strong> <code>dadrock agent skills [OPTIONS]</code></p>
-<h6 id="options_15"><strong>Options:</strong><a class="headerlink" href="#options_15" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
-<h3 id="dadrock-task"><code>dadrock task</code><a class="headerlink" href="#dadrock-task" title="Permanent link">&para;</a></h3>
+<h2 id="dadrock-task"><code>dadrock task</code><a class="headerlink" href="#dadrock-task" title="Permanent link">&para;</a></h2>
 <p>Discover, inspect, and run Dadrock task packages.</p>
 <p><strong>Usage:</strong> <code>dadrock task &lt;COMMAND&gt;</code></p>
-<h6 id="subcommands_6"><strong>Subcommands:</strong><a class="headerlink" href="#subcommands_6" title="Permanent link">&para;</a></h6>
+<p><strong>Subcommands</strong></p>
 <ul>
-<li><code>list</code> — List built-in, user, and project task packages.</li>
-<li><code>show</code> — Show one resolved task package.</li>
-<li><code>run</code> — Run one resolved task package with a local ACP agent.</li>
-<li><code>runs</code> — List persisted local task runs.</li>
-<li><code>result</code> — Read a persisted task run result.</li>
+<li><a href="#dadrock-task-list"><code>list</code></a> — List built-in, user, and project task packages.</li>
+<li><a href="#dadrock-task-show"><code>show</code></a> — Show one resolved task package.</li>
+<li><a href="#dadrock-task-run"><code>run</code></a> — Run one resolved task package with a local ACP agent.</li>
+<li><a href="#dadrock-task-runs"><code>runs</code></a> — List persisted local task runs.</li>
+<li><a href="#dadrock-task-result"><code>result</code></a> — Read a persisted task run result.</li>
 </ul>
 <h3 id="dadrock-task-list"><code>dadrock task list</code><a class="headerlink" href="#dadrock-task-list" title="Permanent link">&para;</a></h3>
 <p>List built-in, user, and project task packages.</p>
 <p><strong>Usage:</strong> <code>dadrock task list [OPTIONS]</code></p>
-<h6 id="options_16"><strong>Options:</strong><a class="headerlink" href="#options_16" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h3 id="dadrock-task-show"><code>dadrock task show</code><a class="headerlink" href="#dadrock-task-show" title="Permanent link">&para;</a></h3>
 <p>Show one resolved task package.</p>
 <p><strong>Usage:</strong> <code>dadrock task show [OPTIONS] &lt;TASK_ID&gt;</code></p>
-<h6 id="arguments_13"><strong>Arguments:</strong><a class="headerlink" href="#arguments_13" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;TASK_ID&gt;</code></li>
 </ul>
-<h6 id="options_17"><strong>Options:</strong><a class="headerlink" href="#options_17" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h3 id="dadrock-task-run"><code>dadrock task run</code><a class="headerlink" href="#dadrock-task-run" title="Permanent link">&para;</a></h3>
 <p>Run one resolved task package with a local ACP agent.</p>
 <p><strong>Usage:</strong> <code>dadrock task run [OPTIONS] &lt;TASK_ID&gt;</code></p>
-<h6 id="arguments_14"><strong>Arguments:</strong><a class="headerlink" href="#arguments_14" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;TASK_ID&gt;</code></li>
 </ul>
-<h6 id="options_18"><strong>Options:</strong><a class="headerlink" href="#options_18" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--input-json &lt;INPUT_JSON&gt;</code></li>
 <li><code>--path &lt;PATH&gt;</code> — File or directory to inspect</li>
@@ -3443,41 +2032,61 @@
 <h3 id="dadrock-task-runs"><code>dadrock task runs</code><a class="headerlink" href="#dadrock-task-runs" title="Permanent link">&para;</a></h3>
 <p>List persisted local task runs.</p>
 <p><strong>Usage:</strong> <code>dadrock task runs [OPTIONS]</code></p>
-<h6 id="options_19"><strong>Options:</strong><a class="headerlink" href="#options_19" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h3 id="dadrock-task-result"><code>dadrock task result</code><a class="headerlink" href="#dadrock-task-result" title="Permanent link">&para;</a></h3>
 <p>Read a persisted task run result.</p>
 <p><strong>Usage:</strong> <code>dadrock task result [OPTIONS] &lt;RUN_ID&gt;</code></p>
-<h6 id="arguments_15"><strong>Arguments:</strong><a class="headerlink" href="#arguments_15" title="Permanent link">&para;</a></h6>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;RUN_ID&gt;</code></li>
 </ul>
-<h6 id="options_20"><strong>Options:</strong><a class="headerlink" href="#options_20" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
 <li><code>--json</code></li>
 </ul>
-<h3 id="dadrock-preview"><code>dadrock preview</code><a class="headerlink" href="#dadrock-preview" title="Permanent link">&para;</a></h3>
-<p>Serve the local web review UI.</p>
-<p><strong>Usage:</strong> <code>dadrock preview [OPTIONS] [DIRECTORY]</code></p>
-<h6 id="arguments_16"><strong>Arguments:</strong><a class="headerlink" href="#arguments_16" title="Permanent link">&para;</a></h6>
+<h2 id="dadrock-mcp"><code>dadrock mcp</code><a class="headerlink" href="#dadrock-mcp" title="Permanent link">&para;</a></h2>
+<p>Serve Dadrock MCP tools over stdio.</p>
+<p><strong>Usage:</strong> <code>dadrock mcp &lt;COMMAND&gt;</code></p>
+<p><strong>Subcommands</strong></p>
+<ul>
+<li><a href="#dadrock-mcp-serve"><code>serve</code></a> — Serve Dadrock MCP tools over stdio.</li>
+</ul>
+<h3 id="dadrock-mcp-serve"><code>dadrock mcp serve</code><a class="headerlink" href="#dadrock-mcp-serve" title="Permanent link">&para;</a></h3>
+<p>Serve Dadrock MCP tools over stdio.</p>
+<p><strong>Usage:</strong> <code>dadrock mcp serve [OPTIONS] [DIRECTORY]</code></p>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;DIRECTORY&gt;</code></li>
 </ul>
-<h6 id="options_21"><strong>Options:</strong><a class="headerlink" href="#options_21" title="Permanent link">&para;</a></h6>
+<p><strong>Options</strong></p>
 <ul>
-<li><code>--port &lt;PORT&gt;</code></li>
+<li><code>--read-only</code></li>
 </ul>
-<p>Default value: <code>4004</code>
-* <code>--host &lt;HOST&gt;</code></p>
-<p>Default value: <code>127.0.0.1</code></p>
-<hr/>
-
-<p><small><i>
-    This document was generated automatically by
-    <a href="https://crates.io/crates/clap-markdown"><code>clap-markdown</code></a>.
-</i></small></p>
+<h2 id="dadrock-help"><code>dadrock help</code><a class="headerlink" href="#dadrock-help" title="Permanent link">&para;</a></h2>
+<p>Show top-level help or detailed metadata for one command.</p>
+<p><strong>Usage:</strong> <code>dadrock help [TOPIC]...</code></p>
+<p><strong>Arguments</strong></p>
+<ul>
+<li><code>&lt;TOPIC&gt;</code></li>
+</ul>
+<h2 id="dadrock-commands"><code>dadrock commands</code><a class="headerlink" href="#dadrock-commands" title="Permanent link">&para;</a></h2>
+<p>List command metadata for automation and command discovery.</p>
+<p><strong>Usage:</strong> <code>dadrock commands [OPTIONS]</code></p>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--json</code></li>
+</ul>
+<h2 id="dadrock-completions"><code>dadrock completions</code><a class="headerlink" href="#dadrock-completions" title="Permanent link">&para;</a></h2>
+<p>Generate a shell completion script.</p>
+<p><strong>Usage:</strong> <code>dadrock completions &lt;SHELL&gt;</code></p>
+<p><strong>Arguments</strong></p>
+<ul>
+<li><code>&lt;SHELL&gt;</code></li>
+</ul>
+<p>Possible values: <code>bash</code>, <code>zsh</code>, <code>fish</code></p>
 <!-- cli-docs:end -->
 
 
@@ -3510,7 +2119,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../llms/" class="md-footer__link md-footer__link--prev" aria-label="Previous: LLM agents">
+          <a href="../editors/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Editors">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3520,20 +2129,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                LLM agents
+                Editors
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../roadmap/" class="md-footer__link md-footer__link--next" aria-label="Next: Roadmap">
+          <a href="../../llms/" class="md-footer__link md-footer__link--next" aria-label="Next: LLM agents">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Roadmap
+                LLM agents
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3570,7 +2179,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","navigation.footer","toc.follow"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","navigation.footer","navigation.expand","toc.follow"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
       <script src="../../assets/javascripts/bundle.dbc0afdc.min.js"></script>

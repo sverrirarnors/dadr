@@ -7,13 +7,16 @@
         <loc>https://vincentarelbundock.github.io/dadr/core/</loc>
       </url>
       <url>
+        <loc>https://vincentarelbundock.github.io/dadr/changing/</loc>
+      </url>
+      <url>
+        <loc>https://vincentarelbundock.github.io/dadr/layout/</loc>
+      </url>
+      <url>
         <loc>https://vincentarelbundock.github.io/dadr/specification/</loc>
       </url>
       <url>
         <loc>https://vincentarelbundock.github.io/dadr/tags/</loc>
-      </url>
-      <url>
-        <loc>https://vincentarelbundock.github.io/dadr/uuidv7/</loc>
       </url>
       <url>
         <loc>https://vincentarelbundock.github.io/dadr/dadrock/</loc>
@@ -22,13 +25,19 @@
         <loc>https://vincentarelbundock.github.io/dadr/dadrock/web/</loc>
       </url>
       <url>
+        <loc>https://vincentarelbundock.github.io/dadr/dadrock/app/</loc>
+      </url>
+      <url>
         <loc>https://vincentarelbundock.github.io/dadr/dadrock/editors/</loc>
       </url>
       <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/llms/</loc>
+        <loc>https://vincentarelbundock.github.io/dadr/dadrock/cli/</loc>
       </url>
       <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/cli/</loc>
+        <loc>https://vincentarelbundock.github.io/dadr/llms/</loc>
+      </url>
+      <url>
+        <loc>https://vincentarelbundock.github.io/dadr/uuidv7/</loc>
       </url>
       <url>
         <loc>https://vincentarelbundock.github.io/dadr/roadmap/</loc>

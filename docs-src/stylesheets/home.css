@@ -133,6 +133,34 @@ body,
   display: block;
 }
 
+/* Code in TOC entries (the command-line page's `dadrock ...` headings) reads
+   as plain monospace text rather than a row of chips. */
+[data-md-component="toc"] code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Left sidebar: nested sections (DADRock) keep the indented look but never
+   fold. navigation.expand opens them on load; these rules keep them open and
+   drop the chevron and the click target. Desktop only: on narrow screens the
+   drawer navigates nested sections as panes. */
+@media screen and (min-width: 76.25em) {
+  .md-nav--primary .md-nav__item--nested > .md-nav__toggle ~ .md-nav {
+    grid-template-rows: minmax(.4rem, 1fr);
+    opacity: 1;
+    visibility: visible;
+    transition: none;
+  }
+  .md-nav--primary .md-nav__item--nested > .md-nav__link {
+    pointer-events: none;
+    cursor: default;
+  }
+  .md-nav--primary .md-nav__item--nested > .md-nav__link .md-nav__icon {
+    display: none;
+  }
+}
+
 /* Footer matches the navbar. zensical's .md-header uses
    --md-default-bg-color--light + --md-default-fg-color, so the footer reads
    from the same tokens for a uniform light/paper strip top and bottom.
