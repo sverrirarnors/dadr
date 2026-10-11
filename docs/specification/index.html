@@ -1224,10 +1224,8 @@
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>id:        01938b8e-4d70-7abc-8def-0123456789ab
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>short id:  01938b8e4d70
 </span></code></pre></div>
-<p>Short ids MUST be unique within a record set. Tools that create records MUST ensure this, for example by generating a fresh <code>id</code> when the short id is already taken.</p>
-<p>A record's filename SHOULD be its short id, a hyphen, a short kebab-case slug of its title, and <code>.md</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>01938b8e4d70-income-preprocessing.md
-</span></code></pre></div>
+<p>Short ids MUST be unique within a record set. Tools that create records MUST ensure this, for example by generating a fresh <code>id</code> when the short id is already taken. The short id is the recommended form for displaying a record's identity and for <a href="#wikilinks">linking to it</a>.</p>
+<p>Filenames are free. A short kebab-case slug of the title plus <code>.md</code>, such as <code>income-preprocessing.md</code>, is suggested. A filename carries no meaning: tools MUST NOT derive a record's identity or status from it, and a record keeps its <code>id</code> when it is renamed or moved.</p>
 <p>Authors drafting by hand can take an <code>id</code> from the <a href="../uuidv7/">UUID v7 generator</a>. A file without an <code>id</code> is not a valid record; tools MAY repair it by assigning a fresh <code>id</code>.</p>
 <hr />
 <h2 id="lifecycle">6. Lifecycle<a class="headerlink" href="#lifecycle" title="Permanent link">&para;</a></h2>
@@ -1258,9 +1256,9 @@
 <p>A record's lifecycle stage is given by its <code>status</code> alone. Tools MUST NOT infer it from the file's name or location.</p>
 <p>Acceptance is a human decision. Tools and agents MUST NOT accept a candidate without human approval, and a candidate MUST meet the <a href="#body">body requirements</a> to be accepted.</p>
 <h3 id="supersession">6.2 Supersession<a class="headerlink" href="#supersession" title="Permanent link">&para;</a></h3>
-<p>To replace an accepted decision, accept a new record and add its <code>id</code> to the old record's <code>successors</code>. An accepted record with a non-empty <code>successors</code> array is <strong>superseded</strong>. This is derived from the record set; it is not a status, and the old record's <code>status</code> stays <code>accepted</code>.</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">successors</span><span class="p">:</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">01938c20-a3b4-7000-8000-111122223333</span>
+<p>To supersede an accepted decision, accept a new record and add its <code>id</code> to the old record's <code>successors</code>. An accepted record with a non-empty <code>successors</code> array is <strong>superseded</strong>. This is derived from the record set; it is not a status, and the old record's <code>status</code> stays <code>accepted</code>.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">successors</span><span class="p">:</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">01938c20-a3b4-7000-8000-111122223333</span>
 </span></code></pre></div>
 <p>Within a record set:</p>
 <ul>
@@ -1276,7 +1274,7 @@
 <li>the meaning of its title and body MUST NOT change. Corrections that leave the meaning intact, such as fixing spelling, formatting, links, or citations, are allowed.</li>
 </ul>
 <p><code>tags</code> and keys outside DADR MAY change. To change an accepted decision, create a new candidate, accept it, and supersede the old record.</p>
-<p>The first rule can be checked mechanically, for example against version-control history. The second requires a reviewer's judgment.</p>
+<p>The first rule can be checked mechanically, for example against version-control history. The second requires a reviewer's judgment. Tools can support that judgment by listing edits to accepted records, for example from version-control history.</p>
 <hr />
 <h2 id="tags">7. Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h2>
 <p>DADR uses the Obsidian tag syntax:</p>
@@ -1289,17 +1287,17 @@
 </ul>
 <p>DADR defines no required tag vocabulary. Projects choose their own; the <a href="../tags/">Tags</a> page suggests one.</p>
 <p>Front-matter tags classify the whole record. Inline tags in the body attach to the passage they appear in; a common pattern is the first line of a blockquote. Tools SHOULD treat both as one tag set when indexing or reporting.</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">&gt; </span><span class="ge">#confidence/low</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">&gt; </span><span class="ge">The pre-analysis plan called for a complete-case rule. We now prefer multiple</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">&gt; </span><span class="ge">imputation, pending a check of missingness by site.</span>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">&gt; </span><span class="ge">#confidence/low</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">&gt; </span><span class="ge">The pre-analysis plan called for a complete-case rule. We now prefer multiple</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">&gt; </span><span class="ge">imputation, pending a check of missingness by site.</span>
 </span></code></pre></div>
 <h3 id="code-tags">7.1 Code tags<a class="headerlink" href="#code-tags" title="Permanent link">&para;</a></h3>
 <p>In source-code comments, DADR tags carry a <code>#dadr/</code> prefix that separates them from other comment text and other tag systems:</p>
-<div class="language-r highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># #dadr/01938b8e4d70</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">df</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">df</span><span class="p">[</span><span class="o">!</span><span class="nf">is.na</span><span class="p">(</span><span class="n">df</span><span class="o">$</span><span class="n">treatment</span><span class="p">),</span><span class="w"> </span><span class="p">]</span>
+<div class="language-r highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># #dadr/01938b8e4d70</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">df</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">df</span><span class="p">[</span><span class="o">!</span><span class="nf">is.na</span><span class="p">(</span><span class="n">df</span><span class="o">$</span><span class="n">treatment</span><span class="p">),</span><span class="w"> </span><span class="p">]</span>
 </span></code></pre></div>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># #dadr/kind/measurement #dadr/topic/student-survey</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">survey</span><span class="p">[</span><span class="s2">&quot;anx_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">survey</span><span class="p">[[</span><span class="s2">&quot;anx1&quot;</span><span class="p">,</span> <span class="s2">&quot;anx2&quot;</span><span class="p">,</span> <span class="s2">&quot;anx3&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># #dadr/kind/measurement #dadr/topic/student-survey</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">survey</span><span class="p">[</span><span class="s2">&quot;anx_mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">survey</span><span class="p">[[</span><span class="s2">&quot;anx1&quot;</span><span class="p">,</span> <span class="s2">&quot;anx2&quot;</span><span class="p">,</span> <span class="s2">&quot;anx3&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </span></code></pre></div>
 <ul>
 <li><code>#dadr/</code> followed by a short id or full <code>id</code> links the nearby code to that record. A link that does not resolve to a record in the record set is broken, and tools that check code tags SHOULD report it.</li>
@@ -1310,16 +1308,16 @@
 <h2 id="links-and-citations">8. Links and citations<a class="headerlink" href="#links-and-citations" title="Permanent link">&para;</a></h2>
 <h3 id="wikilinks">8.1 Links between records<a class="headerlink" href="#wikilinks" title="Permanent link">&para;</a></h3>
 <p>A wikilink whose target is a short id or a full <code>id</code> is a <strong>record link</strong>:</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>See [[01938c20a3b4]] for the sampling rule.
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>Compare with [[01938b8e4d70|the original preprocessing decision]].
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>See [[01938c20a3b4]] for the sampling rule.
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>Compare with [[01938b8e4d70|the original preprocessing decision]].
 </span></code></pre></div>
 <p>The short id form is recommended. Hexadecimal digits match case-insensitively. A record link MUST resolve to a record in the record set, and tools MUST report links that do not resolve rather than guess a target. The form <code>[[target|display text]]</code> sets the displayed text.</p>
 <p>Wikilinks with any other target are not DADR links, and tools MUST leave them unchanged. Tools MAY convert record links to ordinary Markdown links when rendering, for renderers that do not support wikilinks.</p>
 <h3 id="markdown-links">8.2 Other links<a class="headerlink" href="#markdown-links" title="Permanent link">&para;</a></h3>
 <p>References to code, data, notebooks, manuscripts, plans, outputs, registries, and web pages SHOULD be standard Markdown links or autolinks, which every renderer supports. Relative paths resolve from the directory that contains the record, as in any Markdown renderer.</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>The exclusion is enforced in
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>[<span class="sb">`analysis/build_sample.py`</span> lines 42–58](../../analysis/build_sample.py#L42-L58),
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>following the pre-registration at &lt;https://osf.io/abcde&gt;.
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>The exclusion is enforced in
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>[<span class="sb">`analysis/build_sample.py`</span> lines 42–58](../../analysis/build_sample.py#L42-L58),
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>following the pre-registration at &lt;https://osf.io/abcde&gt;.
 </span></code></pre></div>
 <h3 id="citations">8.3 Citations<a class="headerlink" href="#citations" title="Permanent link">&para;</a></h3>
 <p>Records MAY cite sources with Pandoc citation syntax, such as <code>[@rubin1976]</code>. Resolving citation keys is up to the renderer. A Pandoc <code>bibliography</code> key in front matter is treated like any other key outside DADR.</p>
@@ -1348,47 +1346,47 @@
 <li>creates records with unique short ids;</li>
 <li>never accepts a candidate without human approval, and changes accepted records only as <a href="#immutability">§6.3</a> allows.</li>
 </ol>
-<p>A filename that does not follow <a href="#identifiers">§5</a> does not make a record non-conforming.</p>
+<p>A record's filename and location never affect whether it conforms (<a href="#identifiers">§5</a>).</p>
 <hr />
 <h2 id="example">10. Example record<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <p>This example is non-normative.</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>---
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>title: Drop observations with missing treatment assignment
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>status: accepted
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>id: 01938c20-a3b4-7000-8000-111122223333
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>tags:
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="gu">  - kind/sample</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="gu">---</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
-</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="gh"># Drop observations with missing treatment assignment</span>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
-</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="gu">## Context</span>
-</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>
-</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>The treatment variable is required for the primary estimand. Observations with
-</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>missing treatment assignment cannot contribute to the main comparison without
-</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>introducing an additional imputation model. See [[01938b8e4d70]] for how the
-</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>analysis sample was first defined.
-</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>
-</span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="gu">## Decision</span>
-</span><span id="__span-10-19"><a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>
-</span><span id="__span-10-20"><a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>Drop observations with missing treatment assignment from the main analysis
-</span><span id="__span-10-21"><a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>sample.
-</span><span id="__span-10-22"><a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>
-</span><span id="__span-10-23"><a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="gu">## Alternatives</span>
-</span><span id="__span-10-24"><a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>
-</span><span id="__span-10-25"><a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>One alternative was to impute treatment assignment. This was not chosen because
-</span><span id="__span-10-26"><a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>the assignment mechanism is part of the study design rather than a downstream
-</span><span id="__span-10-27"><a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>measurement, and imputing it would make the estimand harder to interpret.
-</span><span id="__span-10-28"><a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>
-</span><span id="__span-10-29"><a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>Another alternative was to keep the observations for descriptive tables only.
-</span><span id="__span-10-30"><a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>This can still be done in a supplemental descriptive analysis, but those rows
-</span><span id="__span-10-31"><a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>are excluded from the primary model.
-</span><span id="__span-10-32"><a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>
-</span><span id="__span-10-33"><a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a><span class="gu">## Consequences</span>
-</span><span id="__span-10-34"><a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>
-</span><span id="__span-10-35"><a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a>The main sample size decreases. The manuscript should report the number of
-</span><span id="__span-10-36"><a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a>excluded observations, and robustness checks should verify that treatment
-</span><span id="__span-10-37"><a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a>missingness is not concentrated in one site.
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>---
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>title: Drop observations with missing treatment assignment
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>status: accepted
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>id: 01938c20-a3b4-7000-8000-111122223333
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>tags:
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="gu">  - kind/sample</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="gu">---</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="gh"># Drop observations with missing treatment assignment</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="gu">## Context</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>The treatment variable is required for the primary estimand. Observations with
+</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>missing treatment assignment cannot contribute to the main comparison without
+</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>introducing an additional imputation model. See [[01938b8e4d70]] for how the
+</span><span id="__span-9-16"><a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>analysis sample was first defined.
+</span><span id="__span-9-17"><a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>
+</span><span id="__span-9-18"><a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="gu">## Decision</span>
+</span><span id="__span-9-19"><a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>
+</span><span id="__span-9-20"><a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>Drop observations with missing treatment assignment from the main analysis
+</span><span id="__span-9-21"><a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>sample.
+</span><span id="__span-9-22"><a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a>
+</span><span id="__span-9-23"><a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="gu">## Alternatives</span>
+</span><span id="__span-9-24"><a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>
+</span><span id="__span-9-25"><a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a>One alternative was to impute treatment assignment. This was not chosen because
+</span><span id="__span-9-26"><a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a>the assignment mechanism is part of the study design rather than a downstream
+</span><span id="__span-9-27"><a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a>measurement, and imputing it would make the estimand harder to interpret.
+</span><span id="__span-9-28"><a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a>
+</span><span id="__span-9-29"><a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a>Another alternative was to keep the observations for descriptive tables only.
+</span><span id="__span-9-30"><a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a>This can still be done in a supplemental descriptive analysis, but those rows
+</span><span id="__span-9-31"><a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a>are excluded from the primary model.
+</span><span id="__span-9-32"><a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a>
+</span><span id="__span-9-33"><a id="__codelineno-9-33" name="__codelineno-9-33" href="#__codelineno-9-33"></a><span class="gu">## Consequences</span>
+</span><span id="__span-9-34"><a id="__codelineno-9-34" name="__codelineno-9-34" href="#__codelineno-9-34"></a>
+</span><span id="__span-9-35"><a id="__codelineno-9-35" name="__codelineno-9-35" href="#__codelineno-9-35"></a>The main sample size decreases. The manuscript should report the number of
+</span><span id="__span-9-36"><a id="__codelineno-9-36" name="__codelineno-9-36" href="#__codelineno-9-36"></a>excluded observations, and robustness checks should verify that treatment
+</span><span id="__span-9-37"><a id="__codelineno-9-37" name="__codelineno-9-37" href="#__codelineno-9-37"></a>missingness is not concentrated in one site.
 </span></code></pre></div>
 <hr />
 <h2 id="reference-implementation">Reference implementation<a class="headerlink" href="#reference-implementation" title="Permanent link">&para;</a></h2>

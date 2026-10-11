@@ -555,6 +555,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Changing a decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#accepting-successors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Accepting successors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stale-successors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stale successors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -784,6 +812,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Changing a decision">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#accepting-successors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Accepting successors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stale-successors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stale successors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -827,7 +883,7 @@
 <li><strong>Consequences:</strong> Report how many observations were removed and consider whether missingness affects interpretation.</li>
 </ul>
 <p>Replace these illustrative statements with what actually happened in your project. In particular, explain <em>why</em> you chose this approach.</p>
-<p>Check that the record describes your analysis accurately and that you endorse the rationale. Save your edits, then choose <strong>Accept</strong>. The record moves to <code>dadr/accepted/</code>, keeping its ID, and appears in the <strong>Ledger</strong>. Commit it with your analysis code. You can also accept from a terminal with <code>dadrock accept ID</code>, replacing <code>ID</code> with the candidate's ID or an unambiguous prefix.</p>
+<p>Check that the record describes your analysis accurately and that you endorse the rationale. Save your edits, then choose <strong>Accept</strong>. The record moves to <code>dadr/ledger/</code>, keeping its ID and filename, and appears in the <strong>Ledger</strong>. Commit it with your analysis code. You can also accept from a terminal with <code>dadrock accept ID</code>, replacing <code>ID</code> with the candidate's ID or an unambiguous prefix.</p>
 <p>Find it again later:</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dadrock<span class="w"> </span>list<span class="w"> </span>--status<span class="w"> </span>accepted
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>dadrock<span class="w"> </span>validate
@@ -836,31 +892,58 @@
 <h2 id="inbox">Inbox<a class="headerlink" href="#inbox" title="Permanent link">&para;</a></h2>
 <p>The Inbox is the home screen and the work queue. Everything that needs a human lands here, grouped by kind:</p>
 <ul>
-<li><strong>Candidates</strong> wait for a decision. Read the record, fix its explanation if needed, then <strong>Accept</strong> or <strong>Reject</strong>. <strong>Revise with agent</strong> sends it back to a local agent with your instructions.</li>
+<li><strong>Candidates</strong> wait for a decision. Read the record, fix its explanation if needed, then <strong>Accept</strong> or <strong>Reject</strong>. <strong>Edit</strong> opens the Markdown; <strong>Revise with agent</strong> sends it back to a local agent with your instructions.</li>
+<li><strong>Successor candidates</strong> open on a <strong>Changes</strong> tab: the reason from their <a href="#changing-a-decision"><code>## Supersedes</code></a> section, then the difference from the predecessor, with a changed title, the tags added and removed, and a line diff of the body without <code>## Supersedes</code>. The <strong>Document</strong> tab shows the record itself. A successor of several decisions (a merge) opens on a section view, Decision first, with each predecessor's text followed by the new text; <strong>Compare with</strong> switches to a line diff against one predecessor.</li>
+<li><strong>Splits</strong> are candidates that supersede the same decision, shown as one item: "Split “X” into 2 decisions". Each candidate shows its reason and its diff. Select the ones that belong together and choose <strong>Accept selected</strong>: all of them to split the decision, or one of them to choose between competing alternatives. Reject the others one by one.</li>
+<li><strong>Stale successors</strong> name a decision that was superseded after they were drafted. A warning names the decisions now in force, and <strong>Accept</strong> waits until you choose <strong>Retarget</strong>, which points the link in <code>## Supersedes</code> at the current decision (you pick one when there are several), saves the candidate, and shows the diff against it.</li>
 <li><strong>Agent proposals</strong> are decisions a local agent drafted from your notes or your code. <strong>Save as candidate</strong> writes the file so you can review it like any other candidate; <strong>Discard</strong> drops it.</li>
-<li><strong>Proposed revisions</strong> show an agent's edit to an existing record as a diff. <strong>Apply</strong> writes it; <strong>Discard</strong> drops it.</li>
-<li><strong>Conflicts</strong> come from <strong>Check for conflicts</strong>, which asks the agent to look for overlapping or contradictory decisions. From a conflict you can <strong>Merge</strong> two candidates, <strong>Replace</strong> an accepted decision, or <strong>Dismiss</strong> the finding.</li>
-<li><strong>Issues</strong> are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. <strong>Open record</strong> jumps to the editor; <strong>Fix with agent</strong> asks for a revision; warnings and notes can be dismissed.</li>
+<li><strong>Proposed revisions</strong> show an agent's edit to a candidate as a diff. <strong>Apply</strong> writes it; <strong>Discard</strong> drops it.</li>
+<li><strong>Conflicts</strong> come from <strong>Check for conflicts</strong>, which asks the agent to look for overlapping or contradictory decisions. From a conflict you can <strong>Merge</strong> two candidates, <strong>Supersede</strong> an accepted decision, or <strong>Dismiss</strong> the finding.</li>
+<li><strong>Issues</strong> are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. <strong>Open record</strong> opens the record in its editor; <strong>Fix with agent</strong> asks the agent to revise a candidate or to draft a successor of a decision in force; warnings and notes can be dismissed. Agents never edit decided text, so issues on archived records offer no agent fix: correct the record yourself.</li>
 </ul>
 <p>Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply the missing rationale before accepting.</p>
 <p>An empty Inbox is the goal. The search box narrows the queue to matching titles, tags, paths, and messages. Use <code>j</code> and <code>k</code> to move through items, <code>a</code> and <code>r</code> for the primary and secondary action, <code>e</code> to edit, and <code>o</code> to open the record in the Ledger.</p>
 <p>Record text is edited in a CodeMirror editor with Markdown and front-matter highlighting, search (<code>Ctrl+F</code>), and <code>Ctrl+S</code> to save.</p>
 <h2 id="ledger">Ledger<a class="headerlink" href="#ledger" title="Permanent link">&para;</a></h2>
-<p>The Ledger is what has been decided. It lists accepted records, newest first, with one search box and a tag facet. <strong>Show history</strong> reveals superseded and rejected records. Each record shows its supersession chain, an inline editor, and two verbs: <strong>Supersede</strong> prepares a replacement, and <strong>Revise with agent</strong> asks a local agent to rewrite the record from your instructions. The result appears in the Inbox as a proposed revision.</p>
+<p>The Ledger is what has been decided. It lists the decisions in force, newest first, with one search box and a tag facet. <strong>Show archived</strong> adds the archived records: rejected and superseded ones.</p>
+<p><strong>Edit</strong> opens the record's Markdown in place, on every record. On an accepted, superseded, or rejected record it is for corrections, such as spelling, formatting, links, or citations: the record keeps its ID and stays where it is, and the edit shows in its <strong>History</strong>. A note above the editor says so. The title, body, tags, and front-matter keys outside DADR can change; see <a href="#changing-a-decision">Changing a decision</a> for what cannot.</p>
+<p>To change what was decided, use <strong>Supersede</strong>. It opens a full-page successor draft on the Draft page, starting from the record's exact title, tags, and body, with an optional "Why does this decision change?" field. Saving creates a successor candidate and opens it in the Inbox on its <strong>Changes</strong> tab; the decision stays in force until you accept the successor. From the Draft page you can also ask the agent instead, or link decisions that already exist. <strong>Revise with agent</strong> asks a local agent to draft the successor (<code>supersede-record</code>).</p>
+<p>Archived records have <strong>Edit</strong> but no <strong>Supersede</strong> or <strong>Revise with agent</strong>. A superseded record says where the decision went ("Superseded by …", linking the decisions now in force).</p>
+<p>The <strong>History</strong> tab shows the decision's versions newest first, the opened one highlighted and the current ones labeled. Lanes join where a decision was split and fork where several were merged. Each change shows its reason and, on request, its diff. Records at the other end of a split or merge appear on one line ("Also became …", "Merged with …") and link to their own history.</p>
+<p>Under each version, "Edited 2 times since accepted" lists the edits Git recorded to its title or body since it was accepted (or rejected), newest first: the date, the author, and the commit subject, each with its diff. An edit that is not committed yet comes first, marked "Not committed yet". Changes to tags or to the record's folder alone are not listed. A record whose text changed after acceptance shows "Edited since acceptance" next to its file name, which opens the History tab. Outside a Git repository, History shows the versions without edits. From a terminal, <a href="../cli/#history"><code>dadrock history</code></a> shows the same versions and edits.</p>
 <h2 id="draft">Draft<a class="headerlink" href="#draft" title="Permanent link">&para;</a></h2>
-<p><strong>Draft</strong> is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a <a href="../llms/#acp">configured agent</a> look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises or replaces that record. Results land in the Inbox as proposals.</p>
-<p>Without an agent, <strong>Write it by hand</strong> gives you a plain form with the candidate template. <strong>Replace with existing decisions instead</strong> links an accepted record to records that already exist.</p>
+<p><strong>Draft</strong> is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a <a href="../llms/#acp">configured agent</a> look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises a candidate or drafts a successor of a decision in force; attach more decisions in force to supersede them together with one successor (a merge). Results land in the Inbox as proposals.</p>
+<p><strong>Write it by hand</strong> (the default without an agent, and where <strong>Supersede</strong> lands) gives you a plain form with the candidate template. For a successor, the form starts from the predecessor's exact text, or from every predecessor's sections for a merge, and asks why the decision changes; the reason is optional. DADRock writes the <code>## Supersedes</code> section with a link to each predecessor and the reason. <strong>Supersede with existing decisions instead</strong> links an accepted record to successors that already exist.</p>
 <h2 id="project">Project<a class="headerlink" href="#project" title="Permanent link">&para;</a></h2>
-<p>The project name in the header opens a small panel with the project root, the detected agent, and three actions: initialize a new project, run validation now, and clear the agent's run history. Local run state is stored under <code>dadr/runs/</code> and ignored by default because it may contain pasted context, source excerpts, and model transcripts.</p>
+<p>The project name in the header opens a small panel with the project root, the detected agent, and three actions: initialize a new project, run validation now, and clear the agent runs. Local run state is stored under <code>dadr/runs/</code> and ignored by default because it may contain pasted context, source excerpts, and model transcripts.</p>
 <p>Old links still work: <code>/records</code>, <code>/candidates/new</code>, <code>/tasks</code>, <code>/validation</code>, <code>/tags</code>, and <code>/settings</code> redirect to the Inbox, the Ledger, or the Draft page.</p>
 <h2 id="changing-a-decision">Changing a decision<a class="headerlink" href="#changing-a-decision" title="Permanent link">&para;</a></h2>
-<p>When an accepted choice changes, use <strong>Supersede</strong> on the record in the Ledger to prepare a replacement. The original stays as history, and accepting the replacement links the two. DADRock records the pending replacement in an optional Markdown section:</p>
-<div class="language-markdown highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gu">## Replaces</span>
+<p>A decided record takes corrections in place; a change of decision is a new record.</p>
+<p><strong>Corrections.</strong> Fixing spelling, formatting, links, or citations edits the record itself, with <strong>Edit</strong> in the <a href="#ledger">Ledger</a> or in your usual editor. It keeps its ID. When you save from the web interface, DADRock refuses to change the <code>id</code>, <code>status</code>, or <code>successors</code> of an accepted, superseded, or rejected record, and an accepted record must keep its four required sections; the title, body, tags, and front-matter keys outside DADR can change. Whether an edit corrects a record or changes the decision is a judgment no rule can make, so DADRock makes every edit visible instead of forbidding it: the record's <strong>History</strong> lists the edits Git recorded to its title and body since it was accepted or rejected, including changes not committed yet. Agents never edit decided text; the <code>edit-record</code> agent task revises candidates only.</p>
+<p><strong>Changes of decision.</strong> To change what was decided, however slightly, draft a successor: a new candidate that supersedes the old record, its predecessor. Use <strong>Supersede</strong> or <strong>Revise with agent</strong> on the record in the <a href="#ledger">Ledger</a>, run the <code>supersede-record</code> <a href="../llms/#custom-workflows-and-runs">task</a>, or write the candidate yourself. The successor names its predecessors in a <code>## Supersedes</code> section, optionally followed by the reason for the change:</p>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gu">## Supersedes</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>[[01938c20-a3b4-7000-8000-111122223333|Previous decision]]
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>[[01938c20-a3b4-7000-8000-111122223333|Winsorize income at p99]]
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>Winsorizing at p99 still left implausible incomes in two waves.
 </span></code></pre></div>
-<p>The link uses the original record's full UUID. Keep this section if the candidate should replace that decision: it preserves the intended relationship after reloading or accepting through the CLI. On acceptance, DADRock validates the predecessor and updates its successors together with accepting the replacement, preserving the old body. This is a DADRock convention, not an additional required section of the DADR format.</p>
-<p>For two records that are already accepted, <code>dadrock supersede --from OLD --to NEW</code> links the replacement explicitly.</p>
+<p>The section starts with one or more lines, each exactly one record link by full UUID, <code>[[uuid]]</code> or <code>[[uuid|label]]</code>. The text after the links, if any, is the reason, in ordinary Markdown. A record has at most one <code>## Supersedes</code> section, and a section without a link is an error. When DADRock writes the section, from the web interface, a <code>supersede-record</code> result, or <a href="../llms/#mcp">MCP</a>, it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links. The section stays in the successor's body after acceptance as the record of why the decision changed. It is a DADRock convention, not an additional required section of the DADR format.</p>
+<p>The <code>supersede-record</code> task takes one or more accepted records and the change you want. The agent starts from the predecessor's exact text and changes only what the request requires, so the successor reads as a small diff; for several predecessors it combines them into one decision. It returns the reason separately, and DADRock writes it into <code>## Supersedes</code> when you save the proposal as a candidate.</p>
+<h3 id="accepting-successors">Accepting successors<a class="headerlink" href="#accepting-successors" title="Permanent link">&para;</a></h3>
+<p>Accepting a successor adds its <code>id</code> to each predecessor's <code>successors</code> and moves each predecessor to <code>dadr/archive/</code> with its body unchanged.</p>
+<ul>
+<li><strong>One-to-one:</strong> the successor names one predecessor.</li>
+<li><strong>Merge:</strong> one successor names several predecessors, and each gains the successor's <code>id</code>.</li>
+<li><strong>Split:</strong> several successors name the same predecessor. Accept them together so that the predecessor gains all of their ids at once.</li>
+</ul>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dadrock<span class="w"> </span>accept<span class="w"> </span><span class="s2">&quot;Impute income&quot;</span><span class="w"> </span>--with<span class="w"> </span><span class="s2">&quot;Complete cases for the outcome&quot;</span>
+</span></code></pre></div>
+<p><code>--with</code> repeats, and the positional words still join into one query. In general, accepting a set of candidates adds, for each predecessor named in the set, every candidate in the set that names it. Candidates without <code>## Supersedes</code> are simply accepted.</p>
+<p>DADRock checks the whole set before writing anything: every candidate must meet the acceptance requirements, and every named predecessor must exist, be accepted, not already be superseded, and not be in the set. A predecessor that is already superseded is refused with the names of its current successors. If a write fails partway, every record is restored.</p>
+<h3 id="stale-successors">Stale successors<a class="headerlink" href="#stale-successors" title="Permanent link">&para;</a></h3>
+<p>Two candidates that name the same predecessor may be the halves of a split or competing alternatives; you decide by what you accept together. Once one of them is accepted alone, the other is stale: its predecessor was superseded after it was drafted, like a branch whose base has moved. <code>dadrock validate</code> warns about a stale candidate (<code>stale_supersedes</code>) and names the decisions now in force, and acceptance refuses it. Point its <code>## Supersedes</code> link at the current decision, or reject it. DADRock never retargets a link on its own; in the <a href="#inbox">Inbox</a>, <strong>Retarget</strong> on the candidate does it when you ask.</p>
+<p>Validation also warns when an accepted record's <code>## Supersedes</code> section names a predecessor that does not list it in <code>successors</code> (<code>unlinked_supersedes</code>), for example after a record was accepted by hand.</p>
+<p>For two records that are already accepted, <code>dadrock supersede --from OLD --to NEW</code> links them explicitly and moves <code>OLD</code> to <code>dadr/archive/</code>. Records linked this way have no <code>## Supersedes</code> section, so no reason is recorded.</p>
 
 
 

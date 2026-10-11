@@ -621,9 +621,10 @@
 
 
 <h1 id="uuid-v7-generator">UUID v7 generator<a class="headerlink" href="#uuid-v7-generator" title="Permanent link">&para;</a></h1>
-<p>Every DADR record should have a UUID v7 in its front-matter <code>id</code> field.
-The record filename should normally begin with the first 12 hex characters of
-that identifier, followed by a short kebab-case title.</p>
+<p>Every DADR record has a UUID v7 in its front-matter <code>id</code> field. Its first 12 hex
+characters are the record's short id, the form to link it by, as in
+<code>[[01938b8e4d70]]</code>. The filename is up to you; a short kebab-case slug of the
+title, such as <code>income-preprocessing.md</code>, is suggested.</p>
 <p>You may use this page when you are drafting DADR records by hand and need a fresh identifier.</p>
 <p><button id="uuidv7-generate" class="md-button md-button--primary" type="button">Generate UUID v7</button></p>
 <div class="uuidv7-field">
@@ -635,12 +636,14 @@ that identifier, followed by a short kebab-case title.</p>
 </div>
 
 <div class="uuidv7-field">
-  <label for="uuidv7-prefix">DADR filename prefix</label>
+  <label for="uuidv7-short">Short id, for links</label>
   <div class="uuidv7-copy-row">
-    <input id="uuidv7-prefix" class="uuidv7-output" type="text" readonly spellcheck="false">
-    <button id="uuidv7-copy-prefix" class="md-button" type="button">Copy prefix</button>
+    <input id="uuidv7-short" class="uuidv7-output" type="text" readonly spellcheck="false">
+    <button id="uuidv7-copy-short" class="md-button" type="button">Copy short id</button>
   </div>
 </div>
+
+<p id="uuidv7-status" class="uuidv7-status" role="status"></p>
 
 <p>This generator runs entirely in your browser. It writes the current Unix millisecond timestamp into the UUIDv7 timestamp field and fills the remaining random bits with <code>crypto.getRandomValues()</code>.</p>
 <style>
@@ -696,8 +699,8 @@ that identifier, followed by a short kebab-case title.</p>
   const currentInput = document.getElementById("uuidv7-current");
   const generateButton = document.getElementById("uuidv7-generate");
   const copyButton = document.getElementById("uuidv7-copy");
-  const prefixOutput = document.getElementById("uuidv7-prefix");
-  const copyPrefixButton = document.getElementById("uuidv7-copy-prefix");
+  const shortOutput = document.getElementById("uuidv7-short");
+  const copyShortButton = document.getElementById("uuidv7-copy-short");
   const statusOutput = document.getElementById("uuidv7-status");
 
   const hasCrypto = globalThis.crypto && typeof globalThis.crypto.getRandomValues === "function";
@@ -740,7 +743,7 @@ that identifier, followed by a short kebab-case title.</p>
 
   function renderUuid(uuid) {
     currentInput.value = uuid;
-    prefixOutput.value = uuid.replaceAll("-", "").slice(0, 12);
+    shortOutput.value = uuid.replaceAll("-", "").slice(0, 12);
   }
 
   async function copyText(text, successMessage) {
@@ -778,7 +781,7 @@ that identifier, followed by a short kebab-case title.</p>
 
   generateButton.addEventListener("click", generateOne);
   copyButton.addEventListener("click", () => copyText(currentInput.value, "Copied UUID."));
-  copyPrefixButton.addEventListener("click", () => copyText(prefixOutput.value, "Copied filename prefix."));
+  copyShortButton.addEventListener("click", () => copyText(shortOutput.value, "Copied short id."));
 
   generateOne();
 })();
