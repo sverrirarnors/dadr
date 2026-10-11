@@ -45,6 +45,13 @@
     list-style: disc;
   }
 
+  :global(.inbox-markdown blockquote) {
+    margin: 0.5rem 0;
+    border-left: 3px solid var(--color-border);
+    padding-left: 0.75rem;
+    color: var(--color-fg-muted);
+  }
+
   :global(.inbox-markdown code) {
     font-family: var(--font-mono);
     font-size: 0.85em;
