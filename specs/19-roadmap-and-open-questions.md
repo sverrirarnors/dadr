@@ -21,7 +21,6 @@ in `docs-src/` or generated references, not repeated here.
 | Team features | Future product work | Notifications, RBAC, scheduled checks, metrics, and shared review surfaces. |
 | Evidence/provenance layer | Future product work | Structured evidence objects and provenance graphs should not change the canonical Markdown record format. |
 | Lifecycle event log | Future product work | An append-only log of accept, reject, and supersede events recording at least the record `id`, the action, the event time, and the actor when known. The log is audit metadata and never overrides `status` or `successors` in front matter. |
-| Decision history | In progress (dadr#zfgm) | Every change to an accepted decision becomes a new record; a decision's history and diffs are derived from `successors`, including splits and merges; a Git-diff check enforces that accepted and rejected records keep their title and body. Replaces the earlier "immutability baselines" idea. See [08-decision-history.md](08-decision-history.md). |
 
 ## Supersession Suggestions
 
@@ -99,6 +98,13 @@ The goal is navigation between the decision record and the execution graph.
   inference, path allowlists/denylists, and remote-model policy?
 - How much persistent evidence/provenance should Dadrock keep without weakening
   the invariant that Markdown records are the canonical durable artifact?
+- Should the `## Supersedes` section become part of the DADR format, so that
+  the reason a decision changed is defined independently of Dadrock? It is a
+  Dadrock convention today.
+- Should agents be able to draft a split? The `supersede-record` task returns
+  one successor; a split would need several candidates from one run.
+- Should DADRock show a record's text edits when the project is not in a Git
+  repository? Text history comes from Git only.
 
 The remaining choices do not change the core design: Markdown files on disk are
 canonical, durable reasoning is captured in those files, and tooling resolves
