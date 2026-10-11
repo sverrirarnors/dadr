@@ -2,9 +2,9 @@
 id: custom
 title: "Custom"
 description: "Use a freeform prompt with selected records, files, folders, or notes when no dedicated DADR workflow fits."
-version: 1
+version: 2
 requirements:
-  records: many
+  records: none
   record_status: all
   paths: optional
   notes: required
@@ -22,8 +22,8 @@ Carry out a DADR-related instruction that no dedicated task covers, using the se
 
 ## Inputs
 
-- The user's instructions: what to do. Required.
-- Selected records of any status and, optionally, files, folders, or pasted text to act on.
+- `instructions`: what to do. Required.
+- Optionally, `records` of any status, files or folders (`paths`), or pasted text to act on. Without them, work from the project itself.
 
 Interactively, these come from the user's request. "Do something useful" is not an instruction; find out what the user wants.
 

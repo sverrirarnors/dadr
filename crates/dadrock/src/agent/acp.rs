@@ -62,11 +62,19 @@ const ACP_ACTIVITY_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 const ACP_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
 pub const ACP_OUTPUT_LIMIT_BYTES: usize = 4 * 1024 * 1024;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+/// How an unattended prompt answers the agent's tool permission requests.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AcpPermissionPolicy {
+    /// Deny every request.
+    #[default]
     Deny,
+    /// Approve each request whose tool reads, searches, or thinks, once, and
+    /// deny every other request, including ones that name no tool kind.
+    AllowReads,
+    /// Approve every request once.
     AllowOnce,
+    /// Approve every request for the rest of the session.
     AllowAlways,
 }
 
@@ -74,15 +82,10 @@ impl AcpPermissionPolicy {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Deny => "deny",
+            Self::AllowReads => "allow-reads",
             Self::AllowOnce => "allow-once",
             Self::AllowAlways => "allow-always",
         }
-    }
-}
-
-impl Default for AcpPermissionPolicy {
-    fn default() -> Self {
-        Self::Deny
     }
 }
 
@@ -970,6 +973,7 @@ async fn run_acp_prompt_async(
                     match update? {
                         SessionMessage::SessionMessage(message) => {
                             let permission_error_for_request = Arc::clone(&permission_error);
+                            let events_for_request = events.clone();
                             MatchDispatch::new(message)
                                 .if_notification(async |notification: SessionNotification| {
                                     match notification.update {
@@ -1021,6 +1025,12 @@ async fn run_acp_prompt_async(
                                         let decision = non_interactive_permission_decision(
                                             options.permission_policy,
                                             &request,
+                                        );
+                                        send_acp_prompt_event(
+                                            events_for_request.as_ref(),
+                                            AcpPromptEvent::Permission {
+                                                message: decision.message,
+                                            },
                                         );
                                         if let Some(message) = decision.post_run_error {
                                             if let Ok(mut permission_error) =

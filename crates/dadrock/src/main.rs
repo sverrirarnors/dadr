@@ -13,7 +13,7 @@ use dadrock::{
     mcp as core_mcp,
     project::ProjectLayout,
     tags::TagReport,
-    tasks::{PersistedTaskRun, TaskContext, TaskListing, TaskPackage, TaskRunCommandRequest},
+    tasks::{PersistedTaskRun, TaskListing, TaskPackage, TaskRunCommandRequest},
     validation::ProjectValidationReport,
     Severity,
 };
@@ -464,7 +464,7 @@ fn task(args: cli::TaskArgs) -> Result<ExitCode> {
     match args.command {
         cli::TaskCommand::List(args) => task_list(args),
         cli::TaskCommand::Show(args) => task_show(args),
-        cli::TaskCommand::Run(args) => task_run(args),
+        cli::TaskCommand::Run(args) => task_run(*args),
         cli::TaskCommand::Runs(args) => task_runs(args),
         cli::TaskCommand::Result(args) => task_result(args),
     }
@@ -494,10 +494,9 @@ fn task_show(args: cli::TaskShowArgs) -> Result<ExitCode> {
 
 fn task_run(args: cli::TaskRunArgs) -> Result<ExitCode> {
     let input = args.task_input()?;
-    let mut context = TaskContext::default();
-    if let Some(path) = input.get("path").and_then(serde_json::Value::as_str) {
-        context.paths.push(path.to_owned());
-    }
+    let command_context = command_context()?;
+    let task = core_commands::show_task_command(&command_context, &args.task_id)?.data;
+    let context = args.task_context(&input, &task.manifest.requirements)?;
     let local_agent = if args.agent.is_some() || !args.agent_args.is_empty() {
         Some(local_acp_agent_command(
             "task run",
@@ -508,7 +507,7 @@ fn task_run(args: cli::TaskRunArgs) -> Result<ExitCode> {
         None
     };
     let envelope = core_commands::run_task_command(
-        &command_context()?,
+        &command_context,
         TaskRunCommandRequest {
             task_id: args.task_id,
             input,

@@ -420,7 +420,7 @@ pub enum TaskCommand {
     #[command(about = "Show one resolved task package.")]
     Show(TaskShowArgs),
     #[command(about = "Run one resolved task package with a local ACP agent.")]
-    Run(TaskRunArgs),
+    Run(Box<TaskRunArgs>),
     #[command(about = "List persisted local task runs.")]
     Runs(JsonArg),
     #[command(about = "Read a persisted task run result.")]
@@ -439,13 +439,15 @@ pub struct TaskShowArgs {
 
 #[derive(Debug, Args)]
 pub struct TaskRunArgs {
+    /// Task to run, by id (see `dadrock task list`).
     pub task_id: String,
-    #[arg(long = "input-json", conflicts_with_all = ["path", "context", "focus", "limit"])]
+    /// Task inputs as a JSON object, for tasks without friendly input flags.
+    #[arg(long = "input-json", value_name = "JSON", conflicts_with_all = ["path", "context", "focus", "limit"])]
     pub input_json: Option<String>,
-    /// File or directory to inspect.
+    /// File or directory to inspect (code-to-record).
     #[arg(long)]
     pub path: Option<String>,
-    /// Describe the decision to capture.
+    /// Describe the decision to capture (context-to-record).
     #[arg(long)]
     pub context: Option<String>,
     /// Topic to concentrate on (code-to-record, decisions-to-spec).
@@ -454,14 +456,28 @@ pub struct TaskRunArgs {
     /// Maximum initial candidates (code-to-record defaults to 5).
     #[arg(long, value_parser = clap::value_parser!(u32).range(1..))]
     pub limit: Option<u32>,
+    /// What the agent should do, as task context (required by custom).
+    #[arg(long)]
+    pub instructions: Option<String>,
+    /// Record for the agent to work on, by id, short id, or title; repeatable.
+    #[arg(long = "record", value_name = "QUERY")]
+    pub records: Vec<String>,
+    /// File or folder for the agent to read, as task context; repeatable.
+    #[arg(long, value_name = "PATH")]
+    pub attach: Vec<String>,
+    /// Print the run as a JSON command envelope.
     #[arg(long)]
     pub json: bool,
+    /// How to answer the agent's tool permission requests.
     #[arg(long, value_enum, default_value_t = PermissionPolicyArg::Deny)]
     pub permission: PermissionPolicyArg,
-    #[arg(long)]
+    /// ACP agent executable to run instead of the configured or detected one.
+    #[arg(long, value_name = "PROGRAM")]
     pub agent: Option<String>,
-    #[arg(long = "agent-arg", allow_hyphen_values = true)]
+    /// Extra argument for the ACP agent; repeatable.
+    #[arg(long = "agent-arg", value_name = "ARG", allow_hyphen_values = true)]
     pub agent_args: Vec<String>,
+    /// Do not attach Dadrock's MCP server to the agent session.
     #[arg(long = "no-mcp")]
     pub no_mcp: bool,
 }
@@ -502,9 +518,54 @@ impl TaskRunArgs {
                     "decisions-to-spec accepts --focus"
                 );
             }
-            _ => anyhow::ensure!(input.is_empty(), "use --input-json for custom task inputs"),
+            task_id => anyhow::ensure!(
+                input.is_empty(),
+                "`{task_id}` does not take --path, --context, --focus or --limit; give its inputs with --input-json and its instructions with --instructions"
+            ),
         }
         Ok(serde_json::Value::Object(input))
+    }
+
+    /// The task context: `--instructions`, `--record` and `--attach`, plus a
+    /// `path` input, which is also a file the agent reads. Each flag needs a
+    /// task whose manifest has a use for it.
+    pub fn task_context(
+        &self,
+        input: &serde_json::Value,
+        requirements: &dadrock::tasks::TaskRequirements,
+    ) -> anyhow::Result<dadrock::tasks::TaskContext> {
+        use dadrock::tasks::{TaskNoteRequirement, TaskPathRequirement, TaskScopeRequirement};
+
+        let task_id = &self.task_id;
+        anyhow::ensure!(
+            self.instructions.is_none() || requirements.notes != TaskNoteRequirement::None,
+            "`{task_id}` does not take --instructions: its manifest has `notes: none`"
+        );
+        anyhow::ensure!(
+            self.attach.is_empty() || requirements.paths != TaskPathRequirement::None,
+            "`{task_id}` does not read files or folders, so it does not take --attach: its manifest has `paths: none`"
+        );
+        anyhow::ensure!(
+            self.records.is_empty() || requirements.scope == TaskScopeRequirement::None,
+            "`{task_id}` chooses the records it reads by scope, so it does not take --record"
+        );
+
+        let mut paths = Vec::new();
+        let path_input = input.get("path").and_then(serde_json::Value::as_str);
+        for path in path_input
+            .into_iter()
+            .chain(self.attach.iter().map(String::as_str))
+        {
+            if !paths.iter().any(|known| known == path) {
+                paths.push(path.to_owned());
+            }
+        }
+        Ok(dadrock::tasks::TaskContext {
+            instructions: self.instructions.clone(),
+            records: self.records.clone(),
+            paths,
+            ..Default::default()
+        })
     }
 }
 
@@ -537,8 +598,13 @@ impl Default for PreviewArgs {
 #[derive(Debug, Clone, Copy, ValueEnum)]
 #[value(rename_all = "kebab-case")]
 pub enum PermissionPolicyArg {
+    /// Deny every tool permission request.
     Deny,
+    /// Approve read, search, and think tool requests once; deny the rest.
+    AllowReads,
+    /// Approve every tool permission request once.
     AllowOnce,
+    /// Approve every tool permission request for the session.
     AllowAlways,
 }
 
@@ -546,6 +612,7 @@ impl From<PermissionPolicyArg> for AcpPermissionPolicy {
     fn from(policy: PermissionPolicyArg) -> Self {
         match policy {
             PermissionPolicyArg::Deny => Self::Deny,
+            PermissionPolicyArg::AllowReads => Self::AllowReads,
             PermissionPolicyArg::AllowOnce => Self::AllowOnce,
             PermissionPolicyArg::AllowAlways => Self::AllowAlways,
         }
@@ -987,6 +1054,31 @@ mod tests {
     }
 
     #[test]
+    fn task_run_permission_defaults_to_deny_and_accepts_allow_reads() {
+        let task_run = |extra: &[&str]| {
+            let cli = Cli::try_parse_from(
+                ["dadrock", "task", "run", "custom"]
+                    .into_iter()
+                    .chain(extra.iter().copied()),
+            )
+            .unwrap();
+            let Some(Command::Task(TaskArgs {
+                command: TaskCommand::Run(args),
+            })) = cli.command
+            else {
+                panic!("expected task run command");
+            };
+            AcpPermissionPolicy::from(args.permission)
+        };
+
+        assert_eq!(task_run(&[]), AcpPermissionPolicy::Deny);
+        assert_eq!(
+            task_run(&["--permission", "allow-reads"]),
+            AcpPermissionPolicy::AllowReads
+        );
+    }
+
+    #[test]
     fn parses_task_runs_json() {
         let cli = Cli::try_parse_from(["dadrock", "task", "runs", "--json"]).unwrap();
 
@@ -1094,6 +1186,157 @@ mod simple_workflow_tests {
                 .is_err()
         );
     }
+    fn task_run_args(args: &[&str]) -> TaskRunArgs {
+        let cli = Cli::try_parse_from(args).unwrap();
+        let Some(Command::Task(TaskArgs {
+            command: TaskCommand::Run(args),
+        })) = cli.command
+        else {
+            panic!("task run")
+        };
+        *args
+    }
+
+    /// The built-in task's manifest requirements, without user or project
+    /// overrides.
+    fn builtin_requirements(task_id: &str) -> dadrock::tasks::TaskRequirements {
+        dadrock::tasks::discover_tasks(camino::Utf8Path::new("/nonexistent-dadrock-project"), None)
+            .tasks
+            .into_iter()
+            .find(|task| task.manifest.id == task_id)
+            .unwrap_or_else(|| panic!("built-in task {task_id}"))
+            .manifest
+            .requirements
+    }
+
+    fn task_context(args: &[&str]) -> anyhow::Result<dadrock::tasks::TaskContext> {
+        let args = task_run_args(args);
+        let input = args.task_input()?;
+        args.task_context(&input, &builtin_requirements(&args.task_id))
+    }
+
+    #[test]
+    fn custom_takes_instructions_records_and_attached_paths() {
+        let context = task_context(&[
+            "dadrock",
+            "task",
+            "run",
+            "custom",
+            "--instructions",
+            "Summarize the sample restrictions",
+            "--record",
+            "0198abc",
+            "--record",
+            "Income cutoff",
+            "--attach",
+            "analysis/",
+            "--attach",
+            "plan.md",
+        ])
+        .unwrap();
+
+        assert_eq!(
+            context.instructions.as_deref(),
+            Some("Summarize the sample restrictions")
+        );
+        assert_eq!(context.records, ["0198abc", "Income cutoff"]);
+        assert_eq!(context.paths, ["analysis/", "plan.md"]);
+    }
+
+    #[test]
+    fn context_flags_combine_with_input_json_and_friendly_flags() {
+        let args = task_run_args(&[
+            "dadrock",
+            "task",
+            "run",
+            "edit-record",
+            "--input-json",
+            r#"{"record_id":"0198abc","requested_changes":"Tighten it"}"#,
+            "--record",
+            "0198abc",
+            "--instructions",
+            "Keep the tags",
+        ]);
+        let input = args.task_input().unwrap();
+        let context = args
+            .task_context(&input, &builtin_requirements("edit-record"))
+            .unwrap();
+        assert_eq!(input["record_id"], "0198abc");
+        assert_eq!(context.records, ["0198abc"]);
+        assert_eq!(context.instructions.as_deref(), Some("Keep the tags"));
+
+        let context = task_context(&[
+            "dadrock",
+            "task",
+            "run",
+            "code-to-record",
+            "--path",
+            "analysis/",
+            "--attach",
+            "plan.md",
+            "--attach",
+            "analysis/",
+        ])
+        .unwrap();
+        assert_eq!(context.paths, ["analysis/", "plan.md"]);
+    }
+
+    #[test]
+    fn context_flags_are_rejected_where_the_manifest_has_no_use_for_them() {
+        let attach = task_context(&[
+            "dadrock",
+            "task",
+            "run",
+            "merge-records",
+            "--attach",
+            "plan.md",
+        ])
+        .unwrap_err();
+        assert!(
+            attach.to_string().contains("does not take --attach"),
+            "{attach}"
+        );
+
+        for task_id in ["find-conflicts", "decisions-to-spec"] {
+            let record = task_context(&["dadrock", "task", "run", task_id, "--record", "0198abc"])
+                .unwrap_err();
+            assert!(
+                record.to_string().contains("does not take --record"),
+                "{record}"
+            );
+        }
+
+        let args = task_run_args(&[
+            "dadrock",
+            "task",
+            "run",
+            "lab-report",
+            "--instructions",
+            "Go",
+        ]);
+        let instructions = args
+            .task_context(
+                &serde_json::json!({}),
+                &dadrock::tasks::TaskRequirements::default(),
+            )
+            .unwrap_err();
+        assert!(
+            instructions
+                .to_string()
+                .contains("`lab-report` does not take --instructions"),
+            "{instructions}"
+        );
+    }
+
+    #[test]
+    fn friendly_input_flags_point_other_tasks_to_input_json() {
+        let error = task_run_args(&["dadrock", "task", "run", "custom", "--focus", "tags"])
+            .task_input()
+            .unwrap_err();
+        assert!(error.to_string().contains("--input-json"), "{error}");
+        assert!(error.to_string().contains("--instructions"), "{error}");
+    }
+
     #[test]
     fn direct_lifecycle_commands_preserve_legacy_commands() {
         assert!(matches!(

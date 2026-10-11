@@ -444,7 +444,7 @@ fn discovery_lists_built_in_starter_tasks() {
     );
     assert_eq!(
         tasks["custom"].manifest.requirements.records,
-        TaskRecordRequirement::Many
+        TaskRecordRequirement::None
     );
     assert_eq!(
         tasks["merge-records"].manifest.output.kind,
@@ -1816,6 +1816,45 @@ fn code_to_record_rejects_run_when_no_context_paths_supplied() {
     let _ = fs::remove_dir_all(root);
 }
 
+/// Runs `dadrock task run` where no ACP agent can be found: nothing on
+/// `PATH` and no `DADROCK_ACP_AGENT`.
+fn dadrock_task_run_without_agent(root: &Path, args: &[&str]) -> std::process::Output {
+    let empty_path = root.join("empty-path");
+    fs::create_dir_all(&empty_path).expect("create empty PATH dir");
+    std::process::Command::new(env!("CARGO_BIN_EXE_dadrock"))
+        .args(["task", "run"])
+        .args(args)
+        .current_dir(root)
+        .env("PATH", &empty_path)
+        .env("DADROCK_TASKS_DIR", root.join("user-tasks"))
+        .env_remove("DADROCK_ACP_AGENT")
+        .env_remove("DADROCK_ACP_AGENT_ARGS")
+        .output()
+        .expect("run dadrock task run")
+}
+
+#[test]
+fn task_run_without_agent_fails_clearly_and_creates_no_run() {
+    let root = unique_temp_dir("dadrock-task-run-no-agent");
+    init_project(&root).unwrap();
+
+    let output = dadrock_task_run_without_agent(
+        &root,
+        &["context-to-record", "--context", "Explain the sample"],
+    );
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("no local ACP agent found") && stderr.contains("DADROCK_ACP_AGENT"),
+        "unexpected stderr: {stderr}"
+    );
+    let project_root = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    assert!(list_task_runs(&project_root).unwrap().is_empty());
+
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn task_run_validation_rejects_missing_required_input() {
     let root = unique_temp_dir("dadrock-task-required-input");
@@ -2377,6 +2416,120 @@ fn attached_mcp_servers(sessions: &str) -> Vec<serde_json::Value> {
         .collect();
     assert!(!servers.is_empty(), "no session attached an MCP server");
     servers
+}
+
+/// Fake ACP agent that records each prompt it receives and answers it with a
+/// `markdown_report.v1` result.
+const PROMPT_RECORDING_ACP_AGENT: &str = r#"
+import json, sys
+log_path = sys.argv[1]
+for line in sys.stdin:
+    q = json.loads(line)
+    method = q.get('method')
+    if method == 'initialize':
+        result = {'protocolVersion': 1, 'agentCapabilities': {}, 'authMethods': []}
+    elif method == 'session/new':
+        result = {'sessionId': 'test', 'configOptions': []}
+    elif method == 'session/prompt':
+        with open(log_path, 'a') as log:
+            for block in q['params']['prompt']:
+                log.write(block.get('text', ''))
+        output = {'kind': 'markdown_report.v1', 'title': 'Report', 'body_markdown': '## Report\nDone.'}
+        print(json.dumps({'jsonrpc': '2.0', 'method': 'session/update', 'params': {'sessionId': 'test', 'update': {'sessionUpdate': 'agent_message_chunk', 'content': {'type': 'text', 'text': json.dumps(output)}}}}), flush=True)
+        result = {'stopReason': 'end_turn'}
+    else:
+        continue
+    print(json.dumps({'jsonrpc': '2.0', 'id': q['id'], 'result': result}), flush=True)
+"#;
+
+#[test]
+fn custom_task_runs_from_the_cli_with_instructions_records_and_attachments() {
+    let root = unique_temp_dir("dadrock-task-run-custom");
+    init_project(&root).unwrap();
+    let project = discover_from_pathbuf(&root);
+    let record = dadrock::records::create_candidate(&project, "Income cutoff", &[]).unwrap();
+    let short_id = record.id.to_string().replace('-', "")[..12].to_owned();
+    let script = root.join("prompt-agent.py");
+    let prompts = root.join("prompts.txt");
+    fs::write(&script, PROMPT_RECORDING_ACP_AGENT).expect("write fake agent");
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_dadrock"))
+        .args([
+            "task",
+            "run",
+            "custom",
+            "--instructions",
+            "Summarize the sample restrictions",
+            "--record",
+            &short_id,
+            "--attach",
+            "analysis/",
+            "--agent",
+            "python3",
+            "--agent-arg",
+            script.to_str().unwrap(),
+            "--agent-arg",
+            prompts.to_str().unwrap(),
+            "--no-mcp",
+            "--json",
+        ])
+        .current_dir(&root)
+        .env("DADROCK_TASKS_DIR", root.join("user-tasks"))
+        .output()
+        .expect("run dadrock task run custom");
+
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let envelope: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(envelope["data"]["status"], json!("succeeded"));
+    let run_dir = Utf8PathBuf::from(envelope["data"]["run_dir"].as_str().unwrap());
+    assert_eq!(
+        read_json(run_dir.join("context.json")),
+        json!({
+            "instructions": "Summarize the sample restrictions",
+            "paths": ["analysis/"],
+            "records": [record.id.to_string()],
+        })
+    );
+    let prompt = fs::read_to_string(&prompts).expect("read recorded prompt");
+    assert!(prompt.contains("Summarize the sample restrictions"));
+    assert!(prompt.contains(&record.id.to_string()));
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn custom_task_without_instructions_names_the_flag_and_starts_nothing() {
+    let root = unique_temp_dir("dadrock-task-run-custom-no-instructions");
+    init_project(&root).unwrap();
+
+    let output = dadrock_task_run_without_agent(&root, &["custom"]);
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("requires notes or instructions"),
+        "unexpected stderr: {stderr}"
+    );
+    let project_root = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    assert!(list_task_runs(&project_root).unwrap().is_empty());
+
+    let output = dadrock_task_run_without_agent(
+        &root,
+        &["custom", "--instructions", "Count decisions by tag"],
+    );
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("no local ACP agent found"),
+        "unexpected stderr: {stderr}"
+    );
+    assert!(list_task_runs(&project_root).unwrap().is_empty());
+
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]

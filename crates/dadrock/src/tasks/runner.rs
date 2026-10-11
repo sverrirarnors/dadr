@@ -393,12 +393,16 @@ pub fn run_task_with_acp(
         permission_policy,
         enable_dadrock_mcp,
     } = request;
-    let (task, run) = prepare_task_run(project, &task_id, input.clone(), &context, None)?;
+    let task = validate_task_run(project, &task_id, &input, &context, None)?;
+    let context = resolve_context_records(project, context)?;
     match task.manifest.execution {
         TaskExecutionMode::Agent => {
+            // Find the agent before creating the run: a run that no agent
+            // will ever pick up would stay `created` forever.
             let local_agent = local_agent
                 .map(Ok)
                 .unwrap_or_else(configured_local_acp_agent)?;
+            let run = create_task_run(&project.cwd, &task, input.clone())?;
             run_created_task_with_acp(
                 project,
                 &task,
@@ -413,8 +417,39 @@ pub fn run_task_with_acp(
                 },
             )
         }
-        TaskExecutionMode::Local => run_created_local_task(project, &task, input, context, &run),
+        TaskExecutionMode::Local => {
+            let run = create_task_run(&project.cwd, &task, input.clone())?;
+            run_created_local_task(project, &task, input, context, &run)
+        }
     }
+}
+
+/// Selected records may be named by any record query; the agent gets each
+/// one's full id, once.
+fn resolve_context_records(
+    project: &ProjectContext,
+    mut context: TaskContext,
+) -> Result<TaskContext, DadrError> {
+    let queries: Vec<&str> = context
+        .records
+        .iter()
+        .map(|query| query.trim())
+        .filter(|query| !query.is_empty())
+        .collect();
+    if queries.is_empty() {
+        context.records.clear();
+        return Ok(context);
+    }
+    let index = ProjectIndex::scan(project)?;
+    let mut ids = Vec::new();
+    for query in queries {
+        let id = index.resolve_one(query)?.record.id.to_string();
+        if !ids.contains(&id) {
+            ids.push(id);
+        }
+    }
+    context.records = ids;
+    Ok(context)
 }
 
 struct TaskRunFailure {
@@ -462,6 +497,19 @@ pub fn create_task_run_for_task(
     prepare_task_run(project, task_id, input, context, None)
 }
 
+/// Resolve a task and check a run request against it without creating the
+/// run. Callers that still have to find an agent do so before
+/// [`create_task_run`], so a failure never leaves a run that nothing will
+/// start.
+pub fn prepare_task_for_run(
+    project: &ProjectContext,
+    task_id: &str,
+    input: &Value,
+    context: &TaskContext,
+) -> Result<TaskPackage, DadrError> {
+    validate_task_run(project, task_id, input, context, None)
+}
+
 fn prepare_task_run(
     project: &ProjectContext,
     task_id: &str,
@@ -469,6 +517,18 @@ fn prepare_task_run(
     context: &TaskContext,
     required_execution: Option<TaskExecutionMode>,
 ) -> Result<(TaskPackage, PersistedTaskRun), DadrError> {
+    let task = validate_task_run(project, task_id, &input, context, required_execution)?;
+    let run = create_task_run(&project.cwd, &task, input)?;
+    Ok((task, run))
+}
+
+fn validate_task_run(
+    project: &ProjectContext,
+    task_id: &str,
+    input: &Value,
+    context: &TaskContext,
+    required_execution: Option<TaskExecutionMode>,
+) -> Result<TaskPackage, DadrError> {
     let task = resolve_task(project, task_id)?;
     if let Some(required_execution) = required_execution {
         if task.manifest.execution != required_execution {
@@ -485,12 +545,11 @@ fn prepare_task_run(
     validate_task_context_requirements(
         project,
         &task,
-        &input,
+        input,
         &task.manifest.requirements,
         context,
     )?;
-    let run = create_task_run(&project.cwd, &task, input)?;
-    Ok((task, run))
+    Ok(task)
 }
 
 fn task_execution_label(execution: TaskExecutionMode) -> &'static str {
@@ -508,21 +567,25 @@ pub fn run_created_task_with_acp(
     run: &PersistedTaskRun,
     options: AcpTaskRunOptions<'_>,
 ) -> Result<PersistedTaskRun, DadrError> {
-    write_task_context(&run.run_dir, &context)?;
     let options = AcpTaskRunOptions {
         events: options
             .events
             .or_else(|| Some(task_run_log_sink(run.run_dir.clone()))),
         ..options
     };
-    match execute_created_task_run(CreatedAcpTaskRun {
-        project,
-        task,
-        input,
-        context,
-        run,
-        options,
-    }) {
+    let result = write_task_context(&run.run_dir, &context)
+        .map_err(TaskRunFailure::from)
+        .and_then(|()| {
+            execute_created_task_run(CreatedAcpTaskRun {
+                project,
+                task,
+                input,
+                context,
+                run,
+                options,
+            })
+        });
+    match result {
         Ok(run) => Ok(run),
         Err(failure) => {
             let TaskRunFailure { error, raw_output } = failure;
@@ -547,8 +610,9 @@ pub fn run_created_local_task(
     context: TaskContext,
     run: &PersistedTaskRun,
 ) -> Result<PersistedTaskRun, DadrError> {
-    write_task_context(&run.run_dir, &context)?;
-    match execute_created_local_task_run(project, task, input, run) {
+    match write_task_context(&run.run_dir, &context)
+        .and_then(|()| execute_created_local_task_run(project, task, input, run))
+    {
         Ok(run) => Ok(run),
         Err(error) => {
             let message = error.to_string();
