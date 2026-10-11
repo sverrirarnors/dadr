@@ -1872,3 +1872,116 @@ fn validate_links_reports_wikilink_and_markdown_link_issues() {
 
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn replacement_acceptance_links_history_and_preserves_original_body() {
+    let root = temp_project("replacement-acceptance");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+    let first = create_candidate(&project, "Previous choice", &[]).unwrap();
+    let old = accept_candidate(&project_index(&project), &first.id.to_string()).unwrap();
+    let original = fs::read_to_string(&old.to).unwrap();
+    let body = format!("## Context\nChanged needs.\n\n## Decision\nUse a new method.\n\n## Alternatives\nKeep old method.\n\n## Consequences\nRecompute results.\n\n## Replaces\n\n[[{}|Previous decision]]\n", old.id);
+    let candidate =
+        dadrock::records::create_candidate_with_body(&project, "New choice", &[], &body).unwrap();
+    let index = project_index(&project);
+    assert_eq!(
+        dadrock::records::pending_replacement(&index, &candidate.id.to_string())
+            .unwrap()
+            .unwrap()
+            .id,
+        old.id
+    );
+    accept_candidate(&index, &candidate.id.to_string()).unwrap();
+    let index = project_index(&project);
+    let previous = status_record(&index, &old.id.to_string()).unwrap();
+    assert_eq!(previous.successors[0].id, candidate.id);
+    let updated = fs::read_to_string(&old.to).unwrap();
+    assert_eq!(
+        original.splitn(3, "---").nth(2),
+        updated.splitn(3, "---").nth(2)
+    );
+    assert!(
+        dadrock::records::pending_replacement(&index, &candidate.id.to_string())
+            .unwrap()
+            .is_none()
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn invalid_replacement_does_not_accept_or_modify_either_record() {
+    let root = temp_project("replacement-invalid");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+    let old = create_candidate(&project, "Still a candidate", &[]).unwrap();
+    let body = format!("## Context\nContext.\n\n## Decision\nDecision.\n\n## Alternatives\nAlternatives.\n\n## Consequences\nConsequences.\n\n## Replaces\n\n[[{}|Previous decision]]\n", old.id);
+    let candidate =
+        dadrock::records::create_candidate_with_body(&project, "Replacement", &[], &body).unwrap();
+    let original = fs::read_to_string(&old.path).unwrap();
+    let proposed = fs::read_to_string(&candidate.path).unwrap();
+    assert!(accept_candidate(&project_index(&project), &candidate.id.to_string()).is_err());
+    assert_eq!(fs::read_to_string(&old.path).unwrap(), original);
+    assert_eq!(fs::read_to_string(&candidate.path).unwrap(), proposed);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn replacement_section_requires_one_explicit_full_id_link() {
+    use dadrock::records::replacement_id;
+    assert!(
+        replacement_id("## Context\nSee [[0193fb1f-a3a0-7000-8000-000000000001]]")
+            .unwrap()
+            .is_none()
+    );
+    assert!(replacement_id(
+        "```markdown\n## Replaces\n[[0193fb1f-a3a0-7000-8000-000000000001]]\n```"
+    )
+    .unwrap()
+    .is_none());
+    assert!(replacement_id("## Replaces\n[[short]]").is_err());
+    assert!(replacement_id("## Replaces\n").is_err());
+    assert!(replacement_id("## Replaces\n[[0193fb1f-a3a0-7000-8000-000000000001]]\n## Replaces\n[[0193fb1f-a3a0-7000-8000-000000000002]]").is_err());
+}
+
+#[test]
+fn replacement_examples_in_nested_fences_and_indented_code_are_not_instructions() {
+    use dadrock::records::replacement_id;
+    let nested =
+        "````markdown\n```\n## Replaces\n[[0193fb1f-a3a0-7000-8000-000000000001]]\n```\n````";
+    assert!(replacement_id(nested).unwrap().is_none());
+    assert!(
+        replacement_id("    ## Replaces\n    [[0193fb1f-a3a0-7000-8000-000000000001]]")
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn replacement_staging_failure_leaves_candidate_and_original_unchanged() {
+    use std::os::unix::fs::PermissionsExt;
+    let root = temp_project("replacement-staging-failure");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+    let first = create_candidate(&project, "Previous choice", &[]).unwrap();
+    let old = accept_candidate(&project_index(&project), &first.id.to_string()).unwrap();
+    let nested = project.decisions_dir.join("nested");
+    fs::create_dir_all(&nested).unwrap();
+    let old_path = nested.join(old.to.file_name().unwrap());
+    fs::rename(&old.to, &old_path).unwrap();
+    let body = format!("## Context\nChanged needs.\n## Decision\nNew choice.\n## Alternatives\nOld choice.\n## Consequences\nNew results.\n## Replaces\n[[{}|Previous decision]]\n", old.id);
+    let candidate =
+        dadrock::records::create_candidate_with_body(&project, "New choice", &[], &body).unwrap();
+    let original = fs::read_to_string(&old_path).unwrap();
+    let proposed = fs::read_to_string(&candidate.path).unwrap();
+    let permissions = fs::metadata(&nested).unwrap().permissions();
+    fs::set_permissions(&nested, fs::Permissions::from_mode(0o500)).unwrap();
+    let result = accept_candidate(&project_index(&project), &candidate.id.to_string());
+    fs::set_permissions(&nested, permissions).unwrap();
+    assert!(result.is_err());
+    assert_eq!(fs::read_to_string(&old_path).unwrap(), original);
+    assert_eq!(fs::read_to_string(&candidate.path).unwrap(), proposed);
+    assert_eq!(project_index(&project).list_records(None).len(), 2);
+    fs::remove_dir_all(root).unwrap();
+}

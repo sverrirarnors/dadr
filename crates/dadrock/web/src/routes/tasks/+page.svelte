@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { taskActionLabel } from '$lib/tasks/presentation';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
@@ -48,6 +49,7 @@
   import { toasts } from '$lib/stores/toast.svelte';
 
   interface CandidateProposal {
+    supersedes?: string | undefined;
     id?: string;
     title: string;
     tags: string[];
@@ -240,7 +242,7 @@
     },
     onMutate: () => {
       runProgress = selectedTask
-        ? `Running ${selectedTask.manifest.title}. Waiting for the local agent...`
+        ? `Running ${taskActionLabel(selectedTask)}. Waiting for the local agent...`
         : 'Running task. Waiting for the local agent...';
       taskLogOpen = false;
       activeRunId = '';
@@ -363,6 +365,7 @@
         title: candidate.title,
         tags: candidate.tags,
         body_markdown: candidate.body_markdown,
+        supersedes: candidate.supersedes,
       }),
     onSuccess: finishCandidate,
     onError: (error) => {
@@ -902,6 +905,7 @@
 
   function supersessionCandidateProposal(result: TaskResult): CandidateProposal {
     return {
+      supersedes: stringField(result, 'superseded_record_id') || undefined,
       title: stringField(result, 'superseding_title') || 'Superseding candidate',
       tags: ['#writer/agent'],
       body_markdown: stringField(result, 'superseding_body_markdown'),
@@ -1130,7 +1134,7 @@
                   onchange={(event) => selectTask(event.currentTarget.value)}
                 >
                   {#each tasks as task (task.manifest.id)}
-                    <option value={task.manifest.id}>{task.manifest.title}</option>
+                    <option value={task.manifest.id}>{taskActionLabel(task)}</option>
                   {/each}
                 </select>
                 <p data-task-description class="mt-2 text-sm leading-5 text-fg-muted">

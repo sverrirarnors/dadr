@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { taskActionLabel } from '$lib/tasks/presentation';
   import type { TaskPackage } from '$lib/api';
   import { Badge } from '$lib/components/ui';
   import { PaneHeader, WorkbenchPane } from '$lib/components/workbench';
@@ -22,7 +23,7 @@
 <WorkbenchPane data-task-workflow-pane class="min-h-0 overflow-auto">
   <PaneHeader
     title="Task workflow"
-    subtitle={selectedTask ? selectedTask.manifest.title : `${taskCount} available tasks`}
+    subtitle={selectedTask ? taskActionLabel(selectedTask) : `${taskCount} available tasks`}
   />
   <div class="space-y-3 p-3 text-sm">
     {#if selectedTask}

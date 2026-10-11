@@ -388,6 +388,107 @@ pub fn reject_candidate(
     })
 }
 
+/// A replacement is ordinary Markdown, so the intent survives restarts and other clients.
+/// Only an explicit, standalone Replaces section is interpreted as a lifecycle request.
+pub fn pending_replacement(
+    index: &ProjectIndex,
+    query: &str,
+) -> Result<Option<ScannedRecordSummary>, DadrError> {
+    let found = index.resolve_one(query)?;
+    if found.record.status != RecordStatus::Candidate {
+        return Ok(None);
+    }
+    let record = require_record_status(
+        index,
+        &found.record,
+        RecordStatus::Candidate,
+        "accepted",
+        "replacement requires a candidate",
+    )?;
+    let Some(id) = replacement_id(&record.body.raw_markdown)? else {
+        return Ok(None);
+    };
+    let predecessor = index.resolve_one(&id.to_string())?.record;
+    if predecessor.id == found.record.id {
+        return Err(DadrError::InvalidLifecycleTransition(
+            "a decision cannot replace itself",
+        ));
+    }
+    supersedable_record(index, &predecessor)?;
+    if predecessor.superseded {
+        return Err(DadrError::InvalidLifecycleTransition(
+            "the previous decision has already been replaced; choose its current successor",
+        ));
+    }
+    Ok(Some(predecessor))
+}
+
+/// Read the optional Dadrock replacement instruction; ordinary references have no effect.
+pub fn replacement_id(body: &str) -> Result<Option<RecordId>, DadrError> {
+    let mut in_section = false;
+    let mut section_seen = false;
+    let mut content = Vec::new();
+    let mut fence: Option<(char, usize)> = None;
+    for raw_line in body.lines() {
+        // Indented code cannot introduce a lifecycle instruction.
+        if raw_line.starts_with("    ") || raw_line.starts_with('\t') {
+            continue;
+        }
+        let line = raw_line.trim_end();
+        let fence_line = line.trim_start();
+        let marker = fence_line
+            .chars()
+            .next()
+            .filter(|ch| *ch == '`' || *ch == '~');
+        let count = marker
+            .map(|ch| fence_line.chars().take_while(|c| *c == ch).count())
+            .unwrap_or(0);
+        if let Some((open_marker, open_count)) = fence {
+            if marker == Some(open_marker)
+                && count >= open_count
+                && fence_line[count..].trim().is_empty()
+            {
+                fence = None;
+            }
+            continue;
+        }
+        if count >= 3 {
+            fence = marker.map(|ch| (ch, count));
+            continue;
+        }
+        if line.starts_with("## ") {
+            in_section = line == "## Replaces";
+            if in_section {
+                if section_seen {
+                    return Err(DadrError::InvalidInput(
+                        "only one Replaces section is allowed",
+                    ));
+                }
+                section_seen = true;
+            }
+        } else if in_section && !line.is_empty() {
+            content.push(line);
+        }
+    }
+    if !section_seen {
+        return Ok(None);
+    }
+    let invalid = || {
+        DadrError::InvalidInput(
+            "Replaces must contain one full record ID link: [[uuid|Previous decision]]",
+        )
+    };
+    if content.len() != 1 {
+        return Err(invalid());
+    }
+    let link = content[0]
+        .strip_prefix("[[")
+        .and_then(|s| s.strip_suffix("]]"))
+        .ok_or_else(invalid)?;
+    let id = link.split('|').next().ok_or_else(invalid)?;
+    id.parse::<RecordId>().map(Some).map_err(|_| invalid())
+}
+
 pub fn accept_candidate(
     index: &ProjectIndex,
     query: &str,
@@ -410,12 +511,56 @@ pub fn accept_candidate(
         )));
     }
 
+    let predecessor = pending_replacement(index, query)?;
+    let replacement = predecessor
+        .as_ref()
+        .map(|old| {
+            let original = fs::read_to_string(utf8_to_path(&old.path))?;
+            let updated = rewrite_for_superseded_record(&original, &[found.record.id])?;
+            Ok::<_, DadrError>((old.path.clone(), original, updated))
+        })
+        .transpose()?;
+
     let accepted_filename =
         candidate_filename_excluding_id(index, found.record.id, &record.front_matter.title);
     let accepted_path = project.decisions_dir.join(accepted_filename);
 
     let original_content = fs::read_to_string(utf8_to_path(&found.record.path))?;
     let accepted_content = rewrite_for_converted_decision(&original_content)?;
+
+    // Stage both writes before changing either record. On an I/O error restore the
+    // original files, following the same rollback convention as supersede_records.
+    if let Some((old_path, old_content, updated_old)) = replacement {
+        if accepted_path != found.record.path && accepted_path.exists() {
+            return Err(DadrError::OverwriteCollision {
+                path: accepted_path,
+            });
+        }
+        let staged_candidate = file_store::stage_replace(&accepted_path, &accepted_content)?;
+        let staged_old = file_store::stage_replace(&old_path, &updated_old)?;
+        let result = (|| {
+            staged_candidate.commit()?;
+            staged_old.commit()?;
+            if accepted_path != found.record.path {
+                file_store::remove_file(&found.record.path)?;
+            }
+            Ok::<_, DadrError>(())
+        })();
+        if let Err(error) = result {
+            file_store::write_replace(&old_path, &old_content)?;
+            file_store::write_replace(&found.record.path, &original_content)?;
+            if accepted_path != found.record.path && accepted_path.exists() {
+                file_store::remove_file(&accepted_path)?;
+            }
+            return Err(error);
+        }
+        return Ok(AcceptRecordResult {
+            id: found.record.id,
+            from: found.record.path,
+            to: accepted_path,
+            status: RecordStatus::Accepted,
+        });
+    }
 
     if accepted_path == found.record.path {
         file_store::write_replace(&accepted_path, &accepted_content)?;

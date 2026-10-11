@@ -8,7 +8,7 @@ test('default route redirects to inbox and chrome renders', async ({ page }) => 
   await expect(page.getByLabel('Search scope')).toBeVisible();
   await expect(page.getByLabel('Toggle sidebar')).not.toBeVisible();
   await expect(page.locator('aside')).toHaveCount(0);
-  await expect(page.locator('header').getByRole('link', { name: 'Browse records' })).toBeVisible();
+  await expect(page.locator('header').getByRole('link', { name: 'Decisions' })).toBeVisible();
   await expect(page.getByLabel('Open command palette')).not.toBeVisible();
   await expect(page.getByLabel(/theme/i)).toBeVisible();
 });
@@ -19,7 +19,7 @@ test('command palette opens with keyboard shortcut and navigates', async ({ page
   await page.keyboard.press('Control+K');
   await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
   await page.getByPlaceholder('Search commands...').fill('records');
-  await page.getByRole('button', { name: 'Go to Records' }).click();
+  await page.getByRole('button', { name: 'Go to Decisions' }).click();
   await expect(page).toHaveURL(/\/records$/);
 });
 
@@ -56,20 +56,23 @@ test('theme toggle cycles and persists', async ({ page }) => {
   await expect(html).toHaveAttribute('data-theme', 'light');
 });
 
-test('navbar icons remain the only page selector', async ({ page }) => {
+test('navigation uses visible labels and keyboard-accessible secondary links on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 700 });
   await page.goto('/inbox');
-
-  await expect(page.locator('aside')).toHaveCount(0);
-  await expect(page.getByLabel('Toggle sidebar')).not.toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toHaveCount(1);
-  const taskLink = page.locator('header').getByRole('link', { name: 'Task runner' });
-  await expect(taskLink).toBeVisible();
-  await taskLink.hover();
-  await expect(taskLink.getByText('Tasks')).toBeVisible();
-
-  await page.keyboard.press('Control+Backslash');
-
-  await expect(page.locator('aside')).toHaveCount(0);
-  await expect(taskLink).toBeVisible();
-  await expect.poll(() => page.evaluate(() => localStorage.getItem('dadr.sidebar'))).toBeNull();
+  const header = page.locator('header');
+  await expect(header.getByRole('link', { name: 'To review' })).toBeVisible();
+  await expect(header.getByRole('link', { name: 'Decisions' })).toBeVisible();
+  await expect(header.getByRole('link', { name: 'Tools' })).toHaveCount(0);
+  const more = header.getByRole('button', { name: 'More' });
+  await more.focus();
+  await page.keyboard.press('Enter');
+  await expect(more).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Tab');
+  await expect(header.getByRole('link', { name: 'Tags' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(more).toBeFocused();
+  await more.click();
+  await header.getByRole('link', { name: 'Tools' }).click();
+  await expect(page).toHaveURL(/tasks$/);
+  await expect(more).toHaveAttribute('aria-expanded', 'false');
 });

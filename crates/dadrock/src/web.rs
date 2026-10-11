@@ -155,8 +155,34 @@ fn initialize_project(cwd: &Utf8PathBuf) -> Result<HttpResponse, ApiFailure> {
 }
 
 fn create_record(request: &HttpRequest, cwd: &Utf8PathBuf) -> Result<HttpResponse, ApiFailure> {
-    let body: CreateRecordRequest = json_body(request)?;
+    let mut body: CreateRecordRequest = json_body(request)?;
     let context = context_for(cwd)?;
+    if let Some(ref supersedes) = body.supersedes {
+        let (project, index) = initialized_index_for(cwd)?;
+        let old = index.resolve_one(supersedes)?.record;
+        if old.status != dadrock::model::RecordStatus::Accepted || old.superseded {
+            return Err(ApiFailure::bad_request(
+                "replacement requires a current accepted decision".to_owned(),
+            ));
+        }
+        let markdown = match body.body_markdown.take() {
+            Some(markdown) => markdown,
+            None => candidate_template_body(&project)?.body,
+        };
+        body.body_markdown = Some(match dadrock::records::replacement_id(&markdown)? {
+            Some(id) if id == old.id => markdown,
+            Some(_) => {
+                return Err(ApiFailure::bad_request(
+                    "Replaces link disagrees with the selected decision".to_owned(),
+                ))
+            }
+            None => format!(
+                "{}\n\n## Replaces\n\n[[{}|Previous decision]]\n",
+                markdown.trim_end(),
+                old.id
+            ),
+        });
+    }
     let envelope = if let Some(body_markdown) = body.body_markdown.as_deref() {
         core_commands::new_record_with_body(&context, body.title.trim(), &body.tags, body_markdown)?
     } else {
@@ -380,10 +406,28 @@ fn record_lifecycle(cwd: &Utf8PathBuf, query: &str) -> Result<HttpResponse, ApiF
     let tag_report = build_tag_report(&index);
     let tag_map = record_tag_map(&tag_report);
     let result = status_record(&index, query)?;
+    let mut diagnostics: Vec<_> = result
+        .diagnostics
+        .iter()
+        .map(api_diagnostic_from_record_diagnostic)
+        .collect();
+    let pending = match dadrock::records::pending_replacement(&index, query) {
+        Ok(pending) => pending,
+        Err(error) => {
+            diagnostics.push(ApiDiagnostic::error(
+                "invalid_replacement",
+                error.to_string(),
+            ));
+            None
+        }
+    };
 
     json_response(
         200,
         &ApiRecordLifecycle {
+            pending_supersedes: pending
+                .as_ref()
+                .map(|record| api_record(&index, record, &tag_map)),
             record: api_record(&index, &result.record, &tag_map),
             predecessors: result
                 .predecessors
@@ -395,11 +439,7 @@ fn record_lifecycle(cwd: &Utf8PathBuf, query: &str) -> Result<HttpResponse, ApiF
                 .iter()
                 .map(|record| api_record(&index, record, &tag_map))
                 .collect(),
-            diagnostics: result
-                .diagnostics
-                .iter()
-                .map(api_diagnostic_from_record_diagnostic)
-                .collect(),
+            diagnostics,
         },
     )
 }
@@ -1018,6 +1058,7 @@ struct ApiRecord {
 
 #[derive(Serialize)]
 struct ApiRecordLifecycle {
+    pending_supersedes: Option<ApiRecord>,
     record: ApiRecord,
     predecessors: Vec<ApiRecord>,
     successors: Vec<ApiRecord>,
@@ -1107,6 +1148,8 @@ struct ApiSettings {
 
 #[derive(Deserialize)]
 struct CreateRecordRequest {
+    #[serde(default)]
+    supersedes: Option<String>,
     title: String,
     #[serde(default)]
     tags: Vec<String>,
@@ -1171,6 +1214,69 @@ fn default_true() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn replacement_api_persists_intent_and_links_on_acceptance() {
+        let root = Utf8PathBuf::from_path_buf(
+            std::env::temp_dir().join(format!("dadrock-web-replacement-{}", RecordId::new_v7())),
+        )
+        .unwrap();
+        fs::create_dir_all(&root).unwrap();
+        initialize_project(&root).unwrap();
+        let create = |title: &str, supersedes: Option<&str>| {
+            let request = HttpRequest {
+                method: "POST".into(),
+                path: "/api/records".into(),
+                headers: vec![],
+                body: serde_json::to_vec(
+                    &serde_json::json!({"title": title, "tags": [], "supersedes": supersedes}),
+                )
+                .unwrap(),
+            };
+            let response = create_record(&request, &root).unwrap();
+            let value: serde_json::Value = serde_json::from_slice(&response.body).unwrap();
+            value["focus"]["selected_id"].as_str().unwrap().to_owned()
+        };
+        let old = create("Previous decision", None);
+        accept_candidate(&root, &old).unwrap();
+        let next = create("Replacement", Some(&old));
+        // Each API call rediscovers the on-disk project; no browser state is needed.
+        let pending: serde_json::Value =
+            serde_json::from_slice(&record_lifecycle(&root, &next).unwrap().body).unwrap();
+        assert_eq!(pending["pending_supersedes"]["id"], old);
+        let response = accept_candidate(&root, &next).unwrap();
+        let mutation: serde_json::Value = serde_json::from_slice(&response.body).unwrap();
+        assert!(mutation["changed_paths"].as_array().unwrap().len() >= 2);
+        let previous: serde_json::Value =
+            serde_json::from_slice(&record_lifecycle(&root, &old).unwrap().body).unwrap();
+        assert_eq!(previous["successors"][0]["id"], next);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn missing_replacement_predecessor_stays_editable_without_accepting() {
+        let root = Utf8PathBuf::from_path_buf(std::env::temp_dir().join(format!(
+            "dadrock-web-missing-replacement-{}",
+            RecordId::new_v7()
+        )))
+        .unwrap();
+        fs::create_dir_all(&root).unwrap();
+        initialize_project(&root).unwrap();
+        let context = context_for(&root).unwrap();
+        let body = format!("## Context\nContext\n## Decision\nDecision\n## Alternatives\nAlternatives\n## Consequences\nConsequences\n## Replaces\n[[{}|Missing decision]]\n", RecordId::new_v7());
+        let candidate = core_commands::new_record_with_body(&context, "Replacement", &[], &body)
+            .unwrap()
+            .data;
+        let before = fs::read_to_string(&candidate.path).unwrap();
+        let id = candidate.id.to_string();
+        let lifecycle: serde_json::Value =
+            serde_json::from_slice(&record_lifecycle(&root, &id).unwrap().body).unwrap();
+        assert_eq!(lifecycle["record"]["status"], "candidate");
+        assert_eq!(lifecycle["diagnostics"][0]["code"], "invalid_replacement");
+        assert!(accept_candidate(&root, &id).is_err());
+        assert_eq!(fs::read_to_string(&candidate.path).unwrap(), before);
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn mutation_focus_serializes_for_lifecycle_selection() {

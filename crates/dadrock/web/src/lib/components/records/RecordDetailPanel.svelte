@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { hasMissingRationale } from '$lib/candidates/review';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
@@ -302,6 +303,21 @@
     </div>
   {/if}
 
+  {#if isCandidate}
+    <Alert class="mt-3" variant="neutral" title={hasMissingRationale(source.data.content) ? 'Reason for this choice is missing' : 'Review this decision'}>
+      {#if hasMissingRationale(source.data.content)}
+        The draft describes what the code does, but does not document why. Edit the decision to add or correct your reason before accepting it.
+      {:else}
+        Check both what was done and why. Accepting means you endorse this decision and its explanation.
+      {/if}
+    </Alert>
+    {#if lifecycle.data.pending_supersedes}
+      <Alert class="mt-2" variant="neutral" title="Proposed replacement">
+        Accepting will replace <a class="text-accent underline" href={resolve(recordLink(lifecycle.data.pending_supersedes))}>{lifecycle.data.pending_supersedes.title}</a> and preserve its explanation.
+      </Alert>
+    {/if}
+  {/if}
+
   <ActionBar class="mt-2 border-0 bg-transparent px-0">
     <div class="flex flex-wrap items-center gap-2">
       {#if selectedTab === 'edit'}
@@ -380,14 +396,14 @@
           variant="outline"
           size="sm"
           class="border-success/40 bg-success/10 text-success hover:bg-success/20"
-          disabled={accept.isPending || reject.isPending}
+          disabled={accept.isPending || reject.isPending || dirty || save.isPending}
           onclick={() => accept.mutate()}
         >
           <Check class="h-3.5 w-3.5" />
           <span>{accept.isPending ? 'Accepting' : 'Accept'}</span>
         </Button>
       {:else if canSupersede}
-        <ActionMenu label="Supersede">
+        <ActionMenu label="Change this decision">
           <button
             role="menuitem"
             type="button"
@@ -398,7 +414,7 @@
               supersedeStatusFilter = 'accepted';
             }}
           >
-            <span>{supersedeExisting.isPending ? 'Superseding' : 'Supersede with existing records'}</span>
+            <span>{supersedeExisting.isPending ? 'Superseding' : 'Replace with existing decisions'}</span>
           </button>
           <a
             role="menuitem"
@@ -406,7 +422,7 @@
             href={resolve(`/candidates/new?supersedes=${encodeURIComponent((detailRecord ?? lifecycle.data.record).id)}`)}
           >
             <FilePlus2 class="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Supersede with new record</span>
+            <span>Draft a replacement</span>
           </a>
           <a
             role="menuitem"
@@ -414,7 +430,7 @@
             href={resolve(taskLink('supersede-record', (detailRecord ?? lifecycle.data.record).id))}
           >
             <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Supersede with agent</span>
+            <span>Draft a replacement with agent</span>
           </a>
         </ActionMenu>
       {/if}
@@ -423,7 +439,7 @@
 
   {#if supersedePickerOpen && snapshot.data}
     <RecordSelectionDialog
-      title="Supersede with existing records"
+      title="Replace with existing decisions"
       records={snapshot.data.records}
       selectedIds={[]}
       excludedIds={[lifecycle.data.record.id]}

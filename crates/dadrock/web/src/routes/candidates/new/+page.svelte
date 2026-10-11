@@ -10,7 +10,6 @@
     Alert,
     Button,
     PanelSection,
-    SegmentedTabs,
     TextareaInput,
     TextInput,
   } from '$lib/components/ui';
@@ -20,17 +19,9 @@
 
   const api = createApi();
   const queryClient = useQueryClient();
-  const modes: Array<{ value: 'manual' | 'agent'; label: string }> = [
-    { value: 'manual', label: 'Manual' },
-    { value: 'agent', label: 'Agent draft' },
-  ];
-
-  let mode = $state<'manual' | 'agent'>(readMode(page.url.searchParams.get('mode')));
   let title = $state('');
   let tags = $state('');
   let body = $state('');
-  let prompt = $state('');
-  let promptPacks = $state('');
   let supersessionPrefillApplied = $state(false);
   const supersedesRecordId = $derived(page.url.searchParams.get('supersedes') ?? '');
 
@@ -57,7 +48,7 @@
     const record = supersededRecord.data?.record;
     if (!template.data || !record || supersessionPrefillApplied) return;
     if (!title.trim()) {
-      title = `Supersede ${record.title}`;
+      title = `Update: ${record.title}`;
     }
     if (!tags.trim()) {
       tags = record.tags.join(' ');
@@ -93,27 +84,19 @@
         title: title.trim(),
         tags: parseListInput(tags),
         body_markdown: body,
+        supersedes: supersedesRecordId || undefined,
       }),
     onSuccess: finish,
   }));
 
-  const agentMutation = createMutation(() => ({
-    mutationFn: () =>
-      api.draftCandidate({
-        prompt: prompt.trim(),
-        prompt_packs: parseListInput(promptPacks),
-        write: true,
-      }),
-    onSuccess: finish,
-  }));
-
-  const busy = $derived(template.isPending || manualMutation.isPending || agentMutation.isPending);
+  const busy = $derived(template.isPending || manualMutation.isPending || (Boolean(supersedesRecordId) && !supersessionPrefillApplied));
   const manualReady = $derived(title.trim().length > 0 && body.trim().length > 0 && !busy);
-  const agentReady = $derived(prompt.trim().length > 0 && !busy);
 
-  function readMode(value: string | null): 'manual' | 'agent' {
-    return value === 'agent' ? 'agent' : 'manual';
-  }
+  $effect(() => {
+    if (page.url.searchParams.get('mode') === 'agent') {
+      goto(resolve('/tasks?task=context-to-record'), { replaceState: true });
+    }
+  });
 </script>
 
 <WorkbenchPage layout="single" class="h-full">
@@ -122,7 +105,7 @@
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-2xl font-semibold">New Candidate</h1>
-        <p class="mt-1 text-sm text-fg-muted">Create a candidate decision manually or from an agent draft.</p>
+        <p class="mt-1 text-sm text-fg-muted">Write a proposed decision, then review and accept it.</p>
       </div>
       <a href={resolve('/records')} class="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg">
         <ArrowLeft class="h-4 w-4" aria-hidden="true" />
@@ -134,18 +117,23 @@
       <Alert class="mt-6" variant="danger" title="Failed to load candidate template">{template.error.message}</Alert>
     {/if}
 
-    {#if manualMutation.isError || agentMutation.isError}
+    {#if manualMutation.isError}
       <Alert class="mt-6" variant="danger" title="Candidate creation failed">
-        {manualMutation.error?.message ?? agentMutation.error?.message}
+        {manualMutation.error?.message}
       </Alert>
     {/if}
 
+    {#if supersedesRecordId}
+      <Alert class="mt-4" variant="neutral" title="Change this decision">
+        Accepting this replacement will link it to the previous decision and preserve the previous explanation.
+      </Alert>
+      {#if supersededRecord.isError}
+        <Alert variant="danger" title="Could not load previous decision">{supersededRecord.error.message}</Alert>
+      {/if}
+    {:else}
+      <a class="mt-4 inline-block text-sm text-accent hover:underline" href={resolve('/tasks?task=context-to-record')}>Draft a decision with an agent</a>
+    {/if}
     <PanelSection class="mt-6 p-0">
-      <div class="border-b border-border p-1">
-        <SegmentedTabs items={modes} value={mode} ariaLabel="Candidate creation mode" onselect={(value) => (mode = value)} />
-      </div>
-
-      {#if mode === 'manual'}
         <form
           class="space-y-4 p-4"
           onsubmit={(event) => {
@@ -191,43 +179,6 @@
             </Button>
           </div>
         </form>
-      {:else}
-        <form
-          class="space-y-4 p-4"
-          onsubmit={(event) => {
-            event.preventDefault();
-            if (agentReady) agentMutation.mutate();
-          }}
-        >
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium text-fg">Draft Prompt</span>
-            <TextareaInput
-              bind:value={prompt}
-              class="min-h-40"
-              placeholder="Describe the decision context the agent should turn into a candidate."
-            />
-          </label>
-
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium text-fg">Prompt Packs</span>
-            <TextInput
-              bind:value={promptPacks}
-              type="text"
-              placeholder="dadr"
-            />
-          </label>
-
-          <div class="flex justify-end">
-            <Button
-              type="submit"
-              disabled={!agentReady}
-              size="lg"
-            >
-              {agentMutation.isPending ? 'Drafting...' : 'Draft candidate'}
-            </Button>
-          </div>
-        </form>
-      {/if}
     </PanelSection>
     </div>
   </WorkbenchPane>

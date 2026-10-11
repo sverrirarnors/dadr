@@ -30,7 +30,9 @@ test('tasks route lets users choose a built-in task and run it', async ({ page }
   await expect(page.getByRole('button', { name: 'Customize task' })).toHaveCount(0);
   await expect(page.getByText('7 available tasks')).toBeVisible();
   await expect(page.getByText('Ready to run a task.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Task runner' })).toBeVisible();
+  await page.locator('header').getByRole('button', { name: 'More' }).click();
+  await expect(page.locator('header').getByRole('link', { name: 'Tools' })).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(page.getByLabel('Records to audit')).toHaveCount(0);
   await expect(page.getByLabel('Scope')).toHaveCount(0);
   await expect(page.locator('[data-task-context-nav]').getByRole('tab', { name: /^System prompt$/ })).toHaveCount(0);
@@ -548,7 +550,7 @@ test('tasks route uses Files for path-like task fields', async ({ page }) => {
 
   await page.getByRole('combobox', { name: 'Task' }).selectOption('code-to-record');
   await expect(page.getByLabel('Path')).toHaveCount(0);
-  await expect(page.locator('[data-task-context-nav]').getByRole('tab', { name: /^Files & Directories 0$/ })).toBeVisible();
+  await expect(page.locator('[data-task-context-nav]').getByRole('tab', { name: /^Files & Directories 1$/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Run task' })).toBeEnabled();
   await expect(page.locator('[data-task-run-requirement-message]')).toHaveCount(0);
 

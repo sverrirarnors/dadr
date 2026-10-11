@@ -4,7 +4,7 @@ import {
   buildCommandPaletteItems,
   filterCommandPaletteItems,
 } from '../../src/lib/command-palette/items';
-import { primaryNavItems } from '../../src/lib/navigation/routes';
+import { allNavItems } from '../../src/lib/navigation/routes';
 
 const records: RecordSummary[] = [
   {
@@ -25,7 +25,7 @@ describe('buildCommandPaletteItems', () => {
   it('includes navigation, record, and action items', () => {
     const items = buildCommandPaletteItems(records);
 
-    expect(items.some((item) => item.label === 'Go to Records' && item.section === 'Navigation')).toBe(true);
+    expect(items.some((item) => item.label === 'Go to Decisions' && item.section === 'Navigation')).toBe(true);
     expect(
       items.some(
         (item) =>
@@ -50,7 +50,7 @@ describe('buildCommandPaletteItems', () => {
       items
         .filter((item) => item.section === 'Navigation')
         .map((item) => ({ label: item.label, route: item.route })),
-    ).toEqual(primaryNavItems.map((item) => ({ label: `Go to ${item.label}`, route: item.href })));
+    ).toEqual(allNavItems.map((item) => ({ label: `Go to ${item.label}`, route: item.href })));
   });
 });
 

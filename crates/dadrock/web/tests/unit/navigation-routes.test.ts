@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { candidateInboxHref, isPrimaryNavItemActive, primaryNavItems } from '../../src/lib/navigation/routes';
+import { candidateInboxHref, isPrimaryNavItemActive, allNavItems } from '../../src/lib/navigation/routes';
 
-function navItem(id: (typeof primaryNavItems)[number]['id']) {
-  const item = primaryNavItems.find((candidate) => candidate.id === id);
+function navItem(id: (typeof allNavItems)[number]['id']) {
+  const item = allNavItems.find((candidate) => candidate.id === id);
   if (!item) throw new Error(`missing nav item: ${id}`);
   return item;
 }
