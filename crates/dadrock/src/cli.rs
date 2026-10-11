@@ -368,7 +368,7 @@ pub struct TaskRunArgs {
     /// Describe the decision to capture.
     #[arg(long)]
     pub context: Option<String>,
-    /// Focus the code review on a topic.
+    /// Topic to concentrate on (code-to-record, decisions-to-spec).
     #[arg(long)]
     pub focus: Option<String>,
     /// Maximum initial candidates (code-to-record defaults to 5).
@@ -414,6 +414,12 @@ impl TaskRunArgs {
                 anyhow::ensure!(
                     self.path.is_none() && self.focus.is_none() && self.limit.is_none(),
                     "context-to-record accepts --context"
+                );
+            }
+            "decisions-to-spec" => {
+                anyhow::ensure!(
+                    self.path.is_none() && self.context.is_none() && self.limit.is_none(),
+                    "decisions-to-spec accepts --focus"
                 );
             }
             _ => anyhow::ensure!(input.is_empty(), "use --input-json for custom task inputs"),
@@ -806,6 +812,17 @@ mod simple_workflow_tests {
                 "Exclude missing income"
             ]),
             serde_json::json!({"context":"Exclude missing income"})
+        );
+        assert_eq!(
+            input(&[
+                "dadrock",
+                "task",
+                "run",
+                "decisions-to-spec",
+                "--focus",
+                "inference"
+            ]),
+            serde_json::json!({"focus":"inference"})
         );
     }
     #[test]
