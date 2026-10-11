@@ -17,11 +17,12 @@ use rmcp::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+use crate::history::{RecordDiffResult, RecordHistory};
 use crate::{
     agent::types::AgentProjectSnapshot,
     commands::{
-        self, CommandContext, CommandEnvelope, ListRecordsRequest, RecordViewFilter,
-        SupersedeRecordsRequest, ValidateRecordsResult,
+        self, CommandContext, CommandEnvelope, ListRecordsRequest, NewSuccessorRequest,
+        RecordViewFilter, SupersedeRecordsRequest, ValidateRecordsResult,
     },
     error::{DadrError, DomainErrorKind},
     index::ProjectIndex,
@@ -41,6 +42,8 @@ const TOOL_GET_RECORD: &str = "dadrock.get_record";
 const TOOL_SEARCH_RECORDS: &str = "dadrock.search_records";
 const TOOL_RESOLVE_RECORD: &str = "dadrock.resolve_record";
 const TOOL_STATUS: &str = "dadrock.status";
+const TOOL_HISTORY: &str = "dadrock.history";
+const TOOL_DIFF: &str = "dadrock.diff";
 const TOOL_LIST_TAGS: &str = "dadrock.list_tags";
 const TOOL_LIST_TASKS: &str = "dadrock.list_tasks";
 const TOOL_GET_TASK: &str = "dadrock.get_task";
@@ -183,6 +186,32 @@ impl DadrockMcpServer {
                 })),
             ),
             read_tool(
+                TOOL_HISTORY,
+                "Run `dadrock history` and return a command envelope with the versions of the decision containing one record (newest first, each with its body without `## Supersedes`), the supersession links between them with the reason from each successor's `## Supersedes` section, neighbors (the other half of a split, the other input of a merge), and each version's `edits`: the title and body edits Git recorded since the version was accepted or rejected, newest first (null outside a Git repository). With `patch`, each link and each edit carries its diff.",
+                object_schema(json!({
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "patch": {"type": "boolean"}
+                    },
+                    "required": ["query"],
+                    "additionalProperties": false
+                })),
+            ),
+            read_tool(
+                TOOL_DIFF,
+                "Run `dadrock diff` and return a command envelope comparing two records from `old` to `new`: title change, tags added and removed, and a line diff of the bodies without `## Supersedes`.",
+                object_schema(json!({
+                    "type": "object",
+                    "properties": {
+                        "old": {"type": "string"},
+                        "new": {"type": "string"}
+                    },
+                    "required": ["old", "new"],
+                    "additionalProperties": false
+                })),
+            ),
+            read_tool(
                 TOOL_LIST_TAGS,
                 "Run `dadrock tags list` and return a command envelope with normalized YAML and inline DADR tags.",
                 empty_schema(),
@@ -237,7 +266,7 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_CREATE_CANDIDATE,
-                "Run `dadrock new` to create a candidate DADR from a title, tags, and optional body Markdown.",
+                "Run `dadrock new` to create a candidate DADR from a title, tags, and optional body Markdown. With `supersedes`, the candidate is a successor: Dadrock writes its `## Supersedes` section first in the body, linking each named current decision, then `supersedes_reason`. Accepting it supersedes those decisions.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {
@@ -246,7 +275,16 @@ impl DadrockMcpServer {
                             "type": "array",
                             "items": {"type": "string"}
                         },
-                        "body_markdown": {"type": "string"}
+                        "body_markdown": {"type": "string"},
+                        "supersedes": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Accepted, current records the candidate supersedes (several for a merge)."
+                        },
+                        "supersedes_reason": {
+                            "type": "string",
+                            "description": "Why the decision changed, written in `## Supersedes` after the links."
+                        }
                     },
                     "required": ["title"],
                     "additionalProperties": false
@@ -255,11 +293,16 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_ACCEPT_RECORD,
-                "Run `dadrock status accept` to convert a valid candidate into an accepted decision.",
+                "Run `dadrock status accept` to convert a valid candidate into an accepted decision in the ledger. `with` accepts more candidates in the same operation. Each record named in a `## Supersedes` section of the set gains every candidate in the set that names it as a successor and moves to the archive; nothing changes if any check fails.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {
-                        "query": {"type": "string"}
+                        "query": {"type": "string"},
+                        "with": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "More candidates to accept together with `query`, such as the other halves of a split."
+                        }
                     },
                     "required": ["query"],
                     "additionalProperties": false
@@ -268,7 +311,7 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_REJECT_RECORD,
-                "Run `dadrock status reject` to reject a candidate and move it into the rejected records directory.",
+                "Run `dadrock status reject` to reject a candidate and move it to the archive.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {
@@ -281,7 +324,7 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_SUPERSEDE_RECORDS,
-                "Run `dadrock status supersede` to link accepted successors to the accepted records they supersede.",
+                "Run `dadrock status supersede` to link accepted successors to the accepted records they supersede and move those records to the archive.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {
@@ -363,6 +406,8 @@ impl DadrockMcpServer {
                 serde_json::to_value(self.resolve_record(arguments)?).map_err(Into::into)
             }
             TOOL_STATUS => serde_json::to_value(self.status(arguments)?).map_err(Into::into),
+            TOOL_HISTORY => serde_json::to_value(self.history(arguments)?).map_err(Into::into),
+            TOOL_DIFF => serde_json::to_value(self.diff(arguments)?).map_err(Into::into),
             TOOL_LIST_TAGS => serde_json::to_value(self.list_tags()?).map_err(Into::into),
             TOOL_LIST_TASKS => serde_json::to_value(self.list_tasks()).map_err(Into::into),
             TOOL_GET_TASK => serde_json::to_value(self.get_task(arguments)?).map_err(Into::into),
@@ -453,6 +498,24 @@ impl DadrockMcpServer {
         commands::show_status(&self.context, &query)
     }
 
+    fn history(
+        &self,
+        arguments: Option<JsonObject>,
+    ) -> Result<CommandEnvelope<RecordHistory>, DadrError> {
+        let query = required_string(&arguments, "query")?;
+        let patch = optional_bool(&arguments, "patch").unwrap_or(false);
+        commands::history(&self.context, &query, patch)
+    }
+
+    fn diff(
+        &self,
+        arguments: Option<JsonObject>,
+    ) -> Result<CommandEnvelope<RecordDiffResult>, DadrError> {
+        let old = required_string(&arguments, "old")?;
+        let new = required_string(&arguments, "new")?;
+        commands::diff(&self.context, &old, &new)
+    }
+
     fn list_tags(&self) -> Result<CommandEnvelope<TagReport>, DadrError> {
         commands::list_tags(&self.context)
     }
@@ -496,6 +559,19 @@ impl DadrockMcpServer {
     ) -> Result<CommandEnvelope<NewRecordResult>, DadrError> {
         let title = required_string(&arguments, "title")?;
         let tags = optional_string_array(&arguments, "tags")?;
+        let supersedes = optional_string_array(&arguments, "supersedes")?;
+        if !supersedes.is_empty() {
+            return commands::new_successor_record(
+                &self.context,
+                NewSuccessorRequest {
+                    title,
+                    tags,
+                    body_markdown: optional_string(&arguments, "body_markdown"),
+                    supersedes,
+                    reason: optional_string(&arguments, "supersedes_reason"),
+                },
+            );
+        }
         if let Some(body_markdown) = optional_string(&arguments, "body_markdown") {
             commands::new_record_with_body(&self.context, &title, &tags, &body_markdown)
         } else {
@@ -507,8 +583,9 @@ impl DadrockMcpServer {
         &self,
         arguments: Option<JsonObject>,
     ) -> Result<CommandEnvelope<AcceptRecordResult>, DadrError> {
-        let query = required_string(&arguments, "query")?;
-        commands::accept_record(&self.context, &query)
+        let mut queries = vec![required_string(&arguments, "query")?];
+        queries.extend(optional_string_array(&arguments, "with")?);
+        commands::accept_records(&self.context, &queries)
     }
 
     fn reject_record(
@@ -918,6 +995,38 @@ mod tests {
         assert!(!tools
             .iter()
             .any(|tool| tool.name == "dadrock.accept_record"));
+    }
+
+    #[test]
+    fn read_only_dadrock_mcp_serves_history_and_diff() {
+        let root =
+            std::env::temp_dir().join(format!("dadrock-mcp-history-{}", crate::RecordId::new_v7()));
+        std::fs::create_dir_all(&root).unwrap();
+        crate::project::init_project(&root).unwrap();
+        let context = CommandContext::from_path(&root).unwrap();
+        let created = crate::commands::new_record(&context, "Only version", &[]).unwrap();
+        let id = created.data.id.to_string();
+        let server = DadrockMcpServer::new_with_access(context, DadrockMcpAccess::ReadOnly);
+
+        let history = server
+            .call_tool_value(
+                "dadrock.history",
+                super::object_schema(serde_json::json!({"query": id, "patch": true})).into(),
+            )
+            .unwrap();
+        assert_eq!(history["command"], "history");
+        assert_eq!(history["data"]["record"], id.as_str());
+        assert_eq!(history["data"]["versions"][0]["current"], true);
+
+        let diff = server
+            .call_tool_value(
+                "dadrock.diff",
+                super::object_schema(serde_json::json!({"old": id, "new": id})).into(),
+            )
+            .unwrap();
+        assert_eq!(diff["command"], "diff");
+        assert_eq!(diff["data"]["diff"]["changed"], false);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

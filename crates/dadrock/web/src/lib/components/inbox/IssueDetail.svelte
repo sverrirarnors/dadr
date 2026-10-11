@@ -7,7 +7,7 @@
   import { diagnosticLocation } from '$lib/diagnostics';
   import { diagnosticFixInstructions, recordEditHref } from '$lib/diagnostics/actions';
   import type { IssueItem } from '$lib/inbox/items';
-  import { kindBadge, severityVariant } from '$lib/inbox/presentation';
+  import { isCurrentDecision, kindBadge, severityVariant } from '$lib/inbox/presentation';
   import { composer } from '$lib/stores/composer.svelte';
   import { resolvedItems } from '$lib/stores/resolved.svelte';
   import { toasts } from '$lib/stores/toast.svelte';
@@ -26,12 +26,23 @@
     ].filter((fact): fact is NonNullable<typeof fact> => fact !== null),
   );
 
+  /**
+   * The agent revises a candidate in place and drafts a successor of a
+   * decision in force. It never edits decided text, so an archived record is
+   * corrected by hand: Open record.
+   */
+  const fixable = $derived(
+    item.record ? item.record.status === 'candidate' || isCurrentDecision(item.record) : false,
+  );
+
   function fixWithAgent() {
     if (!item.record) return;
+    const current = item.record.status !== 'candidate';
     composer.show({
-      mode: 'revise',
+      mode: current ? 'supersede' : 'revise',
       recordIds: [item.record.id],
       text: diagnosticFixInstructions(item.category, item.diagnostic),
+      ...(current ? { view: 'agent' as const } : {}),
     });
   }
 
@@ -82,7 +93,7 @@
       <a class={buttonVariants({ variant: 'outline', size: 'sm' })} data-inbox-action="open" href={resolve(recordEditHref(item.record))}>
         Open record
       </a>
-      {#if agentAvailable}
+      {#if agentAvailable && fixable}
         <Button type="button" variant="outline" size="sm" data-inbox-action="primary" onclick={fixWithAgent}>
           <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
           <span>Fix with agent</span>

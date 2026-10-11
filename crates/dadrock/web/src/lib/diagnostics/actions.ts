@@ -18,7 +18,7 @@ export function recordForDiagnostic(diagnostic: Diagnostic, records: RecordSumma
 
 /** Opens the affected record in the Ledger with the editor showing. */
 export function recordEditHref(record: RecordSummary): LedgerHref {
-  return ledgerUrl({ id: record.id, tab: 'edit', history: record.status !== 'accepted' || record.superseded });
+  return ledgerUrl({ id: record.id, tab: 'edit', archived: record.status !== 'accepted' || record.superseded });
 }
 
 /** Instructions handed to the agent when asked to fix a diagnostic. */

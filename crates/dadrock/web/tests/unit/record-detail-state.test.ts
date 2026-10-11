@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RecordSummary } from '../../src/lib/api';
-import { detailActionRecord, detailActions } from '../../src/lib/records/detail-state';
+import { detailActionRecord, detailActions, successorDraft } from '../../src/lib/records/detail-state';
 
 const candidate: RecordSummary = {
   id: '0193fb1f-a3a0-7000-8000-000000000002',
@@ -9,7 +9,7 @@ const candidate: RecordSummary = {
   title: 'Adopt pre-registration for studies',
   status: 'candidate',
   superseded: false,
-  path: 'dadr/candidates/0002-preregister.md',
+  path: 'dadr/inbox/preregister.md',
   preview: 'Candidate decision.',
   tags: ['#dadr/methodology'],
   timestamp_ms: 1730000100000,
@@ -18,7 +18,7 @@ const candidate: RecordSummary = {
 const accepted: RecordSummary = {
   ...candidate,
   status: 'accepted',
-  path: 'dadr/accepted/0002-preregister.md',
+  path: 'dadr/ledger/preregister.md',
 };
 
 describe('detailActionRecord', () => {
@@ -36,10 +36,12 @@ describe('detailActionRecord', () => {
 });
 
 describe('detailActions', () => {
-  it('lets the inbox edit, revise, reject, and accept a candidate', () => {
+  it('lets the inbox edit in place, revise, reject, and accept a candidate', () => {
     expect(detailActions({ surface: 'inbox', status: 'candidate', agentAvailable: true })).toEqual({
       primary: ['edit', 'revise'],
       lifecycle: ['reject', 'accept'],
+      revise: 'edit-record',
+      correction: false,
     });
   });
 
@@ -47,32 +49,43 @@ describe('detailActions', () => {
     expect(detailActions({ surface: 'inbox', status: 'candidate', agentAvailable: false })).toEqual({
       primary: ['edit'],
       lifecycle: ['reject', 'accept'],
+      revise: null,
+      correction: false,
     });
     expect(detailActions({ surface: 'ledger', status: 'accepted', agentAvailable: false })).toEqual({
       primary: ['edit'],
       lifecycle: ['supersede'],
+      revise: null,
+      correction: true,
     });
   });
 
-  it('lets the ledger supersede only a current accepted decision', () => {
+  it('corrects a decision in force in place, supersedes it, and revises it with the agent as a successor', () => {
     expect(detailActions({ surface: 'ledger', status: 'accepted', agentAvailable: true })).toEqual({
       primary: ['edit', 'revise'],
       lifecycle: ['supersede'],
+      revise: 'supersede-record',
+      correction: true,
     });
-    expect(detailActions({ surface: 'ledger', status: 'superseded', agentAvailable: true })).toEqual({
-      primary: ['edit', 'revise'],
-      lifecycle: [],
-    });
-    expect(detailActions({ surface: 'ledger', status: 'rejected', agentAvailable: true })).toEqual({
-      primary: ['edit', 'revise'],
-      lifecycle: [],
-    });
+  });
+
+  it('only corrects archived records: Edit, but no Revise or Supersede', () => {
+    for (const status of ['superseded', 'rejected'] as const) {
+      expect(detailActions({ surface: 'ledger', status, agentAvailable: true })).toEqual({
+        primary: ['edit'],
+        lifecycle: [],
+        revise: null,
+        correction: true,
+      });
+    }
   });
 
   it('only offers to edit a candidate reached through the ledger', () => {
     expect(detailActions({ surface: 'ledger', status: 'candidate', agentAvailable: true })).toEqual({
       primary: ['edit'],
       lifecycle: [],
+      revise: null,
+      correction: false,
     });
   });
 
@@ -80,6 +93,15 @@ describe('detailActions', () => {
     expect(detailActions({ surface: 'inbox', status: 'accepted', agentAvailable: true })).toEqual({
       primary: ['edit', 'revise'],
       lifecycle: [],
+      revise: 'supersede-record',
+      correction: true,
     });
+  });
+});
+
+describe('successorDraft', () => {
+  it('opens the Draft page in supersede mode, by hand for Supersede and with the agent for Revise', () => {
+    expect(successorDraft('supersede', 'acc-1')).toEqual({ mode: 'supersede', recordIds: ['acc-1'], view: 'manual' });
+    expect(successorDraft('revise', 'acc-1')).toEqual({ mode: 'supersede', recordIds: ['acc-1'], view: 'agent' });
   });
 });

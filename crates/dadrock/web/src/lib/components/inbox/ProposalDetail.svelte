@@ -31,8 +31,13 @@
 
   const tags = $derived(parseListInput(tagsInput));
   const canSave = $derived(title.trim().length > 0 && body.trim().length > 0);
-  const supersedesHref = $derived(
-    item.supersededRecord ? recordLedgerHref(item.supersededRecord) : ledgerUrl({ id: item.proposal.supersedes }),
+  const supersedes = $derived(item.proposal.supersedes ?? []);
+  /** Each predecessor, linked in the Ledger; unknown ids link by id. */
+  const predecessors = $derived(
+    supersedes.map((id) => {
+      const record = item.supersededRecords?.find((candidate) => candidate.id === id);
+      return { id, title: record?.title ?? id, href: record ? recordLedgerHref(record) : ledgerUrl({ id }) };
+    }),
   );
 
   const save = createMutation(() => ({
@@ -42,6 +47,7 @@
         tags,
         body_markdown: body,
         supersedes: item.proposal.supersedes,
+        supersedes_reason: item.proposal.supersedes_reason,
       }),
     onSuccess: async (response) => {
       const itemId = item.id;
@@ -68,7 +74,7 @@
         {#each tags as tag (tag)}
           <InlineLinkBadge href={resolve(ledgerUrl({ tag }))}>{tag}</InlineLinkBadge>
         {/each}
-        {#if !item.proposal.supersedes}
+        {#if !supersedes.length}
           <span>{item.subtitle}</span>
         {/if}
       </MetadataStrip>
@@ -84,10 +90,15 @@
       </Alert>
     {/if}
 
-    {#if item.proposal.supersedes}
-      <Alert variant="info" title={`Replaces “${item.supersededRecord?.title ?? item.proposal.supersedes}”`}>
-        Accepting the saved candidate will link it to the original and keep the original as history.
-        <a class="ml-1 text-accent underline" href={resolve(supersedesHref)}>Open the original</a>
+    {#if predecessors.length}
+      <Alert variant="info" title={`Supersedes ${predecessors.map((record) => `“${record.title}”`).join(', ')}`}>
+        Accepting the saved candidate supersedes {predecessors.length === 1 ? 'this decision, which moves' : 'these decisions, which move'}
+        to the archive unchanged.
+        {#each predecessors as predecessor (predecessor.id)}
+          <a class="ml-1 text-accent underline" href={resolve(predecessor.href)}>
+            Open {predecessors.length === 1 ? 'the predecessor' : `“${predecessor.title}”`}
+          </a>
+        {/each}
       </Alert>
     {/if}
 

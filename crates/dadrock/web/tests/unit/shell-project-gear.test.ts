@@ -53,7 +53,7 @@ describe('projectFacts', () => {
     const snapshot = {
       project: {
         cwd: '/tmp/dadr-mock',
-        decisions_dir: '/tmp/dadr-mock/dadr/accepted',
+        decisions_dir: '/tmp/dadr-mock/dadr/ledger',
         initialized: true,
         discovery_source: 'directory',
         status: 'ok',
@@ -63,7 +63,7 @@ describe('projectFacts', () => {
 
     expect(projectFacts(snapshot)).toEqual([
       { key: 'root', label: 'Root', value: '/tmp/dadr-mock', mono: true },
-      { key: 'decisions', label: 'Decisions', value: '/tmp/dadr-mock/dadr/accepted', mono: true },
+      { key: 'decisions', label: 'Decisions', value: '/tmp/dadr-mock/dadr/ledger', mono: true },
       { key: 'discovery', label: 'Discovery', value: 'directory', mono: false },
       { key: 'agent', label: 'Agent', value: 'claude-agent-acp', mono: false },
     ]);

@@ -22,9 +22,10 @@ pub struct ProjectIndex {
 
 impl ProjectIndex {
     pub fn scan(project: &ProjectContext) -> Result<Self, DadrError> {
-        let mut scanned = scan_records(&project.decisions_dir)?;
-        scanned.extend(scan_records(&project.candidates_dir())?);
-        scanned.extend(scan_records(&project.rejected_dir())?);
+        let mut scanned = Vec::new();
+        for dir in project.record_dirs() {
+            scanned.extend(scan_records(&dir)?);
+        }
         Ok(Self::from_scanned(project.clone(), scanned))
     }
 
@@ -58,10 +59,6 @@ impl ProjectIndex {
 
     pub fn project(&self) -> &ProjectContext {
         &self.project
-    }
-
-    pub fn decisions_dir(&self) -> &camino::Utf8Path {
-        &self.project.decisions_dir
     }
 
     pub fn scanned_records(&self) -> &[ScannedRecord] {
@@ -206,19 +203,14 @@ impl ProjectIndex {
         find_result(&target.to_string(), matches)
     }
 
-    /// Whether a short id is used by a record, or by a file that names it but
-    /// could not be parsed.
+    /// Whether a record uses a short id. Identity lives in front matter only:
+    /// a filename never reserves a short id.
     pub fn short_id_taken(&self, short_id: &str) -> bool {
-        let filename_prefix = format!("{short_id}-");
         self.scanned.iter().any(|scanned| {
             scanned
                 .record
                 .as_ref()
                 .is_some_and(|record| record.front_matter.id.short_id() == short_id)
-                || scanned
-                    .path
-                    .file_name()
-                    .is_some_and(|name| name.starts_with(&filename_prefix))
         })
     }
 }

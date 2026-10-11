@@ -1,19 +1,19 @@
 ---
 id: supersede-record
 title: "Supersede record"
-description: "Draft a replacement candidate for an accepted DADR when the project decision has changed."
-version: 1
+description: "Draft a successor candidate that supersedes one or more accepted DADRs when the decision has changed."
+version: 2
 inputs:
-  - name: record_id
-    label: "Record to supersede"
-    type: text
+  - name: record_ids
+    label: "Records to supersede"
+    type: textarea
     required: true
-  - name: reason
-    label: "Reason"
+  - name: requested_changes
+    label: "Requested changes"
     type: textarea
     required: true
 requirements:
-  records: one
+  records: one_or_more
   record_status: accepted
   paths: none
   notes: required
@@ -28,51 +28,55 @@ tools:
 
 # Supersede record
 
-Draft a replacement for an accepted DADR whose decision has changed. DADR never rewrites an accepted decision: the predecessor stays as history, and the replacement is a new candidate. Once a human accepts the replacement, dadrock adds it to the predecessor's `successors`.
+Draft a successor: a new candidate that, once a human accepts it, supersedes one or more accepted records, its predecessors. Agents never edit an accepted record. A person may correct its wording in place when the meaning stays the same (spelling, formatting, links, citations); every change to what was decided goes through a successor. When the successor is accepted, dadrock adds its id to each predecessor's `successors` and moves the predecessors to `dadr/archive/`.
 
 ## Inputs
 
-- `record_id`: the accepted record to replace.
-- `reason`: why the decision changed, such as new evidence, a plan amendment, a conflict with another decision, or a clarified scope.
+- `record_ids`: the accepted records to supersede, one per line. Several records make a merge: one successor takes the place of all of them.
+- `requested_changes`: what the analyst wants changed, and usually why: new evidence, a plan amendment, a conflict with another decision, a correction.
 
 Interactively, these come from the user's request. "I changed my mind" is a valid reason, but state it concretely.
 
-The predecessor must be accepted and not yet superseded. If it has already been replaced, its current successor is the decision to replace; say so rather than drafting.
+Each predecessor must be accepted and current. A superseded record is closed: its current successors hold the decision now in force. Say so and name them rather than drafting; the change belongs in a successor of those decisions. If the records are still candidates, revise them with [edit-record](edit-record.md) or consolidate them with [merge-records](merge-records.md).
 
-## What carries over
+Read each predecessor in full before writing: title, tags, and the four sections, with their exact wording.
 
-- **Valid rationale.** Reasons in the old Context, Alternatives, or Consequences that still hold, reshaped for the new decision rather than copied.
-- **Source links** that still resolve, with updated line ranges.
-- **Tags** that still apply (`kind/`, `topic/`, `plan/`), plus `writer/agent`. Drop tags that no longer fit.
+## Start from the predecessor's exact text
 
-Do not silently discard evidence or alternatives from the old record: carry them over, or explain in the rationale why they no longer apply.
+The reviewer reads the successor as a diff against its predecessor, so every unnecessary edit is noise.
 
-## What must change
+- **One predecessor:** copy its title, tags, and four sections exactly, then change only what the request requires. Leave every other sentence, link, citation, and line break as it is. A different estimator may change one phrase; a new cutoff changes the sentences that state the cutoff and the consequences that follow from it.
+- **Several predecessors (a merge):** combine their sections into one decision. Keep each predecessor's wording where it still holds, remove repetition, and change only what the merged decision requires. Keep the tags that still apply.
+- Keep the title unless the request changes what the decision is about. A title is a noun phrase, not a question.
+- Keep source links that still resolve, and update line ranges that have shifted. Do not invent paths or line numbers.
+- When the decision itself changed, the predecessor's choice often becomes an alternative, with the reason it no longer holds.
 
-Write the replacement to the [record reference](../record.md), with a fresh noun-phrase title, and:
+The body has exactly the four sections of the [record reference](../record.md), each once and with text. If a predecessor lacks one, write it from the evidence you have; if genuinely no alternative applies, write "Not applicable".
 
-- **Context** names the predecessor with a record link (`[[<short-id>]]`), states what triggered the change, and cites the source that motivates it (a file with a line range, a plan section).
-- **Decision** states the new choice in active voice and makes the difference from the predecessor explicit.
-- **Alternatives** usually include the predecessor's choice as a rejected alternative, linked again, with a one-line reason. Add other real alternatives, or write "Not applicable".
-- **Consequences** cover downstream effects, any new robustness obligation, and prior results that must be re-run.
-- A final **`## Replaces`** section holds exactly one line: a link to the predecessor's full UUID, `[[<full-predecessor-uuid>|Previous decision]]`. It records the intended replacement while the record is a candidate; dadrock validates it and links the two records only when a human accepts the replacement.
+## What not to write
 
-Keep the body around 200–400 words. Do not invent rationale beyond the stated reason and the sources.
+- **Do not narrate the supersession.** Do not rewrite Context to say that a predecessor existed, why it is being superseded, or that this record supersedes it. The successor reads as a complete record of the decision now in force.
+- **Do not put a `## Supersedes` section in the body**, or add links to the predecessors for the sake of the supersession. The successor's `## Supersedes` section is built from the superseded record ids and the rationale: one link per predecessor, then the rationale as the reason for the change.
+- **Do not edit the predecessors**, list successors, or suggest lifecycle commands. Accepting the successor links the records; no separate supersede step follows.
+
+## Rationale
+
+The rationale explains why the decision changed, in one to three sentences, for a reviewer deciding whether to accept the successor. Be concrete: "SAP amendment §4.3 requires multiple imputation rather than complete cases", not "this is better". It becomes the reason in the successor's `## Supersedes` section, the permanent record of why the decision changed, so write it as plain prose that stands on its own, without headings.
 
 ## Constraints
 
-- One predecessor, one replacement. Two decisions that both need replacing get two replacements.
-- Never propose edits to the predecessor's body, and never write `successors` by hand.
-- Never accept the replacement or supersede the predecessor. Those are the reviewer's actions.
+- **No lost evidence.** Do not silently drop sources or alternatives from a predecessor. Keep them, or explain in the rationale why they no longer apply.
+- **One decision per successor.** If the request splits a decision in two, draft the successor for the part the request names and mention the other part in the summary.
+- Never edit a predecessor, and never write `successors` by hand.
+- Never accept the successor or supersede the predecessors. Those are the reviewer's actions.
 
 ## Result
 
 A supersession proposal:
 
-- **Summary**: one sentence framing the proposal.
-- **Superseded record id**: the predecessor's full id.
-- **Title** of the replacement: a noun phrase, not a question.
-- **Tags** of the replacement: the predecessor's tags that still apply, plus `writer/agent`.
-- **Body** of the replacement: the four sections plus `## Replaces`.
-- **Rationale**: one to three sentences, for the reviewer, on why the predecessor needs replacing. This is separate from the body.
-- **Suggested actions**: ordered next steps for the reviewer, such as reviewing and accepting the replacement and re-running the analyses its Consequences name. Accepting the replacement links the predecessor, so do not add a separate supersede step.
+- **Summary**: one sentence describing the change.
+- **Superseded record ids**: the full id of every predecessor, one per record in `record_ids`.
+- **Title** of the successor: the predecessor's title unless the request changes what the decision is about.
+- **Tags** of the successor, starting from the predecessors' tags.
+- **Body** of the successor: the four sections, and nothing else.
+- **Rationale**: why the decision changed.

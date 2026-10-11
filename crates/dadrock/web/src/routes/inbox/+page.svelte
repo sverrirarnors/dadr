@@ -13,7 +13,13 @@
   import { PaneHeader, PaneToolbar, ResizableWorkbenchSplit, WorkbenchPane } from '$lib/components/workbench';
   import { recordEditHref } from '$lib/diagnostics/actions';
   import { filterInboxGroups } from '$lib/inbox/filter';
-  import { buildInboxGroups, countActionable, flattenInboxGroups, type InboxItem } from '$lib/inbox/items';
+  import {
+    buildInboxGroups,
+    countActionable,
+    flattenInboxGroups,
+    itemForCandidate,
+    type InboxItem,
+  } from '$lib/inbox/items';
   import { actionSelector, inboxKeyAction, isTypingTarget, neighbourItemId } from '$lib/inbox/keyboard';
   import { kindBadge, recordLedgerHref } from '$lib/inbox/presentation';
   import { fetchInboxRuns, inboxRunsQueryKey, inboxRunsRefetchInterval, isActiveRun } from '$lib/inbox/queries';
@@ -55,7 +61,12 @@
   const agentAvailable = $derived(snapshot.data?.settings.agent_available ?? false);
 
   const requestedId = $derived(page.url.searchParams.get('item'));
-  const requestedItem = $derived(items.find((item) => item.id === requestedId));
+  /** A link to one candidate of a split opens the split, with that candidate marked. */
+  const requestedCandidate = $derived(requestedId?.startsWith('candidate:') ? requestedId.slice('candidate:'.length) : null);
+  const requestedItem = $derived(
+    items.find((item) => item.id === requestedId) ??
+      (requestedCandidate ? itemForCandidate(items, requestedCandidate) : undefined),
+  );
   const selectedItem = $derived(requestedItem ?? items[0]);
 
   let wide = $state(false);
@@ -110,6 +121,7 @@
 
   function openHref(item: InboxItem): LedgerHref | null {
     if (item.kind === 'candidate') return recordLedgerHref(item.record);
+    if (item.kind === 'split' && item.predecessors[0]) return recordLedgerHref(item.predecessors[0]);
     if (item.kind === 'issue' && item.record) return recordEditHref(item.record);
     if (item.kind === 'revision' && item.record) return recordLedgerHref(item.record);
     return null;
@@ -173,7 +185,7 @@
         </div>
         <div data-inbox-detail class="flex min-h-0 flex-1 flex-col">
           {#key selectedItem.id}
-            <InboxDetail item={selectedItem} {agentAvailable} />
+            <InboxDetail item={selectedItem} {agentAvailable} focusId={requestedCandidate} />
           {/key}
         </div>
       </WorkbenchPane>
@@ -268,7 +280,7 @@
           <div data-inbox-detail class="flex min-h-0 flex-1 flex-col">
             {#if selectedItem}
               {#key selectedItem.id}
-                <InboxDetail item={selectedItem} {agentAvailable} />
+                <InboxDetail item={selectedItem} {agentAvailable} focusId={requestedCandidate} />
               {/key}
             {:else}
               <div class="p-4">

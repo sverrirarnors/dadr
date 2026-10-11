@@ -34,7 +34,7 @@ Interactively, this comes from the user's request.
 
 ## Which decisions
 
-Use accepted records that have not been superseded; a superseded decision has been replaced by its successor and no longer binds. Ignore candidates and rejected records. If there are no accepted records, say so and stop rather than drafting from candidates.
+Use accepted records that have not been superseded; a superseded decision no longer binds; its successors do. Ignore candidates and rejected records. If there are no accepted records, say so and stop rather than drafting from candidates.
 
 From each decision, take:
 
@@ -77,7 +77,7 @@ Before finishing, check that every included decision appears in a requirement or
 
 - Accepted decisions are binding. Do not soften or reinterpret a Decision to make the spec easier to write, and do not add requirements no decision states.
 - Alternatives stay alternatives: mention them only as non-goals.
-- If two accepted decisions prescribe incompatible requirements, do not choose between them. List the conflict under Open questions; resolving it takes a replacement record and supersession.
+- If two accepted decisions prescribe incompatible requirements, do not choose between them. List the conflict under Open questions; resolving it takes a successor that supersedes them.
 - The spec does not change any record.
 
 ## Result

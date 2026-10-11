@@ -19,7 +19,7 @@ export function legacyRedirectTarget(url: URL): string | null {
     const scope = params.get('scope');
     const q = params.get('q');
     if (scope === 'tag' && q) return ledgerUrl({ tag: q, id });
-    return ledgerUrl({ q, id, tab, history: Boolean(params.get('status')) });
+    return ledgerUrl({ q, id, tab, archived: Boolean(params.get('status')) });
   }
 
   const recordMatch = path.match(/^\/records\/([^/]+)$/);

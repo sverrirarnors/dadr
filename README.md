@@ -2,7 +2,7 @@
 
 Keep a record of the important choices behind your analysis, so you and your collaborators can remember why you made them.
 
-Each decision is a Markdown file with four sections: **Context, Decision, Alternatives, Consequences**. Draft it, review it, and accept or reject it. When an accepted decision changes, create a replacement and preserve the history.
+Each decision is a Markdown file with four sections: **Context, Decision, Alternatives, Consequences**. Draft it, review it, and accept or reject it. When an accepted decision changes, accept a successor that supersedes it; the original moves to the archive unchanged.
 
 **DADR** is the format. **DADRock** is the CLI and local web application for writing, reviewing, and finding those records. Agent-assisted drafting is optional.
 

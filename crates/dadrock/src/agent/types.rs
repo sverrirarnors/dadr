@@ -226,7 +226,7 @@ impl From<ScannedRecordSummary> for AgentRecordSummary {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AgentProjectSnapshot {
     pub cwd: Utf8PathBuf,
-    pub decisions_dir: Utf8PathBuf,
+    pub project_dir: Utf8PathBuf,
     pub initialized: bool,
     pub total_records: usize,
     pub omitted_records: usize,
@@ -240,7 +240,7 @@ impl AgentProjectSnapshot {
         let omitted_records = total_records.saturating_sub(records.len());
         Self {
             cwd: project.cwd.clone(),
-            decisions_dir: project.decisions_dir.clone(),
+            project_dir: project.project_dir.clone(),
             initialized: project.initialized,
             total_records,
             omitted_records,

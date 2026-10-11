@@ -37,9 +37,9 @@
     "reproducibility"
   ],
   "activationEvents": [
-    "workspaceContains:**/dadr/accepted",
-    "workspaceContains:**/dadr/candidates",
-    "workspaceContains:**/dadr/rejected"
+    "workspaceContains:**/dadr/inbox",
+    "workspaceContains:**/dadr/ledger",
+    "workspaceContains:**/dadr/archive"
   ],
   "main": "./out/extension.js",
   "contributes": {

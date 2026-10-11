@@ -21,8 +21,19 @@ use crate::{
     model::{Record, RecordStatus},
     project::{utf8_to_path, ProjectContext},
     templates::candidate_template_body,
-    text::ascii_slug,
 };
+
+mod rewrite;
+mod supersession;
+mod writes;
+
+pub use rewrite::check_record_rewrite;
+pub(crate) use supersession::record_list;
+pub use supersession::{
+    accept_candidate, accept_candidates, current_successors, pending_supersedes,
+    successor_candidate_body, PendingSupersedes, StaleSupersedes,
+};
+use writes::{apply_record_writes, new_record_path, relocate, RecordWrite, Relocation};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScannedRecord {
@@ -128,12 +139,35 @@ pub struct RejectRecordResult {
     pub status: RecordStatus,
 }
 
+/// A record file rewritten by a lifecycle action, with where it was and where
+/// it is now (the same path when it did not change folders).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AcceptRecordResult {
+pub struct RecordMove {
     pub id: RecordId,
     pub from: Utf8PathBuf,
     pub to: Utf8PathBuf,
-    pub status: RecordStatus,
+}
+
+/// The result of accepting a set of candidates in one operation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AcceptRecordResult {
+    /// Each accepted candidate's move from the inbox to the ledger, in the
+    /// order the candidates were given.
+    pub accepted: Vec<RecordMove>,
+    /// Each predecessor named in a `## Supersedes` section of the set, moved
+    /// to the archive.
+    #[serde(default)]
+    pub superseded: Vec<SupersededRecordMove>,
+}
+
+/// A predecessor superseded by accepting its successors.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SupersededRecordMove {
+    pub id: RecordId,
+    pub from: Utf8PathBuf,
+    pub to: Utf8PathBuf,
+    /// The accepted records added to its `successors`.
+    pub successors: Vec<RecordId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,9 +181,13 @@ pub struct SupersedeRecordResult {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SupersedeRecordsResult {
+    /// The superseded records, as they are after the operation.
     pub from: Vec<ScannedRecordSummary>,
     pub to: Vec<ScannedRecordSummary>,
     pub edges: Vec<SupersedeRecordResult>,
+    /// Each superseded record's move to the archive.
+    #[serde(default)]
+    pub superseded: Vec<RecordMove>,
 }
 
 pub fn parse_record_file(path: &Utf8Path) -> Result<ScannedRecord, DadrError> {
@@ -180,12 +218,12 @@ pub fn parse_record_file(path: &Utf8Path) -> Result<ScannedRecord, DadrError> {
     })
 }
 
-pub fn scan_records(decisions_dir: &Utf8Path) -> Result<Vec<ScannedRecord>, DadrError> {
+pub fn scan_records(dir: &Utf8Path) -> Result<Vec<ScannedRecord>, DadrError> {
     let mut records = Vec::new();
-    if !decisions_dir.is_dir() {
+    if !dir.is_dir() {
         return Ok(records);
     }
-    scan_dir(decisions_dir, &mut records)?;
+    scan_dir(dir, &mut records)?;
     records.sort_by(|left, right| left.path.cmp(&right.path));
     Ok(records)
 }
@@ -277,10 +315,9 @@ fn create_candidate_from_body(
     project.require_initialized()?;
     let index = ProjectIndex::scan(project)?;
     let id = allocate_record_id(&index);
-    let candidates_dir = project.candidates_dir();
-    fs::create_dir_all(utf8_to_path(&candidates_dir))?;
-    let filename = record_filename(id, title);
-    let path = candidates_dir.join(filename);
+    let inbox_dir = project.inbox_dir();
+    fs::create_dir_all(utf8_to_path(&inbox_dir))?;
+    let path = new_record_path(&inbox_dir, id, title)?;
     let content = render_candidate(id, title, tags, body_markdown);
 
     file_store::write_new(&path, &content)?;
@@ -359,29 +396,17 @@ pub fn reject_candidate(
         "reject requires status `candidate`",
     )?;
 
-    let original_content = fs::read_to_string(utf8_to_path(&found.record.path))?;
-    let rejected_content = rewrite_status(&original_content, RecordStatus::Rejected)?;
-    let rejected_dir = project.rejected_dir();
-    fs::create_dir_all(utf8_to_path(&rejected_dir))?;
-    let target_path =
-        rejected_dir.join(found.record.path.file_name().ok_or_else(|| {
-            DadrError::ProjectInvariant("record path has no filename".to_owned())
-        })?);
-
-    if target_path == found.record.path {
-        file_store::write_replace(&target_path, &rejected_content)?;
-    } else {
-        if target_path.exists() {
-            return Err(DadrError::OverwriteCollision { path: target_path });
-        }
-        file_store::write_new(&target_path, &rejected_content)?;
-        if let Err(failure) = file_store::remove_file_with_unlink_status(&found.record.path) {
-            if !failure.unlinked {
-                let _ = file_store::remove_file(&target_path);
-            }
-            return Err(failure.error);
-        }
-    }
+    let target_path = relocate(&[Relocation {
+        from: &found.record.path,
+        id: found.record.id,
+        dir: project.archive_dir(),
+    }])?
+    .pop()
+    .ok_or_else(|| DadrError::ProjectInvariant("reject planned no move".to_owned()))?;
+    let write = RecordWrite::read(&found.record.path, target_path.clone(), |content| {
+        rewrite_status(content, RecordStatus::Rejected)
+    })?;
+    apply_record_writes(std::slice::from_ref(&write))?;
 
     Ok(RejectRecordResult {
         id: found.record.id,
@@ -391,196 +416,229 @@ pub fn reject_candidate(
     })
 }
 
-/// A replacement is ordinary Markdown, so the intent survives restarts and other clients.
-/// Only an explicit, standalone Replaces section is interpreted as a lifecycle request.
-pub fn pending_replacement(
-    index: &ProjectIndex,
-    query: &str,
-) -> Result<Option<ScannedRecordSummary>, DadrError> {
-    let found = index.resolve_one(query)?;
-    if found.record.status != RecordStatus::Candidate {
-        return Ok(None);
-    }
-    let record = require_record_status(
-        index,
-        &found.record,
-        RecordStatus::Candidate,
-        "accepted",
-        "replacement requires a candidate",
-    )?;
-    let Some(id) = replacement_id(&record.body.raw_markdown)? else {
-        return Ok(None);
-    };
-    let predecessor = index.resolve_one(&id.to_string())?.record;
-    if predecessor.id == found.record.id {
-        return Err(DadrError::InvalidLifecycleTransition(
-            "a decision cannot replace itself",
-        ));
-    }
-    supersedable_record(index, &predecessor)?;
-    if predecessor.superseded {
-        return Err(DadrError::InvalidLifecycleTransition(
-            "the previous decision has already been replaced; choose its current successor",
-        ));
-    }
-    Ok(Some(predecessor))
+/// The `## Supersedes` section of a record: the records it supersedes, by full
+/// id, and optionally why, as Markdown.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Supersedes {
+    pub ids: Vec<RecordId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
-/// Read the optional Dadrock replacement instruction; ordinary references have no effect.
-pub fn replacement_id(body: &str) -> Result<Option<RecordId>, DadrError> {
-    let mut in_section = false;
-    let mut section_seen = false;
-    let mut content = Vec::new();
-    let mut fence: Option<(char, usize)> = None;
-    for raw_line in body.lines() {
-        // Indented code cannot introduce a lifecycle instruction.
-        if raw_line.starts_with("    ") || raw_line.starts_with('\t') {
-            continue;
+const SUPERSEDES_HEADING: &str = "## Supersedes";
+
+/// Parse the optional `## Supersedes` section of a record body.
+///
+/// The section starts with one or more lines that are each exactly one record
+/// link by full id, `[[uuid]]` or `[[uuid|label]]`. The first other non-empty
+/// line starts the reason, which runs to the end of the section and keeps its
+/// Markdown. Headings inside fenced or indented code neither open nor close the
+/// section, and code inside the section is never a link line.
+pub fn supersedes_section(body: &str) -> Result<Option<Supersedes>, DadrError> {
+    let lines = classify_body_lines(body);
+    let section = match supersedes_sections(&lines).as_slice() {
+        [] => return Ok(None),
+        [section] => section.clone(),
+        _ => {
+            return Err(DadrError::InvalidInput(
+                "a record can have only one `## Supersedes` section",
+            ))
         }
-        let line = raw_line.trim_end();
-        let fence_line = line.trim_start();
-        let marker = fence_line
-            .chars()
-            .next()
-            .filter(|ch| *ch == '`' || *ch == '~');
-        let count = marker
-            .map(|ch| fence_line.chars().take_while(|c| *c == ch).count())
-            .unwrap_or(0);
-        if let Some((open_marker, open_count)) = fence {
-            if marker == Some(open_marker)
-                && count >= open_count
-                && fence_line[count..].trim().is_empty()
-            {
-                fence = None;
-            }
-            continue;
-        }
-        if count >= 3 {
-            fence = marker.map(|ch| (ch, count));
-            continue;
-        }
-        if line.starts_with("## ") {
-            in_section = line == "## Replaces";
-            if in_section {
-                if section_seen {
-                    return Err(DadrError::InvalidInput(
-                        "only one Replaces section is allowed",
-                    ));
-                }
-                section_seen = true;
-            }
-        } else if in_section && !line.is_empty() {
-            content.push(line);
-        }
-    }
-    if !section_seen {
-        return Ok(None);
-    }
-    let invalid = || {
-        DadrError::InvalidInput(
-            "Replaces must contain one full record ID link: [[uuid|Previous decision]]",
-        )
     };
-    if content.len() != 1 {
-        return Err(invalid());
+
+    // Skip the heading; the links come first, then the reason.
+    let content = &lines[section.start + 1..section.end];
+    let mut ids = Vec::new();
+    let mut reason_lines: &[BodyLine<'_>] = &[];
+    for (offset, line) in content.iter().enumerate() {
+        let text = line.text.trim();
+        if text.is_empty() {
+            continue;
+        }
+        let link = (line.kind == LineKind::Text)
+            .then(|| single_wikilink(text))
+            .flatten();
+        let Some(link) = link else {
+            reason_lines = &content[offset..];
+            break;
+        };
+        let id = supersedes_link_id(link)?;
+        if ids.contains(&id) {
+            return Err(DadrError::InvalidInput(format!(
+                "`## Supersedes` names `{id}` more than once"
+            )));
+        }
+        ids.push(id);
     }
-    let link = content[0]
-        .strip_prefix("[[")
-        .and_then(|s| s.strip_suffix("]]"))
-        .ok_or_else(invalid)?;
-    let id = link.split('|').next().ok_or_else(invalid)?;
-    id.parse::<RecordId>().map(Some).map_err(|_| invalid())
+    if ids.is_empty() {
+        return Err(DadrError::InvalidInput(
+            "`## Supersedes` must start with a link to the superseded record by full id, such as [[<uuid>|<title>]]",
+        ));
+    }
+
+    let mut reason: Vec<&str> = reason_lines.iter().map(|line| line.text).collect();
+    while reason.last().is_some_and(|line| line.trim().is_empty()) {
+        reason.pop();
+    }
+    let reason = (!reason.is_empty()).then(|| reason.join("\n"));
+    Ok(Some(Supersedes { ids, reason }))
 }
 
-pub fn accept_candidate(
-    index: &ProjectIndex,
-    query: &str,
-) -> Result<AcceptRecordResult, DadrError> {
-    let project = index.project();
-    let found = index.resolve_one(query)?;
-    let record = require_record_status(
-        index,
-        &found.record,
-        RecordStatus::Candidate,
-        "accepted",
-        "accept requires status `candidate`",
-    )?;
-
-    let sections = check_required_sections(&record.body.raw_markdown);
-    if !sections.is_complete() {
-        return Err(DadrError::InvalidLifecycleTransition(format!(
-            "accept requires each standard section exactly once and with text: {}",
-            sections.problems().join("; ")
-        )));
+/// The body with every `## Supersedes` section removed, for comparing versions.
+/// The rest of the body is unchanged, except that blank lines left at the end
+/// by removing a final section are dropped.
+pub fn body_without_supersedes(body: &str) -> String {
+    let lines = classify_body_lines(body);
+    let sections = supersedes_sections(&lines);
+    if sections.is_empty() {
+        return body.to_owned();
     }
-
-    let predecessor = pending_replacement(index, query)?;
-    let replacement = predecessor
-        .as_ref()
-        .map(|old| {
-            let original = fs::read_to_string(utf8_to_path(&old.path))?;
-            let updated = rewrite_for_superseded_record(&original, &[found.record.id])?;
-            Ok::<_, DadrError>((old.path.clone(), original, updated))
-        })
-        .transpose()?;
-
-    let accepted_filename = record_filename(found.record.id, &record.front_matter.title);
-    let accepted_path = project.decisions_dir.join(accepted_filename);
-
-    let original_content = fs::read_to_string(utf8_to_path(&found.record.path))?;
-    let accepted_content = rewrite_for_converted_decision(&original_content)?;
-
-    // Stage both writes before changing either record. On an I/O error restore the
-    // original files, following the same rollback convention as supersede_records.
-    if let Some((old_path, old_content, updated_old)) = replacement {
-        if accepted_path != found.record.path && accepted_path.exists() {
-            return Err(DadrError::OverwriteCollision {
-                path: accepted_path,
-            });
-        }
-        let staged_candidate = file_store::stage_replace(&accepted_path, &accepted_content)?;
-        let staged_old = file_store::stage_replace(&old_path, &updated_old)?;
-        let result = (|| {
-            staged_candidate.commit()?;
-            staged_old.commit()?;
-            if accepted_path != found.record.path {
-                file_store::remove_file(&found.record.path)?;
-            }
-            Ok::<_, DadrError>(())
-        })();
-        if let Err(error) = result {
-            file_store::write_replace(&old_path, &old_content)?;
-            file_store::write_replace(&found.record.path, &original_content)?;
-            if accepted_path != found.record.path && accepted_path.exists() {
-                file_store::remove_file(&accepted_path)?;
-            }
-            return Err(error);
-        }
-        return Ok(AcceptRecordResult {
-            id: found.record.id,
-            from: found.record.path,
-            to: accepted_path,
-            status: RecordStatus::Accepted,
-        });
+    let mut output = String::with_capacity(body.len());
+    let mut next = 0;
+    for section in &sections {
+        output.push_str(&body[next..lines[section.start].start]);
+        next = lines.get(section.end).map_or(body.len(), |line| line.start);
     }
-
-    if accepted_path == found.record.path {
-        file_store::write_replace(&accepted_path, &accepted_content)?;
-    } else {
-        file_store::write_new(&accepted_path, &accepted_content)?;
-        if let Err(failure) = file_store::remove_file_with_unlink_status(&found.record.path) {
-            if !failure.unlinked {
-                let _ = file_store::remove_file(&accepted_path);
-            }
-            return Err(failure.error);
+    output.push_str(&body[next..]);
+    if next == body.len() {
+        let kept = output.trim_end().len();
+        output.truncate(kept);
+        if !output.is_empty() {
+            output.push('\n');
         }
     }
+    output
+}
 
-    Ok(AcceptRecordResult {
-        id: found.record.id,
-        from: found.record.path,
-        to: accepted_path,
-        status: RecordStatus::Accepted,
+/// Prefix a body with a `## Supersedes` section: one link per predecessor,
+/// labelled with its title, then the reason, if any.
+pub fn with_supersedes_section(
+    body: &str,
+    predecessors: &[(RecordId, &str)],
+    reason: Option<&str>,
+) -> String {
+    let mut section = format!("{SUPERSEDES_HEADING}\n\n");
+    for (id, title) in predecessors {
+        // A label is one line and cannot contain the link delimiters.
+        let label = title
+            .replace(['\r', '\n'], " ")
+            .replace("[[", "[")
+            .replace("]]", "]");
+        section.push_str(&format!("[[{id}|{}]]\n", label.trim()));
+    }
+    if let Some(reason) = reason.map(str::trim).filter(|reason| !reason.is_empty()) {
+        section.push('\n');
+        section.push_str(reason);
+        section.push('\n');
+    }
+    section.push('\n');
+    section.push_str(body.trim_start());
+    section
+}
+
+/// How a body line reads for the `## Supersedes` grammar.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LineKind {
+    /// Indented code, a code fence, or a line inside a fenced block.
+    Code,
+    /// A level-1 or level-2 ATX heading, which starts a new section.
+    SectionHeading {
+        supersedes: bool,
+    },
+    Text,
+}
+
+struct BodyLine<'a> {
+    /// The line without its line ending.
+    text: &'a str,
+    /// Byte offset of the line in the body.
+    start: usize,
+    kind: LineKind,
+}
+
+fn classify_body_lines(body: &str) -> Vec<BodyLine<'_>> {
+    let mut lines = Vec::new();
+    let mut fence = None;
+    let mut start = 0;
+    for raw in body.split_inclusive('\n') {
+        let text = raw.strip_suffix('\n').unwrap_or(raw);
+        let text = text.strip_suffix('\r').unwrap_or(text);
+        let kind = classify_body_line(text, &mut fence);
+        lines.push(BodyLine { text, start, kind });
+        start += raw.len();
+    }
+    lines
+}
+
+fn classify_body_line(text: &str, fence: &mut Option<(char, usize)>) -> LineKind {
+    // Indented code cannot open or close a fence or a section.
+    if text.starts_with("    ") || text.starts_with('\t') {
+        return LineKind::Code;
+    }
+    let line = text.trim_end();
+    let fence_line = line.trim_start();
+    let marker = fence_line
+        .chars()
+        .next()
+        .filter(|ch| *ch == '`' || *ch == '~');
+    let count = marker
+        .map(|ch| fence_line.chars().take_while(|c| *c == ch).count())
+        .unwrap_or(0);
+    if let Some((open_marker, open_count)) = *fence {
+        if marker == Some(open_marker)
+            && count >= open_count
+            && fence_line[count..].trim().is_empty()
+        {
+            *fence = None;
+        }
+        return LineKind::Code;
+    }
+    if count >= 3 {
+        *fence = marker.map(|ch| (ch, count));
+        return LineKind::Code;
+    }
+    let level = line.bytes().take_while(|byte| *byte == b'#').count();
+    if (1..=2).contains(&level) && (line.len() == level || line[level..].starts_with([' ', '\t'])) {
+        return LineKind::SectionHeading {
+            supersedes: line == SUPERSEDES_HEADING,
+        };
+    }
+    LineKind::Text
+}
+
+/// Line ranges of each `## Supersedes` section: the heading through the line
+/// before the next level-1 or level-2 heading.
+fn supersedes_sections(lines: &[BodyLine<'_>]) -> Vec<std::ops::Range<usize>> {
+    let mut sections = Vec::new();
+    let mut open = None;
+    for (index, line) in lines.iter().enumerate() {
+        if let LineKind::SectionHeading { supersedes } = line.kind {
+            if let Some(start) = open.take() {
+                sections.push(start..index);
+            }
+            if supersedes {
+                open = Some(index);
+            }
+        }
+    }
+    if let Some(start) = open {
+        sections.push(start..lines.len());
+    }
+    sections
+}
+
+/// The inside of a line that is exactly one wikilink.
+fn single_wikilink(text: &str) -> Option<&str> {
+    let inner = text.strip_prefix("[[")?.strip_suffix("]]")?;
+    (!inner.contains("[[") && !inner.contains("]]")).then_some(inner)
+}
+
+fn supersedes_link_id(link: &str) -> Result<RecordId, DadrError> {
+    let target = link.split('|').next().unwrap_or_default().trim();
+    RecordId::parse(target).map_err(|_| {
+        DadrError::InvalidInput(format!(
+            "`## Supersedes` link `[[{link}]]` must name a record by its full id, such as [[<uuid>|<title>]]"
+        ))
     })
 }
 
@@ -613,7 +671,7 @@ pub fn supersede_records(
         ));
     }
 
-    let old_records = resolve_unique_summaries(index, old_queries, "--from")?;
+    let mut old_records = resolve_unique_summaries(index, old_queries, "--from")?;
     let new_records = resolve_unique_summaries(index, new_queries, "--to")?;
     let new_ids: BTreeSet<_> = new_records.iter().map(|record| record.id).collect();
     for old in &old_records {
@@ -660,28 +718,38 @@ pub fn supersede_records(
         }
     }
 
+    // Every predecessor gains its successors and moves to the archive in one
+    // operation; on failure, every record is restored.
     let new_ids: Vec<_> = new_records.iter().map(|record| record.id).collect();
-    let mut replacements = Vec::new();
-    for old in &old_records {
-        let original_content = fs::read_to_string(utf8_to_path(&old.path))?;
-        let superseded_content = rewrite_for_superseded_record(&original_content, &new_ids)?;
-        replacements.push((old.path.clone(), original_content, superseded_content));
-    }
-    let staged = replacements
+    let archive_dir = index.project().archive_dir();
+    let relocations: Vec<_> = old_records
         .iter()
-        .map(|(path, _, content)| file_store::stage_replace(path, content))
+        .map(|old| Relocation {
+            from: &old.path,
+            id: old.id,
+            dir: archive_dir.clone(),
+        })
+        .collect();
+    let writes = old_records
+        .iter()
+        .zip(relocate(&relocations)?)
+        .map(|(old, archived_path)| {
+            RecordWrite::read(&old.path, archived_path, |content| {
+                rewrite_for_superseded_record(content, &new_ids)
+            })
+        })
         .collect::<Result<Vec<_>, _>>()?;
+    apply_record_writes(&writes)?;
 
-    let mut committed: Vec<(Utf8PathBuf, String)> = Vec::new();
-    for (staged, (path, original_content, _)) in staged.into_iter().zip(&replacements) {
-        if let Err(err) = staged.commit() {
-            for (path, original_content) in committed {
-                let _ = file_store::write_replace(&path, &original_content);
-            }
-            let _ = file_store::write_replace(path, original_content);
-            return Err(err);
-        }
-        committed.push((path.clone(), original_content.clone()));
+    let mut superseded = Vec::new();
+    for (old, write) in old_records.iter_mut().zip(&writes) {
+        superseded.push(RecordMove {
+            id: old.id,
+            from: write.from.clone(),
+            to: write.to.clone(),
+        });
+        old.path = write.to.clone();
+        old.superseded = true;
     }
 
     let mut edges = Vec::new();
@@ -701,6 +769,7 @@ pub fn supersede_records(
         from: old_records,
         to: new_records,
         edges,
+        superseded,
     })
 }
 
@@ -1021,10 +1090,6 @@ fn allocate_record_id(index: &ProjectIndex) -> RecordId {
         // The short id is the millisecond timestamp; wait for the next one.
         std::thread::sleep(std::time::Duration::from_millis(1));
     }
-}
-
-fn record_filename(id: RecordId, title: &str) -> String {
-    format!("{}-{}.md", id.short_id(), ascii_slug(title, 80, "untitled"))
 }
 
 fn render_candidate(id: RecordId, title: &str, tags: &[String], body_template: &str) -> String {

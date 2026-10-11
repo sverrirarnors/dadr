@@ -20,7 +20,7 @@ END = "<!-- cli-docs:end -->"
 # in "Other", so a new command still shows up before this list is updated.
 GROUPS = [
     ("Projects", ["init", "demo", "preview", "config", "dir"]),
-    ("Records", ["new", "list", "accept", "reject", "supersede", "status"]),
+    ("Records", ["new", "list", "history", "diff", "accept", "reject", "supersede", "status"]),
     ("Validation", ["validate", "tags"]),
     ("Agents", ["agent", "task", "mcp"]),
     ("Help", ["help", "commands", "completions"]),

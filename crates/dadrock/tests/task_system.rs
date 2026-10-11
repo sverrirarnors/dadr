@@ -406,78 +406,6 @@ fn validate_task_output_accepts_structured_diagnosis_summary() {
     assert_eq!(serde_json::to_value(validated).unwrap(), output);
 }
 
-fn supersession_proposal_with_tags() -> serde_json::Value {
-    json!({
-        "kind": "supersession_proposal.v1",
-        "summary": "Narrow the complete-case rule.",
-        "superseded_record_id": "01938b8e-4d70-7abc-8def-000000000001",
-        "superseding_title": "Use model-specific complete cases",
-        "tags": ["kind/sample", "writer/agent"],
-        "superseding_body_markdown": "## Context\n\nOld rule.\n\n## Decision\n\nNew rule.\n\n## Alternatives\n\nOld rule.\n\n## Consequences\n\nRe-run models.\n",
-        "rationale": "The old rule drops too many rows.",
-        "suggested_actions": ["Review and accept the replacement."]
-    })
-}
-
-#[test]
-fn supersession_proposal_contract_and_schema_carry_tags() {
-    assert!(TaskOutputKind::SupersessionProposalV1
-        .output_contract()
-        .contains(r#""tags": ["string"]"#));
-
-    let output = supersession_proposal_with_tags();
-    let validated =
-        validate_task_output(TaskOutputKind::SupersessionProposalV1, output.clone()).unwrap();
-    assert_eq!(validated, output);
-
-    let TaskOutputValue::SupersessionProposal(proposal) =
-        serde_json::from_value(validated).unwrap()
-    else {
-        panic!("expected supersession_proposal.v1 output");
-    };
-    assert_eq!(proposal.tags, ["kind/sample", "writer/agent"]);
-
-    let mut untagged = output;
-    untagged.as_object_mut().unwrap().remove("tags");
-    let TaskOutputValue::SupersessionProposal(proposal) = serde_json::from_value(
-        validate_task_output(TaskOutputKind::SupersessionProposalV1, untagged).unwrap(),
-    )
-    .unwrap() else {
-        panic!("expected supersession_proposal.v1 output");
-    };
-    assert!(proposal.tags.is_empty());
-}
-
-#[test]
-fn submitted_supersession_proposal_persists_tags() {
-    let root = unique_temp_dir("dadrock-task-run-supersession-tags");
-    init_project(&root).unwrap();
-    let user_tasks = root.join("user-tasks");
-    let _env_lock = TASK_ENV_LOCK.lock().unwrap();
-    let _env = EnvVarGuard::set_path("DADROCK_TASKS_DIR", &user_tasks);
-    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
-    let user_tasks = Utf8PathBuf::from_path_buf(user_tasks).expect("utf8 user tasks");
-    let task = discovered_task(&cwd, Some(&user_tasks), "supersede-record");
-    let run = create_task_run(
-        &cwd,
-        &task,
-        json!({"record_id": "01938b8e-4d70-7abc-8def-000000000001", "reason": "Too broad."}),
-    )
-    .unwrap();
-    let context = CommandContext::from_path(&root).expect("context");
-    let result = supersession_proposal_with_tags();
-
-    submit_task_result_command(&context, &run.id.to_string(), result.clone()).unwrap();
-
-    let persisted = read_json(run.run_dir.join("result.json"));
-    assert_eq!(persisted, result);
-    assert_eq!(persisted["tags"], json!(["kind/sample", "writer/agent"]));
-    let shown = show_task_result_command(&context, &run.id.to_string()).unwrap();
-    assert_eq!(shown.data["tags"], json!(["kind/sample", "writer/agent"]));
-
-    let _ = fs::remove_dir_all(root);
-}
-
 #[test]
 fn discovery_lists_built_in_starter_tasks() {
     let root = unique_temp_dir("dadrock-task-discovery-builtins");
@@ -546,7 +474,18 @@ fn discovery_lists_built_in_starter_tasks() {
     );
     assert_eq!(
         tasks["edit-record"].manifest.requirements.record_status,
-        TaskRecordStatusRequirement::All
+        TaskRecordStatusRequirement::Candidate
+    );
+    assert_eq!(
+        tasks["supersede-record"].manifest.requirements.records,
+        TaskRecordRequirement::OneOrMore
+    );
+    assert_eq!(
+        tasks["supersede-record"]
+            .manifest
+            .requirements
+            .record_status,
+        TaskRecordStatusRequirement::Accepted
     );
     assert!(tasks
         .values()
@@ -1627,8 +1566,8 @@ fn run_task_prompt_embeds_builtin_task_guide() {
             description: task.manifest.description.clone(),
             output_kind: task.manifest.output.kind.clone(),
             input: json!({
-                "record_id": "01960000-0000-7000-8000-000000000000",
-                "reason": "new evidence"
+                "record_ids": "01960000-0000-7000-8000-000000000000",
+                "requested_changes": "new evidence"
             }),
             context: TaskContext::default(),
             prompt: task.prompt.clone(),
@@ -1640,6 +1579,11 @@ fn run_task_prompt_embeds_builtin_task_guide() {
 
     let encoded_guide = serde_json::to_string(&task.prompt).expect("encode task guide");
     assert!(prompt.contains(&encoded_guide));
+    assert!(prompt.contains("Start from the predecessor's exact text"));
+    assert!(prompt.contains("Do not narrate the supersession"));
+    assert!(prompt.contains("superseded_record_ids"));
+    assert!(!prompt.contains("dadrock status supersede"));
+    assert!(!prompt.contains("[[<predecessor-uuid>]]"));
 
     let _ = fs::remove_dir_all(root);
 }
@@ -1927,7 +1871,9 @@ fn task_run_validation_enforces_notes_records_and_status_requirements() {
         &ProjectIndex::scan(&project).unwrap(),
         &candidate.id.to_string(),
     )
-    .unwrap();
+    .unwrap()
+    .accepted
+    .remove(0);
 
     let custom_error = create_task_run_for_task(
         &agent_project,
@@ -1971,7 +1917,7 @@ fn task_run_validation_enforces_notes_records_and_status_requirements() {
     let supersede_status_error = create_task_run_for_task(
         &agent_project,
         "supersede-record",
-        json!({"record_id": second_candidate.id.to_string(), "reason": "new evidence"}),
+        json!({"record_ids": second_candidate.id.to_string(), "requested_changes": "new evidence"}),
         &TaskContext {
             records: vec![second_candidate.id.to_string()],
             ..TaskContext::default()
@@ -2261,7 +2207,7 @@ fn discovered_task(
 fn agent_project_context(cwd: &Utf8PathBuf) -> ProjectContext {
     ProjectContext {
         cwd: cwd.clone(),
-        decisions_dir: cwd.join("dadr/accepted"),
+        project_dir: cwd.join("dadr"),
         discovery_source: DiscoverySource::Fallback,
         initialized: true,
     }

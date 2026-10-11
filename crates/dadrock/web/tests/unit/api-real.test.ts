@@ -5,7 +5,7 @@ const emptyPanel = { counts: {}, diagnostics: [] };
 const validSnapshot = {
   project: {
     cwd: '/tmp/proj',
-    decisions_dir: '/tmp/proj/dadr/accepted',
+    decisions_dir: '/tmp/proj/dadr/ledger',
     initialized: true,
     discovery_source: 'directory',
     status: 'Project discovered.',
@@ -63,7 +63,7 @@ describe('RealApi.getRecordSource', () => {
       new Response(
         JSON.stringify({
           id: '0193fb1f-a3a0-7000-8000-000000000001',
-          path: 'dadr/accepted/0001-use-polars.md',
+          path: 'dadr/ledger/use-polars.md',
           content: '---\nid: 0193fb1f-a3a0-7000-8000-000000000001\n---\n\n# Use Polars',
         }),
         { headers: { 'content-type': 'application/json' } },
@@ -71,7 +71,7 @@ describe('RealApi.getRecordSource', () => {
     );
     const api = new RealApi('http://example.test', fakeFetch as typeof fetch);
     const source = await api.getRecordSource('0193fb1f-a3a0-7000-8000-000000000001');
-    expect(source.path).toBe('dadr/accepted/0001-use-polars.md');
+    expect(source.path).toBe('dadr/ledger/use-polars.md');
     expect(fakeFetch).toHaveBeenCalledWith(
       'http://example.test/api/records/0193fb1f-a3a0-7000-8000-000000000001/source',
       expect.any(Object),
@@ -101,7 +101,7 @@ describe('RealApi.getRecordLifecycle', () => {
             title: 'Use Polars over pandas',
             status: 'accepted',
             superseded: true,
-            path: 'dadr/accepted/0001-use-polars.md',
+            path: 'dadr/archive/use-polars.md',
             preview: 'Use Polars.',
             tags: ['#dadr/data/processing'],
             timestamp_ms: 1730000000000,
@@ -115,7 +115,7 @@ describe('RealApi.getRecordLifecycle', () => {
               title: 'Use Polars lazy frames',
               status: 'accepted',
               superseded: false,
-              path: 'dadr/accepted/0002-use-polars-lazy.md',
+              path: 'dadr/ledger/use-polars-lazy.md',
               preview: 'Use lazy frames.',
               tags: ['#dadr/data/processing'],
               timestamp_ms: 1730000100000,
@@ -145,7 +145,7 @@ describe('RealApi.saveRecordSource', () => {
       new Response(
         JSON.stringify({
           message: 'saved 0193fb1f-a3a0-7000-8000-000000000001',
-          changed_paths: ['dadr/accepted/0001-use-polars.md'],
+          changed_paths: ['dadr/ledger/use-polars.md'],
           focus: {
             selected_id: '0193fb1f-a3a0-7000-8000-000000000001',
             status_filter: 'accepted',
@@ -161,7 +161,7 @@ describe('RealApi.saveRecordSource', () => {
       'edited markdown',
     );
     expect(response.message).toContain('saved');
-    expect(response.changed_paths).toEqual(['dadr/accepted/0001-use-polars.md']);
+    expect(response.changed_paths).toEqual(['dadr/ledger/use-polars.md']);
     expect(fakeFetch).toHaveBeenCalledWith(
       'http://example.test/api/records/0193fb1f-a3a0-7000-8000-000000000001/source',
       expect.objectContaining({
@@ -190,7 +190,7 @@ describe('RealApi.applyRecordRevision', () => {
       new Response(
         JSON.stringify({
           message: 'applied revision 0193fb1f-a3a0-7000-8000-000000000002',
-          changed_paths: ['dadr/candidates/0002-preregister.md'],
+          changed_paths: ['dadr/inbox/preregister.md'],
           focus: {
             selected_id: '0193fb1f-a3a0-7000-8000-000000000002',
             status_filter: 'candidate',
@@ -293,7 +293,7 @@ describe('RealApi.createCandidate', () => {
       new Response(
         JSON.stringify({
           message: 'created candidate 0193fb1f-a3a0-7000-8000-000000000003',
-          changed_paths: ['dadr/candidates/0003-use-duckdb.md'],
+          changed_paths: ['dadr/inbox/use-duckdb.md'],
           focus: {
             selected_id: '0193fb1f-a3a0-7000-8000-000000000003',
             status_filter: 'candidate',
@@ -332,7 +332,7 @@ describe('RealApi.draftCandidate', () => {
       new Response(
         JSON.stringify({
           message: 'drafted candidate 0193fb1f-a3a0-7000-8000-000000000004',
-          changed_paths: ['dadr/candidates/0004-agent-draft.md'],
+          changed_paths: ['dadr/inbox/agent-draft.md'],
           snapshot: validSnapshot,
         }),
         { headers: { 'content-type': 'application/json' } },
@@ -395,9 +395,9 @@ describe('RealApi.initializeProject', () => {
           message: 'created 8 paths, reused 0 paths',
           changed_paths: [
             'dadr',
-            'dadr/accepted',
-            'dadr/candidates',
-            'dadr/rejected',
+            'dadr/inbox',
+            'dadr/ledger',
+            'dadr/archive',
             'dadr/templates',
             'dadr/tasks',
             'dadr/runs',
@@ -427,7 +427,7 @@ describe('RealApi candidate lifecycle actions', () => {
   it('posts accept and reject actions to candidate endpoints', async () => {
     const responseBody = {
       message: 'accepted candidate 0193fb1f-a3a0-7000-8000-000000000002',
-      changed_paths: ['dadr/accepted/0002-preregister.md'],
+      changed_paths: ['dadr/ledger/preregister.md'],
       focus: {
         selected_id: '0193fb1f-a3a0-7000-8000-000000000002',
         status_filter: 'accepted',
@@ -468,7 +468,7 @@ describe('RealApi.supersedeRecords', () => {
   it('posts selected successors as one supersede request', async () => {
     const responseBody = {
       message: 'record superseded',
-      changed_paths: ['dadr/accepted/old.md', 'dadr/accepted/new.md'],
+      changed_paths: ['dadr/archive/old.md', 'dadr/ledger/new.md'],
       snapshot: validSnapshot,
     };
     const fakeFetch = vi.fn().mockResolvedValue(
@@ -695,11 +695,11 @@ describe('RealApi task commands', () => {
     );
   });
 
-  it('clears task run history through a mutation response', async () => {
+  it('clears task runs through a mutation response', async () => {
     const fakeFetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
-          message: 'cleared task history',
+          message: 'Agent runs cleared.',
           changed_paths: ['/tmp/proj/dadr/runs'],
           snapshot: validSnapshot,
         }),
@@ -708,9 +708,9 @@ describe('RealApi task commands', () => {
     );
     const api = new RealApi('http://example.test', fakeFetch as typeof fetch);
 
-    const response = await api.clearTaskHistory();
+    const response = await api.clearTaskRuns();
 
-    expect(response.message).toBe('cleared task history');
+    expect(response.message).toBe('Agent runs cleared.');
     expect(fakeFetch).toHaveBeenCalledWith(
       'http://example.test/api/task-runs/clear',
       expect.objectContaining({
@@ -718,5 +718,109 @@ describe('RealApi task commands', () => {
         body: JSON.stringify({}),
       }),
     );
+  });
+});
+
+describe('RealApi history, diff, and set acceptance', () => {
+  const OLD = '01938c20-a3b4-7000-8000-000000000001';
+  const NEW = '0193b2a1-c0f4-7000-8000-000000000002';
+  const summary = (id: string, title: string, current: boolean) => ({
+    id,
+    short_id: id.replaceAll('-', '').slice(0, 12),
+    title,
+    status: 'accepted',
+    superseded: !current,
+    current,
+    path: `/p/dadr/x/${id}.md`,
+    tags: [],
+  });
+  const diff = {
+    changed: true,
+    title: { old: 'Listwise deletion', new: 'Multiple imputation' },
+    tags_added: ['topic/missing-data'],
+    tags_removed: [],
+    lines: [{ kind: 'added', text: 'Use multiple imputation.' }],
+  };
+  const envelope = (command: string, data: unknown) =>
+    new Response(JSON.stringify({ command, ok: true, data, diagnostics: [], changed_paths: [] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+
+  it('reads the history envelope, asking for patches when wanted', async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      envelope('history', {
+        record: OLD,
+        versions: [{ ...summary(NEW, 'Multiple imputation', true), body: 'x\n' }, { ...summary(OLD, 'Listwise deletion', false), body: 'y\n' }],
+        links: [{ predecessor: OLD, successor: NEW, reason: 'Complete cases lose a third.', diff }],
+        neighbors: [],
+      }),
+    );
+    const api = new RealApi('http://example.test', fakeFetch as typeof fetch);
+    const history = await api.getRecordHistory(OLD, { patch: true });
+    expect(fakeFetch).toHaveBeenCalledWith(`http://example.test/api/records/${OLD}/history?patch=1`, expect.any(Object));
+    expect(history.versions.map((version) => version.current)).toEqual([true, false]);
+    expect(history.links[0]?.diff?.title).toEqual({ old: 'Listwise deletion', new: 'Multiple imputation' });
+  });
+
+  it('reads each version\'s text edits, null outside Git and when an older binary omits them', async () => {
+    const edit = {
+      commit: 'e3b1c9a4f27d8e6b5a0c1d2e3f4a5b6c7d8e9f01',
+      short_commit: 'e3b1c9a',
+      author: 'Alice Martin',
+      date: '2026-10-01T14:22:05+02:00',
+      subject: 'Fix a typo',
+      title_changed: false,
+      body_changed: true,
+      diff: { ...diff, title: null, tags_added: [] },
+    };
+    const working = { commit: null, short_commit: null, author: null, date: null, subject: null, title_changed: true, body_changed: false };
+    const fakeFetch = vi.fn().mockResolvedValue(
+      envelope('history', {
+        record: OLD,
+        versions: [
+          { ...summary(NEW, 'Multiple imputation', true), body: 'x\n', edits: [working, edit] },
+          { ...summary(OLD, 'Listwise deletion', false), body: 'y\n', edits: null },
+          { ...summary(OLD.replace(/1$/, '3'), 'Pairwise deletion', false), body: 'z\n' },
+        ],
+        links: [],
+        neighbors: [],
+      }),
+    );
+    const history = await new RealApi('', fakeFetch as typeof fetch).getRecordHistory(OLD, { patch: true });
+    expect(history.versions.map((version) => version.edits?.length ?? null)).toEqual([2, null, null]);
+    expect(history.versions[0]?.edits?.[0]).toEqual(working);
+    expect(history.versions[0]?.edits?.[1]?.diff?.lines).toEqual([{ kind: 'added', text: 'Use multiple imputation.' }]);
+  });
+
+  it('defaults a missing reason to null', async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      envelope('history', { record: OLD, versions: [], links: [{ predecessor: OLD, successor: NEW }], neighbors: [] }),
+    );
+    const history = await new RealApi('', fakeFetch as typeof fetch).getRecordHistory(OLD);
+    expect(fakeFetch).toHaveBeenCalledWith(`/api/records/${OLD}/history`, expect.any(Object));
+    expect(history.links[0]?.reason).toBeNull();
+  });
+
+  it('diffs against another record, encoding the query', async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      envelope('diff', { old: summary(OLD, 'Listwise deletion', false), new: summary(NEW, 'Multiple imputation', true), diff }),
+    );
+    const result = await new RealApi('', fakeFetch as typeof fetch).getRecordDiff(NEW, 'Listwise deletion');
+    expect(fakeFetch).toHaveBeenCalledWith(`/api/records/${NEW}/diff?against=Listwise%20deletion`, expect.any(Object));
+    expect(result.diff.lines).toEqual([{ kind: 'added', text: 'Use multiple imputation.' }]);
+  });
+
+  it('accepts several candidates together with `with`', async () => {
+    const fakeFetch = vi.fn().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ message: 'accepted 2 candidates', changed_paths: [], snapshot: validSnapshot }), {
+          headers: { 'content-type': 'application/json' },
+        }),
+    );
+    const api = new RealApi('', fakeFetch as typeof fetch);
+    await api.acceptCandidate('a', ['b']);
+    expect(fakeFetch).toHaveBeenLastCalledWith('/api/candidates/a/accept', expect.objectContaining({ body: '{"with":["b"]}' }));
+    await api.acceptCandidate('a');
+    expect(fakeFetch).toHaveBeenLastCalledWith('/api/candidates/a/accept', expect.objectContaining({ body: '{}' }));
   });
 });

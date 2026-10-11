@@ -14,7 +14,7 @@
 | [`demo`](#dadrock-demo) | Seed a new project with a named DADR example. |
 | [`preview`](#dadrock-preview) | Serve the local web review UI. |
 | [`config`](#dadrock-config) | Print the resolved project layout. |
-| [`dir`](#dadrock-dir) | Print the discovered accepted records directory. |
+| [`dir`](#dadrock-dir) | Print the discovered Dadrock project directory (dadr/). |
 
 **Records**
 
@@ -22,16 +22,18 @@
 |---|---|
 | [`new`](#dadrock-new) | Create a candidate decision record from the active candidate template. |
 | [`list`](#dadrock-list) | List records, optionally filtered by lifecycle status, tag, or query. |
-| [`accept`](#dadrock-accept) | Accept a candidate decision. |
+| [`history`](#dadrock-history) | Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git. |
+| [`diff`](#dadrock-diff) | Compare two records: title, tags, and body without `## Supersedes`. |
+| [`accept`](#dadrock-accept) | Accept a candidate decision, or several together with --with. |
 | [`reject`](#dadrock-reject) | Reject a candidate decision. |
-| [`supersede`](#dadrock-supersede) | Link replacement decisions to the decisions they replace. |
+| [`supersede`](#dadrock-supersede) | Link accepted successors to the records they supersede and move those records to the archive. |
 | [`status`](#dadrock-status) | Inspect one record's lifecycle status or run lifecycle transitions. |
 
 **Validation**
 
 | Command | Description |
 |---|---|
-| [`validate`](#dadrock-validate) | Run project validation, or target records, links, or tags. |
+| [`validate`](#dadrock-validate) | Run project validation, or target records, links, tags, or changes. |
 | [`tags`](#dadrock-tags) | Inspect DADR tag usage. |
 
 **Agents**
@@ -110,7 +112,7 @@ Print the resolved project layout.
 
 ## `dadrock dir`
 
-Print the discovered accepted records directory.
+Print the discovered Dadrock project directory (dadr/).
 
 **Usage:** `dadrock dir`
 
@@ -145,15 +147,49 @@ List records, optionally filtered by lifecycle status, tag, or query.
 * `--query <QUERY>`
 * `--unique`
 
-## `dadrock accept`
+## `dadrock history`
 
-Accept a candidate decision.
+Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.
 
-**Usage:** `dadrock accept <QUERY>...`
+**Usage:** `dadrock history [OPTIONS] <QUERY>...`
 
 **Arguments**
 
-* `<QUERY>`
+* `<QUERY>` — Any version of the decision: full id, id prefix, filename, or title
+
+**Options**
+
+* `--patch` — Print each change's diff under its link, and each text edit's diff under its version
+* `--json`
+
+## `dadrock diff`
+
+Compare two records: title, tags, and body without `## Supersedes`.
+
+**Usage:** `dadrock diff [OPTIONS] <OLD> <NEW>`
+
+**Arguments**
+
+* `<OLD>` — The record to compare from: full id, id prefix, filename, or title
+* `<NEW>` — The record to compare to
+
+**Options**
+
+* `--json`
+
+## `dadrock accept`
+
+Accept a candidate decision, or several together with --with.
+
+**Usage:** `dadrock accept [OPTIONS] <QUERY>...`
+
+**Arguments**
+
+* `<QUERY>` — The candidate to accept; the words join into one query
+
+**Options**
+
+* `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
 
 ## `dadrock reject`
 
@@ -167,7 +203,7 @@ Reject a candidate decision.
 
 ## `dadrock supersede`
 
-Link replacement decisions to the decisions they replace.
+Link accepted successors to the records they supersede and move those records to the archive.
 
 **Usage:** `dadrock supersede [OPTIONS]`
 
@@ -184,9 +220,9 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 **Subcommands**
 
-* [`accept`](#dadrock-status-accept) — Accept a candidate by converting it into an accepted decision.
-* [`reject`](#dadrock-status-reject) — Reject a candidate and move it into the rejected records directory.
-* [`supersede`](#dadrock-status-supersede) — Link accepted successors to the records they supersede.
+* [`accept`](#dadrock-status-accept) — Accept a candidate and move it to the ledger, or several together with --with.
+* [`reject`](#dadrock-status-reject) — Reject a candidate and move it to the archive.
+* [`supersede`](#dadrock-status-supersede) — Link accepted successors to the records they supersede and move those records to the archive.
 
 **Arguments**
 
@@ -194,17 +230,21 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ### `dadrock status accept`
 
-Accept a candidate by converting it into an accepted decision.
+Accept a candidate and move it to the ledger, or several together with --with.
 
-**Usage:** `dadrock status accept <QUERY>...`
+**Usage:** `dadrock status accept [OPTIONS] <QUERY>...`
 
 **Arguments**
 
-* `<QUERY>`
+* `<QUERY>` — The candidate to accept; the words join into one query
+
+**Options**
+
+* `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
 
 ### `dadrock status reject`
 
-Reject a candidate and move it into the rejected records directory.
+Reject a candidate and move it to the archive.
 
 **Usage:** `dadrock status reject <QUERY>...`
 
@@ -214,7 +254,7 @@ Reject a candidate and move it into the rejected records directory.
 
 ### `dadrock status supersede`
 
-Link accepted successors to the records they supersede.
+Link accepted successors to the records they supersede and move those records to the archive.
 
 **Usage:** `dadrock status supersede [OPTIONS]`
 
@@ -225,7 +265,7 @@ Link accepted successors to the records they supersede.
 
 ## `dadrock validate`
 
-Run project validation, or target records, links, or tags.
+Run project validation, or target records, links, tags, or changes.
 
 **Usage:** `dadrock validate [OPTIONS] [COMMAND]`
 
@@ -234,6 +274,7 @@ Run project validation, or target records, links, or tags.
 * [`records`](#dadrock-validate-records) — Validate record front matter and structure.
 * [`links`](#dadrock-validate-links) — Report broken or ambiguous wikilinks and local Markdown links.
 * [`tags`](#dadrock-validate-tags) — Report malformed YAML and inline tags.
+* [`changes`](#dadrock-validate-changes) — Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.
 
 **Options**
 
@@ -271,6 +312,21 @@ Report malformed YAML and inline tags.
 
 **Options**
 
+* `--json`
+
+### `dadrock validate changes`
+
+Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.
+
+**Usage:** `dadrock validate changes [OPTIONS]`
+
+**Options**
+
+* `--base <BASE>` — Git revision to compare with
+
+  Default value: `HEAD`
+* `--staged` — Compare the index (staged changes) instead of the working tree
+* `--strict` — Report title and body edits to accepted and rejected records as errors
 * `--json`
 
 ## `dadrock tags`

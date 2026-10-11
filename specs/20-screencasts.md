@@ -22,7 +22,7 @@
 | `penguins` | Realistic Python analysis target for `code-to-record` | Code-to-record, path picker, task results |
 | `broken` | Lifecycle-style project with intentional validation defects | Validation queue and repair |
 | `conflicts` | Lifecycle-style project with overlapping and contradictory candidates | Find conflicts, merge records, supersession follow-up |
-| `task-history` | Lifecycle/conflict project with persisted successful task runs for all important output kinds | Task history and typed result rendering |
+| `task-history` | Lifecycle/conflict project with persisted successful task runs for all important output kinds | Agent runs and typed result rendering |
 
 The Penguins project contains `analysis/penguins_ols.py`, a `uv` script that
 downloads Palmer Penguins data from Rdatasets when run separately, subsets
@@ -80,7 +80,7 @@ data.
     Use `candidate-review`. Select a candidate with reviewer
     feedback, run `edit-record`, inspect the proposed revision, and apply it.
 
-10. **Task history and results**
+10. **Agent runs and results**
     Use `task-history`. Show typed result rendering for candidate drafts,
     candidate batches, supersession proposals, conflict reports, record
     revisions, and markdown reports.

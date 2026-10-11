@@ -1,11 +1,11 @@
 ---
 id: edit-record
 title: "Edit record"
-description: "Revise any existing DADR while preserving its lifecycle status until you choose what to do next."
-version: 1
+description: "Revise a candidate DADR before it is accepted or rejected."
+version: 2
 inputs:
   - name: record_id
-    label: "Record"
+    label: "Candidate"
     type: text
     required: true
   - name: requested_changes
@@ -14,7 +14,7 @@ inputs:
     required: true
 requirements:
   records: one
-  record_status: all
+  record_status: candidate
   paths: none
   notes: required
   scope: none
@@ -28,30 +28,31 @@ tools:
 
 # Edit record
 
-Revise an existing DADR as a reviewer requests while preserving its choice, its evidence, and its lifecycle status. A revision sharpens or corrects how the decision is described; it does not replace the decision.
+Revise a candidate DADR as a reviewer requests while preserving its choice and its evidence. The candidate stays a candidate; only its title, tags, or body change. A revision sharpens or corrects how the decision is described; it does not switch to a different decision.
 
 ## Inputs
 
-- `record_id`: the record to revise.
+- `record_id`: the candidate to revise.
 - `requested_changes`: what the reviewer wants changed.
 
 Interactively, these come from the user's request. "Make it better" is not specific enough: find out which sections should change, and how.
 
-## What may change
+## Candidates only
 
-- **Candidates** may be revised freely, as long as they still record the same choice.
-- **Accepted records**, superseded or not, allow only changes that keep their meaning: spelling, formatting, links, citations, and tags. If the request would change what an accepted record decides or why, do not apply that part; say in the warnings that it needs a replacement record ([supersede-record](supersede-record.md)).
-- **Rejected records** are closed. Limit changes to the same meaning-preserving corrections; revisiting a rejected idea means drafting a new candidate.
+Only candidates are revised. Agents never edit accepted or rejected records, superseded or not, and the `edit-record` task refuses them before it runs:
+
+- For an **accepted** record, a person corrects its wording in place when the meaning stays the same (spelling, formatting, links, citations). To change what it decides, draft a successor with [supersede-record](supersede-record.md).
+- For a **rejected** record, revisiting the idea means drafting a new candidate, for example with [context-to-record](context-to-record.md).
 
 Never change `id`, `status`, or `successors`.
 
 ## What to preserve
 
-- **The choice itself.** If a request for a candidate amounts to a different decision, apply it faithfully and warn that the result reads as a different decision.
+- **The choice itself.** If the request amounts to a different decision, apply it faithfully and warn that the result reads as a different decision.
 - **Valid evidence.** Keep source links that still resolve. Update line ranges that have shifted; remove links that no longer exist and say so.
 - **Alternatives.** Do not silently drop an alternative the original named. If you remove one, explain why.
 - **Tags already in use.** Add tags when they apply, but keep `kind/` and `writer/` tags unless the request explicitly changes them.
-- **Other sections**, such as `## Replaces` or `## Robustness`, unless the request targets them.
+- **Other sections**, such as `## Supersedes` or `## Robustness`, unless the request targets them.
 
 ## Section conventions
 
@@ -61,15 +62,15 @@ Avoid the usual pitfalls: tense drift in the Decision ("we will", "we plan to"),
 
 ## Constraints
 
-- Revise only the named record.
+- Revise only the named candidate.
 - Never accept, reject, or supersede it. Those are the reviewer's next steps.
 
 ## Result
 
-A revision of the record:
+A revision of the candidate:
 
 - **Summary**: one sentence on what changed.
-- **Record id** of the revised record.
+- **Record id** of the revised candidate.
 - **Title**, only if it changed.
 - **Tags**, only if they changed, as the complete new list.
 - **Body**: the complete revised body, with all four sections and any other sections it had.

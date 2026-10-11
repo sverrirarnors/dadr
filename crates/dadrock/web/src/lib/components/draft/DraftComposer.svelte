@@ -8,6 +8,7 @@
   import RecordSelectionDialog from '$lib/components/records/RecordSelectionDialog.svelte';
   import { Alert, Button, TextareaInput } from '$lib/components/ui';
   import {
+    attachedRecords,
     attachRecordsStatus,
     composerTitle,
     errorMessage,
@@ -26,6 +27,7 @@
   import { toasts } from '$lib/stores/toast.svelte';
   import DraftAttachments from './DraftAttachments.svelte';
   import DraftManualForm from './DraftManualForm.svelte';
+  import DraftSuccessorForm from './DraftSuccessorForm.svelte';
 
   const api = createApi();
   const queryClient = useQueryClient();
@@ -38,7 +40,8 @@
   const records = $derived(snapshot.data?.records ?? []);
   const agentAvailable = $derived(snapshot.data?.settings.agent_available ?? false);
   const pinned = $derived(pinnedRecord(composer.mode, composer.recordIds, records));
-  const title = $derived(composerTitle(composer.mode, pinned));
+  /** In supersede mode, every attached decision is superseded together (a merge). */
+  const predecessors = $derived(composer.mode === 'supersede' ? attachedRecords(composer.recordIds, records) : []);
   const intent = $derived(
     resolveDraftIntent(
       {
@@ -53,17 +56,26 @@
 
   /** The person's explicit choice; null follows the default for the mode. */
   let chosenView = $state<ComposerView | null>(null);
-  const view = $derived(chosenView ?? initialComposerView(composer.mode, agentAvailable));
+  const view = $derived(chosenView ?? composer.view ?? initialComposerView(composer.mode, agentAvailable));
+  const title = $derived(
+    composerTitle(composer.mode, composer.mode === 'supersede' ? predecessors : pinned ? [pinned] : []),
+  );
   const canWriteByHand = $derived(manualFormAvailable(composer.mode));
   const canAttachRecords = $derived(
-    composer.mode === 'new' || composer.mode === 'merge' || !pinned,
+    composer.mode === 'new' || composer.mode === 'merge' || composer.mode === 'supersede' || !pinned,
   );
-  /** The record "Edit it in the Ledger" points at, in revise mode. */
-  const editRecord = $derived(composer.mode === 'revise' ? pinned : undefined);
+  /**
+   * The record "Edit it in the Ledger" points at, in revise mode: a candidate,
+   * or an archived record, which is corrected by hand. A decision in force is
+   * revised by drafting a successor instead.
+   */
+  const editRecord = $derived(
+    composer.mode === 'revise' && pinned && (pinned.status !== 'accepted' || pinned.superseded) ? pinned : undefined,
+  );
 
   let sending = $state(false);
   let error = $state<{ title: string; detail: string } | null>(null);
-  let picker = $state<'attach' | 'replace' | null>(null);
+  let picker = $state<'attach' | 'supersede' | null>(null);
   let pickerQuery = $state('');
   let pickerStatus = $state<RecordStatusFilter>('all');
   let root = $state<HTMLElement | undefined>();
@@ -89,7 +101,7 @@
 
   /** Where Close goes: back to the record this draft is about, else the Inbox. */
   const returnHref = $derived(
-    pinned ? ledgerUrl({ id: pinned.id, history: pinned.status !== 'accepted' || pinned.superseded }) : inboxUrl(),
+    pinned ? ledgerUrl({ id: pinned.id, archived: pinned.status !== 'accepted' || pinned.superseded }) : inboxUrl(),
   );
 
   function close() {
@@ -117,10 +129,10 @@
     picker = 'attach';
   }
 
-  function openReplacePicker() {
+  function openSupersedePicker() {
     pickerQuery = '';
     pickerStatus = 'accepted';
-    picker = 'replace';
+    picker = 'supersede';
   }
 
   function attachRecords(ids: string[]) {
@@ -157,7 +169,7 @@
     }
   }
 
-  async function replaceWithExisting(ids: string[]) {
+  async function supersedeWithExisting(ids: string[]) {
     picker = null;
     const from = pinned?.id;
     if (!from || ids.length === 0 || sending) return;
@@ -168,9 +180,9 @@
       toasts.push({ severity: 'success', message: response.message });
       await applyMutationResponse(queryClient, response);
       composer.reset();
-      await goto(resolve(ledgerUrl({ id: from, history: true }) as '/ledger'));
+      await goto(resolve(ledgerUrl({ id: from, archived: true }) as '/ledger'));
     } catch (cause) {
-      error = { title: 'Could not replace the decision', detail: errorMessage(cause) };
+      error = { title: 'Could not supersede the decision', detail: errorMessage(cause) };
     } finally {
       sending = false;
     }
@@ -204,13 +216,24 @@
     <div class="mt-5">
         {#if !loaded}
           <p class="text-sm text-fg-subtle">Loading the project…</p>
+        {:else if view === 'manual' && composer.mode === 'supersede'}
+          {#if predecessors.length}
+            {#key composer.recordIds.join(',')}
+              <DraftSuccessorForm
+                {predecessors}
+                {agentAvailable}
+                onuseagent={() => (chosenView = 'agent')}
+                onattachrecords={openAttachPicker}
+              />
+            {/key}
+          {:else}
+            <div class="space-y-3">
+              <p class="text-sm text-fg-muted">Choose the decision to supersede.</p>
+              <Button type="button" variant="outline" size="sm" onclick={openAttachPicker}>Attach records</Button>
+            </div>
+          {/if}
         {:else if view === 'manual'}
-          <DraftManualForm
-            mode={composer.mode}
-            record={pinned}
-            {agentAvailable}
-            onuseagent={() => (chosenView = 'agent')}
-          />
+          <DraftManualForm {agentAvailable} onuseagent={() => (chosenView = 'agent')} />
         {:else if !agentAvailable}
           <div class="space-y-3">
             <Alert variant="warning" title="No local agent found">
@@ -261,7 +284,7 @@
           <Alert class="mt-4" variant="danger" title={error.title}>{error.detail}</Alert>
         {/if}
 
-        {#if loaded && composer.mode === 'supersede' && pinned}
+        {#if loaded && composer.mode === 'supersede' && pinned && composer.recordIds.length === 1}
           <div class="mt-6 border-t border-border pt-4">
             <p class="text-xs text-fg-subtle">Already decided elsewhere?</p>
             <Button
@@ -270,9 +293,9 @@
               size="sm"
               class="mt-2"
               disabled={sending}
-              onclick={openReplacePicker}
+              onclick={openSupersedePicker}
             >
-              Replace with existing decisions instead
+              Supersede with existing decisions instead
             </Button>
           </div>
         {/if}
@@ -309,15 +332,15 @@
       onconfirm={attachRecords}
       oncancel={() => (picker = null)}
     />
-  {:else if picker === 'replace' && pinned}
+  {:else if picker === 'supersede' && pinned}
     <RecordSelectionDialog
-      title="Replace with existing decisions"
+      title="Supersede with existing decisions"
       {records}
       excludedIds={[pinned.id]}
       bind:query={pickerQuery}
       bind:status={pickerStatus}
       confirmLabel={() => 'Save'}
-      onconfirm={replaceWithExisting}
+      onconfirm={supersedeWithExisting}
       oncancel={() => (picker = null)}
     />
   {/if}

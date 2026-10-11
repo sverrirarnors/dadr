@@ -1,8 +1,9 @@
 # UUID v7 generator
 
-Every DADR record should have a UUID v7 in its front-matter `id` field.
-The record filename should normally begin with the first 12 hex characters of
-that identifier, followed by a short kebab-case title.
+Every DADR record has a UUID v7 in its front-matter `id` field. Its first 12 hex
+characters are the record's short id, the form to link it by, as in
+`[[01938b8e4d70]]`. The filename is up to you; a short kebab-case slug of the
+title, such as `income-preprocessing.md`, is suggested.
 
 You may use this page when you are drafting DADR records by hand and need a fresh identifier.
 
@@ -18,12 +19,14 @@ You may use this page when you are drafting DADR records by hand and need a fres
 </div>
 
 <div class="uuidv7-field">
-  <label for="uuidv7-prefix">DADR filename prefix</label>
+  <label for="uuidv7-short">Short id, for links</label>
   <div class="uuidv7-copy-row">
-    <input id="uuidv7-prefix" class="uuidv7-output" type="text" readonly spellcheck="false">
-    <button id="uuidv7-copy-prefix" class="md-button" type="button">Copy prefix</button>
+    <input id="uuidv7-short" class="uuidv7-output" type="text" readonly spellcheck="false">
+    <button id="uuidv7-copy-short" class="md-button" type="button">Copy short id</button>
   </div>
 </div>
+
+<p id="uuidv7-status" class="uuidv7-status" role="status"></p>
 
 This generator runs entirely in your browser. It writes the current Unix millisecond timestamp into the UUIDv7 timestamp field and fills the remaining random bits with `crypto.getRandomValues()`.
 
@@ -80,8 +83,8 @@ This generator runs entirely in your browser. It writes the current Unix millise
   const currentInput = document.getElementById("uuidv7-current");
   const generateButton = document.getElementById("uuidv7-generate");
   const copyButton = document.getElementById("uuidv7-copy");
-  const prefixOutput = document.getElementById("uuidv7-prefix");
-  const copyPrefixButton = document.getElementById("uuidv7-copy-prefix");
+  const shortOutput = document.getElementById("uuidv7-short");
+  const copyShortButton = document.getElementById("uuidv7-copy-short");
   const statusOutput = document.getElementById("uuidv7-status");
 
   const hasCrypto = globalThis.crypto && typeof globalThis.crypto.getRandomValues === "function";
@@ -124,7 +127,7 @@ This generator runs entirely in your browser. It writes the current Unix millise
 
   function renderUuid(uuid) {
     currentInput.value = uuid;
-    prefixOutput.value = uuid.replaceAll("-", "").slice(0, 12);
+    shortOutput.value = uuid.replaceAll("-", "").slice(0, 12);
   }
 
   async function copyText(text, successMessage) {
@@ -162,7 +165,7 @@ This generator runs entirely in your browser. It writes the current Unix millise
 
   generateButton.addEventListener("click", generateOne);
   copyButton.addEventListener("click", () => copyText(currentInput.value, "Copied UUID."));
-  copyPrefixButton.addEventListener("click", () => copyText(prefixOutput.value, "Copied filename prefix."));
+  copyShortButton.addEventListener("click", () => copyText(shortOutput.value, "Copied short id."));
 
   generateOne();
 })();

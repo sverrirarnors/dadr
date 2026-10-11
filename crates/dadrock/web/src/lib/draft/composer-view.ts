@@ -1,10 +1,13 @@
 import type { RecordSummary } from '$lib/api';
+import { parseListInput } from '$lib/candidates/form';
 import { ledgerUrl, type LedgerHref } from '$lib/navigation/routes';
 import type { RecordStatusFilter } from '$lib/records/filters';
-import type { DraftMode } from '$lib/stores/composer.svelte';
+import { readFrontMatter, splitSource } from '$lib/records/front-matter';
+import { mergedSuccessorBody } from '$lib/records/sections';
+import { bodyWithoutSupersedes, comparableBody } from '$lib/records/supersedes';
+import type { ComposerView, DraftMode } from '$lib/stores/composer.svelte';
 
-/** Which half of the composer is showing: the agent prompt or the manual form. */
-export type ComposerView = 'agent' | 'manual';
+export type { ComposerView };
 
 /** The record a revise or supersede composer is pinned to, when it is known. */
 export function pinnedRecord(
@@ -18,12 +21,22 @@ export function pinnedRecord(
   return records.find((record) => record.id === id);
 }
 
-export function composerTitle(mode: DraftMode, record: RecordSummary | undefined): string {
+/** The attached records that exist, in the order they were attached. */
+export function attachedRecords(recordIds: string[], records: RecordSummary[]): RecordSummary[] {
+  return recordIds
+    .map((id) => records.find((record) => record.id === id))
+    .filter((record): record is RecordSummary => Boolean(record));
+}
+
+/** The page title. Several attached decisions are superseded together, as a merge. */
+export function composerTitle(mode: DraftMode, records: RecordSummary[]): string {
+  const record = records[0];
   switch (mode) {
     case 'revise':
       return record ? `Revise “${record.title}”` : 'Revise a record';
     case 'supersede':
-      return record ? `Replace “${record.title}”` : 'Replace a decision';
+      if (records.length > 1) return `Supersede ${records.length} decisions`;
+      return record ? `Supersede “${record.title}”` : 'Supersede a decision';
     case 'merge':
       return 'Merge candidates';
     case 'new':
@@ -62,17 +75,55 @@ export function initialComposerView(mode: DraftMode, agentAvailable: boolean): C
   return !agentAvailable && manualFormAvailable(mode) ? 'manual' : 'agent';
 }
 
-export interface ManualPrefill {
-  title: string;
-  tags: string;
+export interface SuccessorSource {
+  record: RecordSummary;
+  /** The record's file content. */
+  source: string;
 }
 
-/** Title and tags the manual form starts with. */
-export function manualPrefill(mode: DraftMode, record: RecordSummary | undefined): ManualPrefill {
-  if (mode === 'supersede' && record) {
-    return { title: `Update: ${record.title}`, tags: record.tags.join(' ') };
+export interface SuccessorPrefill {
+  title: string;
+  /** Space-separated, as the tags field shows them. */
+  tags: string;
+  body: string;
+}
+
+/** A record's body as a successor starts from it: without front matter and without its own `## Supersedes`. */
+export function successorStartingBody(source: string): string {
+  return bodyWithoutSupersedes(splitSource(source).body).replace(/^(?:[ \t]*\r?\n)+/, '');
+}
+
+/**
+ * What a successor written by hand starts from. A successor of one decision
+ * starts from its exact title, tags, and body, so the diff shows only what
+ * the analyst changes. A merge starts untitled, with every predecessor's tags
+ * and each section's text from every predecessor.
+ */
+export function successorPrefill(predecessors: SuccessorSource[]): SuccessorPrefill {
+  const tagsOf = ({ record, source }: SuccessorSource) => {
+    const tags = readFrontMatter(source).tags;
+    return tags.length ? tags : record.tags;
+  };
+  const [only] = predecessors;
+  if (predecessors.length === 1 && only) {
+    return { title: only.record.title, tags: tagsOf(only).join(' '), body: successorStartingBody(only.source) };
   }
-  return { title: '', tags: '' };
+  const tags: string[] = [];
+  for (const predecessor of predecessors) {
+    for (const tag of tagsOf(predecessor)) if (!tags.includes(tag)) tags.push(tag);
+  }
+  return {
+    title: '',
+    tags: tags.join(' '),
+    body: predecessors.length ? mergedSuccessorBody(predecessors.map(({ source }) => successorStartingBody(source))) : '',
+  };
+}
+
+/** Whether the draft differs from what it started from: title, tags, or body. */
+export function successorChanged(prefill: SuccessorPrefill, draft: SuccessorPrefill): boolean {
+  if (prefill.title.trim() !== draft.title.trim()) return true;
+  if (parseListInput(prefill.tags).join(' ') !== parseListInput(draft.tags).join(' ')) return true;
+  return comparableBody(prefill.body) !== comparableBody(draft.body);
 }
 
 /** Where "Edit it in the Ledger" goes for a record. */
@@ -80,7 +131,7 @@ export function ledgerEditHref(record: RecordSummary): LedgerHref {
   return ledgerUrl({
     id: record.id,
     tab: 'edit',
-    history: record.status !== 'accepted' || record.superseded,
+    archived: record.status !== 'accepted' || record.superseded,
   });
 }
 

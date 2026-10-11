@@ -100,12 +100,11 @@ static BUILTIN_OUTPUT_KINDS: &[TaskOutputKindMeta] = &[
         contract: r#"{
   "kind": "supersession_proposal.v1",
   "summary": "string",
-  "superseded_record_id": "string",
+  "superseded_record_ids": ["string, one full id per superseded record"],
   "superseding_title": "string",
-  "tags": ["string"],
-  "superseding_body_markdown": "markdown string with Context, Decision, Alternatives, Consequences sections",
-  "rationale": "string",
-  "suggested_actions": ["string"]
+  "tags": ["optional string"],
+  "superseding_body_markdown": "markdown string with only the Context, Decision, Alternatives, Consequences sections; no ## Supersedes section",
+  "rationale": "string: why the decision changed, written into the successor's ## Supersedes section"
 }"#,
     },
     TaskOutputKindMeta {
@@ -307,14 +306,31 @@ pub struct DiagnosisIssue {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SupersessionProposalOutput {
     pub summary: String,
-    pub superseded_record_id: String,
+    /// The records the successor supersedes: one, or several for a merge.
+    #[serde(deserialize_with = "non_empty_strings")]
+    pub superseded_record_ids: Vec<String>,
     pub superseding_title: String,
+    /// Tags for the successor, starting from the predecessors' tags.
     #[serde(default)]
     pub tags: Vec<String>,
+    /// The successor's four sections. Dadrock writes `## Supersedes` itself
+    /// when the proposal is saved as a candidate.
     pub superseding_body_markdown: String,
+    /// Why the decision changed: the reason in `## Supersedes`.
     pub rationale: String,
-    #[serde(default)]
-    pub suggested_actions: Vec<String>,
+}
+
+fn non_empty_strings<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let values = Vec::<String>::deserialize(deserializer)?;
+    if values.is_empty() || values.iter().any(|value| value.trim().is_empty()) {
+        return Err(serde::de::Error::custom(
+            "expected at least one non-empty record id",
+        ));
+    }
+    Ok(values)
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -394,15 +410,32 @@ pub fn validate_task_output(
     match expected_kind {
         TaskOutputKind::Vendor(_) => Ok(value),
         _ => {
-            serde_json::from_value::<TaskOutputValue>(value.clone()).map_err(|err| {
-                DadrError::InvalidInput(format!(
-                    "failed to validate `{}` task output: {err}",
-                    expected_kind.as_str()
-                ))
-            })?;
+            let output =
+                serde_json::from_value::<TaskOutputValue>(value.clone()).map_err(|err| {
+                    DadrError::InvalidInput(format!(
+                        "failed to validate `{}` task output: {err}",
+                        expected_kind.as_str()
+                    ))
+                })?;
+            if let TaskOutputValue::SupersessionProposal(proposal) = &output {
+                validate_supersession_proposal(proposal)?;
+            }
             Ok(value)
         }
     }
+}
+
+/// Dadrock writes the successor's `## Supersedes` section from the proposal's
+/// ids and rationale, so the body carries only the four sections.
+fn validate_supersession_proposal(proposal: &SupersessionProposalOutput) -> Result<(), DadrError> {
+    let has_section = crate::records::supersedes_section(&proposal.superseding_body_markdown)
+        .map_or(true, |section| section.is_some());
+    if has_section {
+        return Err(DadrError::InvalidInput(
+            "failed to validate `supersession_proposal.v1` task output: `superseding_body_markdown` must not contain a `## Supersedes` section; Dadrock writes it from `superseded_record_ids` and `rationale`",
+        ));
+    }
+    Ok(())
 }
 
 fn output_kind_from_value(value: &Value) -> Result<TaskOutputKind, DadrError> {
