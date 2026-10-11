@@ -4,22 +4,10 @@
         <loc>https://vincentarelbundock.github.io/dadr/</loc>
       </url>
       <url>
-        <loc>https://vincentarelbundock.github.io/dadr/getting-started/</loc>
+        <loc>https://vincentarelbundock.github.io/dadr/install/</loc>
       </url>
       <url>
         <loc>https://vincentarelbundock.github.io/dadr/core/</loc>
-      </url>
-      <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/</loc>
-      </url>
-      <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/web/</loc>
-      </url>
-      <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/cli/</loc>
-      </url>
-      <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/ide/</loc>
       </url>
       <url>
         <loc>https://vincentarelbundock.github.io/dadr/specification/</loc>
@@ -35,5 +23,8 @@
       </url>
       <url>
         <loc>https://vincentarelbundock.github.io/dadr/roadmap/</loc>
+      </url>
+      <url>
+        <loc>https://vincentarelbundock.github.io/dadr/dadrock/</loc>
       </url>
 </urlset>

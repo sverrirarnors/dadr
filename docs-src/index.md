@@ -103,55 +103,13 @@ Data Analysis Decision Records (DADR) are designed to make our key analytical ch
 
 DADR is not meant to be a comprehensive record of every thought, but rather a focused ledger of the key decisions that shape an analysis. It is a simple specification inspired by the [Architecture Decision Record](https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-decision-record), a proven and popular development practice in the software engineering community.
 
-## Audience
-
-DADR serves three audiences:
-
-<div class="audience-grid" markdown>
-
-<div class="audience" markdown>
-<div class="audience-icon" markdown>:lucide-user:</div>
-**Researcher**
-
-A transparent reminder of past decisions and the reasons behind them.
-</div>
-
-<div class="audience" markdown>
-<div class="audience-icon" markdown>:lucide-users:</div>
-**Readers**
-
-People who want to understand which decisions were made and why, without having to reconstruct the analyst's intent from code or git commit history.
-</div>
-
-<div class="audience" markdown>
-<div class="audience-icon" markdown>:lucide-bot:</div>
-**LLMs**
-
-Machines can verify if the analyst's intent is implemented faithfully in the code, a pre-analysis plan, or a report.
-</div>
-
-</div>
-
-## Frictionless
-
-DADR is easy to implement because automated tools and LLMs do all the hard work! In the vast majority of cases, all the analyst needs to do is click "Accept" or "Reject" to determine if a candidate decision should enter the permanent record.
-
-A decision can be initiated in several ways:
-
-1. The LLM agent walks a code base to detect important decisions and drafts candidate decisions for them.[^static-analysis]
-2. The LLM agent detects a change in the code, analyzes the change, and drafts a candidate decision if necessary (Git hook).
-3. The LLM agent drafts a candidate decision based on analyst-supplied prompt and context.
-4. The analyst drafts a candidate decision manually.
-
-[^static-analysis]: The agent can have access to static analysis or instrumentation tools to better infer the consequences of a code chunk. Supplying these tools is on the roadmap for the **dadrock** tool.
-
 <div class="principle" markdown>
 Every candidate decision <b>must</b> be approved by the human analyst before it enters the permanent record.
 </div>
 
 <figure class="screenshot" markdown>
 ![Reviewing a candidate decision in the dadrock web UI, with Accept and Reject buttons](assets/dadrock-review-light.webp){ loading=lazy }
-<figcaption>Reviewing a candidate in the <a href="dadrock/web/">dadrock web UI</a>.</figcaption>
+<figcaption>Reviewing a candidate in the <a href="dadrock/#web-interface">dadrock web UI</a>.</figcaption>
 </figure>
 
 ## New possibilities
@@ -247,6 +205,6 @@ to be re-run; see [[01938c30b1e2]].
 ```
 
 <div class="hero-buttons" style="margin-top: 2.5rem">
-  <a class="md-button" href="getting-started/">Get started</a>
-  <a class="md-button" href="specification/">Read the specification</a>
+  <a class="md-button" href="core/">Documentation</a>
+  <a class="md-button" href="dadrock/">Software</a>
 </div>

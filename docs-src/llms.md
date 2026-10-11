@@ -1,6 +1,6 @@
-# Advanced agent setup
+# LLM agents
 
-Agent assistance is optional. The [manual walkthrough](getting-started.md) needs only Dadrock. This page is for configuring an agent or integrating Dadrock into other tools.
+Agent assistance is optional. The [first decision](dadrock.md#first-decision) needs only Dadrock. This page is for configuring an agent or integrating Dadrock into other tools.
 
 ## Configure one local agent
 

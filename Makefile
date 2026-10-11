@@ -37,8 +37,8 @@ release: ## Tag and push v$(VERSION); fires cargo-dist release workflow
 	git tag -a v$(VERSION) -m "Release v$(VERSION)"
 	git push origin v$(VERSION)
 
-cli-docs: ## Regenerate docs-src/dadrock/cli.md from the clap CLI definition
-	cargo run --quiet -p dadrock --bin dadrock -- gen-cli-docs > docs-src/dadrock/cli.md
+cli-docs: ## Regenerate the command-line reference inside docs-src/dadrock.md
+	cargo run --quiet -p dadrock --bin dadrock -- gen-cli-docs | python3 scripts/splice-cli-docs.py docs-src/dadrock.md
 
 web-deps: ## Install Python deps (zensical) into .venv via uv
 	uv sync

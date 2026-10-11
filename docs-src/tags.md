@@ -1,4 +1,4 @@
-# Optional tags
+# Tags
 
 You can use DADR without tags. Add them when they help your team find related decisions; there is no mandatory vocabulary.
 

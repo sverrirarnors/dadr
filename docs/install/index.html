@@ -10,7 +10,7 @@
       
       
       
-        <link rel="canonical" href="https://vincentarelbundock.github.io/dadr/getting-started/">
+        <link rel="canonical" href="https://vincentarelbundock.github.io/dadr/install/">
       
       
         <link rel="prev" href="./..">
@@ -27,7 +27,7 @@
     
     
       
-        <title>Your first decision - DADR</title>
+        <title>Install - DADR</title>
       
     
     
@@ -76,17 +76,17 @@
   
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DADR">
-  <meta property="og:title" content="Your first decision - DADR">
+  <meta property="og:title" content="Install - DADR">
   <meta property="og:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
   
-    <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/getting-started/">
+    <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/install/">
   
   <meta property="og:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="DADR — Data Analysis Decision Records">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Your first decision - DADR">
+  <meta name="twitter:title" content="Install - DADR">
   <meta name="twitter:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
   <meta name="twitter:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
 
@@ -109,7 +109,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#your-first-decision" class="md-skip">
+        <a href="#install" class="md-skip">
           Skip to content
         </a>
       
@@ -135,16 +135,13 @@
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
+    
+    
     <nav class="dadr-header-nav" aria-label="Primary">
       
-        
-        <a href="././" class="dadr-header-nav__link dadr-header-nav__link--active" aria-current="page">Get started</a>
+        <a href="../core/" class="dadr-header-nav__link dadr-header-nav__link--active" aria-current="page">Documentation</a>
       
-        
-        <a href="../specification/" class="dadr-header-nav__link">Specification</a>
-      
-        
-        <a href="../dadrock/dadrock/" class="dadr-header-nav__link">dadrock</a>
+        <a href="../dadrock/" class="dadr-header-nav__link">Software</a>
       
     </nav>
     
@@ -274,7 +271,7 @@
   <span class="md-ellipsis">
     
   
-  Get started
+  Install
 
     
   </span>
@@ -291,7 +288,7 @@
   <span class="md-ellipsis">
     
   
-  Get started
+  Install
 
     
   </span>
@@ -317,10 +314,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-install-from-source" class="md-nav__link">
+  <a href="#from-source" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Install from source
+        From source
       </span>
     </span>
   </a>
@@ -328,10 +325,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-start-in-your-analysis-project" class="md-nav__link">
+  <a href="#without-the-web-interface" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Start in your analysis project
+        Without the web interface
       </span>
     </span>
   </a>
@@ -339,10 +336,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-write-the-explanation" class="md-nav__link">
+  <a href="#editor-integration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Write the explanation
+        Editor integration
       </span>
     </span>
   </a>
@@ -350,10 +347,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-review-and-accept" class="md-nav__link">
+  <a href="#optional-a-local-agent" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Review and accept
+        Optional: a local agent
       </span>
     </span>
   </a>
@@ -361,21 +358,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-find-it-again" class="md-nav__link">
+  <a href="#next" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        5. Find it again
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-ask-an-agent-to-draft" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Optional: ask an agent to draft
+        Next
       </span>
     </span>
   </a>
@@ -404,7 +390,7 @@
   <span class="md-ellipsis">
     
   
-  The format
+  Data Analysis Decision Records
 
     
   </span>
@@ -418,211 +404,6 @@
     
       
       
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Dadrock
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Dadrock
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dadrock/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview and validation
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dadrock/web/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Web UI
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dadrock/cli/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  CLI reference
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dadrock/ide/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Editor integration
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reference
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Reference
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
   
   
   
@@ -646,10 +427,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -662,7 +442,7 @@
   <span class="md-ellipsis">
     
   
-  Optional tags
+  Tags
 
     
   </span>
@@ -673,10 +453,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -689,7 +468,7 @@
   <span class="md-ellipsis">
     
   
-  Advanced agent setup
+  LLM agents
 
     
   </span>
@@ -700,10 +479,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -727,10 +505,9 @@
     </li>
   
 
-              
-            
-              
-                
+    
+      
+      
   
   
   
@@ -754,11 +531,29 @@
     </li>
   
 
-              
-            
-          </ul>
-        </nav>
+    
       
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Dadrock
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -804,10 +599,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-install-from-source" class="md-nav__link">
+  <a href="#from-source" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Install from source
+        From source
       </span>
     </span>
   </a>
@@ -815,10 +610,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-start-in-your-analysis-project" class="md-nav__link">
+  <a href="#without-the-web-interface" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Start in your analysis project
+        Without the web interface
       </span>
     </span>
   </a>
@@ -826,10 +621,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-write-the-explanation" class="md-nav__link">
+  <a href="#editor-integration" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Write the explanation
+        Editor integration
       </span>
     </span>
   </a>
@@ -837,10 +632,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-review-and-accept" class="md-nav__link">
+  <a href="#optional-a-local-agent" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. Review and accept
+        Optional: a local agent
       </span>
     </span>
   </a>
@@ -848,21 +643,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-find-it-again" class="md-nav__link">
+  <a href="#next" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        5. Find it again
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-ask-an-agent-to-draft" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Optional: ask an agent to draft
+        Next
       </span>
     </span>
   </a>
@@ -887,49 +671,27 @@
   
 
 
-<h1 id="your-first-decision">Your first decision<a class="headerlink" href="#your-first-decision" title="Permanent link">&para;</a></h1>
-<p>After installation, this five-minute walkthrough takes you from an empty project to one accepted decision. You do not need an agent account or tags.</p>
-<h2 id="1-install-from-source">1. Install from source<a class="headerlink" href="#1-install-from-source" title="Permanent link">&para;</a></h2>
-<p>Install Rust/Cargo and Bun, then clone this repository and build Dadrock:</p>
+<h1 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h1>
+<p>Dadrock is a single binary. The web interface is embedded in it, so a complete build needs <a href="https://rustup.rs">Rust</a> and <a href="https://bun.sh">Bun</a>; a CLI-only build needs Rust alone.</p>
+<h2 id="from-source">From source<a class="headerlink" href="#from-source" title="Permanent link">&para;</a></h2>
+<p>Clone the repository and build with Cargo:</p>
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/vincentarelbundock/dadr.git
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>dadr
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nv">DADROCK_REQUIRE_JS_BUILD</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>cargo<span class="w"> </span>install<span class="w"> </span>--path<span class="w"> </span>crates/dadrock<span class="w"> </span>--bin<span class="w"> </span>dadrock
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>dadrock<span class="w"> </span>--version
 </span></code></pre></div>
-<p>The first build downloads dependencies and may take several minutes. Bun is needed to include the web interface. These instructions use the source checkout; they do not depend on a published package or release installer.</p>
-<h2 id="2-start-in-your-analysis-project">2. Start in your analysis project<a class="headerlink" href="#2-start-in-your-analysis-project" title="Permanent link">&para;</a></h2>
-<p>Change to the project where you keep your analysis, then run:</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dadrock<span class="w"> </span>init
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>dadrock<span class="w"> </span>new<span class="w"> </span><span class="s2">&quot;Exclude observations without treatment assignment&quot;</span>
+<p>The first build downloads dependencies and may take several minutes. <code>DADROCK_REQUIRE_JS_BUILD=1</code> makes the build fail rather than silently skip the web interface when Bun is missing.</p>
+<h2 id="without-the-web-interface">Without the web interface<a class="headerlink" href="#without-the-web-interface" title="Permanent link">&para;</a></h2>
+<p>For servers and continuous integration, build the command line only:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cargo<span class="w"> </span>install<span class="w"> </span>--path<span class="w"> </span>crates/dadrock<span class="w"> </span>--bin<span class="w"> </span>dadrock<span class="w"> </span>--features<span class="w"> </span>no-js-build
 </span></code></pre></div>
-<p><code>init</code> creates a <code>dadr/</code> directory without overwriting existing records. <code>new</code> prints the location of a candidate Markdown file and generates its ID.</p>
-<h2 id="3-write-the-explanation">3. Write the explanation<a class="headerlink" href="#3-write-the-explanation" title="Permanent link">&para;</a></h2>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadrock<span class="w"> </span>preview
-</span></code></pre></div>
-<p>Open the local URL printed in your terminal. Select your candidate and edit its four sections (or edit the Markdown file in your usual editor):</p>
-<ul>
-<li><strong>Context:</strong> Some observations lack treatment assignment.</li>
-<li><strong>Decision:</strong> Exclude those observations from this analysis.</li>
-<li><strong>Alternatives:</strong> Recover assignment from the original log; explain whether this was possible.</li>
-<li><strong>Consequences:</strong> Report how many observations were removed and consider whether missingness affects interpretation.</li>
-</ul>
-<p>Replace these illustrative statements with what actually happened in your project. In particular, explain <em>why</em> you chose this approach.</p>
-<h2 id="4-review-and-accept">4. Review and accept<a class="headerlink" href="#4-review-and-accept" title="Permanent link">&para;</a></h2>
-<p>Check both that the record describes your analysis accurately and that you endorse the rationale. Save your edits, then choose <strong>Accept</strong>. Your record moves to <code>dadr/accepted/</code>, keeping its ID. Commit the record with your analysis code using your usual version-control workflow.</p>
-<p>You can also accept from another terminal with <code>dadrock accept ID</code>, replacing <code>ID</code> with the candidate's ID or an unambiguous prefix.</p>
-<h2 id="5-find-it-again">5. Find it again<a class="headerlink" href="#5-find-it-again" title="Permanent link">&para;</a></h2>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dadrock<span class="w"> </span>list<span class="w"> </span>--status<span class="w"> </span>accepted
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>dadrock<span class="w"> </span>validate
-</span></code></pre></div>
-<p>Validation checks the records' structure and internal references. It does not establish that the analysis implements your decision correctly.</p>
-<p>When your choice changes, use <strong>Supersede</strong> on the record in the web interface to prepare a replacement. Preserve the original explanation. See <a href="../core/">the format in one page</a> for the lifecycle.</p>
-<h2 id="optional-ask-an-agent-to-draft">Optional: ask an agent to draft<a class="headerlink" href="#optional-ask-an-agent-to-draft" title="Permanent link">&para;</a></h2>
-<p>Once a local agent is <a href="../llms/">configured</a>, start with a small batch of consequential choices:</p>
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dadrock<span class="w"> </span>task<span class="w"> </span>run<span class="w"> </span>code-to-record<span class="w"> </span>--path<span class="w"> </span>analysis/<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>dadrock<span class="w"> </span>task<span class="w"> </span>run<span class="w"> </span>context-to-record<span class="w"> </span>--context<span class="w"> </span><span class="s2">&quot;Document why we exclude rows without treatment assignment&quot;</span>
-</span></code></pre></div>
-<p>Agent outputs are proposals for review. Code can show what happened without establishing why; correct unsupported claims and supply missing rationale before acceptance. The web interface also offers drafting actions.</p>
-<p>For a disposable example instead of your own analysis, run <code>dadrock demo --example candidate-review /tmp/dadr-example</code>, then <code>dadrock preview /tmp/dadr-example</code>. The demo requires a new or empty target directory.</p>
+<p><code>dadrock preview</code> then shows a notice instead of the interface; every other command works. Install from a pinned revision for reproducibility.</p>
+<h2 id="editor-integration">Editor integration<a class="headerlink" href="#editor-integration" title="Permanent link">&para;</a></h2>
+<p>The repository ships a VS Code extension under <code>editors/vscode</code>. From a checkout, <code>make vscode</code> builds the binary and the extension and installs it with the VS Code CLI; <code>make positron</code> targets Positron. These targets need the editor CLI, Rust, Bun, and Node. You can also edit DADR files in any editor and run <code>dadrock preview</code> alongside it.</p>
+<h2 id="optional-a-local-agent">Optional: a local agent<a class="headerlink" href="#optional-a-local-agent" title="Permanent link">&para;</a></h2>
+<p>Drafting and conflict checks use a local agent speaking the Agent Client Protocol, such as <code>claude-agent-acp</code>. Dadrock detects one on <code>PATH</code> automatically; see <a href="../llms/">LLM agents</a> to configure a specific provider. Nothing else in Dadrock depends on it.</p>
+<h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
+<p><a href="../dadrock/#first-decision">Record your first decision</a> with the software, or read what a <a href="../core/">Data Analysis Decision Record</a> is.</p>
 
 
 
@@ -978,13 +740,13 @@
         
         
           
-          <a href="../core/" class="md-footer__link md-footer__link--next" aria-label="Next: The format">
+          <a href="../core/" class="md-footer__link md-footer__link--next" aria-label="Next: Data Analysis Decision Records">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                The format
+                Data Analysis Decision Records
               </div>
             </div>
             <div class="md-footer__button md-icon">

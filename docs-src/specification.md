@@ -4,11 +4,11 @@ title: DADR specification
 
 # DADR specification
 
-For a short introduction, see [the format in one page](core.md). Suggested tag vocabularies are [documented separately](tags.md).
+For a short introduction, see [Data Analysis Decision Records](core.md). Suggested tag vocabularies are [documented separately](tags.md).
 
 **DADR** (Data-Analysis Decision Records) is a file-first format for recording consequential decisions in empirical and data-analysis projects. A DADR record is a Markdown file that captures one analytic decision: the context that motivated it, the decision that was made, the alternatives considered, and the consequences for the analysis. Records live alongside the analysis code, manuscript, data references, and project documentation.
 
-This page is the canonical specification of the record format. Directory layouts, inference, version-control hooks, previews, and agent workflows are tooling concerns; the reference implementation documents its own choices in the [**dadrock**](dadrock/dadrock.md) section.
+This page is the canonical specification of the record format. Directory layouts, inference, version-control hooks, previews, and agent workflows are tooling concerns; the reference implementation documents its own choices in the [**dadrock**](dadrock.md) section.
 
 ---
 
@@ -323,4 +323,4 @@ missingness is not concentrated in one site.
 
 ## Reference implementation { #reference-implementation }
 
-The reference implementation is **dadrock**, a Rust tool with a CLI, a web UI, and IDE integrations. See the [**dadrock**](dadrock/dadrock.md) section for its project layout, commands, and validation, and the [Tags](tags.md) page for the recommended tag vocabulary.
+The reference implementation is **dadrock**, a Rust tool with a CLI, a web UI, and IDE integrations. See the [**dadrock**](dadrock.md) section for its project layout, commands, and validation, and the [Tags](tags.md) page for the recommended tag vocabulary.

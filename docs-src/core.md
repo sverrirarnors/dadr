@@ -1,4 +1,4 @@
-# The format in one page
+# Data Analysis Decision Records
 
 A Data Analysis Decision Record answers one question: **what did we decide, and why?** Keep one Markdown file per consequential choice, alongside your analysis.
 
@@ -23,4 +23,4 @@ Start with choices a collaborator would ask you to explain: who enters the sampl
 
 Code can reveal what an analysis does without revealing why. When a draft says the rationale is unknown, supply it or leave the record as a candidate until you can review it.
 
-[Create your first record](getting-started.md), or consult the [full specification](specification.md) for exact syntax and implementation rules.
+[Install dadrock](install.md) and [record your first decision](dadrock.md#first-decision), or consult the [full specification](specification.md) for exact syntax and implementation rules.

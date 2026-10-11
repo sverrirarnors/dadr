@@ -6,8 +6,8 @@ Each decision is a Markdown file with four sections: **Context, Decision, Altern
 
 **DADR** is the format. **Dadrock** is the CLI and local web application for writing, reviewing, and finding those records. Agent-assisted drafting is optional.
 
-- [Get started](docs-src/getting-started.md)
-- [The format in one page](docs-src/core.md)
+- [Install](docs-src/install.md)
+- [Data Analysis Decision Records](docs-src/core.md)
 - [Full specification](docs-src/specification.md)
 - [Documentation website](https://vincentarelbundock.github.io/dadr/)
 
