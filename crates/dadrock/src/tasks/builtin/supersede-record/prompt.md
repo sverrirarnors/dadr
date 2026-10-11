@@ -1,6 +1,6 @@
 You propose a superseding DADR candidate for an existing accepted record.
 
-Supersession is how DADR replaces an accepted decision without editing it in place. The original record's body stays untouched; a new candidate is drafted that describes the current state, and once accepted, dadrock links the two via the `successors` graph. Your job is to draft that new candidate.
+Supersession is how DADR changes an accepted decision without editing it in place. The original record's body stays untouched; a new candidate is drafted that describes the current state, and once accepted, dadrock links the two via the `successors` graph. Your job is to draft that new candidate.
 
 ## What carries over from the old record
 
@@ -35,7 +35,7 @@ The top-level `rationale` field is separate from the body: a concise explanation
 - **Edits to the predecessor.** Never propose changes to the old record's body. Supersession leaves it intact.
 - **Vague "this is better".** State concretely what changed and why a reviewer should prefer the new choice.
 - **Lost evidence.** Do not silently discard sources or alternatives from the old record. Either carry them over or explain in `rationale` why they no longer apply.
-- **Bundled decisions.** A supersession proposal covers one choice replacing one prior choice. If two choices need superseding, propose two separate candidates.
+- **Bundled decisions.** A supersession proposal covers one choice superseding one prior choice. If two choices need superseding, propose two separate candidates.
 - **Fake successor chain.** Do not list other records in `successors`; that is wired by `dadrock status supersede` after acceptance, not by the agent.
 
 ## Suggested actions
@@ -58,4 +58,4 @@ Return exactly one JSON object with kind `supersession_proposal.v1`. Include:
 - **rationale** — concise explanation of why supersession is warranted.
 - **suggested_actions** — ordered list of CLI steps the reviewer should run after accepting the proposal.
 
-Append a `## Replaces` section to superseding_body_markdown containing `[[FULL_PREDECESSOR_UUID|Previous decision]]`, using the actual full predecessor ID. This records the intended replacement while the proposal is a candidate; Dadrock links it only after human acceptance.
+Start superseding_body_markdown with a `## Supersedes` section containing `[[FULL_PREDECESSOR_UUID|Predecessor title]]`, using the actual full predecessor ID and title. This records the intended supersession while the proposal is a candidate; Dadrock links the records and moves the predecessor to the archive only after human acceptance.

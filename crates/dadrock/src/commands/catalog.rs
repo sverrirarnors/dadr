@@ -110,7 +110,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["dir"],
         usage: "dir",
-        description: "Print the discovered accepted records directory.",
+        description: "Print the discovered Dadrock project directory (dadr/).",
         mutation: CommandMutation::ReadOnly,
         supports_json: false,
         exit_behavior: "Exits non-zero when project discovery fails.",
@@ -173,7 +173,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["accept"],
         usage: "accept <candidate-query>",
-        description: "Accept a candidate by converting it into an accepted decision.",
+        description: "Accept a candidate and move it to the ledger.",
         mutation: CommandMutation::Writes,
         supports_json: true,
         exit_behavior: "Exits non-zero when the candidate is unresolved, ambiguous, invalid, or cannot be moved.",
@@ -182,7 +182,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["reject"],
         usage: "reject <candidate-query>",
-        description: "Reject a candidate and move it into the rejected records directory.",
+        description: "Reject a candidate and move it to the archive.",
         mutation: CommandMutation::Writes,
         supports_json: true,
         exit_behavior: "Exits non-zero when the candidate is unresolved, ambiguous, invalid, or cannot be moved.",
@@ -191,7 +191,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["supersede"],
         usage: "supersede --from <old-query> --to <new-query> [--from <old-query>] [--to <new-query>]",
-        description: "Link accepted successors to the records they supersede.",
+        description: "Link accepted successors to the records they supersede and move those records to the archive.",
         mutation: CommandMutation::Writes,
         supports_json: true,
         exit_behavior: "Exits non-zero when any query is invalid, statuses are incompatible, or the requested edges would duplicate or cycle.",
@@ -200,7 +200,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["status", "accept"],
         usage: "status accept <candidate-query>",
-        description: "Accept a candidate by converting it into an accepted decision.",
+        description: "Accept a candidate and move it to the ledger.",
         mutation: CommandMutation::Writes,
         supports_json: true,
         exit_behavior: "Exits non-zero when the candidate is unresolved, ambiguous, invalid, or cannot be moved.",
@@ -209,7 +209,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["status", "reject"],
         usage: "status reject <candidate-query>",
-        description: "Reject a candidate and move it into the rejected records directory.",
+        description: "Reject a candidate and move it to the archive.",
         mutation: CommandMutation::Writes,
         supports_json: true,
         exit_behavior: "Exits non-zero when the candidate is unresolved, ambiguous, invalid, or cannot be moved.",
@@ -218,7 +218,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["status", "supersede"],
         usage: "status supersede --from <old-query> --to <new-query> [--from <old-query>] [--to <new-query>]",
-        description: "Link accepted successors to the records they supersede.",
+        description: "Link accepted successors to the records they supersede and move those records to the archive.",
         mutation: CommandMutation::Writes,
         supports_json: true,
         exit_behavior: "Exits non-zero when any query is invalid, statuses are incompatible, or the requested edges would duplicate or cycle.",

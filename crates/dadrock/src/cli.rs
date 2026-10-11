@@ -35,7 +35,7 @@ pub enum Command {
         about = "Print the CLI reference as Markdown (used to regenerate docs-src/dadrock/cli.md)."
     )]
     GenCliDocs,
-    #[command(about = "Print the discovered accepted records directory.")]
+    #[command(about = "Print the discovered Dadrock project directory (dadr/).")]
     Dir,
     #[command(about = "Print the resolved project layout.")]
     Config(JsonArg),
@@ -53,7 +53,9 @@ pub enum Command {
     Accept(QueryArgs),
     #[command(about = "Reject a candidate decision.")]
     Reject(QueryArgs),
-    #[command(about = "Link replacement decisions to the decisions they replace.")]
+    #[command(
+        about = "Link accepted successors to the records they supersede and move those records to the archive."
+    )]
     Supersede(StatusSupersedeArgs),
     #[command(about = "Run project validation, or target records, links, or tags.")]
     Validate(ValidateArgs),
@@ -200,11 +202,13 @@ pub struct StatusArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum StatusCommand {
-    #[command(about = "Accept a candidate by converting it into an accepted decision.")]
+    #[command(about = "Accept a candidate and move it to the ledger.")]
     Accept(QueryArgs),
-    #[command(about = "Reject a candidate and move it into the rejected records directory.")]
+    #[command(about = "Reject a candidate and move it to the archive.")]
     Reject(QueryArgs),
-    #[command(about = "Link accepted successors to the records they supersede.")]
+    #[command(
+        about = "Link accepted successors to the records they supersede and move those records to the archive."
+    )]
     Supersede(StatusSupersedeArgs),
 }
 

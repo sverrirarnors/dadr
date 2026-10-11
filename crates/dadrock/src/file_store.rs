@@ -65,22 +65,6 @@ pub(crate) fn remove_file(path: &Utf8Path) -> Result<(), DadrError> {
     sync_parent_dir(path)
 }
 
-pub(crate) struct RemoveFileFailure {
-    pub error: DadrError,
-    pub unlinked: bool,
-}
-
-pub(crate) fn remove_file_with_unlink_status(path: &Utf8Path) -> Result<(), RemoveFileFailure> {
-    fs::remove_file(utf8_to_path(path)).map_err(|err| RemoveFileFailure {
-        error: DadrError::Io(err),
-        unlinked: false,
-    })?;
-    sync_parent_dir(path).map_err(|error| RemoveFileFailure {
-        error,
-        unlinked: true,
-    })
-}
-
 pub(crate) fn sync_parent_dir(path: &Utf8Path) -> Result<(), DadrError> {
     let Some(parent) = path.parent() else {
         return Ok(());

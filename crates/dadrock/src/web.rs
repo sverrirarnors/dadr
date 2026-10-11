@@ -162,25 +162,20 @@ fn create_record(request: &HttpRequest, cwd: &Utf8PathBuf) -> Result<HttpRespons
         let old = index.resolve_one(supersedes)?.record;
         if old.status != dadrock::model::RecordStatus::Accepted || old.superseded {
             return Err(ApiFailure::bad_request(
-                "replacement requires a current accepted decision".to_owned(),
+                "a successor can supersede only a current accepted decision".to_owned(),
             ));
         }
         let markdown = match body.body_markdown.take() {
             Some(markdown) => markdown,
             None => candidate_template_body(&project)?.body,
         };
-        body.body_markdown = Some(match dadrock::records::replacement_id(&markdown)? {
-            Some(id) if id == old.id => markdown,
-            Some(_) => {
-                return Err(ApiFailure::bad_request(
-                    "Replaces link disagrees with the selected decision".to_owned(),
-                ))
-            }
-            None => format!(
-                "{}\n\n## Replaces\n\n[[{}|Previous decision]]\n",
-                markdown.trim_end(),
-                old.id
-            ),
+        body.body_markdown = Some(match dadrock::records::supersedes_section(&markdown)? {
+            Some(section) if section.ids == [old.id] => markdown,
+            Some(_) => return Err(ApiFailure::bad_request(
+                "the `## Supersedes` section names a different record than the selected decision"
+                    .to_owned(),
+            )),
+            None => dadrock::records::with_supersedes_section(&markdown, old.id, &old.title),
         });
     }
     let envelope = if let Some(body_markdown) = body.body_markdown.as_deref() {
@@ -220,7 +215,7 @@ fn clear_task_history(cwd: &Utf8PathBuf) -> Result<HttpResponse, ApiFailure> {
     let project_root = task_project_root(&project);
     let cleared = core_clear_task_runs(&project_root)?;
     let changed_paths = cleared.into_iter().collect::<Vec<_>>();
-    mutation_response(cwd, "Task history cleared.".to_owned(), changed_paths)
+    mutation_response(cwd, "Agent runs cleared.".to_owned(), changed_paths)
 }
 
 fn show_task_result(cwd: &Utf8PathBuf, run_id: &str) -> Result<HttpResponse, ApiFailure> {
@@ -411,11 +406,11 @@ fn record_lifecycle(cwd: &Utf8PathBuf, query: &str) -> Result<HttpResponse, ApiF
         .iter()
         .map(api_diagnostic_from_record_diagnostic)
         .collect();
-    let pending = match dadrock::records::pending_replacement(&index, query) {
+    let pending = match dadrock::records::pending_supersedes(&index, query) {
         Ok(pending) => pending,
         Err(error) => {
             diagnostics.push(ApiDiagnostic::error(
-                "invalid_replacement",
+                "invalid_supersedes",
                 error.to_string(),
             ));
             None
@@ -685,13 +680,13 @@ fn build_snapshot(cwd: &Utf8PathBuf) -> Result<ApiSnapshot, DadrError> {
 fn api_project(project: &ProjectContext) -> ApiProject {
     ApiProject {
         cwd: project.cwd.to_string(),
-        decisions_dir: project.decisions_dir.to_string(),
+        decisions_dir: project.ledger_dir().to_string(),
         initialized: project.initialized,
         discovery_source: discovery_source_label(&project.discovery_source).to_owned(),
         status: if project.initialized {
             "Project discovered. Commands operate on the local decision records.".to_owned()
         } else {
-            "No Dadrock project found here. Initialize to create dadr/ with records, candidates, templates, tasks, and runs."
+            "No Dadrock project found here. Initialize to create dadr/ with inbox, ledger, archive, templates, tasks, and runs."
                 .to_owned()
         },
     }
@@ -886,9 +881,9 @@ fn settings_panel(
             let layout = envelope.data;
             settings.config = vec![
                 format!("project dir: {}", layout.project_dir),
-                format!("accepted dir: {}", layout.accepted_dir),
-                format!("candidates dir: {}", layout.candidates_dir),
-                format!("rejected dir: {}", layout.rejected_dir),
+                format!("inbox dir: {}", layout.inbox_dir),
+                format!("ledger dir: {}", layout.ledger_dir),
+                format!("archive dir: {}", layout.archive_dir),
                 format!("templates dir: {}", layout.templates_dir),
                 format!("tasks dir: {}", layout.tasks_dir),
                 format!("runs dir: {}", layout.runs_dir),
@@ -1045,6 +1040,7 @@ struct ApiSnapshot {
 #[derive(Serialize)]
 struct ApiProject {
     cwd: String,
+    /// The ledger, where the decisions in force live.
     decisions_dir: String,
     initialized: bool,
     discovery_source: String,
@@ -1227,9 +1223,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn replacement_api_persists_intent_and_links_on_acceptance() {
+    fn supersedes_api_persists_intent_and_links_on_acceptance() {
         let root = Utf8PathBuf::from_path_buf(
-            std::env::temp_dir().join(format!("dadrock-web-replacement-{}", RecordId::new_v7())),
+            std::env::temp_dir().join(format!("dadrock-web-supersedes-{}", RecordId::new_v7())),
         )
         .unwrap();
         fs::create_dir_all(&root).unwrap();
@@ -1250,32 +1246,48 @@ mod tests {
         };
         let old = create("Previous decision", None);
         accept_candidate(&root, &old).unwrap();
-        let next = create("Replacement", Some(&old));
+        let next = create("Successor", Some(&old));
         // Each API call rediscovers the on-disk project; no browser state is needed.
         let pending: serde_json::Value =
             serde_json::from_slice(&record_lifecycle(&root, &next).unwrap().body).unwrap();
         assert_eq!(pending["pending_supersedes"]["id"], old);
+        let source: serde_json::Value =
+            serde_json::from_slice(&record_source(&root, &next).unwrap().body).unwrap();
+        let body = source["content"]
+            .as_str()
+            .unwrap()
+            .splitn(3, "---")
+            .nth(2)
+            .unwrap();
+        assert!(body.trim_start().starts_with(&format!(
+            "## Supersedes\n\n[[{old}|Previous decision]]\n\n## Context\n"
+        )));
         let response = accept_candidate(&root, &next).unwrap();
         let mutation: serde_json::Value = serde_json::from_slice(&response.body).unwrap();
-        assert!(mutation["changed_paths"].as_array().unwrap().len() >= 2);
+        // The successor and its predecessor each moved: inbox to ledger, ledger to archive.
+        assert_eq!(mutation["changed_paths"].as_array().unwrap().len(), 4);
         let previous: serde_json::Value =
             serde_json::from_slice(&record_lifecycle(&root, &old).unwrap().body).unwrap();
         assert_eq!(previous["successors"][0]["id"], next);
+        assert!(previous["record"]["path"]
+            .as_str()
+            .unwrap()
+            .contains("/dadr/archive/"));
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn missing_replacement_predecessor_stays_editable_without_accepting() {
+    fn missing_predecessor_stays_editable_without_accepting() {
         let root = Utf8PathBuf::from_path_buf(std::env::temp_dir().join(format!(
-            "dadrock-web-missing-replacement-{}",
+            "dadrock-web-missing-predecessor-{}",
             RecordId::new_v7()
         )))
         .unwrap();
         fs::create_dir_all(&root).unwrap();
         initialize_project(&root).unwrap();
         let context = context_for(&root).unwrap();
-        let body = format!("## Context\nContext\n## Decision\nDecision\n## Alternatives\nAlternatives\n## Consequences\nConsequences\n## Replaces\n[[{}|Missing decision]]\n", RecordId::new_v7());
-        let candidate = core_commands::new_record_with_body(&context, "Replacement", &[], &body)
+        let body = format!("## Supersedes\n\n[[{}|Missing decision]]\n\n## Context\nContext\n## Decision\nDecision\n## Alternatives\nAlternatives\n## Consequences\nConsequences\n", RecordId::new_v7());
+        let candidate = core_commands::new_record_with_body(&context, "Successor", &[], &body)
             .unwrap()
             .data;
         let before = fs::read_to_string(&candidate.path).unwrap();
@@ -1283,7 +1295,7 @@ mod tests {
         let lifecycle: serde_json::Value =
             serde_json::from_slice(&record_lifecycle(&root, &id).unwrap().body).unwrap();
         assert_eq!(lifecycle["record"]["status"], "candidate");
-        assert_eq!(lifecycle["diagnostics"][0]["code"], "invalid_replacement");
+        assert_eq!(lifecycle["diagnostics"][0]["code"], "invalid_supersedes");
         assert!(accept_candidate(&root, &id).is_err());
         assert_eq!(fs::read_to_string(&candidate.path).unwrap(), before);
         fs::remove_dir_all(root).unwrap();
@@ -1301,7 +1313,7 @@ mod tests {
             snapshot: ApiSnapshot {
                 project: ApiProject {
                     cwd: "/tmp/project".to_owned(),
-                    decisions_dir: "/tmp/project/dadr/accepted".to_owned(),
+                    decisions_dir: "/tmp/project/dadr/ledger".to_owned(),
                     initialized: true,
                     discovery_source: "directory".to_owned(),
                     status: "Project discovered.".to_owned(),

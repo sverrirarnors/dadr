@@ -22,9 +22,10 @@ pub struct ProjectIndex {
 
 impl ProjectIndex {
     pub fn scan(project: &ProjectContext) -> Result<Self, DadrError> {
-        let mut scanned = scan_records(&project.decisions_dir)?;
-        scanned.extend(scan_records(&project.candidates_dir())?);
-        scanned.extend(scan_records(&project.rejected_dir())?);
+        let mut scanned = Vec::new();
+        for dir in project.record_dirs() {
+            scanned.extend(scan_records(&dir)?);
+        }
         Ok(Self::from_scanned(project.clone(), scanned))
     }
 
@@ -58,10 +59,6 @@ impl ProjectIndex {
 
     pub fn project(&self) -> &ProjectContext {
         &self.project
-    }
-
-    pub fn decisions_dir(&self) -> &camino::Utf8Path {
-        &self.project.decisions_dir
     }
 
     pub fn scanned_records(&self) -> &[ScannedRecord] {

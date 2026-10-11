@@ -1373,7 +1373,7 @@ fn supersede_task_prompt_requires_predecessor_wikilink() {
             id: "supersede-record".to_owned(),
             run_id: "01960000000000000000000000".to_owned(),
             title: "Supersede record".to_owned(),
-            description: "Draft a replacement candidate for an accepted DADR.".to_owned(),
+            description: "Draft a successor candidate for an accepted DADR.".to_owned(),
             output_kind: TaskOutputKind::SupersessionProposalV1,
             input: json!({
                 "record_id": "01960000-0000-7000-8000-000000000000",
@@ -1865,7 +1865,7 @@ fn discovered_task(
 fn agent_project_context(cwd: &Utf8PathBuf) -> ProjectContext {
     ProjectContext {
         cwd: cwd.clone(),
-        decisions_dir: cwd.join("dadr/accepted"),
+        project_dir: cwd.join("dadr"),
         discovery_source: DiscoverySource::Fallback,
         initialized: true,
     }

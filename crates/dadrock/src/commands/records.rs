@@ -11,8 +11,8 @@ use crate::{
         accept_candidate, check_required_sections, create_candidate, create_candidate_with_body,
         parse_record_str, reject_candidate, scan_input, status_record, supersede_record,
         supersede_records as supersede_records_impl, AcceptRecordResult, NewRecordResult,
-        RecordStatusResult, RejectRecordResult, ScannedRecordSummary, SupersedeRecordResult,
-        SupersedeRecordsResult,
+        RecordMove, RecordStatusResult, RejectRecordResult, ScannedRecordSummary,
+        SupersedeRecordResult, SupersedeRecordsResult,
     },
     tags::{build_tag_report, record_ids_for_tag, TagReport},
     validation::{validate_project_index, ProjectValidationReport},
@@ -200,15 +200,10 @@ pub fn accept_record(
     query: &str,
 ) -> Result<CommandEnvelope<AcceptRecordResult>, DadrError> {
     let (_, index) = context.initialized_index()?;
-    let predecessor = crate::records::pending_replacement(&index, query)?;
     let result = accept_candidate(&index, query)?;
-    let mut changed_paths = if result.from == result.to {
-        vec![result.to.clone()]
-    } else {
-        vec![result.from.clone(), result.to.clone()]
-    };
-    if let Some(old) = predecessor {
-        changed_paths.push(old.path);
+    let mut changed_paths = moved_paths(&result.from, &result.to);
+    for moved in &result.superseded {
+        changed_paths.extend(moved_paths(&moved.from, &moved.to));
     }
     Ok(CommandEnvelope::new("status accept", result).with_changed_paths(changed_paths))
 }
@@ -219,11 +214,7 @@ pub fn reject_record(
 ) -> Result<CommandEnvelope<RejectRecordResult>, DadrError> {
     let (_, index) = context.initialized_index()?;
     let result = reject_candidate(&index, query)?;
-    let changed_paths = if result.from == result.to {
-        vec![result.to.clone()]
-    } else {
-        vec![result.from.clone(), result.to.clone()]
-    };
+    let changed_paths = moved_paths(&result.from, &result.to);
     Ok(CommandEnvelope::new("status reject", result).with_changed_paths(changed_paths))
 }
 
@@ -234,7 +225,10 @@ pub fn supersede(
 ) -> Result<CommandEnvelope<SupersedeRecordResult>, DadrError> {
     let (_, index) = context.initialized_index()?;
     let result = supersede_record(&index, old_query, new_query)?;
-    let changed_paths = vec![result.old_path.clone()];
+    let old_path = index
+        .summary_by_id(result.old_id)
+        .map_or_else(|| result.old_path.clone(), |old| old.path.clone());
+    let changed_paths = moved_paths(&old_path, &result.old_path);
     Ok(CommandEnvelope::new("status supersede", result).with_changed_paths(changed_paths))
 }
 
@@ -251,11 +245,20 @@ pub fn supersede_records(
     let (_, index) = context.initialized_index()?;
     let result = supersede_records_impl(&index, &request.from, &request.to)?;
     let changed_paths = result
-        .from
+        .superseded
         .iter()
-        .map(|record| record.path.clone())
+        .flat_map(|RecordMove { from, to, .. }| moved_paths(from, to))
         .collect();
     Ok(CommandEnvelope::new("status supersede", result).with_changed_paths(changed_paths))
+}
+
+/// The paths a rewrite touched: one path in place, or both ends of a move.
+fn moved_paths(from: &Utf8PathBuf, to: &Utf8PathBuf) -> Vec<Utf8PathBuf> {
+    if from == to {
+        vec![to.clone()]
+    } else {
+        vec![from.clone(), to.clone()]
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

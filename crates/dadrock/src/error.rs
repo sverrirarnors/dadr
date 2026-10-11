@@ -30,8 +30,8 @@ pub enum DadrError {
     #[error("record query is ambiguous: {query} matched {matches} records")]
     AmbiguousRecordQuery { query: String, matches: usize },
 
-    #[error("no Dadrock project found for `{decisions_dir}`; run `dadrock init` first")]
-    ProjectNotInitialized { decisions_dir: Utf8PathBuf },
+    #[error("no Dadrock project found for `{project_dir}`; run `dadrock init` first")]
+    ProjectNotInitialized { project_dir: Utf8PathBuf },
 
     #[error("path is not valid UTF-8: {path}")]
     PathNotUtf8 { path: String },

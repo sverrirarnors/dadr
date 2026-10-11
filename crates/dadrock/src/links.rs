@@ -8,7 +8,6 @@ use crate::{
     index::ProjectIndex,
     markdown::scan::{byte_in_spans, inline_code_spans, is_fenced_code_fence},
     model::RecordStatus,
-    project::ProjectContext,
     records::{FindResolution, ScannedRecord},
     text::write_serde_label,
     RecordId, RecordRef,
@@ -16,7 +15,7 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LinkCheckReport {
-    pub decisions_dir: Utf8PathBuf,
+    pub project_dir: Utf8PathBuf,
     pub ok: bool,
     pub counts: IssueCounts,
     pub issues: Vec<LinkIssue>,
@@ -128,14 +127,7 @@ pub fn check_project_links(index: &ProjectIndex) -> LinkCheckReport {
             if in_fenced_code {
                 continue;
             }
-            add_wikilink_issues(
-                project,
-                index,
-                scanned_record,
-                line,
-                line_number,
-                &mut issues,
-            );
+            add_wikilink_issues(index, scanned_record, line, line_number, &mut issues);
             add_markdown_link_issues(scanned_record, line, line_number, &mut issues);
         }
     }
@@ -144,7 +136,7 @@ pub fn check_project_links(index: &ProjectIndex) -> LinkCheckReport {
     let counts = IssueCounts::from_severities(issues.iter().map(|issue| issue.severity));
     let ok = counts.errors == 0;
     LinkCheckReport {
-        decisions_dir: project.decisions_dir.clone(),
+        project_dir: project.project_dir.clone(),
         ok,
         counts,
         issues,
@@ -152,7 +144,6 @@ pub fn check_project_links(index: &ProjectIndex) -> LinkCheckReport {
 }
 
 fn add_wikilink_issues(
-    project: &ProjectContext,
     index: &ProjectIndex,
     scanned: &ScannedRecord,
     line: &str,
@@ -204,23 +195,23 @@ fn add_wikilink_issues(
                     .into_iter()
                     .next()
                     .expect("one resolution contains one match");
-                if found.record.path.starts_with(project.rejected_dir()) {
-                    let mut issue = LinkIssue::warning(
-                        LinkIssueCode::RejectedRecordWikilink,
-                        scanned.path.clone(),
-                        line_number,
-                        query.to_owned(),
-                        format!(
-                            "wikilink target `{query}` resolves to rejected record `{}`",
-                            found.record.title
-                        ),
-                    )
-                    .with_optional_record_id(source_record_id(scanned))
-                    .with_related_paths(vec![found.record.path]);
-                    if found.record.status != RecordStatus::Accepted {
-                        issue.message.push_str(" rather than an accepted decision");
-                    }
-                    issues.push(issue);
+                // The archive also holds superseded decisions, which are fine
+                // to link, so the check reads the status, not the folder.
+                if found.record.status == RecordStatus::Rejected {
+                    issues.push(
+                        LinkIssue::warning(
+                            LinkIssueCode::RejectedRecordWikilink,
+                            scanned.path.clone(),
+                            line_number,
+                            query.to_owned(),
+                            format!(
+                                "wikilink target `{query}` resolves to rejected record `{}` rather than an accepted decision",
+                                found.record.title
+                            ),
+                        )
+                        .with_optional_record_id(source_record_id(scanned))
+                        .with_related_paths(vec![found.record.path]),
+                    );
                 }
             }
         }

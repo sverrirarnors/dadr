@@ -135,7 +135,7 @@ fn dadr_task_guidance() -> &'static str {
     r###"DADR task guidance:
 - A DADR candidate records one consequential analytic choice: a choice that could plausibly change results, interpretation, or the scope of a claim.
 - Candidate bodies should use these four sections exactly once: Context, Decision, Alternatives, Consequences.
-- Ground candidate proposals in evidence. Include Markdown links to sources when available, and use warnings or low confidence when evidence is thin. Relative link paths resolve from the record's directory (`dadr/candidates/`), so a repository file is `../../path/to/file`. Link other records with short-id wikilinks such as `[[01938b8e4d70]]`.
+- Ground candidate proposals in evidence. Include Markdown links to sources when available, and use warnings or low confidence when evidence is thin. Relative link paths resolve from the record's directory (`dadr/inbox/`), so a repository file is `../../path/to/file`. Link other records with short-id wikilinks such as `[[01938b8e4d70]]`.
 - Agent-drafted candidate tags should include kind/<surface> and writer/agent. Common kind values are sample, model, estimand, measurement, transformation, inference, report, and robustness.
 - Do not fabricate alternatives. If no real alternative is supported, say so plainly in the candidate body or warning.
 - Do not accept, reject, or supersede records. Those lifecycle transitions are human approval boundaries."###

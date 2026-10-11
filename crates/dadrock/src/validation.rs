@@ -20,7 +20,7 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectValidationReport {
-    pub decisions_dir: Utf8PathBuf,
+    pub project_dir: Utf8PathBuf,
     pub ok: bool,
     pub counts: IssueCounts,
     pub issues: Vec<ProjectValidationIssue>,
@@ -165,7 +165,7 @@ pub fn validate_project_index(index: &ProjectIndex) -> ProjectValidationReport {
     let ok = counts.errors == 0;
 
     ProjectValidationReport {
-        decisions_dir: project.decisions_dir.clone(),
+        project_dir: project.project_dir.clone(),
         ok,
         counts,
         issues,
@@ -344,22 +344,27 @@ fn status_location_issue(
     record: &Record,
     id: RecordId,
 ) -> Option<ProjectValidationIssue> {
-    let in_candidates = scanned.path.starts_with(project.candidates_dir());
-    let in_rejected = scanned.path.starts_with(project.rejected_dir());
-    let status = record.front_matter.status;
-
-    let message = match status {
-        RecordStatus::Candidate if !in_candidates => {
-            Some("active candidate records should live under the active candidates directory")
-        }
-        RecordStatus::Rejected if !in_rejected => {
-            Some("rejected records should live under the rejected directory")
-        }
-        RecordStatus::Accepted if in_candidates || in_rejected => {
-            Some("accepted records should live under the accepted directory")
-        }
-        _ => None,
-    }?;
+    let (expected_dir, message) = match record.front_matter.status {
+        RecordStatus::Candidate => (
+            project.inbox_dir(),
+            "candidate records belong in the inbox, `dadr/inbox/`",
+        ),
+        RecordStatus::Accepted if record.front_matter.is_superseded() => (
+            project.archive_dir(),
+            "superseded records (accepted, with successors) belong in the archive, `dadr/archive/`",
+        ),
+        RecordStatus::Accepted => (
+            project.ledger_dir(),
+            "accepted records without successors belong in the ledger, `dadr/ledger/`",
+        ),
+        RecordStatus::Rejected => (
+            project.archive_dir(),
+            "rejected records belong in the archive, `dadr/archive/`",
+        ),
+    };
+    if scanned.path.starts_with(&expected_dir) {
+        return None;
+    }
 
     Some(
         ProjectValidationIssue::warning(

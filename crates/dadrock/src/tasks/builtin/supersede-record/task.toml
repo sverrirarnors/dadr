@@ -1,6 +1,6 @@
 id = "supersede-record"
 title = "Supersede record"
-description = "Draft a replacement candidate for an accepted DADR when the project decision has changed."
+description = "Draft a successor candidate for an accepted DADR when the project decision has changed."
 version = 1
 
 [input]

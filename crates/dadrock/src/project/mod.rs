@@ -14,47 +14,57 @@ pub enum DiscoverySource {
     Fallback,
 }
 
+/// Folder for candidates, the records waiting for a human decision.
+pub const INBOX_DIR: &str = "inbox";
+/// Folder for decisions in force: accepted records without successors.
+pub const LEDGER_DIR: &str = "ledger";
+/// Folder for records kept but not in force: rejected and superseded records.
+pub const ARCHIVE_DIR: &str = "archive";
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectContext {
     pub cwd: Utf8PathBuf,
-    pub decisions_dir: Utf8PathBuf,
+    /// The `dadr/` directory.
+    pub project_dir: Utf8PathBuf,
     pub discovery_source: DiscoverySource,
     pub initialized: bool,
 }
 
 impl ProjectContext {
-    pub fn project_dir(&self) -> Utf8PathBuf {
-        self.decisions_dir
-            .parent()
-            .map(Utf8Path::to_path_buf)
-            .unwrap_or_else(|| self.decisions_dir.clone())
-    }
-
     pub fn workspace_dir(&self) -> Utf8PathBuf {
-        self.project_dir()
+        self.project_dir
             .parent()
             .map(Utf8Path::to_path_buf)
             .unwrap_or_else(|| self.cwd.clone())
     }
 
-    pub fn candidates_dir(&self) -> Utf8PathBuf {
-        self.project_dir().join("candidates")
+    pub fn inbox_dir(&self) -> Utf8PathBuf {
+        self.project_dir.join(INBOX_DIR)
     }
 
-    pub fn rejected_dir(&self) -> Utf8PathBuf {
-        self.project_dir().join("rejected")
+    pub fn ledger_dir(&self) -> Utf8PathBuf {
+        self.project_dir.join(LEDGER_DIR)
+    }
+
+    pub fn archive_dir(&self) -> Utf8PathBuf {
+        self.project_dir.join(ARCHIVE_DIR)
+    }
+
+    /// The folders that hold records, in scan order.
+    pub fn record_dirs(&self) -> [Utf8PathBuf; 3] {
+        [self.ledger_dir(), self.inbox_dir(), self.archive_dir()]
     }
 
     pub fn templates_dir(&self) -> Utf8PathBuf {
-        self.project_dir().join("templates")
+        self.project_dir.join("templates")
     }
 
     pub fn tasks_dir(&self) -> Utf8PathBuf {
-        self.project_dir().join("tasks")
+        self.project_dir.join("tasks")
     }
 
     pub fn runs_dir(&self) -> Utf8PathBuf {
-        self.project_dir().join("runs")
+        self.project_dir.join("runs")
     }
 
     pub fn require_initialized(&self) -> Result<(), DadrError> {
@@ -62,7 +72,7 @@ impl ProjectContext {
             Ok(())
         } else {
             Err(DadrError::ProjectNotInitialized {
-                decisions_dir: self.decisions_dir.clone(),
+                project_dir: self.project_dir.clone(),
             })
         }
     }
@@ -70,7 +80,7 @@ impl ProjectContext {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InitResult {
-    pub decisions_dir: Utf8PathBuf,
+    pub project_dir: Utf8PathBuf,
     pub created: Vec<Utf8PathBuf>,
     pub existing: Vec<Utf8PathBuf>,
 }
@@ -78,9 +88,9 @@ pub struct InitResult {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectLayout {
     pub project_dir: Utf8PathBuf,
-    pub accepted_dir: Utf8PathBuf,
-    pub candidates_dir: Utf8PathBuf,
-    pub rejected_dir: Utf8PathBuf,
+    pub inbox_dir: Utf8PathBuf,
+    pub ledger_dir: Utf8PathBuf,
+    pub archive_dir: Utf8PathBuf,
     pub templates_dir: Utf8PathBuf,
     pub tasks_dir: Utf8PathBuf,
     pub runs_dir: Utf8PathBuf,
@@ -88,10 +98,10 @@ pub struct ProjectLayout {
 
 pub fn project_layout(project: &ProjectContext) -> ProjectLayout {
     ProjectLayout {
-        project_dir: project.project_dir(),
-        accepted_dir: project.decisions_dir.clone(),
-        candidates_dir: project.candidates_dir(),
-        rejected_dir: project.rejected_dir(),
+        project_dir: project.project_dir.clone(),
+        inbox_dir: project.inbox_dir(),
+        ledger_dir: project.ledger_dir(),
+        archive_dir: project.archive_dir(),
         templates_dir: project.templates_dir(),
         tasks_dir: project.tasks_dir(),
         runs_dir: project.runs_dir(),
@@ -112,7 +122,7 @@ pub fn discover_from(start: impl AsRef<Path>) -> Result<ProjectContext, DadrErro
         if dadr_layout_exists(&dadr) {
             return Ok(ProjectContext {
                 cwd: cwd_utf8,
-                decisions_dir: path_to_utf8(dadr.join("accepted"))?,
+                project_dir: path_to_utf8(dadr)?,
                 discovery_source: DiscoverySource::Directory,
                 initialized: true,
             });
@@ -124,7 +134,7 @@ pub fn discover_from(start: impl AsRef<Path>) -> Result<ProjectContext, DadrErro
 
     Ok(ProjectContext {
         cwd: cwd_utf8.clone(),
-        decisions_dir: cwd_utf8.join("dadr").join("accepted"),
+        project_dir: cwd_utf8.join("dadr"),
         discovery_source: DiscoverySource::Fallback,
         initialized: false,
     })
@@ -138,9 +148,9 @@ fn nearest_git_root(cwd: &Path) -> Option<PathBuf> {
 
 fn dadr_layout_exists(dadr: &Path) -> bool {
     dadr.is_dir()
-        && dadr.join("accepted").is_dir()
-        && dadr.join("candidates").is_dir()
-        && dadr.join("rejected").is_dir()
+        && [INBOX_DIR, LEDGER_DIR, ARCHIVE_DIR]
+            .iter()
+            .all(|folder| dadr.join(folder).is_dir())
 }
 
 pub fn init_project(target: impl AsRef<Path>) -> Result<InitResult, DadrError> {
@@ -150,24 +160,24 @@ pub fn init_project(target: impl AsRef<Path>) -> Result<InitResult, DadrError> {
     } else {
         target.join("dadr")
     };
-    let decisions_dir = project_dir.join("accepted");
-    let candidates_dir = project_dir.join("candidates");
-    let rejected_dir = project_dir.join("rejected");
+    let inbox_dir = project_dir.join(INBOX_DIR);
+    let ledger_dir = project_dir.join(LEDGER_DIR);
+    let archive_dir = project_dir.join(ARCHIVE_DIR);
     let templates_dir = project_dir.join("templates");
     let tasks_dir = project_dir.join("tasks");
     let runs_dir = project_dir.join("runs");
     let runs_gitignore = runs_dir.join(".gitignore");
 
     let mut result = InitResult {
-        decisions_dir: path_to_utf8(decisions_dir.clone())?,
+        project_dir: path_to_utf8(project_dir.clone())?,
         created: Vec::new(),
         existing: Vec::new(),
     };
 
     create_dir_idempotent(&project_dir, &mut result)?;
-    create_dir_idempotent(&decisions_dir, &mut result)?;
-    create_dir_idempotent(&candidates_dir, &mut result)?;
-    create_dir_idempotent(&rejected_dir, &mut result)?;
+    create_dir_idempotent(&inbox_dir, &mut result)?;
+    create_dir_idempotent(&ledger_dir, &mut result)?;
+    create_dir_idempotent(&archive_dir, &mut result)?;
     create_dir_idempotent(&templates_dir, &mut result)?;
     create_dir_idempotent(&tasks_dir, &mut result)?;
     create_dir_idempotent(&runs_dir, &mut result)?;

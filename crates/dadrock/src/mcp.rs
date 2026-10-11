@@ -251,7 +251,7 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_ACCEPT_RECORD,
-                "Run `dadrock status accept` to convert a valid candidate into an accepted decision.",
+                "Run `dadrock status accept` to convert a valid candidate into an accepted decision in the ledger. A `## Supersedes` section links the named predecessor and moves it to the archive.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {
@@ -264,7 +264,7 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_REJECT_RECORD,
-                "Run `dadrock status reject` to reject a candidate and move it into the rejected records directory.",
+                "Run `dadrock status reject` to reject a candidate and move it to the archive.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {
@@ -277,7 +277,7 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_SUPERSEDE_RECORDS,
-                "Run `dadrock status supersede` to link accepted successors to the accepted records they supersede.",
+                "Run `dadrock status supersede` to link accepted successors to the accepted records they supersede and move those records to the archive.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {

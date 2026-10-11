@@ -193,7 +193,7 @@ fn print_envelope<T: Serialize>(
 
 fn show_dir() -> Result<ExitCode> {
     let envelope = core_commands::show_dir(&command_context()?)?;
-    println!("{}", envelope.data.decisions_dir);
+    println!("{}", envelope.data.project_dir);
     Ok(envelope_exit_code(&envelope))
 }
 
@@ -220,7 +220,7 @@ fn demo(args: cli::DemoArgs) -> Result<ExitCode> {
         println!(
             "seeded {} DADR demo at {}",
             result.example.as_str(),
-            result.decisions_dir
+            result.project_dir
         );
         println!("{} record(s)", result.records.len());
         Ok(())
@@ -529,9 +529,9 @@ fn preview(args: cli::PreviewArgs) -> Result<ExitCode> {
 
 fn print_project_layout(layout: &ProjectLayout) {
     println!("project_dir\t{}", layout.project_dir);
-    println!("accepted_dir\t{}", layout.accepted_dir);
-    println!("candidates_dir\t{}", layout.candidates_dir);
-    println!("rejected_dir\t{}", layout.rejected_dir);
+    println!("inbox_dir\t{}", layout.inbox_dir);
+    println!("ledger_dir\t{}", layout.ledger_dir);
+    println!("archive_dir\t{}", layout.archive_dir);
     println!("templates_dir\t{}", layout.templates_dir);
     println!("tasks_dir\t{}", layout.tasks_dir);
     println!("runs_dir\t{}", layout.runs_dir);

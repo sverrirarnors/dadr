@@ -427,7 +427,7 @@ mod tests {
         )
         .unwrap();
 
-        assert!(candidate.path.as_str().contains("/dadr/candidates/"));
+        assert!(candidate.path.as_str().contains("/dadr/inbox/"));
         let content = fs::read_to_string(&candidate.path).unwrap();
         assert!(content.contains("status: candidate"));
         assert!(content.contains("Use local ACP agent drafts"));
@@ -515,7 +515,7 @@ mod tests {
     fn validate_records_envelope_collects_diagnostics() {
         let root = temp_project("validate");
         init_project(&root).unwrap();
-        let bad_path = root.join("dadr/accepted/bad.md");
+        let bad_path = root.join("dadr/ledger/bad.md");
         fs::write(&bad_path, "---\ntitle: Bad\nstatus: candidate\n---\n").unwrap();
         let context = CommandContext::from_path(&root).unwrap();
 

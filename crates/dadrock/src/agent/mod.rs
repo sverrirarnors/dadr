@@ -568,7 +568,7 @@ Final answer:
         let cwd = Utf8PathBuf::from_path_buf(root.to_path_buf()).expect("utf8 temp path");
         let project = ProjectContext {
             cwd: cwd.clone(),
-            decisions_dir: cwd.join("dadr/accepted"),
+            project_dir: cwd.join("dadr"),
             discovery_source: DiscoverySource::Fallback,
             initialized: true,
         };
