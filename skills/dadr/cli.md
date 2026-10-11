@@ -14,6 +14,8 @@ This document contains the help content for the `dadrock` command-line program.
 * [`dadrock demo`↴](#dadrock-demo)
 * [`dadrock new`↴](#dadrock-new)
 * [`dadrock list`↴](#dadrock-list)
+* [`dadrock history`↴](#dadrock-history)
+* [`dadrock diff`↴](#dadrock-diff)
 * [`dadrock status`↴](#dadrock-status)
 * [`dadrock status accept`↴](#dadrock-status-accept)
 * [`dadrock status reject`↴](#dadrock-status-reject)
@@ -60,6 +62,8 @@ With no command, prints this help menu.
 * `demo` — Seed a new project with a named DADR example.
 * `new` — Create a candidate decision record from the active candidate template.
 * `list` — List records, optionally filtered by lifecycle status, tag, or query.
+* `history` — Show a decision's versions as a graph, newest first, with the reason for each change.
+* `diff` — Compare two records: title, tags, and body without `## Supersedes`.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
 * `accept` — Accept a candidate decision.
 * `reject` — Reject a candidate decision.
@@ -198,6 +202,40 @@ List records, optionally filtered by lifecycle status, tag, or query.
 * `--tag <TAG>`
 * `--query <QUERY>`
 * `--unique`
+
+
+
+## `dadrock history`
+
+Show a decision's versions as a graph, newest first, with the reason for each change.
+
+**Usage:** `dadrock history [OPTIONS] <QUERY>...`
+
+###### **Arguments:**
+
+* `<QUERY>` — Any version of the decision: full id, id prefix, filename, or title
+
+###### **Options:**
+
+* `--patch` — Print each change's diff under its link
+* `--json`
+
+
+
+## `dadrock diff`
+
+Compare two records: title, tags, and body without `## Supersedes`.
+
+**Usage:** `dadrock diff [OPTIONS] <OLD> <NEW>`
+
+###### **Arguments:**
+
+* `<OLD>` — The record to compare from: full id, id prefix, filename, or title
+* `<NEW>` — The record to compare to
+
+###### **Options:**
+
+* `--json`
 
 
 
