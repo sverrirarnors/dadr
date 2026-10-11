@@ -458,17 +458,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1096,17 +1085,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1284,50 +1262,6 @@
 <h4 id="teaching">Teaching<a class="headerlink" href="#teaching" title="Permanent link">&para;</a></h4>
 <p>Use real annotated analyses to show how defensible alternatives were considered and chosen.</p>
 </div>
-</div>
-<h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
-<p>Candidate decisions can be drafted automatically by a LLM agent, or manually by the analyst. Every candidate decision <em>must</em> be reviewed by the human analyst before it enters the permanent record. The analyst can either accept the candidate decision, reject it, or draft a superseding decision that replaces it. Every decision (candidate, accepted, rejected, superseded) is recorded in the DADR ledger to create a complete trace of how the analysis evolved over time.</p>
-<div class="diagram">
-<pre class="mermaid"><code>%%{init: {"flowchart": {"defaultRenderer": "elk", "curve": "basis", "nodeSpacing": 70, "rankSpacing": 70}}}%%
-flowchart TD
-    analyst["Analyst"]
-    no["No decision needed"]
-    llm1["LLM agent"]
-    candidate["Candidate decision"]
-    review(["Analyst approval"])
-    accepted["Accepted decision"]
-    rejected["Rejected decision"]
-    supersede["Superseding decision"]
-    log["Data&amp;nbsp;Analysis&amp;nbsp;Decision&amp;nbsp;Records"]
-
-    analyst -- "Ask an agent to&lt;br/&gt;draft a decision" --&gt; llm1
-    analyst -- "Modify code or data&lt;br/&gt;(Git commit hook)" --&gt; llm1
-    analyst -- "Draft a decision manually" --&gt; candidate
-    llm1 --&gt; no
-    llm1 --&gt; candidate
-    candidate --&gt; review
-    review --&gt; accepted
-    review --&gt; rejected
-    accepted --&gt; supersede
-    accepted -.-&gt; log
-    rejected -.-&gt; log
-    candidate -.-&gt; log
-    supersede -.-&gt; log
-
-    linkStyle 9,10,11 stroke:#94a3b8,stroke-width:1px;
-
-    classDef default fill:#ffffff,stroke:#cbd5e1,stroke-width:1px,color:#0f172a;
-    classDef sReview fill:#ffffff,stroke:#0f172a,stroke-width:2px,color:#0f172a,font-weight:600,font-size:18px;
-    classDef sCandidate fill:#fefce8,stroke:#ca8a04,stroke-width:1px,color:#422006;
-    classDef sAccepted fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
-    classDef sSuperseded fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
-    classDef sRejected fill:#fef2f2,stroke:#dc2626,stroke-width:1px,color:#450a0a;
-
-    class review sReview;
-    class candidate sCandidate;
-    class accepted sAccepted;
-    class rejected sRejected;
-    class supersede sSuperseded;</code></pre>
 </div>
 <h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <div class="language-markdown highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>---
