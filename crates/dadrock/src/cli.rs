@@ -35,7 +35,7 @@ pub enum Command {
         about = "Print the CLI reference as Markdown (used to regenerate docs-src/dadrock/cli.md)."
     )]
     GenCliDocs,
-    #[command(about = "Print the discovered Dadrock project directory (dadr/).")]
+    #[command(about = "Print the project's dadr/ directory, even before it exists.")]
     Dir,
     #[command(about = "Print the resolved project layout.")]
     Config(JsonArg),
@@ -85,18 +85,21 @@ impl Default for Command {
 
 #[derive(Debug, Args)]
 pub struct HelpArgs {
+    /// The command to describe, such as `validate changes`.
     #[arg(num_args = 0.., trailing_var_arg = true)]
     pub topic: Vec<String>,
 }
 
 #[derive(Debug, Args)]
 pub struct JsonArg {
+    /// Print the JSON envelope instead of text.
     #[arg(long)]
     pub json: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct CompletionsArgs {
+    /// The shell to generate the script for.
     #[arg(value_enum)]
     pub shell: ShellArg,
 }
@@ -120,15 +123,21 @@ impl From<ShellArg> for Shell {
 
 #[derive(Debug, Args)]
 pub struct InitArgs {
+    /// Where to create `dadr/`: its parent directory, or a path ending in
+    /// `dadr` (defaults to the current directory).
     pub directory: Option<Utf8PathBuf>,
 }
 
 #[derive(Debug, Args)]
 pub struct DemoArgs {
+    /// Print the JSON envelope instead of text.
     #[arg(long)]
     pub json: bool,
+    /// The example project to seed.
     #[arg(long, value_enum, default_value_t = DemoExampleArg::Lifecycle)]
     pub example: DemoExampleArg,
+    /// The directory to seed, which must be new or empty (defaults to the
+    /// current directory).
     pub directory: Option<Utf8PathBuf>,
 }
 
@@ -158,8 +167,10 @@ impl From<DemoExampleArg> for DemoExample {
 
 #[derive(Debug, Args)]
 pub struct NewArgs {
-    #[arg(long = "tag")]
+    /// A tag for the record, without `#`; repeat for more.
+    #[arg(long = "tag", value_name = "TAG")]
     pub tags: Vec<String>,
+    /// Print only the new record's id instead of the JSON envelope.
     #[arg(long)]
     pub quiet: bool,
     /// The record's title; the words join into one title. Options can come
@@ -170,12 +181,19 @@ pub struct NewArgs {
 
 #[derive(Debug, Args)]
 pub struct ListArgs {
+    /// Only records with this status; `accepted` leaves out superseded
+    /// records, and `superseded` lists only them.
     #[arg(long, value_enum)]
     pub status: Option<RecordStatusArg>,
+    /// Only records with this tag, in front matter or inline (the `#` is
+    /// optional).
     #[arg(long)]
     pub tag: Option<String>,
+    /// Only records matching a full id, an id prefix, or part of a filename
+    /// or title.
     #[arg(long)]
     pub query: Option<String>,
+    /// Exit non-zero unless exactly one record matches.
     #[arg(long)]
     pub unique: bool,
 }
@@ -185,6 +203,7 @@ pub struct HistoryArgs {
     /// Print each change's diff under its link, and each text edit's diff under its version.
     #[arg(long)]
     pub patch: bool,
+    /// Print the JSON envelope instead of text.
     #[arg(long)]
     pub json: bool,
     /// Any version of the decision: full id, id prefix, filename, or title.
@@ -194,6 +213,7 @@ pub struct HistoryArgs {
 
 #[derive(Debug, Args)]
 pub struct DiffArgs {
+    /// Print the JSON envelope instead of text.
     #[arg(long)]
     pub json: bool,
     /// The record to compare from: full id, id prefix, filename, or title.
@@ -226,6 +246,8 @@ impl From<RecordStatusArg> for RecordViewFilter {
 pub struct StatusArgs {
     #[command(subcommand)]
     pub command: Option<StatusCommand>,
+    /// The record to inspect: full id, id prefix, filename, or title; the
+    /// words join into one query.
     #[arg(num_args = 0.., trailing_var_arg = true)]
     pub query: Vec<String>,
 }
@@ -246,6 +268,8 @@ pub enum StatusCommand {
 
 #[derive(Debug, Args)]
 pub struct QueryArgs {
+    /// The candidate: full id, id prefix, filename, or title; the words join
+    /// into one query.
     #[arg(required = true, num_args = 1.., trailing_var_arg = true)]
     pub query: Vec<String>,
 }
@@ -278,14 +302,19 @@ impl AcceptArgs {
 
 #[derive(Debug, Args)]
 pub struct StatusSupersedeArgs {
+    /// An accepted record to supersede: full id, id prefix, filename, or
+    /// title. Repeat for more.
     #[arg(long = "from")]
     pub from: Vec<String>,
+    /// An accepted record that replaces it. Repeat for more; every `--from`
+    /// record gets every `--to` record as a successor.
     #[arg(long = "to")]
     pub to: Vec<String>,
 }
 
 #[derive(Debug, Args)]
 pub struct ValidateArgs {
+    /// Print the project validation's JSON envelope instead of text.
     #[arg(long)]
     pub json: bool,
     #[command(subcommand)]
@@ -317,14 +346,18 @@ pub struct ValidateChangesArgs {
     /// Report title and body edits to accepted and rejected records as errors.
     #[arg(long)]
     pub strict: bool,
+    /// Print the JSON envelope instead of text.
     #[arg(long)]
     pub json: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct ValidateRecordsArgs {
+    /// No effect: this command always prints the JSON envelope.
     #[arg(long)]
     pub json: bool,
+    /// Record files or directories to validate (defaults to every record in
+    /// the project).
     pub paths: Vec<Utf8PathBuf>,
 }
 
@@ -354,12 +387,15 @@ pub enum McpCommand {
 
 #[derive(Debug, Args)]
 pub struct McpServeArgs {
+    /// Serve only the read tools, so no tool can create or change a record.
     #[arg(long)]
     pub read_only: bool,
     /// Serve the access level Dadrock gives its own task runs: read tools
     /// plus task-result submission. Internal; set by the task runner.
     #[arg(long, hide = true, conflicts_with = "read_only")]
     pub task_run: bool,
+    /// The directory to find the project from (defaults to the current
+    /// directory).
     pub directory: Option<Utf8PathBuf>,
 }
 
@@ -381,30 +417,45 @@ pub enum AgentCommand {
 
 #[derive(Debug, Args)]
 pub struct AgentCheckArgs {
+    /// The ACP agent program to start (defaults to `DADROCK_ACP_AGENT`, then
+    /// an installed provider).
     #[arg(long)]
     pub agent: Option<String>,
+    /// An extra argument for the agent program; repeat for more.
     #[arg(long = "agent-arg", allow_hyphen_values = true)]
     pub agent_args: Vec<String>,
+    /// Start the agent without Dadrock's MCP tools.
     #[arg(long = "no-mcp")]
     pub no_mcp: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct AgentDraftArgs {
+    /// Save the draft as a new candidate record; without it, the draft is
+    /// only printed.
     #[arg(long)]
     pub write: bool,
+    /// Print the JSON envelope instead of text.
     #[arg(long)]
     pub json: bool,
+    /// How to answer the agent's tool permission requests.
     #[arg(long, value_enum, default_value_t = PermissionPolicyArg::Deny)]
     pub permission: PermissionPolicyArg,
+    /// The ACP agent program to start (defaults to `DADROCK_ACP_AGENT`, then
+    /// an installed provider).
     #[arg(long)]
     pub agent: Option<String>,
+    /// An extra argument for the agent program; repeat for more.
     #[arg(long = "agent-arg", allow_hyphen_values = true)]
     pub agent_args: Vec<String>,
+    /// An agent skill or prompt pack to include, by name or path; repeat for
+    /// more.
     #[arg(long = "skill", visible_alias = "prompt-pack")]
     pub skills: Vec<String>,
+    /// Start the agent without Dadrock's MCP tools.
     #[arg(long = "no-mcp")]
     pub no_mcp: bool,
+    /// The decision to draft; the words join into one prompt.
     #[arg(required = true, num_args = 1.., trailing_var_arg = true)]
     pub prompt: Vec<String>,
 }
@@ -431,7 +482,9 @@ pub enum TaskCommand {
 
 #[derive(Debug, Args)]
 pub struct TaskShowArgs {
+    /// The task id, as `dadrock task list` prints it.
     pub task_id: String,
+    /// Print the JSON envelope instead of text.
     #[arg(long)]
     pub json: bool,
     /// Print the task file exactly as written, front matter included.
@@ -512,17 +565,24 @@ impl TaskRunArgs {
 
 #[derive(Debug, Args)]
 pub struct TaskResultArgs {
+    /// The run id, as `dadrock task runs` prints it.
     pub run_id: String,
+    /// Print the whole JSON envelope instead of the result alone.
     #[arg(long)]
     pub json: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct PreviewArgs {
+    /// The port to listen on; 0 picks a free one.
     #[arg(long, default_value_t = 4004)]
     pub port: u16,
+    /// The address to listen on: only `localhost`, `127.0.0.1`, and `::1`
+    /// are accepted.
     #[arg(long, default_value = "127.0.0.1")]
     pub host: String,
+    /// The directory to find the project from (defaults to the current
+    /// directory).
     pub directory: Option<Utf8PathBuf>,
 }
 
@@ -629,6 +689,41 @@ mod tests {
 
         assert!(Cli::try_parse_from(["dadrock", "new", "-1", "codes", "missing"]).is_err());
         assert!(Cli::try_parse_from(["dadrock", "new", "--quiet"]).is_err());
+    }
+
+    #[test]
+    fn every_visible_argument_has_help() {
+        fn collect_missing(command: &clap::Command, path: &str, missing: &mut Vec<String>) {
+            for arg in command.get_arguments() {
+                if !arg.is_hide_set() && arg.get_help().is_none() {
+                    missing.push(format!("{path} {}", arg.get_id()));
+                }
+            }
+            for subcommand in command.get_subcommands() {
+                let path = format!("{path} {}", subcommand.get_name());
+                // `task run` is skipped until its options get help text.
+                if path != "dadrock task run" {
+                    collect_missing(subcommand, &path, missing);
+                }
+            }
+        }
+
+        let mut missing = Vec::new();
+        collect_missing(&Cli::command(), "dadrock", &mut missing);
+        assert!(missing.is_empty(), "arguments without help: {missing:#?}");
+    }
+
+    #[test]
+    fn help_names_the_accepted_preview_hosts() {
+        let mut command = Cli::command();
+        let preview = command
+            .find_subcommand_mut("preview")
+            .expect("preview command");
+        let help = preview.render_help().to_string();
+        assert!(
+            help.contains("`localhost`, `127.0.0.1`, and `::1`"),
+            "{help}"
+        );
     }
 
     #[test]
