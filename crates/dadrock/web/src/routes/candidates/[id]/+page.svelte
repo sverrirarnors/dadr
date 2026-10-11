@@ -109,7 +109,7 @@
         {/if}
       </div>
 
-      {#each lifecycle.data.diagnostics as diagnostic}
+      {#each lifecycle.data.diagnostics as diagnostic (diagnostic.code + diagnostic.message)}
         <Alert class="mt-4" variant="danger" title="Decision needs attention">{diagnostic.message}</Alert>
       {/each}
 
