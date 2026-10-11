@@ -10,10 +10,10 @@ The `status` field takes one of three values: `candidate`, `accepted`, or `rejec
 
 | Record | Editable? | Notes |
 |---|---|---|
-| `candidate` | Yes — freely revisable | A proposed decision under review. Lives in `dadr/candidates/`. Each of the four sections must have text before acceptance; thin candidates create work for the reviewer. |
-| `accepted` | No changes in meaning | The decision is in force. Lives under `dadr/accepted/`. Typo and link fixes are fine; anything else goes through a new candidate plus supersession. Use `dadrock supersede` to link accepted replacements, or accept a replacement candidate with a `## Replaces` section. |
-| `accepted`, superseded | No changes in meaning | An accepted record whose `successors` array points at its replacement. Stays in `dadr/accepted/` with `status: accepted`. |
-| `rejected` | No edits | A closed candidate. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
+| `candidate` | Yes — freely revisable | A proposed decision under review. Lives in `dadr/inbox/`. Each of the four sections must have text before acceptance; thin candidates create work for the reviewer. |
+| `accepted` | No changes in meaning | The decision is in force. Lives in `dadr/ledger/`. Typo and link fixes are fine; anything else goes through a successor candidate and supersession. Accept a successor candidate with a `## Supersedes` section, or use `dadrock supersede` to link records that are already accepted. |
+| `accepted`, superseded | No changes in meaning | An accepted record whose `successors` array names the records that supersede it. Moved to `dadr/archive/`; keeps `status: accepted`. |
+| `rejected` | No edits | A closed candidate. Lives in `dadr/archive/`. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
 
 Acceptance, rejection, and supersession are all **human approval boundaries**. No skill auto-transitions.
 
@@ -69,7 +69,7 @@ report the exclusion count and the missingness pattern.
 | `status` | One of `candidate \| accepted \| rejected`. Set on creation; changed only via `dadrock status` lifecycle commands. |
 | `id` | UUIDv7 allocated by `dadrock new`. **Never write by hand.** Its first 12 hex digits are the record's short id. |
 | `tags` | Optional; follow project conventions (see [tags.md](tags.md)). |
-| `successors` | Optional list of UUIDv7 ids. Names accepted replacements; a non-empty list makes an accepted record superseded. Written by Dadrock during replacement acceptance or an explicit `dadrock supersede` action. |
+| `successors` | Optional list of UUIDv7 ids. Names the accepted records that supersede this one; a non-empty list makes an accepted record superseded. Written by Dadrock when a successor is accepted or by an explicit `dadrock supersede` action. |
 
 Other keys (for example Pandoc's `bibliography`) are allowed and passed through unchanged; DADR gives them no meaning. **Never add dates**: no `date` key and no `2026-05-07`-style value under any key. A record's time comes only from its `id`.
 
@@ -152,7 +152,7 @@ A well-formed record is **roughly 200–400 words of body prose** — long enoug
 - **No source link in `Context`.** Every record is grounded in evidence. If you cannot link to a file/line, you cannot draft the record yet — surface the gap to the user.
 - **Two decisions in one file.** If `Decision` describes both an exclusion and a recoding, split into two records.
 - **Hand-written `id`.** Always go through `dadrock new`.
-- **Hand-written `successors`.** Always go through `dadrock supersede`.
+- **Hand-written `successors`.** Let Dadrock write them, when a successor with a `## Supersedes` section is accepted or through `dadrock supersede`.
 - **Question-form titles.** "Should we drop missing treatment?" → "Drop observations with missing treatment".
 - **Tense drift in `Decision`.** Active voice describing what was done (or what the code does); not "we plan to" or "we should".
 - **Editing accepted bodies.** Preserve substantive content; changed decisions require a new candidate plus supersession. Minor corrections are allowed.

@@ -90,7 +90,8 @@ The spec (`docs-src/specification.md`) is authoritative. In short:
 - Front matter: required `title`, `status`, `id`; optional `successors`, `tags`. Other keys are allowed, have no DADR meaning, and must be preserved on rewrite.
 - Records never store dates: no `date` key and no ISO 8601 date/date-time value anywhere in front matter (`DiagnosticCode::DateInFrontMatter`). A record's time is always derived from its UUIDv7 id; lifecycle event times come from version control.
 - `status` is `candidate | accepted | rejected`. "Superseded" is derived: an accepted record with non-empty `successors`.
-- Accepting or rejecting changes `status` on the **same** record and keeps its UUIDv7 `id`. Dadrock moves the file between `dadr/candidates/`, `dadr/accepted/`, and `dadr/rejected/`.
+- Accepting or rejecting changes `status` on the **same** record and keeps its UUIDv7 `id`.
+- Dadrock's folders follow the workflow: `dadr/inbox/` (candidates), `dadr/ledger/` (accepted, not superseded), `dadr/archive/` (rejected, and accepted with `successors`). Accepting moves a record inbox → ledger, rejecting inbox → archive, and superseding moves the predecessor ledger → archive. The old `candidates/`, `accepted/`, `rejected/` layout is not read or migrated.
 - Accepted records need `## Context`, `## Decision`, `## Alternatives`, `## Consequences`, each exactly once and non-empty (`dadr::check_required_sections`).
 - The short id (first 12 hex digits of the id) must be unique per project; it prefixes filenames and is the recommended wikilink target. Record links are exactly `[[<short-id>]]` or `[[<full-id>]]`; other wikilinks are ignored.
 
@@ -101,12 +102,13 @@ The spec (`docs-src/specification.md`) is authoritative. In short:
 - **Errors**: library code uses `thiserror`-based `DadrError`; `anyhow` only at the binary boundary (`main.rs`, `web.rs`).
 - **Diagnostics vs. errors**: per-file parse problems are `Diagnostic`s on the scanned record, so one bad file doesn't fail a whole command. Reserve `DadrError` for fatal conditions.
 - **Idempotency**: `dadrock init` never overwrites existing files. `dadrock demo` requires an empty target.
+- **Supersession vocabulary**: "supersede" is the only verb for one record taking the place of another; the records are the successor and the predecessor. Never write "replace" or "replacement" for this, in code, UI, or docs. "History" means only one decision's chain of versions; the `archive/` folder and the Ledger's **Show archived** toggle hold records not in force, and agent task output is "runs" (**Clear agent runs**).
 - **Tag vocabulary** lives in `docs-src/tags.md` (`kind/`, `confidence/`, `writer/`, `people/`, `topic/`, `plan/`, `axis/`, `multiverse/`, `robustness/`, `rejected/`). Keep prompts, skills, and demos consistent with it.
 
 ## Onboarding and agent boundaries
 
 Agent tasks return proposals for human review. Do not invent an analyst's rationale from code alone or automatically accept a candidate. Advanced ACP/MCP integration details belong in `docs-src/llms.md`, not onboarding.
 
-Use `dadrock accept`, `dadrock reject`, and `dadrock supersede` for everyday lifecycle actions; the `status` subcommands remain compatible. A replacement candidate can include an optional `## Replaces` section with a labeled full-UUID link. Acceptance validates and links that replacement while preserving the predecessor's body.
+Use `dadrock accept`, `dadrock reject`, and `dadrock supersede` for everyday lifecycle actions; the `status` subcommands remain compatible. A successor candidate names its predecessor in an optional `## Supersedes` section: a record link by full UUID (`[[uuid]]` or `[[uuid|label]]`), then optionally the reason in ordinary Markdown. When Dadrock writes the section, it is the first section of the body and the link is labeled with the predecessor's title. Acceptance supports exactly one predecessor for now; it validates and links the predecessor and moves it to `dadr/archive/` while preserving its body. The related diagnostic code is `invalid_supersedes`.
 
 Document only behavior implemented in source. Keep planned features in `docs-src/roadmap.md`, with detailed future-work RFCs under `specs/`. Current validation does not establish code faithfulness or compare accepted files against Git history. Do not promise release binaries, registry packages, or editor integrations without checking their availability.

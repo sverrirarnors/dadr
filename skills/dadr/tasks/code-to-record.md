@@ -13,7 +13,7 @@ This is for **onboarding existing projects**. For projects that already use DADR
 
 The shared preconditions in [../SKILL.md](../SKILL.md) apply. In addition:
 
-- If `dadrock dir` errors or no project is configured, run `dadrock init`. It creates the Dadrock project directory at `dadr/`, including `dadr/accepted/`, `dadr/candidates/`, `dadr/rejected/`, `dadr/templates/`, `dadr/tasks/`, and `dadr/runs/`.
+- If `dadrock dir` errors or no project is configured, run `dadrock init`. It creates the Dadrock project directory at `dadr/`, including `dadr/inbox/`, `dadr/ledger/`, `dadr/archive/`, `dadr/templates/`, `dadr/tasks/`, and `dadr/runs/`.
 - If `dadrock dir` prints an existing path, **skip init** — it is idempotent but noisy.
 
 ## Workflow
@@ -72,7 +72,7 @@ For each consequential decision, use Dadrock's candidate-writing surface. **Do n
 
 #### Step 3a — Write via Dadrock
 
-When running inside a Dadrock ACP task and the MCP tool `dadrock.create_candidate` is available, call it once for each candidate with `title`, `tags`, and `body_markdown`. This writes the file under `dadr/candidates/`. Do not merely return proposed candidates for the UI to write later.
+When running inside a Dadrock ACP task and the MCP tool `dadrock.create_candidate` is available, call it once for each candidate with `title`, `tags`, and `body_markdown`. This writes the file under `dadr/inbox/`. Do not merely return proposed candidates for the UI to write later.
 
 When working outside MCP, use the equivalent CLI flow:
 
@@ -128,7 +128,7 @@ Mention that **acceptance is a human approval boundary** — the skill must neve
 
 - **Never overwrite existing records.** Before drafting, list current candidates with `dadrock list --status candidate` and skip any decision that is already covered.
 - **No fabricated alternatives.** If you cannot identify a real alternative the analyst plausibly considered, say "Not applicable" or describe a generic methodological alternative honestly tagged `confidence/low`.
-- **Do not edit accepted records.** This skill writes only to `dadr/candidates/`.
+- **Do not edit accepted records.** This skill writes only to `dadr/inbox/`.
 
 ## Example end-to-end
 
@@ -138,7 +138,7 @@ User: "bootstrap DADR for this project"
 2. `dadrock dir` → errors (no project). Run `dadrock init`.
 3. Read `README.md`, glob `**/*.{R,py,qmd,Rmd}`, identify a SAP at `docs/sap.md`.
 4. From `analysis/build_sample.R`: identify `df %>% filter(!is.na(treatment))` → candidate "Drop observations with missing treatment assignment", `kind/sample, writer/agent`.
-5. `dadrock new "Drop observations with missing treatment assignment" --tag kind/sample --tag writer/agent --quiet` → writes `dadr/candidates/<uuid>-drop-observations-....md`.
+5. `dadrock new "Drop observations with missing treatment assignment" --tag kind/sample --tag writer/agent --quiet` → writes `dadr/inbox/<uuid>-drop-observations-....md`.
 6. Edit that file's four sections with grounded prose and a link back to `analysis/build_sample.R#L12-L18`.
 7. Repeat for each consequential choice identified in the inventory.
 8. `dadrock validate` → clean.

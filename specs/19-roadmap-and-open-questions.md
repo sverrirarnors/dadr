@@ -34,8 +34,8 @@ overlapping normalized tags, especially `#kind/...`, `#topic/...`,
 
 The classifier should label close matches as:
 
-- `possible-supersession`: the new candidate appears to replace, amend, narrow,
-  broaden, or reverse an accepted decision;
+- `possible-supersession`: the new candidate appears to supersede an accepted
+  decision by amending, narrowing, broadening, or reversing it;
 - `possible-duplicate`: the new candidate appears already covered by an
   existing decision or candidate;
 - `conflict`: both decisions could apply but prescribe incompatible actions;

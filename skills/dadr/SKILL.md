@@ -38,7 +38,7 @@ Pick the workflow that matches the request:
 | "bootstrap DADR", "seed dadr/", "find analytic choices in this project", "scaffold candidates", "onboard this analysis to DADR" | [tasks/code-to-record.md](tasks/code-to-record.md) |
 | "draft a DADR for this", "capture this decision", "log this choice" | [tasks/context-to-record.md](tasks/context-to-record.md) |
 | "revise this candidate", "rework the alternatives section", "the reviewer wants changes" | [tasks/edit-record.md](tasks/edit-record.md) |
-| "supersede decision X", "replace the accepted choice", "draft a successor" | [tasks/supersede-record.md](tasks/supersede-record.md) |
+| "supersede decision X", "change the accepted choice", "draft a successor" | [tasks/supersede-record.md](tasks/supersede-record.md) |
 | "merge these candidates", "consolidate the duplicate drafts" | [tasks/merge-records.md](tasks/merge-records.md) |
 | "find conflicting decisions", "resolve duplicate DADRs", "any decisions contradict each other?", "clean up dadr/" | [tasks/find-conflicts.md](tasks/find-conflicts.md) |
 | "diagnose dadr/", "health-check the DADR ledger", "audit the ledger", "what's broken in dadr/?" | Use the validation page or `dadrock validate`; deterministic diagnostics do not go through agent tasks. |
@@ -62,19 +62,19 @@ The decision-handling workflows require:
 
 2. The current directory is the project root the user means. Run `pwd` and `ls` to confirm if unclear.
 
-3. Inspect the project's decisions directory:
+3. Inspect the project's Dadrock directory:
    ```bash
    dadrock dir
    ```
    The two main workflow families diverge from there:
    - **code → record** ([tasks/code-to-record.md](tasks/code-to-record.md)) may need `dadrock init` if no project is configured.
-   - workflows that read accepted records require an existing populated `dadr/accepted/` with at least one accepted record. Stop and ask the user if it is empty.
+   - workflows that read accepted records require an existing populated `dadr/ledger/` with at least one decision in force. Stop and ask the user if it is empty.
 
 ## Shared constraints
 
 - **Acceptance is a human approval boundary** — never auto-accept candidates.
 - **UUIDv7 only.** Always go through Dadrock's candidate-writing surface (`dadrock.create_candidate` in MCP or `dadrock new` in the CLI); never hand-write the `id` field.
-- **Never overwrite or edit accepted records** without explicit user permission. New choices that contradict an accepted record are drafted as new candidates and resolved via `dadrock supersede`.
+- **Never overwrite or edit accepted records** without explicit user permission. New choices that contradict an accepted record are drafted as successor candidates with a `## Supersedes` section (or linked later with `dadrock supersede`).
 - **One file per decision.** A single piece of code may embed two distinct choices; draft (or implement) them as two records.
 
 ## Reflect and improve

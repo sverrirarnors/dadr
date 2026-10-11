@@ -32,7 +32,7 @@ Tool permission requests default to `deny`. When your selected workflow needs to
 
 `dadrock agent draft` remains available for compatibility. New workflows should use `task run context-to-record`.
 
-## Custom workflows and run history
+## Custom workflows and runs
 
 ```sh
 dadrock task list
@@ -41,7 +41,7 @@ dadrock task runs
 dadrock task result RUN_ID
 ```
 
-Built-in workflows include drafting, editing candidates, proposing replacements, merging drafts, finding conflicts, and synthesizing accepted decisions. Project overrides live in `dadr/tasks/<task-id>/`, with a `task.toml` manifest and a prompt file. Inspect an existing task before customizing it. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
+Built-in workflows include drafting, editing candidates, drafting successors for accepted decisions, merging drafts, finding conflicts, and synthesizing accepted decisions. Project overrides live in `dadr/tasks/<task-id>/`, with a `task.toml` manifest and a prompt file. Inspect an existing task before customizing it. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
 
 Runs are persisted under `dadr/runs/`, which is ignored by default and may contain source excerpts or model transcripts. Output kinds determine how results are rendered. Protocol and run metadata stay outside record front matter.
 

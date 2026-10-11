@@ -109,6 +109,6 @@ User: "turn the accepted decisions into an analysis spec"
 2. Read each record and group by `kind/`, `topic/`, and `plan/` when those tags
    exist.
 3. Draft sections for sample construction, variables, models, inference, robustness, and reporting.
-4. For the accepted record "Cluster standard errors at the school level", write: "All primary models use school-clustered standard errors. Source: dadr/accepted/<id>-cluster-standard-errors.md."
+4. For the accepted record "Cluster standard errors at the school level", write: "All primary models use school-clustered standard errors. Source: dadr/ledger/<id>-cluster-standard-errors.md."
 5. Put an accepted but vague "Use conservative robustness checks" record under "Open questions" because it does not specify the robustness axes.
 6. Report that the spec covers 11 records and leaves 1 open question for supersession or clarification.

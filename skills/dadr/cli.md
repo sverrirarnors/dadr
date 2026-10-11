@@ -54,7 +54,7 @@ With no command, prints this help menu.
 * `help` — Show top-level help or detailed metadata for one command.
 * `commands` — List command metadata for automation and command discovery.
 * `completions` — Generate a shell completion script.
-* `dir` — Print the discovered accepted records directory.
+* `dir` — Print the discovered Dadrock project directory (dadr/).
 * `config` — Print the resolved project layout.
 * `init` — Create a Dadrock dadr/ directory.
 * `demo` — Seed a new project with a named DADR example.
@@ -63,7 +63,7 @@ With no command, prints this help menu.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
 * `accept` — Accept a candidate decision.
 * `reject` — Reject a candidate decision.
-* `supersede` — Link replacement decisions to the decisions they replace.
+* `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
 * `validate` — Run project validation, or target records, links, or tags.
 * `tags` — Inspect DADR tag usage.
 * `mcp` — Serve Dadrock MCP tools over stdio.
@@ -114,7 +114,7 @@ Generate a shell completion script.
 
 ## `dadrock dir`
 
-Print the discovered accepted records directory.
+Print the discovered Dadrock project directory (dadr/).
 
 **Usage:** `dadrock dir`
 
@@ -209,9 +209,9 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ###### **Subcommands:**
 
-* `accept` — Accept a candidate by converting it into an accepted decision.
-* `reject` — Reject a candidate and move it into the rejected records directory.
-* `supersede` — Link accepted successors to the records they supersede.
+* `accept` — Accept a candidate and move it to the ledger.
+* `reject` — Reject a candidate and move it to the archive.
+* `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
 
 ###### **Arguments:**
 
@@ -221,7 +221,7 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ## `dadrock status accept`
 
-Accept a candidate by converting it into an accepted decision.
+Accept a candidate and move it to the ledger.
 
 **Usage:** `dadrock status accept <QUERY>...`
 
@@ -233,7 +233,7 @@ Accept a candidate by converting it into an accepted decision.
 
 ## `dadrock status reject`
 
-Reject a candidate and move it into the rejected records directory.
+Reject a candidate and move it to the archive.
 
 **Usage:** `dadrock status reject <QUERY>...`
 
@@ -245,7 +245,7 @@ Reject a candidate and move it into the rejected records directory.
 
 ## `dadrock status supersede`
 
-Link accepted successors to the records they supersede.
+Link accepted successors to the records they supersede and move those records to the archive.
 
 **Usage:** `dadrock status supersede [OPTIONS]`
 
@@ -282,7 +282,7 @@ Reject a candidate decision.
 
 ## `dadrock supersede`
 
-Link replacement decisions to the decisions they replace.
+Link accepted successors to the records they supersede and move those records to the archive.
 
 **Usage:** `dadrock supersede [OPTIONS]`
 

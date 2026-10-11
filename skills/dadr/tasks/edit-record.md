@@ -5,7 +5,7 @@ description: Revise an existing DADR candidate to apply reviewer-requested chang
 
 # Edit record
 
-Apply requested changes to an existing candidate DADR. The candidate stays a candidate; only its body, title, or tags change. If the request would replace the underlying choice with a different one, this is the wrong skill — use [supersede-record.md](supersede-record.md) (if the predecessor is already accepted) or draft a fresh candidate via [context-to-record.md](context-to-record.md).
+Apply requested changes to an existing candidate DADR. The candidate stays a candidate; only its body, title, or tags change. If the request would change the underlying choice to a different one, this is the wrong skill — use [supersede-record.md](supersede-record.md) (if the predecessor is already accepted) or draft a fresh candidate via [context-to-record.md](context-to-record.md).
 
 Trigger phrases:
 

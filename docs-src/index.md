@@ -135,7 +135,7 @@ Automatically surface the choices that need to be subjected to sensitivity, robu
 
 <div class="feature" markdown>
 #### Decision flow
-Follow how analytic choices evolved: which decisions replaced which, when, and why.
+Follow how analytic choices evolved: which decisions superseded which, when, and why.
 </div>
 
 <div class="feature" markdown>

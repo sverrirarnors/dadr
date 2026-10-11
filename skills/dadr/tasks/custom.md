@@ -31,7 +31,7 @@ If any of these match, prefer the dedicated skill:
 | Bootstrap a new project's candidates | [code-to-record.md](code-to-record.md) |
 | Draft a single candidate from a plan/code/paper snippet | [context-to-record.md](context-to-record.md) |
 | Revise an existing candidate per reviewer feedback | [edit-record.md](edit-record.md) |
-| Replace an accepted decision | [supersede-record.md](supersede-record.md) |
+| Supersede an accepted decision with a successor | [supersede-record.md](supersede-record.md) |
 | Consolidate overlapping candidates | [merge-records.md](merge-records.md) |
 | Find or resolve conflicts | [find-conflicts.md](find-conflicts.md) |
 | Audit the ledger for issues | Use the validation page or `dadrock validate`; deterministic diagnostics do not go through agent tasks. |

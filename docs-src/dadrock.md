@@ -27,12 +27,12 @@ The DADR format does not mandate a directory structure. **dadrock** uses this on
 
 ```text
 dadr/
-  accepted/
+  inbox/
+    01938ba1c4f3-country-exclusions.md
+  ledger/
     01938b8e4d70-income-preprocessing.md
     01938b8f9d71-drop-missing-treatment.md
-  candidates/
-    01938ba1c4f3-country-exclusions.md
-  rejected/
+  archive/
     01938b8d9c10-deprecated-cohort-filter.md
   templates/
     candidate.md                                    # optional
@@ -43,16 +43,18 @@ dadr/
 
 | Directory | Contents |
 |---|---|
-| `dadr/candidates/` | Proposals awaiting review |
-| `dadr/accepted/` | Accepted decisions, including those later replaced |
-| `dadr/rejected/` | Rejected proposals |
+| `dadr/inbox/` | Candidates: proposals awaiting review |
+| `dadr/ledger/` | Decisions in force: accepted records without successors |
+| `dadr/archive/` | Records kept but no longer in force: rejected records and superseded records |
 | `dadr/templates/` | Optional template overrides for new candidates |
 | `dadr/tasks/` | Optional project-specific agent workflows (`dadr/tasks/<task-id>/task.toml` plus its prompt file) |
 | `dadr/runs/` | Agent-run inputs, results, and logs; ignored by version control |
 
-`dadrock accept` changes a candidate's `status` to `accepted` and moves the file to `dadr/accepted/`. `dadrock reject` changes it to `rejected` and moves it to `dadr/rejected/`. The `id` never changes. `dadrock supersede` appends the new record's `id` to the old record's `successors` and leaves both files in `dadr/accepted/`.
+`dadrock accept` changes a candidate's `status` to `accepted` and moves the file from `dadr/inbox/` to `dadr/ledger/`. `dadrock reject` changes it to `rejected` and moves it to `dadr/archive/`. The `id` never changes. Superseding a decision, by accepting its successor or with `dadrock supersede`, appends the successor's `id` to the predecessor's `successors` and moves the predecessor to `dadr/archive/`; its `status` stays `accepted`.
 
-The directory is a convenience: `status` in the front matter is authoritative. `dadrock validate` warns when a record sits in a directory that does not match its status. Use `dadrock config` to inspect the resolved layout. Keep the record directories in version control; run state may contain pasted context and source excerpts and is ignored by default.
+The directory is a convenience: the front matter is authoritative. `dadrock validate` warns when a record sits in a directory that does not match its `status` and `successors`. Moving a file breaks relative Markdown links to its path; record wikilinks use ids and are unaffected. Use `dadrock config` to inspect the resolved layout. Keep the record directories in version control; run state may contain pasted context and source excerpts and is ignored by default.
+
+Earlier versions of Dadrock used `candidates/`, `accepted/`, and `rejected/`. Dadrock no longer reads those directories: move candidates to `inbox/`, current decisions to `ledger/`, and rejected and superseded records to `archive/`.
 
 ## First decision
 
@@ -82,7 +84,7 @@ The candidate is waiting in the **Inbox**. Open it, choose **Edit**, and fill in
 
 Replace these illustrative statements with what actually happened in your project. In particular, explain *why* you chose this approach.
 
-Check that the record describes your analysis accurately and that you endorse the rationale. Save your edits, then choose **Accept**. The record moves to `dadr/accepted/`, keeping its ID, and appears in the **Ledger**. Commit it with your analysis code. You can also accept from a terminal with `dadrock accept ID`, replacing `ID` with the candidate's ID or an unambiguous prefix.
+Check that the record describes your analysis accurately and that you endorse the rationale. Save your edits, then choose **Accept**. The record moves to `dadr/ledger/`, keeping its ID, and appears in the **Ledger**. Commit it with your analysis code. You can also accept from a terminal with `dadrock accept ID`, replacing `ID` with the candidate's ID or an unambiguous prefix.
 
 Find it again later:
 
@@ -95,17 +97,21 @@ For a disposable example instead of your own analysis, run `dadrock demo --examp
 
 ## Changing a decision
 
-When an accepted choice changes, use **Supersede** on the record in the web interface to prepare a replacement. The original stays as history, and accepting the replacement links the two. Dadrock records the pending replacement in an optional Markdown section:
+An accepted decision is not rewritten. When an accepted choice changes, draft a successor: a new candidate that supersedes the old record, its predecessor. Use **Supersede** on the record in the web interface, or write the candidate yourself. The successor names its predecessor in a `## Supersedes` section:
 
 ```markdown
-## Replaces
+## Supersedes
 
-[[01938c20-a3b4-7000-8000-111122223333|Previous decision]]
+[[01938c20-a3b4-7000-8000-111122223333|Winsorize income at p99]]
+
+Winsorizing at p99 still left implausible incomes in two waves.
 ```
 
-The link uses the original record's full UUID. Keep this section if the candidate should replace that decision: it preserves the intended relationship after reloading or accepting through the CLI. On acceptance, Dadrock validates the predecessor and updates its successors together with accepting the replacement, preserving the old body. This is a Dadrock convention, not an additional required section of the DADR format.
+The section starts with a record link to the predecessor by its full UUID, `[[uuid]]` or `[[uuid|label]]`. Any text after the link is the reason for the change, in ordinary Markdown. A record has at most one `## Supersedes` section. When Dadrock writes the section, it is the first section of the body, and the link is labeled with the predecessor's title. For now, a successor supersedes exactly one predecessor.
 
-For two records that are already accepted, `dadrock supersede --from OLD --to NEW` links the replacement explicitly.
+On acceptance, Dadrock checks that the predecessor is accepted and not already superseded, adds the successor's `id` to the predecessor's `successors`, and moves the predecessor to `dadr/archive/` with its body unchanged. The section stays in the successor's body as the record of why the decision changed. It is a Dadrock convention, not an additional required section of the DADR format.
+
+For two records that are already accepted, `dadrock supersede --from OLD --to NEW` links them explicitly and moves `OLD` to `dadr/archive/`. Records linked this way have no `## Supersedes` section.
 
 ## Validation
 
@@ -119,7 +125,7 @@ Current validation checks:
 - no `date` key or ISO 8601 date/time values in front matter;
 - YAML fields, UUIDv7 IDs, four sections each appearing exactly once with text, and status/location consistency;
 - duplicate full IDs and short IDs, and filename collisions;
-- missing or invalid successors and cycles in replacement relationships;
+- missing or invalid successors and cycles in supersession relationships;
 - broken or ambiguous record wikilinks and missing local Markdown-link targets;
 - malformed tags and unreadable candidate templates.
 
@@ -147,7 +153,7 @@ The Inbox is the home screen and the work queue. Everything that needs a human l
 - **Candidates** wait for a decision. Read the record, fix its explanation if needed, then **Accept** or **Reject**. **Revise with agent** sends it back to a local agent with your instructions.
 - **Agent proposals** are decisions a local agent drafted from your notes or your code. **Save as candidate** writes the file so you can review it like any other candidate; **Discard** drops it.
 - **Proposed revisions** show an agent's edit to an existing record as a diff. **Apply** writes it; **Discard** drops it.
-- **Conflicts** come from **Check for conflicts**, which asks the agent to look for overlapping or contradictory decisions. From a conflict you can **Merge** two candidates, **Replace** an accepted decision, or **Dismiss** the finding.
+- **Conflicts** come from **Check for conflicts**, which asks the agent to look for overlapping or contradictory decisions. From a conflict you can **Merge** two candidates, **Supersede** an accepted decision, or **Dismiss** the finding.
 - **Issues** are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. **Open record** jumps to the editor; **Fix with agent** asks for a revision; warnings and notes can be dismissed.
 
 Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply the missing rationale before accepting.
@@ -158,17 +164,17 @@ Record text is edited in a CodeMirror editor with Markdown and front-matter high
 
 ### Ledger
 
-The Ledger is what has been decided. It lists accepted records, newest first, with one search box and a tag facet. **Show history** reveals superseded and rejected records. Each record shows its supersession chain, an inline editor, and two verbs: **Supersede** prepares a replacement, and **Revise with agent** asks a local agent to rewrite the record from your instructions. The result appears in the Inbox as a proposed revision.
+The Ledger is what has been decided. It lists the decisions in force, newest first, with one search box and a tag facet. **Show archived** adds the archived records: rejected and superseded ones. Each record shows its supersession chain, an inline editor, and two verbs: **Supersede** drafts a successor, and **Revise with agent** asks a local agent to rewrite the record from your instructions. The result appears in the Inbox as a proposed revision.
 
 ### Draft
 
-**Draft** is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a [configured agent](llms.md) look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises or replaces that record. Results land in the Inbox as proposals.
+**Draft** is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a [configured agent](llms.md) look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises that record or drafts its successor. Results land in the Inbox as proposals.
 
-Without an agent, **Write it by hand** gives you a plain form with the candidate template. **Replace with existing decisions instead** links an accepted record to records that already exist.
+Without an agent, **Write it by hand** gives you a plain form with the candidate template. **Supersede with existing decisions instead** links an accepted record to successors that already exist.
 
 ### Project
 
-The project name in the header opens a small panel with the project root, the detected agent, and three actions: initialize a new project, run validation now, and clear the agent's run history. Local run state is stored under `dadr/runs/` and ignored by default because it may contain pasted context, source excerpts, and model transcripts.
+The project name in the header opens a small panel with the project root, the detected agent, and three actions: initialize a new project, run validation now, and clear the agent runs. Local run state is stored under `dadr/runs/` and ignored by default because it may contain pasted context, source excerpts, and model transcripts.
 
 Old links still work: `/records`, `/candidates/new`, `/tasks`, `/validation`, `/tags`, and `/settings` redirect to the Inbox, the Ledger, or the Draft page.
 
@@ -245,7 +251,7 @@ With no command, prints this help menu.
 * `help` — Show top-level help or detailed metadata for one command.
 * `commands` — List command metadata for automation and command discovery.
 * `completions` — Generate a shell completion script.
-* `dir` — Print the discovered accepted records directory.
+* `dir` — Print the discovered Dadrock project directory (dadr/).
 * `config` — Print the resolved project layout.
 * `init` — Create a Dadrock dadr/ directory.
 * `demo` — Seed a new project with a named DADR example.
@@ -254,7 +260,7 @@ With no command, prints this help menu.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
 * `accept` — Accept a candidate decision.
 * `reject` — Reject a candidate decision.
-* `supersede` — Link replacement decisions to the decisions they replace.
+* `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
 * `validate` — Run project validation, or target records, links, or tags.
 * `tags` — Inspect DADR tag usage.
 * `mcp` — Serve Dadrock MCP tools over stdio.
@@ -296,7 +302,7 @@ Generate a shell completion script.
 
 ### `dadrock dir`
 
-Print the discovered accepted records directory.
+Print the discovered Dadrock project directory (dadr/).
 
 **Usage:** `dadrock dir`
 
@@ -378,9 +384,9 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ###### **Subcommands:**
 
-* `accept` — Accept a candidate by converting it into an accepted decision.
-* `reject` — Reject a candidate and move it into the rejected records directory.
-* `supersede` — Link accepted successors to the records they supersede.
+* `accept` — Accept a candidate and move it to the ledger.
+* `reject` — Reject a candidate and move it to the archive.
+* `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
 
 ###### **Arguments:**
 
@@ -388,7 +394,7 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ### `dadrock status accept`
 
-Accept a candidate by converting it into an accepted decision.
+Accept a candidate and move it to the ledger.
 
 **Usage:** `dadrock status accept <QUERY>...`
 
@@ -398,7 +404,7 @@ Accept a candidate by converting it into an accepted decision.
 
 ### `dadrock status reject`
 
-Reject a candidate and move it into the rejected records directory.
+Reject a candidate and move it to the archive.
 
 **Usage:** `dadrock status reject <QUERY>...`
 
@@ -408,7 +414,7 @@ Reject a candidate and move it into the rejected records directory.
 
 ### `dadrock status supersede`
 
-Link accepted successors to the records they supersede.
+Link accepted successors to the records they supersede and move those records to the archive.
 
 **Usage:** `dadrock status supersede [OPTIONS]`
 
@@ -439,7 +445,7 @@ Reject a candidate decision.
 
 ### `dadrock supersede`
 
-Link replacement decisions to the decisions they replace.
+Link accepted successors to the records they supersede and move those records to the archive.
 
 **Usage:** `dadrock supersede [OPTIONS]`
 

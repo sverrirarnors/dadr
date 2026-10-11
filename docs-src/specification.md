@@ -146,7 +146,7 @@ Acceptance is a human decision. Tools and agents MUST NOT accept a candidate wit
 
 ### 6.2 Supersession { #supersession }
 
-To replace an accepted decision, accept a new record and add its `id` to the old record's `successors`. An accepted record with a non-empty `successors` array is **superseded**. This is derived from the record set; it is not a status, and the old record's `status` stays `accepted`.
+To supersede an accepted decision, accept a new record and add its `id` to the old record's `successors`. An accepted record with a non-empty `successors` array is **superseded**. This is derived from the record set; it is not a status, and the old record's `status` stays `accepted`.
 
 ```yaml
 successors:
