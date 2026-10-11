@@ -47,6 +47,7 @@
       
     
     
+  
       
         
         
@@ -55,6 +56,8 @@
         <style>:root{--md-text-font:"Source Serif 4";--md-code-font:"JetBrains Mono"}</style>
       
     
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
     
       <link rel="stylesheet" href="./stylesheets/home.css">
     
@@ -64,6 +67,27 @@
 
     
     
+  
+    
+  
+  
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DADR">
+  <meta property="og:title" content="DADR - DADR">
+  <meta property="og:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  
+    <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/">
+  
+  <meta property="og:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DADR — Data Analysis Decision Records">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DADR - DADR">
+  <meta name="twitter:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  <meta name="twitter:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+
   </head>
   
   
@@ -83,7 +107,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#problem-1-opacity" class="md-skip">
+        <a href="#why-did-we-exclude-these-observations" class="md-skip">
           Skip to content
         </a>
       
@@ -109,44 +133,18 @@
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
-
     <nav class="dadr-header-nav" aria-label="Primary">
-      <a href="./getting-started/" class="dadr-header-nav__link">Get started</a>
-      <a href="./specification/" class="dadr-header-nav__link">Specification: DADR</a>
-      <a href="./dadrock/dadrock" class="dadr-header-nav__link">Tool: dadrock</a>
+      
+        
+        <a href="./getting-started/" class="dadr-header-nav__link">Get started</a>
+      
+        
+        <a href="./specification/" class="dadr-header-nav__link">Specification</a>
+      
+        
+        <a href="./dadrock/dadrock/" class="dadr-header-nav__link">dadrock</a>
+      
     </nav>
-
-    
-      
-        <form class="md-header__option" data-md-component="palette">
-  
-    
-    
-    
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="red"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
-    
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      </label>
-    
-  
-    
-    
-    
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="red"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
-    
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
-      </label>
-    
-  
-</form>
-      
-    
-    
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
-    
-    
     
       
       
@@ -289,10 +287,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#problem-1-opacity" class="md-nav__link">
+  <a href="#why-did-we-exclude-these-observations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Problem 1: Opacity
+        Why did we exclude these observations?
       </span>
     </span>
   </a>
@@ -300,10 +298,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#problem-2-drift" class="md-nav__link">
+  <a href="#write-review-remember" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Problem 2: Drift
+        Write, review, remember
       </span>
     </span>
   </a>
@@ -311,10 +309,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#solution-data-analysis-decision-records" class="md-nav__link">
+  <a href="#why-keep-decisions" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Solution: Data Analysis Decision Records
+        Why keep decisions?
       </span>
     </span>
   </a>
@@ -322,159 +320,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#audience" class="md-nav__link">
+  <a href="#what-dadrock-does-today" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Audience
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#frictionless" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Frictionless
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#new-possibilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        New possibilities
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="New possibilities">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#faithfulness" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Faithfulness
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compliance" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Compliance
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#multiverse-and-robustness" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Multiverse and robustness
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#decision-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Decision flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#drafting" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Drafting
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#onboarding" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Onboarding
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#replication-and-reuse" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Replication and reuse
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#coverage-and-audit" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Coverage and audit
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#teaching" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Teaching
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Example
+        What Dadrock does today
       </span>
     </span>
   </a>
@@ -522,40 +371,14 @@
   
   
     <li class="md-nav__item">
-      <a href="./specification/" class="md-nav__link">
+      <a href="./core/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Specification
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="./tags/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Tags
+  The format
 
     
   </span>
@@ -582,17 +405,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  dadrock
+  Dadrock
 
     
   </span>
@@ -602,12 +425,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
-  dadrock
+  Dadrock
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -619,41 +442,14 @@
   
   
     <li class="md-nav__item">
-      <a href="./dadrock/dadrock/" class="md-nav__link">
+      <a href="./dadrock/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="./dadrock/cli/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  CLI
+  Overview and validation
 
     
   </span>
@@ -700,6 +496,33 @@
   
   
     <li class="md-nav__item">
+      <a href="./dadrock/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CLI reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="./dadrock/ide/" class="md-nav__link">
         
   
@@ -707,7 +530,7 @@
   <span class="md-ellipsis">
     
   
-  IDE integrations
+  Editor integration
 
     
   </span>
@@ -733,15 +556,60 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="./llms/" class="md-nav__link">
+      <a href="./specification/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  LLM agents
+  Specification
 
     
   </span>
@@ -752,9 +620,64 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./tags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+  Optional tags
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./llms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Advanced agent setup
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -775,6 +698,41 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Roadmap
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -818,10 +776,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#problem-1-opacity" class="md-nav__link">
+  <a href="#why-did-we-exclude-these-observations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Problem 1: Opacity
+        Why did we exclude these observations?
       </span>
     </span>
   </a>
@@ -829,10 +787,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#problem-2-drift" class="md-nav__link">
+  <a href="#write-review-remember" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Problem 2: Drift
+        Write, review, remember
       </span>
     </span>
   </a>
@@ -840,10 +798,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#solution-data-analysis-decision-records" class="md-nav__link">
+  <a href="#why-keep-decisions" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Solution: Data Analysis Decision Records
+        Why keep decisions?
       </span>
     </span>
   </a>
@@ -851,159 +809,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#audience" class="md-nav__link">
+  <a href="#what-dadrock-does-today" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Audience
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#frictionless" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Frictionless
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#new-possibilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        New possibilities
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="New possibilities">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#faithfulness" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Faithfulness
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#compliance" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Compliance
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#multiverse-and-robustness" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Multiverse and robustness
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#decision-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Decision flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#drafting" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Drafting
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#onboarding" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Onboarding
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#replication-and-reuse" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Replication and reuse
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#coverage-and-audit" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Coverage and audit
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#teaching" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Teaching
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Example
+        What Dadrock does today
       </span>
     </span>
   </a>
@@ -1031,206 +840,54 @@
   <h1 id="__skip">DADR</h1>
 
 <div class="hero">
-<p><img src="assets/dadr_logo.svg" alt="DADR — Data Analysis Decision Records" class="hero-logo">
-<br></p>
-<p class="hero-tagline">A lightweight file specification, workflow, and set of tools to capture the <b>human decisions</b> that drive our results.
-</p>
+<p><img src="assets/dadr_logo.svg" alt="DADR — Data Analysis Decision Records" class="hero-logo"></p>
+<p class="hero-tagline">Keep a record of the <b>important choices behind your analysis</b>, so you and your collaborators can remember why you made them.</p>
 </div>
-<div class="problem">
-<h2 id="problem-1-opacity">Problem 1: Opacity<a class="headerlink" href="#problem-1-opacity" title="Permanent link">&para;</a></h2>
-<div class="problem-body">
-<div class="problem-prose">
-<p>Every data analysis rests on dozens of choices: which observations to include, how to code key variables, which model to fit, how to quantify uncertainty, which robustness checks to report, etc. These decisions can have major consequences. Indeed, <em>Many Analysts</em> studies show that when independent teams analyze the same data and the same hypotheses, they routinely arrive at very different results.<sup id="fnref:many-analysts"><a class="footnote-ref" href="#fn:many-analysts">1</a></sup></p>
-<p>Unfortunately, many of the choices that drive data analytic results are not surfaced in the methods sections of reports and articles. And even when an analyst makes available their full code and data, reconstructing their decisions and rationales retrospectively can often feel like an impossible archeology project.</p>
-</div>
-<div class="pull pull--aside">
-<p>A simple way to record what was decided, why, what alternatives were considered, and what the consequences are.</p>
-</div>
-</div>
-</div>
-<div class="problem">
-<h2 id="problem-2-drift">Problem 2: Drift<a class="headerlink" href="#problem-2-drift" title="Permanent link">&para;</a></h2>
-<div class="problem-body">
-<div class="problem-prose">
-<p>Analysts who work on complex projects can sometimes lose track of key decisions and the reasons behind them. Over time, their codebase can slowly drift away from the original intent of the project, and minor-looking coding decisions can completely change the interpretation of empirical results. This risk is especially pronounced when part of the analysis is delegated to agentic coding, which produces a lot of hard-to-review code.</p>
-</div>
-<div class="pull pull--aside">
-<p>A human-approved, auditable, and authoritative record of the key decisions made in a project.</p>
-</div>
-</div>
-</div>
-<h2 id="solution-data-analysis-decision-records">Solution: Data Analysis Decision Records<a class="headerlink" href="#solution-data-analysis-decision-records" title="Permanent link">&para;</a></h2>
-<p>Data Analysis Decision Records (DADR) are designed to make our key analytical choices explicit. Each decision becomes a short Markdown record, stored alongside the code, data, and prose of a project. The DADR markdown files are human-editable, LLM-readable, and version-controllable. They include meta-data fields and tags that enable external tools to track decision flows, audit the faithfulness of a codebase to recorded decisions, and generate reports and narratives directly from the decision ledger.</p>
-<p>DADR is not meant to be a comprehensive record of every thought, but rather a focused ledger of the key decisions that shape an analysis. It is a simple specification inspired by the <a href="https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-decision-record">Architecture Decision Record</a>, a proven and popular development practice in the software engineering community.</p>
-<h2 id="audience">Audience<a class="headerlink" href="#audience" title="Permanent link">&para;</a></h2>
-<p>DADR serves three audiences:</p>
-<div class="audience-grid">
-<div class="audience">
-<div class="audience-icon">👤</div>
-<p><strong>Researcher</strong></p>
-<p>A transparent reminder of past decisions and the reasons behind them.</p>
-</div>
-<div class="audience">
-<div class="audience-icon">👥</div>
-<p><strong>Readers</strong></p>
-<p>People who want to understand which decisions were made and why, without having to reconstruct the analyst's intent from code or git commit history.</p>
-</div>
-<div class="audience">
-<div class="audience-icon">🤖</div>
-<p><strong>LLMs</strong></p>
-<p>Machines can verify if the analyst's intent is implemented faithfully in the code, a pre-analysis plan, or a report.</p>
-</div>
-</div>
-<h2 id="frictionless">Frictionless<a class="headerlink" href="#frictionless" title="Permanent link">&para;</a></h2>
-<p>DADR is easy to implement because automated tools and LLMs do all the hard work! In the vast majority of cases, all the analyst needs to do is click "Accept" or "Reject" to determine if a candidate decision should enter the permanent record.</p>
-<p>A decision can be initiated in several ways:</p>
-<ol>
-<li>The LLM agent walks a code base to detect important decisions and drafts candidate decisions for them.<sup id="fnref:static-analysis"><a class="footnote-ref" href="#fn:static-analysis">2</a></sup></li>
-<li>The LLM agent detects a change in the code, analyzes the change, and drafts a candidate decision if necessary (Git hook).</li>
-<li>The LLM agent drafts a candidate decision based on analyst-supplied prompt and context.</li>
-<li>The analyst drafts a candidate decision manually.</li>
-</ol>
-<div class="principle">
-<p>Every candidate decision <b>must</b> be approved by the human analyst before it enters the permanent record.</p>
-</div>
-<h2 id="new-possibilities">New possibilities<a class="headerlink" href="#new-possibilities" title="Permanent link">&para;</a></h2>
-<p>A complete, structured trace of analytic decisions is more than documentation. It is an asset that downstream tools and humans can act on.</p>
-<div class="feature-grid">
-<div class="feature">
-<h4 id="faithfulness">Faithfulness<a class="headerlink" href="#faithfulness" title="Permanent link">&para;</a></h4>
-<p>Compare code, plan, and manuscript against recorded decisions to flag drift, undocumented choices, or contradictions. An LLM walks the relevant code paths and produces a discrepancy report for human triage.</p>
-</div>
-<div class="feature">
-<h4 id="compliance">Compliance<a class="headerlink" href="#compliance" title="Permanent link">&para;</a></h4>
-<p>Cross-check decisions against a Statistical Analysis Plan (SAP), a Pre-Analysis Plan (PAP), Pre-registration, or data cleaning plan to surface deviations and unexecuted commitments.</p>
-</div>
-<div class="feature">
-<h4 id="multiverse-and-robustness">Multiverse and robustness<a class="headerlink" href="#multiverse-and-robustness" title="Permanent link">&para;</a></h4>
-<p>Automatically surface the choices that need to be subjected to sensitivity, robustness, or multiverse analysis.</p>
-</div>
-<div class="feature">
-<h4 id="decision-flow">Decision flow<a class="headerlink" href="#decision-flow" title="Permanent link">&para;</a></h4>
-<p>Follow how analytic choices evolved: which decisions replaced which, when, and why.</p>
-</div>
-<div class="feature">
-<h4 id="drafting">Drafting<a class="headerlink" href="#drafting" title="Permanent link">&para;</a></h4>
-<p>Generate methods sections, appendices, and decision tables directly from the trace, with citations back to the records.</p>
-</div>
-<div class="feature">
-<h4 id="onboarding">Onboarding<a class="headerlink" href="#onboarding" title="Permanent link">&para;</a></h4>
-<p>Hand a collaborator or new contributor a readable narrative instead of a code-archaeology assignment.</p>
-</div>
-<div class="feature">
-<h4 id="replication-and-reuse">Replication and reuse<a class="headerlink" href="#replication-and-reuse" title="Permanent link">&para;</a></h4>
-<p>Give independent analysts a self-contained rationale for every consequential choice.</p>
-</div>
-<div class="feature">
-<h4 id="coverage-and-audit">Coverage and audit<a class="headerlink" href="#coverage-and-audit" title="Permanent link">&para;</a></h4>
-<p>Report which analysis activities are backed by decisions, which are unreviewed, and which have gone stale.</p>
-</div>
-<div class="feature">
-<h4 id="teaching">Teaching<a class="headerlink" href="#teaching" title="Permanent link">&para;</a></h4>
-<p>Use real annotated analyses to show how defensible alternatives were considered and chosen.</p>
-</div>
-</div>
-<h2 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h2>
-<p>Candidate decisions can be drafted automatically by a LLM agent, or manually by the analyst. Every candidate decision <em>must</em> be reviewed by the human analyst before it enters the permanent record. The analyst can either accept the candidate decision, reject it, or draft a superseding decision that replaces it. Every decision (candidate, accepted, rejected, superseded) is recorded in the DADR ledger to create a complete trace of how the analysis evolved over time.</p>
-<div class="diagram">
-<pre class="mermaid"><code>%%{init: {"flowchart": {"defaultRenderer": "elk", "curve": "basis", "nodeSpacing": 70, "rankSpacing": 70}}}%%
-flowchart TD
-    analyst["Analyst"]
-    no["No decision needed"]
-    llm1["LLM agent"]
-    candidate["Candidate decision"]
-    review(["Analyst approval"])
-    accepted["Accepted decision"]
-    rejected["Rejected decision"]
-    supersede["Superseding decision"]
-    log["Data&amp;nbsp;Analysis&amp;nbsp;Decision&amp;nbsp;Records"]
-
-    analyst -- "Ask an agent to&lt;br/&gt;draft a decision" --&gt; llm1
-    analyst -- "Modify code or data&lt;br/&gt;(Git commit hook)" --&gt; llm1
-    analyst -- "Draft a decision manually" --&gt; candidate
-    llm1 --&gt; no
-    llm1 --&gt; candidate
-    candidate --&gt; review
-    review --&gt; accepted
-    review --&gt; rejected
-    accepted --&gt; supersede
-    accepted -.-&gt; log
-    rejected -.-&gt; log
-    candidate -.-&gt; log
-    supersede -.-&gt; log
-
-    linkStyle 9,10,11 stroke:#94a3b8,stroke-width:1px;
-
-    classDef default fill:#ffffff,stroke:#cbd5e1,stroke-width:1px,color:#0f172a;
-    classDef sReview fill:#ffffff,stroke:#0f172a,stroke-width:2px,color:#0f172a,font-weight:600,font-size:18px;
-    classDef sCandidate fill:#fefce8,stroke:#ca8a04,stroke-width:1px,color:#422006;
-    classDef sAccepted fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
-    classDef sSuperseded fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#052e16;
-    classDef sRejected fill:#fef2f2,stroke:#dc2626,stroke-width:1px,color:#450a0a;
-
-    class review sReview;
-    class candidate sCandidate;
-    class accepted sAccepted;
-    class rejected sRejected;
-    class supersede sSuperseded;</code></pre>
-</div>
-<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nn">---</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Drop observations with missing treatment assignment</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">accepted</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">01938c20-a3b4-7000-8000-111122223333</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">tags</span><span class="p">:</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kind/sample</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">confidence/high</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nn">---</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1">## Context</span>
+<h2 id="why-did-we-exclude-these-observations">Why did we exclude these observations?<a class="headerlink" href="#why-did-we-exclude-these-observations" title="Permanent link">&para;</a></h2>
+<p>Months later, the code may still tell you which rows were dropped. A decision record tells you why. Each important choice gets one short Markdown file:</p>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>---
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>title: Exclude observations without treatment assignment
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>status: accepted
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gu">id: 01938c20-a3b4-7000-8000-111122223333</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gu">---</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gu">## Context</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>The assignment log is missing treatment assignment for 47 of 8,213
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>respondents. We could not recover it from the original records.
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="l l-Scalar l-Scalar-Plain">The randomization log is missing the treatment field for 47 of 8,213</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="l l-Scalar l-Scalar-Plain">respondents. Without an assignment we cannot estimate either</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="l l-Scalar l-Scalar-Plain">intent-to-treat or per-protocol effects for those rows. This extends</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="l l-Scalar l-Scalar-Plain">the sampling rule established in [[01938b8e4d70]].</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="l l-Scalar l-Scalar-Plain">## Decision</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="l l-Scalar l-Scalar-Plain">&gt;</span><span class="w"> </span><span class="c1">#axis/sample/complete-case</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="p p-Indicator">&gt;</span><span class="err"> Drop the 47 respondents without recorded treatment assignment from</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="p p-Indicator">&gt;</span><span class="err"> the analysis sample.</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="c1">## Alternatives</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Multiple imputation of the assignment indicator (rejected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignment</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">is a treatment, not a covariate; imputing it would invent</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">counterfactual exposures).</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Coding the missing rows as control (rejected</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">silently biases the ITT</span>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">estimate toward the null).</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="c1">## Consequences</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="l l-Scalar l-Scalar-Plain">The analysis sample drops from 8,213 to 8,166. Power calculations need</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="l l-Scalar l-Scalar-Plain">to be re-run; see [[01938c30b1e2]].</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="gu">## Decision</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>Exclude those 47 respondents from the treatment-effect analysis.
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="gu">## Alternatives</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>Recover assignment from the original records: attempted without success.
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>Treat missing assignments as control: rejected because the assignment
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>is unknown, not evidence of assignment to control.
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="gu">## Consequences</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>The sample falls to 8,166. Report the exclusions and investigate whether
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>missing assignment is associated with observed respondent characteristics.
 </span></code></pre></div>
+<h2 id="write-review-remember">Write, review, remember<a class="headerlink" href="#write-review-remember" title="Permanent link">&para;</a></h2>
+<p><strong>DADR</strong> is the file format: four sections, a title, a status, and an ID. <strong>Dadrock</strong> is the tool that helps you write, review, and find these records.</p>
+<p>Draft a candidate yourself or ask an agent for help. Review what it says and why, then accept or reject it. Once approved, the decision's substantive content is preserved. Changing your mind creates a linked replacement; minor corrections remain possible. The old record remains accepted, with successors identifying its replacements.</p>
+<p>Start with a few consequential choices. Tags, agents, and integrations are optional. You can keep the files alongside your analysis and read them in any text editor.</p>
+<figure class="screenshot">
+<p><img alt="Reviewing a candidate decision in the dadrock web UI, with Accept and Reject buttons" loading="lazy" src="assets/dadrock-review-light.webp" /></p>
+<figcaption>Reviewing a candidate in the <a href="dadrock/web/">dadrock web UI</a>.</figcaption>
+</figure>
+<h2 id="why-keep-decisions">Why keep decisions?<a class="headerlink" href="#why-keep-decisions" title="Permanent link">&para;</a></h2>
+<p>Analysis choices can materially affect results. In Many Analysts studies, independent teams working with the same data and questions reached different conclusions; see <a href="https://doi.org/10.1177/2515245917747646">Silberzahn et al. (2018)</a> and <a href="https://doi.org/10.1073/pnas.2203150119">Breznau et al. (2022)</a>. Recording consequential choices helps collaborators understand those differences and helps you notice when an analysis departs from its original intent.</p>
+<h2 id="what-dadrock-does-today">What Dadrock does today<a class="headerlink" href="#what-dadrock-does-today" title="Permanent link">&para;</a></h2>
+<p>Dadrock creates and organizes records, provides a local web review interface, links replacement decisions, and checks record structure and references. With a configured local agent, it can propose drafts from your context or code and help review conflicting records.</p>
+<p>An agent can identify a sample restriction without knowing your reason for choosing it. Supply that reason during review; accepting a plausible description is not a substitute for endorsing the decision.</p>
+<p>Automated comparisons of code, plans, and manuscripts against decisions are <a href="roadmap/">roadmap ideas</a>, not guarantees provided by current validation.</p>
 <div class="hero-buttons" style="margin-top: 2.5rem">
-  <a class="md-button" href="getting-started/">Get started</a>
-  <a class="md-button" href="specification/">Read the specification</a>
-</div>
-
-<div class="footnote">
-<hr />
-<ol>
-<li id="fn:many-analysts">
-<p>Silberzahn et al. (2018), "Many Analysts, One Data Set: Making Transparent How Variations in Analytic Choices Affect Results," <em>Advances in Methods and Practices in Psychological Science</em> 1(3): 337–356, <a href="https://doi.org/10.1177/2515245917747646">doi:10.1177/2515245917747646</a>.
-Botvinik-Nezer et al. (2020), "Variability in the Analysis of a Single Neuroimaging Dataset by Many Teams," <em>Nature</em> 582: 84–88, <a href="https://doi.org/10.1038/s41586-020-2314-9">doi:10.1038/s41586-020-2314-9</a>.
-Huntington-Klein et al. (2021), "The Influence of Hidden Researcher Decisions in Applied Microeconomics," <em>Economic Inquiry</em> 59(3): 944–960, <a href="https://doi.org/10.1111/ecin.12992">doi:10.1111/ecin.12992</a>.
-Breznau et al. (2022), "Observing Many Researchers Using the Same Data and Hypothesis Reveals a Hidden Universe of Uncertainty," <em>PNAS</em> 119(44): e2203150119, <a href="https://doi.org/10.1073/pnas.2203150119">doi:10.1073/pnas.2203150119</a>.&#160;<a class="footnote-backref" href="#fnref:many-analysts" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-<li id="fn:static-analysis">
-<p>The agent can have access to static analysis or instrumentation tools to better infer the consequences of a code chunk. Supplying these tools is on the roadmap for the <strong>dadrock</strong> tool.&#160;<a class="footnote-backref" href="#fnref:static-analysis" title="Jump back to footnote 2 in the text">&#8617;</a></p>
-</li>
-</ol>
+  <a class="md-button" href="getting-started/">Create your first decision</a>
+  <a class="md-button" href="core/">The format in one page</a>
 </div>
 
   

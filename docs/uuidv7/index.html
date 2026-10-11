@@ -16,6 +16,8 @@
         <link rel="prev" href="../llms/">
       
       
+        <link rel="next" href="../roadmap/">
+      
       
         
       
@@ -47,6 +49,7 @@
       
     
     
+  
       
         
         
@@ -55,6 +58,8 @@
         <style>:root{--md-text-font:"Source Serif 4";--md-code-font:"JetBrains Mono"}</style>
       
     
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
     
       <link rel="stylesheet" href="../stylesheets/home.css">
     
@@ -64,6 +69,27 @@
 
     
     
+  
+    
+  
+  
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DADR">
+  <meta property="og:title" content="UUID v7 generator - DADR">
+  <meta property="og:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  
+    <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/uuidv7/">
+  
+  <meta property="og:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DADR — Data Analysis Decision Records">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="UUID v7 generator - DADR">
+  <meta name="twitter:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  <meta name="twitter:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+
   </head>
   
   
@@ -109,44 +135,18 @@
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
-
     <nav class="dadr-header-nav" aria-label="Primary">
-      <a href="../getting-started/" class="dadr-header-nav__link">Get started</a>
-      <a href="../specification/" class="dadr-header-nav__link">Specification: DADR</a>
-      <a href="../dadrock/dadrock" class="dadr-header-nav__link">Tool: dadrock</a>
+      
+        
+        <a href="../getting-started/" class="dadr-header-nav__link">Get started</a>
+      
+        
+        <a href="../specification/" class="dadr-header-nav__link">Specification</a>
+      
+        
+        <a href="../dadrock/dadrock/" class="dadr-header-nav__link">dadrock</a>
+      
     </nav>
-
-    
-      
-        <form class="md-header__option" data-md-component="palette">
-  
-    
-    
-    
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="red"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
-    
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      </label>
-    
-  
-    
-    
-    
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="red"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
-    
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
-      </label>
-    
-  
-</form>
-      
-    
-    
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
-    
-    
     
       
       
@@ -284,40 +284,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../specification/" class="md-nav__link">
+      <a href="../core/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Specification
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tags/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Tags
+  The format
 
     
   </span>
@@ -344,17 +318,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  dadrock
+  Dadrock
 
     
   </span>
@@ -364,12 +338,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
-  dadrock
+  Dadrock
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -381,41 +355,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../dadrock/dadrock/" class="md-nav__link">
+      <a href="../dadrock/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dadrock/cli/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  CLI
+  Overview and validation
 
     
   </span>
@@ -462,6 +409,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../dadrock/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CLI reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../dadrock/ide/" class="md-nav__link">
         
   
@@ -469,7 +443,7 @@
   <span class="md-ellipsis">
     
   
-  IDE integrations
+  Editor integration
 
     
   </span>
@@ -493,17 +467,64 @@
       
   
   
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../llms/" class="md-nav__link">
+      <a href="../specification/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  LLM agents
+  Specification
 
     
   </span>
@@ -514,9 +535,64 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+  Optional tags
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../llms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Advanced agent setup
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
     
@@ -546,6 +622,41 @@
   
 
       </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Roadmap
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -790,7 +901,7 @@ that identifier, followed by a short kebab-case title.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../llms/" class="md-footer__link md-footer__link--prev" aria-label="Previous: LLM agents">
+          <a href="../llms/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Advanced agent setup">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -800,11 +911,27 @@ that identifier, followed by a short kebab-case title.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                LLM agents
+                Advanced agent setup
               </div>
             </div>
           </a>
         
+        
+          
+          <a href="../roadmap/" class="md-footer__link md-footer__link--next" aria-label="Next: Roadmap">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Roadmap
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
         
       </nav>
     

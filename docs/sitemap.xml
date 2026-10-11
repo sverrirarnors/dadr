@@ -7,27 +7,33 @@
         <loc>https://vincentarelbundock.github.io/dadr/getting-started/</loc>
       </url>
       <url>
+        <loc>https://vincentarelbundock.github.io/dadr/core/</loc>
+      </url>
+      <url>
+        <loc>https://vincentarelbundock.github.io/dadr/dadrock/</loc>
+      </url>
+      <url>
+        <loc>https://vincentarelbundock.github.io/dadr/dadrock/web/</loc>
+      </url>
+      <url>
+        <loc>https://vincentarelbundock.github.io/dadr/dadrock/cli/</loc>
+      </url>
+      <url>
+        <loc>https://vincentarelbundock.github.io/dadr/dadrock/ide/</loc>
+      </url>
+      <url>
         <loc>https://vincentarelbundock.github.io/dadr/specification/</loc>
       </url>
       <url>
         <loc>https://vincentarelbundock.github.io/dadr/tags/</loc>
       </url>
       <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/dadrock/</loc>
-      </url>
-      <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/cli/</loc>
-      </url>
-      <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/web/</loc>
-      </url>
-      <url>
-        <loc>https://vincentarelbundock.github.io/dadr/dadrock/ide/</loc>
-      </url>
-      <url>
         <loc>https://vincentarelbundock.github.io/dadr/llms/</loc>
       </url>
       <url>
         <loc>https://vincentarelbundock.github.io/dadr/uuidv7/</loc>
+      </url>
+      <url>
+        <loc>https://vincentarelbundock.github.io/dadr/roadmap/</loc>
       </url>
 </urlset>

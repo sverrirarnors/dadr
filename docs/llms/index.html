@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://vincentarelbundock.github.io/dadr/llms/">
       
       
-        <link rel="prev" href="../dadrock/ide/">
+        <link rel="prev" href="../tags/">
       
       
         <link rel="next" href="../uuidv7/">
@@ -27,7 +27,7 @@
     
     
       
-        <title>LLMs and agents - DADR</title>
+        <title>Advanced agent setup - DADR</title>
       
     
     
@@ -49,6 +49,7 @@
       
     
     
+  
       
         
         
@@ -57,6 +58,8 @@
         <style>:root{--md-text-font:"Source Serif 4";--md-code-font:"JetBrains Mono"}</style>
       
     
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
     
       <link rel="stylesheet" href="../stylesheets/home.css">
     
@@ -66,6 +69,27 @@
 
     
     
+  
+    
+  
+  
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DADR">
+  <meta property="og:title" content="Advanced agent setup - DADR">
+  <meta property="og:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  
+    <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/llms/">
+  
+  <meta property="og:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DADR — Data Analysis Decision Records">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Advanced agent setup - DADR">
+  <meta name="twitter:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  <meta name="twitter:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+
   </head>
   
   
@@ -85,7 +109,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#llms-and-agents" class="md-skip">
+        <a href="#advanced-agent-setup" class="md-skip">
           Skip to content
         </a>
       
@@ -111,44 +135,18 @@
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
-
     <nav class="dadr-header-nav" aria-label="Primary">
-      <a href="../getting-started/" class="dadr-header-nav__link">Get started</a>
-      <a href="../specification/" class="dadr-header-nav__link">Specification: DADR</a>
-      <a href="../dadrock/dadrock" class="dadr-header-nav__link">Tool: dadrock</a>
+      
+        
+        <a href="../getting-started/" class="dadr-header-nav__link">Get started</a>
+      
+        
+        <a href="../specification/" class="dadr-header-nav__link">Specification</a>
+      
+        
+        <a href="../dadrock/dadrock/" class="dadr-header-nav__link">dadrock</a>
+      
     </nav>
-
-    
-      
-        <form class="md-header__option" data-md-component="palette">
-  
-    
-    
-    
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="red"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
-    
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      </label>
-    
-  
-    
-    
-    
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="red"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
-    
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
-      </label>
-    
-  
-</form>
-      
-    
-    
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
-    
-    
     
       
       
@@ -286,40 +284,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../specification/" class="md-nav__link">
+      <a href="../core/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Specification
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../tags/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Tags
+  The format
 
     
   </span>
@@ -346,17 +318,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  dadrock
+  Dadrock
 
     
   </span>
@@ -366,12 +338,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
-  dadrock
+  Dadrock
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -383,41 +355,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../dadrock/dadrock/" class="md-nav__link">
+      <a href="../dadrock/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../dadrock/cli/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  CLI
+  Overview and validation
 
     
   </span>
@@ -464,6 +409,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../dadrock/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CLI reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../dadrock/ide/" class="md-nav__link">
         
   
@@ -471,7 +443,7 @@
   <span class="md-ellipsis">
     
   
-  IDE integrations
+  Editor integration
 
     
   </span>
@@ -499,6 +471,107 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../specification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Specification
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional tags
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       
@@ -514,7 +587,7 @@
   <span class="md-ellipsis">
     
   
-  LLM agents
+  Advanced agent setup
 
     
   </span>
@@ -531,7 +604,7 @@
   <span class="md-ellipsis">
     
   
-  LLM agents
+  Advanced agent setup
 
     
   </span>
@@ -557,10 +630,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#implemented" class="md-nav__link">
+  <a href="#configure-one-local-agent" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Implemented
+        Configure one local agent
       </span>
     </span>
   </a>
@@ -568,10 +641,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dadrock-tasks" class="md-nav__link">
+  <a href="#draft-for-review" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Dadrock Tasks
+        Draft for review
       </span>
     </span>
   </a>
@@ -579,10 +652,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#roadmap" class="md-nav__link">
+  <a href="#custom-workflows-and-run-history" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Roadmap
+        Custom workflows and run history
       </span>
     </span>
   </a>
@@ -590,52 +663,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#llm-agent-setup" class="md-nav__link">
+  <a href="#integrate-another-agent-client" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        LLM agent setup
+        Integrate another agent client
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="LLM agent setup">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Requirements
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#install-a-provider-cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Install a provider CLI
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#use-a-llm-agent-to-draft-decision-candidates" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Use a LLM agent to draft decision candidates
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -646,9 +680,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -669,6 +704,41 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Roadmap
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -714,10 +784,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#implemented" class="md-nav__link">
+  <a href="#configure-one-local-agent" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Implemented
+        Configure one local agent
       </span>
     </span>
   </a>
@@ -725,10 +795,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dadrock-tasks" class="md-nav__link">
+  <a href="#draft-for-review" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Dadrock Tasks
+        Draft for review
       </span>
     </span>
   </a>
@@ -736,10 +806,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#roadmap" class="md-nav__link">
+  <a href="#custom-workflows-and-run-history" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Roadmap
+        Custom workflows and run history
       </span>
     </span>
   </a>
@@ -747,52 +817,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#llm-agent-setup" class="md-nav__link">
+  <a href="#integrate-another-agent-client" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        LLM agent setup
+        Integrate another agent client
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="LLM agent setup">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Requirements
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#install-a-provider-cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Install a provider CLI
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#use-a-llm-agent-to-draft-decision-candidates" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Use a LLM agent to draft decision candidates
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -814,168 +845,40 @@
   
 
 
-<h1 id="llms-and-agents">LLMs and agents<a class="headerlink" href="#llms-and-agents" title="Permanent link">&para;</a></h1>
-<p>Using DADR should be <a href="/dadr/#frictionless">frictionless.</a> The <strong>dadrock</strong> software can help with tedious file management and validation. But the key to making this system work is to use LLM agents to draft and review decision candidates.</p>
-<p>LLMs work especially well with DADR, because they are plain text (markdown) and atomic (one decision per file). This makes them easy for agents to process.</p>
-<p>As noted in the <a href="/dadr/#workflow">workflow diagram,</a> all acceptance or rejection decisions are <em>human-gated</em>. LLM agents</p>
-<ul>
-<li>MAY draft or edit candidate decisions.</li>
-<li>MUST NOT accept or reject decisions.</li>
-</ul>
-<h2 id="implemented">Implemented<a class="headerlink" href="#implemented" title="Permanent link">&para;</a></h2>
-<p>These features are already implemented in <strong>dadrock</strong>:</p>
-<ul>
-<li>Draft a decision candidate based on user input. </li>
-<li>Chat interface for iterative improvement of decision candidates.</li>
-<li>MCP tools for structured project inspection and DADR lifecycle mutations during agent sessions.</li>
-<li>Optional local skill/prompt-pack instructions for agent drafts.</li>
-</ul>
-<h2 id="dadrock-tasks">Dadrock Tasks<a class="headerlink" href="#dadrock-tasks" title="Permanent link">&para;</a></h2>
-<p>Dadrock tasks are editable prompt workflows that use the same Dadrock MCP and command layers as the CLI and web UI. Built-in tasks are examples, not special cases: project tasks live under <code>dadr/tasks/</code>, user-installed tasks can also be discovered, and task runs are persisted under <code>dadr/runs/</code>.</p>
-<p>Agents running tasks must return the declared JSON output kind exactly. They must not accept, reject, supersede, or rewrite records except through explicit user-requested Dadrock lifecycle actions.</p>
-<h2 id="roadmap">Roadmap<a class="headerlink" href="#roadmap" title="Permanent link">&para;</a></h2>
-<p>These features will be implemented in <strong>dadrock</strong> in the short term:</p>
-<ul>
-<li>Draft decision candidates automatically based on <ul>
-<li>Git commits </li>
-<li>Working tree changes to the code base.</li>
-<li>Manuscript </li>
-<li>Pre-analysis plan.</li>
-</ul>
-</li>
-<li>Faithfulness analysis to compare<ul>
-<li>Manuscript vs. Decisions</li>
-<li>Pre-analysis plan vs. Decisions</li>
-<li>Code vs. Decisions</li>
-</ul>
-</li>
-<li>Consistency and completeness<ul>
-<li>Do some decisions contradict each other?</li>
-<li>Are the unresolved ambiguities?</li>
-<li>Are all the decisions made in the code recorded in DADR?</li>
-</ul>
-</li>
-<li>Decision review<ul>
-<li>Comment on the decisions and their unforseen consequences.</li>
-</ul>
-</li>
-<li>Draft reports<ul>
-<li>Write a draft methods section based on the narrative DADR.</li>
-</ul>
-</li>
-</ul>
-<h2 id="llm-agent-setup">LLM agent setup<a class="headerlink" href="#llm-agent-setup" title="Permanent link">&para;</a></h2>
-<p><strong>dadrock</strong> uses local agents through the <a href="https://agentclientprotocol.com/"><strong>Agent Client Protocol (ACP)</strong></a>.</p>
-<h3 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h3>
-<p>To use agent drafting or web candidate revision, the local machine needs:</p>
-<ul>
-<li>the <code>dadrock</code> binary installed;</li>
-<li>an installed LLM agent like Claude Code, Codex, or Open Code;</li>
-<li>an ACP-compatible bridge;</li>
-<li>an authenticated account with a LLM provider.</li>
-</ul>
-<h3 id="install-a-provider-cli">Install a provider CLI<a class="headerlink" href="#install-a-provider-cli" title="Permanent link">&para;</a></h3>
-<p><strong>dadrock</strong> does not bundle LLM agents or ACP providers. Install one supported agent and ACP locally, and configure authentication in that provider's own tool.<sup id="fnref:acp-install-security"><a class="footnote-ref" href="#fn:acp-install-security">1</a></sup><sup>,</sup><sup id="fnref:acp-install-local"><a class="footnote-ref" href="#fn:acp-install-local">2</a></sup></p>
-<p>Install the CLI for any ACP-compatible provider of your choice, using your preferred method. For examples, see the table below.<sup id="fnref:agentic-nvim"><a class="footnote-ref" href="#fn:agentic-nvim">3</a></sup></p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>These install commands are included for convenience. Always refer to the official installation instructions from the respective ACP provider.</p>
-</div>
-<table>
-<thead>
-<tr>
-<th>Provider</th>
-<th>Install</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="https://github.com/agentclientprotocol/claude-agent-acp">Claude Agent ACP</a></td>
-<td><code>pnpm add -g @agentclientprotocol/claude-agent-acp</code><br/><strong>OR</strong> <code>npm i -g @agentclientprotocol/claude-agent-acp</code><br/><strong>OR</strong> <a href="https://github.com/agentclientprotocol/claude-agent-acp/releases">Download binary</a></td>
-</tr>
-<tr>
-<td><a href="https://github.com/google-gemini/gemini-cli">Gemini CLI</a></td>
-<td><code>pnpm add -g @google/gemini-cli</code><br/><strong>OR</strong> <code>npm i -g @google/gemini-cli</code><br/><strong>OR</strong> <code>brew install --cask gemini</code></td>
-</tr>
-<tr>
-<td><a href="https://github.com/zed-industries/codex">Codex ACP</a></td>
-<td><code>pnpm add -g @zed-industries/codex-acp</code><br/><strong>OR</strong> <code>npm i -g @zed-industries/codex-acp</code><br/><strong>OR</strong> <a href="https://github.com/zed-industries/codex/releases">Download binary</a></td>
-</tr>
-<tr>
-<td><a href="https://opencode.ai/">OpenCode</a></td>
-<td><code>pnpm add -g opencode-ai</code><br/><strong>OR</strong> <code>npm i -g opencode-ai</code><br/><strong>OR</strong> <code>brew install opencode</code><br/><strong>OR</strong> <code>curl -fsSL https://opencode.ai/install \| bash</code></td>
-</tr>
-<tr>
-<td><a href="https://cursor.com/docs/cli/agent">Cursor Agent</a></td>
-<td><code>curl https://cursor.com/install -fsS \| bash</code><br/><strong>OR</strong> Windows: <code>irm 'https://cursor.com/install?win32=true' \| iex</code><br/><strong>OR</strong> See <a href="https://cursor.com/docs/cli/agent">Cursor docs</a></td>
-</tr>
-<tr>
-<td><a href="https://github.com/github/copilot-cli">Copilot CLI</a></td>
-<td><code>pnpm add -g @github/copilot</code><br/><strong>OR</strong> <code>npm i -g @github/copilot</code><br/><strong>OR</strong> <code>brew install copilot-cli</code><br/><strong>OR</strong> <code>curl -fsSL https://gh.io/copilot-install \| bash</code></td>
-</tr>
-<tr>
-<td><a href="https://www.augmentcode.com/">Auggie</a></td>
-<td><code>pnpm add -g @augmentcode/auggie</code><br/><strong>OR</strong> <code>npm i -g @augmentcode/auggie</code><br/><strong>OR</strong> See <a href="https://docs.augmentcode.com/">Auggie docs</a></td>
-</tr>
-<tr>
-<td><a href="https://mistral.ai/news/mistral-code">Mistral Vibe</a></td>
-<td><code>curl -LsSf https://mistral.ai/vibe/install.sh \| bash</code><br/><strong>OR</strong> <code>uv tool install mistral-vibe</code><br/><strong>OR</strong> <code>pip install mistral-vibe</code><br/><strong>OR</strong> <a href="https://github.com/mistralai/vibe/releases">Download binary</a></td>
-</tr>
-<tr>
-<td><a href="https://cline.bot/">Cline</a></td>
-<td><code>pnpm add -g cline</code><br/><strong>OR</strong> <code>npm i -g cline</code><br/><strong>OR</strong> See <a href="https://docs.cline.bot/">Cline docs</a></td>
-</tr>
-<tr>
-<td><a href="https://block.github.io/goose/">Goose</a></td>
-<td><code>brew install block-goose-cli</code><br/><strong>OR</strong> See <a href="https://block.github.io/goose/docs/getting-started/installation">Goose docs</a></td>
-</tr>
-</tbody>
-</table>
-<h3 id="use-a-llm-agent-to-draft-decision-candidates">Use a LLM agent to draft decision candidates<a class="headerlink" href="#use-a-llm-agent-to-draft-decision-candidates" title="Permanent link">&para;</a></h3>
-<p>If exactly one supported provider is installed, automatic detection is enough:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>draft<span class="w"> </span><span class="s2">&quot;Document the missing sample restriction&quot;</span>
+<h1 id="advanced-agent-setup">Advanced agent setup<a class="headerlink" href="#advanced-agent-setup" title="Permanent link">&para;</a></h1>
+<p>Agent assistance is optional. The <a href="../getting-started/">manual walkthrough</a> needs only Dadrock. This page is for configuring an agent or integrating Dadrock into other tools.</p>
+<h2 id="configure-one-local-agent">Configure one local agent<a class="headerlink" href="#configure-one-local-agent" title="Permanent link">&para;</a></h2>
+<p>Dadrock connects to a locally installed agent through the Agent Client Protocol (ACP). The agent may use a remote model. You need an ACP-compatible provider or bridge and its authentication. Built-in tasks include their own instructions; no separately installed skill is required. An ordinary <code>claude</code> or <code>codex</code> executable alone is not necessarily an ACP provider.</p>
+<p>Use your provider's own installation and authentication instructions. Choose a bridge explicitly supported by your agent provider. Dadrock does not install providers or manage their credentials.</p>
+<p>For optional guidance outside built-in tasks, copy <code>skills/dadr/</code> from this checkout to your agent's supported skill directory, such as <code>.agents/skills/dadr</code> or <code>~/.codex/skills/dadr</code>. The agent's own discovery rules determine which location works.</p>
+<p>Check the connection:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>check
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>skills
 </span></code></pre></div>
-<p>To choose a provider explicitly:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>draft<span class="w"> </span>--agent<span class="w"> </span>gemini<span class="w"> </span>--agent-arg<span class="w"> </span>--acp<span class="w"> </span><span class="s2">&quot;Draft a DADR for the new model specification&quot;</span>
+<p>When more than one provider is available, choose one explicitly with <code>--agent</code>. Provider-specific arguments can be passed with <code>--agent-arg</code>. <code>agent skills</code> lists optional local instructions. Built-in task runs do not require a skill-loading preflight.</p>
+<h2 id="draft-for-review">Draft for review<a class="headerlink" href="#draft-for-review" title="Permanent link">&para;</a></h2>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dadrock<span class="w"> </span>task<span class="w"> </span>run<span class="w"> </span>code-to-record<span class="w"> </span>--path<span class="w"> </span>analysis/<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>dadrock<span class="w"> </span>task<span class="w"> </span>run<span class="w"> </span>context-to-record<span class="w"> </span>--context<span class="w"> </span><span class="s2">&quot;Explain our choice of sample restrictions&quot;</span>
 </span></code></pre></div>
-<p>ACP tool permission requests are denied by default. To allow them for a session:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>draft<span class="w"> </span>--permission<span class="w"> </span>allow-once<span class="w"> </span><span class="s2">&quot;Draft a DADR for the sample restriction&quot;</span>
+<p>The limit asks the agent to prioritize a small batch, rather than treating every operation as a decision. It is a drafting request, not a hard guarantee on model output. Outputs remain proposals. Do not infer motivation from implementation alone; supply missing rationale before accepting.</p>
+<p>Tool permission requests default to <code>deny</code>. When your selected workflow needs tools, explicitly choose the appropriate permission mode with <code>--permission allow-once</code> or <code>--permission allow-always</code>. This does not authorize an agent to accept decisions on your behalf.</p>
+<p><code>dadrock agent draft</code> remains available for compatibility. New workflows should use <code>task run context-to-record</code>.</p>
+<h2 id="custom-workflows-and-run-history">Custom workflows and run history<a class="headerlink" href="#custom-workflows-and-run-history" title="Permanent link">&para;</a></h2>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadrock<span class="w"> </span>task<span class="w"> </span>list
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>dadrock<span class="w"> </span>task<span class="w"> </span>show<span class="w"> </span>code-to-record
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>dadrock<span class="w"> </span>task<span class="w"> </span>runs
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>dadrock<span class="w"> </span>task<span class="w"> </span>result<span class="w"> </span>RUN_ID
 </span></code></pre></div>
-<p>By default, <strong>dadrock</strong> attaches an MCP server to ACP sessions so the agent can inspect records, tags, validation reports, and the bounded project snapshot with structured tools instead of guessing. The same MCP surface also exposes DADR lifecycle mutations through the <code>dadrock::commands</code> layer used by the CLI, so writes return command envelopes with changed paths and diagnostics. To run the MCP server directly for another client:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dadrock<span class="w"> </span>mcp<span class="w"> </span>serve
+<p>Built-in workflows include drafting, editing candidates, proposing replacements, merging drafts, finding conflicts, and synthesizing accepted decisions. Project overrides live in <code>dadr/tasks/&lt;task-id&gt;/</code>, with a <code>task.toml</code> manifest and a prompt file. Inspect an existing task before customizing it. Advanced and third-party inputs can use <code>--input-json</code>; do not combine it with friendly input flags such as <code>--path</code> or <code>--context</code>.</p>
+<p>Runs are persisted under <code>dadr/runs/</code>, which is ignored by default and may contain source excerpts or model transcripts. Output kinds determine how results are rendered. Protocol and run metadata stay outside record front matter.</p>
+<h2 id="integrate-another-agent-client">Integrate another agent client<a class="headerlink" href="#integrate-another-agent-client" title="Permanent link">&para;</a></h2>
+<p>Dadrock exposes a Model Context Protocol (MCP) server:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dadrock<span class="w"> </span>mcp<span class="w"> </span>serve
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>dadrock<span class="w"> </span>mcp<span class="w"> </span>serve<span class="w"> </span>--read-only
 </span></code></pre></div>
-<p>To check that a local ACP provider accepts a Dadrock session with MCP attached:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>check
-</span></code></pre></div>
-<p>Disable automatic MCP attachment for one draft with <code>--no-mcp</code>:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>draft<span class="w"> </span>--no-mcp<span class="w"> </span><span class="s2">&quot;Draft a DADR without project tools&quot;</span>
-</span></code></pre></div>
-<p>Dadrock ships with a built-in <code>dadr</code> skill for DADR workflow guidance:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>draft<span class="w"> </span>--skill<span class="w"> </span>dadr<span class="w"> </span><span class="s2">&quot;Draft candidate DADRs from this project&quot;</span>
-</span></code></pre></div>
-<p>To add local guidance, put instructions in a <code>SKILL.md</code> file under <code>.agents/skills/&lt;name&gt;/</code>, <code>.github/skills/&lt;name&gt;/</code>, <code>.claude/skills/&lt;name&gt;/</code>, <code>~/.agents/skills/&lt;name&gt;/</code>, <code>~/.codex/skills/&lt;name&gt;/</code>, <code>~/.codex/skills/.system/&lt;name&gt;/</code>, or <code>~/.claude/skills/&lt;name&gt;/</code>, then pass it by name:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>draft<span class="w"> </span>--skill<span class="w"> </span>dadr-style<span class="w"> </span><span class="s2">&quot;Draft a DADR for the new API boundary&quot;</span>
-</span></code></pre></div>
-<p>You can also pass a direct file or directory path with <code>--skill</code>; <code>--prompt-pack</code> is an alias. <strong>dadrock</strong> includes the selected instructions in the prompt and records a combined SHA-256 hash in the agent response provenance.</p>
-<p>To inspect built-in, installed, and project-local skills and prompt packs:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>skills
-</span></code></pre></div>
-<p>Prompt-pack provenance stays in the agent response envelope rather than the DADR record front matter. This keeps record files focused on the decision itself and avoids expanding the DADR schema with tool-run metadata.</p>
-<p>Even when permissions are allowed, the agent still produces candidates or revisions for review. It does not accept decisions.</p>
-<div class="footnote">
-<hr />
-<ol>
-<li id="fn:acp-install-security">
-<p>For security reasons, <strong>dadrock</strong> does not install or manage provider binaries for you. You must install them manually.&#160;<a class="footnote-backref" href="#fnref:acp-install-security" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-<li id="fn:acp-install-local">
-<p>Note: The provider may still call a remote model; "local" here means <strong>dadrock</strong> talks to a local ACP process.&#160;<a class="footnote-backref" href="#fnref:acp-install-local" title="Jump back to footnote 2 in the text">&#8617;</a></p>
-</li>
-<li id="fn:agentic-nvim">
-<p>This install table is adapted from the ACP provider installation guidance in the <a href="https://github.com/agentic-labs/agentic.nvim"><code>agentic.nvim</code> README</a>.&#160;<a class="footnote-backref" href="#fnref:agentic-nvim" title="Jump back to footnote 3 in the text">&#8617;</a></p>
-</li>
-</ol>
-</div>
+<p>The normal server exposes inspection and mutation tools through the same command layer as the CLI. Use read-only mode for clients that should only inspect records. Human approval is still required for acceptance or rejection.</p>
+<p>Dadrock attaches MCP to its agent sessions by default. <code>--no-mcp</code> disables that attachment for clients where it is unsuitable. These integration settings are not required to write or review records manually.</p>
+<p>Future automated faithfulness and coverage checks are described on the <a href="../roadmap/">roadmap</a>.</p>
 
 
 
@@ -1007,7 +910,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../dadrock/ide/" class="md-footer__link md-footer__link--prev" aria-label="Previous: IDE integrations">
+          <a href="../tags/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Optional tags">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -1017,7 +920,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                IDE integrations
+                Optional tags
               </div>
             </div>
           </a>

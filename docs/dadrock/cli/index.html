@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://vincentarelbundock.github.io/dadr/dadrock/cli/">
       
       
-        <link rel="prev" href="../dadrock/">
+        <link rel="prev" href="../web/">
       
       
-        <link rel="next" href="../web/">
+        <link rel="next" href="../ide/">
       
       
         
@@ -49,6 +49,7 @@
       
     
     
+  
       
         
         
@@ -57,6 +58,8 @@
         <style>:root{--md-text-font:"Source Serif 4";--md-code-font:"JetBrains Mono"}</style>
       
     
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
     
       <link rel="stylesheet" href="../../stylesheets/home.css">
     
@@ -66,6 +69,27 @@
 
     
     
+  
+    
+  
+  
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DADR">
+  <meta property="og:title" content="Command-Line Help for dadrock - DADR">
+  <meta property="og:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  
+    <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/dadrock/cli/">
+  
+  <meta property="og:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DADR — Data Analysis Decision Records">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Command-Line Help for dadrock - DADR">
+  <meta name="twitter:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  <meta name="twitter:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+
   </head>
   
   
@@ -111,44 +135,18 @@
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
-
     <nav class="dadr-header-nav" aria-label="Primary">
-      <a href="../../getting-started/" class="dadr-header-nav__link">Get started</a>
-      <a href="../../specification/" class="dadr-header-nav__link">Specification: DADR</a>
-      <a href="../dadrock" class="dadr-header-nav__link">Tool: dadrock</a>
+      
+        
+        <a href="../../getting-started/" class="dadr-header-nav__link">Get started</a>
+      
+        
+        <a href="../../specification/" class="dadr-header-nav__link">Specification</a>
+      
+        
+        <a href="../dadrock/" class="dadr-header-nav__link dadr-header-nav__link--active" aria-current="page">dadrock</a>
+      
     </nav>
-
-    
-      
-        <form class="md-header__option" data-md-component="palette">
-  
-    
-    
-    
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="red"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
-    
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-      </label>
-    
-  
-    
-    
-    
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="red"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
-    
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
-      </label>
-    
-  
-</form>
-      
-    
-    
-      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
-    
-    
     
       
       
@@ -286,40 +284,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../specification/" class="md-nav__link">
+      <a href="../../core/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Specification
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../tags/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Tags
+  The format
 
     
   </span>
@@ -348,17 +320,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  dadrock
+  Dadrock
 
     
   </span>
@@ -368,12 +340,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
-  dadrock
+  Dadrock
 
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
@@ -385,14 +357,41 @@
   
   
     <li class="md-nav__item">
-      <a href="../dadrock/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  Overview and validation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web UI
 
     
   </span>
@@ -428,7 +427,7 @@
   <span class="md-ellipsis">
     
   
-  CLI
+  CLI reference
 
     
   </span>
@@ -445,7 +444,7 @@
   <span class="md-ellipsis">
     
   
-  CLI
+  CLI reference
 
     
   </span>
@@ -879,6 +878,90 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dadrock-accept" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock accept</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="dadrock accept">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <strong>Arguments:</strong>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-reject" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock reject</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="dadrock reject">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <strong>Arguments:</strong>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-supersede" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock supersede</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="dadrock supersede">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#options_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <strong>Options:</strong>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dadrock-validate" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -902,7 +985,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_6" class="md-nav__link">
+  <a href="#options_7" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -930,7 +1013,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_8" class="md-nav__link">
+  <a href="#arguments_10" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -941,7 +1024,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_7" class="md-nav__link">
+  <a href="#options_8" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -969,7 +1052,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_8" class="md-nav__link">
+  <a href="#options_9" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -997,7 +1080,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_9" class="md-nav__link">
+  <a href="#options_10" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1053,7 +1136,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_10" class="md-nav__link">
+  <a href="#options_11" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1109,7 +1192,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_9" class="md-nav__link">
+  <a href="#arguments_11" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -1120,7 +1203,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_11" class="md-nav__link">
+  <a href="#options_12" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1176,7 +1259,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_12" class="md-nav__link">
+  <a href="#options_13" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1204,7 +1287,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_10" class="md-nav__link">
+  <a href="#arguments_12" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -1215,7 +1298,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_13" class="md-nav__link">
+  <a href="#options_14" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1243,7 +1326,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_14" class="md-nav__link">
+  <a href="#options_15" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1299,7 +1382,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_15" class="md-nav__link">
+  <a href="#options_16" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1327,7 +1410,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_11" class="md-nav__link">
+  <a href="#arguments_13" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -1338,7 +1421,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_16" class="md-nav__link">
+  <a href="#options_17" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1366,7 +1449,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_12" class="md-nav__link">
+  <a href="#arguments_14" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -1377,7 +1460,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_17" class="md-nav__link">
+  <a href="#options_18" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1405,7 +1488,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_18" class="md-nav__link">
+  <a href="#options_19" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1433,7 +1516,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_13" class="md-nav__link">
+  <a href="#arguments_15" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -1444,7 +1527,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_19" class="md-nav__link">
+  <a href="#options_20" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1472,7 +1555,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_14" class="md-nav__link">
+  <a href="#arguments_16" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -1483,7 +1566,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_20" class="md-nav__link">
+  <a href="#options_21" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -1514,33 +1597,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../web/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Web UI
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../ide/" class="md-nav__link">
         
   
@@ -1548,7 +1604,7 @@
   <span class="md-ellipsis">
     
   
-  IDE integrations
+  Editor integration
 
     
   </span>
@@ -1574,15 +1630,60 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../../llms/" class="md-nav__link">
+      <a href="../../specification/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  LLM agents
+  Specification
 
     
   </span>
@@ -1593,9 +1694,64 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+  Optional tags
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Advanced agent setup
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -1616,6 +1772,41 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Roadmap
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -2069,6 +2260,90 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dadrock-accept" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock accept</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="dadrock accept">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <strong>Arguments:</strong>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-reject" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock reject</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="dadrock reject">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <strong>Arguments:</strong>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-supersede" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock supersede</code>
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="dadrock supersede">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#options_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <strong>Options:</strong>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dadrock-validate" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2092,7 +2367,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_6" class="md-nav__link">
+  <a href="#options_7" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2120,7 +2395,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_8" class="md-nav__link">
+  <a href="#arguments_10" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -2131,7 +2406,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_7" class="md-nav__link">
+  <a href="#options_8" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2159,7 +2434,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_8" class="md-nav__link">
+  <a href="#options_9" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2187,7 +2462,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_9" class="md-nav__link">
+  <a href="#options_10" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2243,7 +2518,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_10" class="md-nav__link">
+  <a href="#options_11" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2299,7 +2574,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_9" class="md-nav__link">
+  <a href="#arguments_11" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -2310,7 +2585,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_11" class="md-nav__link">
+  <a href="#options_12" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2366,7 +2641,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_12" class="md-nav__link">
+  <a href="#options_13" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2394,7 +2669,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_10" class="md-nav__link">
+  <a href="#arguments_12" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -2405,7 +2680,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_13" class="md-nav__link">
+  <a href="#options_14" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2433,7 +2708,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_14" class="md-nav__link">
+  <a href="#options_15" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2489,7 +2764,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_15" class="md-nav__link">
+  <a href="#options_16" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2517,7 +2792,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_11" class="md-nav__link">
+  <a href="#arguments_13" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -2528,7 +2803,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_16" class="md-nav__link">
+  <a href="#options_17" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2556,7 +2831,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_12" class="md-nav__link">
+  <a href="#arguments_14" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -2567,7 +2842,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_17" class="md-nav__link">
+  <a href="#options_18" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2595,7 +2870,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#options_18" class="md-nav__link">
+  <a href="#options_19" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2623,7 +2898,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_13" class="md-nav__link">
+  <a href="#arguments_15" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -2634,7 +2909,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_19" class="md-nav__link">
+  <a href="#options_20" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2662,7 +2937,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_14" class="md-nav__link">
+  <a href="#arguments_16" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Arguments:</strong>
@@ -2673,7 +2948,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#options_20" class="md-nav__link">
+  <a href="#options_21" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         <strong>Options:</strong>
@@ -2724,6 +2999,9 @@
 <li><a href="#dadrock-status-accept"><code>dadrock status accept</code>↴</a></li>
 <li><a href="#dadrock-status-reject"><code>dadrock status reject</code>↴</a></li>
 <li><a href="#dadrock-status-supersede"><code>dadrock status supersede</code>↴</a></li>
+<li><a href="#dadrock-accept"><code>dadrock accept</code>↴</a></li>
+<li><a href="#dadrock-reject"><code>dadrock reject</code>↴</a></li>
+<li><a href="#dadrock-supersede"><code>dadrock supersede</code>↴</a></li>
 <li><a href="#dadrock-validate"><code>dadrock validate</code>↴</a></li>
 <li><a href="#dadrock-validate-records"><code>dadrock validate records</code>↴</a></li>
 <li><a href="#dadrock-validate-links"><code>dadrock validate links</code>↴</a></li>
@@ -2760,6 +3038,9 @@
 <li><code>new</code> — Create a candidate decision record from the active candidate template.</li>
 <li><code>list</code> — List records, optionally filtered by lifecycle status, tag, or query.</li>
 <li><code>status</code> — Inspect one record's lifecycle status or run lifecycle transitions.</li>
+<li><code>accept</code> — Accept a candidate decision.</li>
+<li><code>reject</code> — Reject a candidate decision.</li>
+<li><code>supersede</code> — Link replacement decisions to the decisions they replace.</li>
 <li><code>validate</code> — Run project validation, or target records, links, or tags.</li>
 <li><code>tags</code> — Inspect DADR tag usage.</li>
 <li><code>mcp</code> — Serve Dadrock MCP tools over stdio.</li>
@@ -2880,6 +3161,28 @@
 <li><code>--from &lt;FROM&gt;</code></li>
 <li><code>--to &lt;TO&gt;</code></li>
 </ul>
+<h2 id="dadrock-accept"><code>dadrock accept</code><a class="headerlink" href="#dadrock-accept" title="Permanent link">&para;</a></h2>
+<p>Accept a candidate decision.</p>
+<p><strong>Usage:</strong> <code>dadrock accept &lt;QUERY&gt;...</code></p>
+<h6 id="arguments_8"><strong>Arguments:</strong><a class="headerlink" href="#arguments_8" title="Permanent link">&para;</a></h6>
+<ul>
+<li><code>&lt;QUERY&gt;</code></li>
+</ul>
+<h2 id="dadrock-reject"><code>dadrock reject</code><a class="headerlink" href="#dadrock-reject" title="Permanent link">&para;</a></h2>
+<p>Reject a candidate decision.</p>
+<p><strong>Usage:</strong> <code>dadrock reject &lt;QUERY&gt;...</code></p>
+<h6 id="arguments_9"><strong>Arguments:</strong><a class="headerlink" href="#arguments_9" title="Permanent link">&para;</a></h6>
+<ul>
+<li><code>&lt;QUERY&gt;</code></li>
+</ul>
+<h2 id="dadrock-supersede"><code>dadrock supersede</code><a class="headerlink" href="#dadrock-supersede" title="Permanent link">&para;</a></h2>
+<p>Link replacement decisions to the decisions they replace.</p>
+<p><strong>Usage:</strong> <code>dadrock supersede [OPTIONS]</code></p>
+<h6 id="options_6"><strong>Options:</strong><a class="headerlink" href="#options_6" title="Permanent link">&para;</a></h6>
+<ul>
+<li><code>--from &lt;FROM&gt;</code></li>
+<li><code>--to &lt;TO&gt;</code></li>
+</ul>
 <h2 id="dadrock-validate"><code>dadrock validate</code><a class="headerlink" href="#dadrock-validate" title="Permanent link">&para;</a></h2>
 <p>Run project validation, or target records, links, or tags.</p>
 <p><strong>Usage:</strong> <code>dadrock validate [OPTIONS] [COMMAND]</code></p>
@@ -2889,32 +3192,32 @@
 <li><code>links</code> — Report broken or ambiguous wikilinks and local Markdown links.</li>
 <li><code>tags</code> — Report malformed YAML and inline tags.</li>
 </ul>
-<h6 id="options_6"><strong>Options:</strong><a class="headerlink" href="#options_6" title="Permanent link">&para;</a></h6>
+<h6 id="options_7"><strong>Options:</strong><a class="headerlink" href="#options_7" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h2 id="dadrock-validate-records"><code>dadrock validate records</code><a class="headerlink" href="#dadrock-validate-records" title="Permanent link">&para;</a></h2>
 <p>Validate record front matter and structure.</p>
 <p><strong>Usage:</strong> <code>dadrock validate records [OPTIONS] [PATHS]...</code></p>
-<h6 id="arguments_8"><strong>Arguments:</strong><a class="headerlink" href="#arguments_8" title="Permanent link">&para;</a></h6>
+<h6 id="arguments_10"><strong>Arguments:</strong><a class="headerlink" href="#arguments_10" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>&lt;PATHS&gt;</code></li>
 </ul>
-<h6 id="options_7"><strong>Options:</strong><a class="headerlink" href="#options_7" title="Permanent link">&para;</a></h6>
+<h6 id="options_8"><strong>Options:</strong><a class="headerlink" href="#options_8" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h2 id="dadrock-validate-links"><code>dadrock validate links</code><a class="headerlink" href="#dadrock-validate-links" title="Permanent link">&para;</a></h2>
 <p>Report broken or ambiguous wikilinks and local Markdown links.</p>
 <p><strong>Usage:</strong> <code>dadrock validate links [OPTIONS]</code></p>
-<h6 id="options_8"><strong>Options:</strong><a class="headerlink" href="#options_8" title="Permanent link">&para;</a></h6>
+<h6 id="options_9"><strong>Options:</strong><a class="headerlink" href="#options_9" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h2 id="dadrock-validate-tags"><code>dadrock validate tags</code><a class="headerlink" href="#dadrock-validate-tags" title="Permanent link">&para;</a></h2>
 <p>Report malformed YAML and inline tags.</p>
 <p><strong>Usage:</strong> <code>dadrock validate tags [OPTIONS]</code></p>
-<h6 id="options_9"><strong>Options:</strong><a class="headerlink" href="#options_9" title="Permanent link">&para;</a></h6>
+<h6 id="options_10"><strong>Options:</strong><a class="headerlink" href="#options_10" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
@@ -2928,7 +3231,7 @@
 <h2 id="dadrock-tags-list"><code>dadrock tags list</code><a class="headerlink" href="#dadrock-tags-list" title="Permanent link">&para;</a></h2>
 <p>List normalized YAML and inline tags.</p>
 <p><strong>Usage:</strong> <code>dadrock tags list [OPTIONS]</code></p>
-<h6 id="options_10"><strong>Options:</strong><a class="headerlink" href="#options_10" title="Permanent link">&para;</a></h6>
+<h6 id="options_11"><strong>Options:</strong><a class="headerlink" href="#options_11" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
@@ -2942,11 +3245,11 @@
 <h2 id="dadrock-mcp-serve"><code>dadrock mcp serve</code><a class="headerlink" href="#dadrock-mcp-serve" title="Permanent link">&para;</a></h2>
 <p>Serve Dadrock MCP tools over stdio.</p>
 <p><strong>Usage:</strong> <code>dadrock mcp serve [OPTIONS] [DIRECTORY]</code></p>
-<h6 id="arguments_9"><strong>Arguments:</strong><a class="headerlink" href="#arguments_9" title="Permanent link">&para;</a></h6>
+<h6 id="arguments_11"><strong>Arguments:</strong><a class="headerlink" href="#arguments_11" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>&lt;DIRECTORY&gt;</code></li>
 </ul>
-<h6 id="options_11"><strong>Options:</strong><a class="headerlink" href="#options_11" title="Permanent link">&para;</a></h6>
+<h6 id="options_12"><strong>Options:</strong><a class="headerlink" href="#options_12" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--read-only</code></li>
 </ul>
@@ -2962,7 +3265,7 @@
 <h2 id="dadrock-agent-check"><code>dadrock agent check</code><a class="headerlink" href="#dadrock-agent-check" title="Permanent link">&para;</a></h2>
 <p>Check that a local ACP agent can start a Dadrock session.</p>
 <p><strong>Usage:</strong> <code>dadrock agent check [OPTIONS]</code></p>
-<h6 id="options_12"><strong>Options:</strong><a class="headerlink" href="#options_12" title="Permanent link">&para;</a></h6>
+<h6 id="options_13"><strong>Options:</strong><a class="headerlink" href="#options_13" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--agent &lt;AGENT&gt;</code></li>
 <li><code>--agent-arg &lt;AGENT_ARGS&gt;</code></li>
@@ -2971,11 +3274,11 @@
 <h2 id="dadrock-agent-draft"><code>dadrock agent draft</code><a class="headerlink" href="#dadrock-agent-draft" title="Permanent link">&para;</a></h2>
 <p>Ask a local ACP agent to draft a candidate decision.</p>
 <p><strong>Usage:</strong> <code>dadrock agent draft [OPTIONS] &lt;PROMPT&gt;...</code></p>
-<h6 id="arguments_10"><strong>Arguments:</strong><a class="headerlink" href="#arguments_10" title="Permanent link">&para;</a></h6>
+<h6 id="arguments_12"><strong>Arguments:</strong><a class="headerlink" href="#arguments_12" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>&lt;PROMPT&gt;</code></li>
 </ul>
-<h6 id="options_13"><strong>Options:</strong><a class="headerlink" href="#options_13" title="Permanent link">&para;</a></h6>
+<h6 id="options_14"><strong>Options:</strong><a class="headerlink" href="#options_14" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--write</code></li>
 <li><code>--json</code></li>
@@ -2992,7 +3295,7 @@
 <h2 id="dadrock-agent-skills"><code>dadrock agent skills</code><a class="headerlink" href="#dadrock-agent-skills" title="Permanent link">&para;</a></h2>
 <p>List available Dadrock agent skills and prompt packs.</p>
 <p><strong>Usage:</strong> <code>dadrock agent skills [OPTIONS]</code></p>
-<h6 id="options_14"><strong>Options:</strong><a class="headerlink" href="#options_14" title="Permanent link">&para;</a></h6>
+<h6 id="options_15"><strong>Options:</strong><a class="headerlink" href="#options_15" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
@@ -3010,31 +3313,35 @@
 <h2 id="dadrock-task-list"><code>dadrock task list</code><a class="headerlink" href="#dadrock-task-list" title="Permanent link">&para;</a></h2>
 <p>List built-in, user, and project task packages.</p>
 <p><strong>Usage:</strong> <code>dadrock task list [OPTIONS]</code></p>
-<h6 id="options_15"><strong>Options:</strong><a class="headerlink" href="#options_15" title="Permanent link">&para;</a></h6>
+<h6 id="options_16"><strong>Options:</strong><a class="headerlink" href="#options_16" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h2 id="dadrock-task-show"><code>dadrock task show</code><a class="headerlink" href="#dadrock-task-show" title="Permanent link">&para;</a></h2>
 <p>Show one resolved task package.</p>
 <p><strong>Usage:</strong> <code>dadrock task show [OPTIONS] &lt;TASK_ID&gt;</code></p>
-<h6 id="arguments_11"><strong>Arguments:</strong><a class="headerlink" href="#arguments_11" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>&lt;TASK_ID&gt;</code></li>
-</ul>
-<h6 id="options_16"><strong>Options:</strong><a class="headerlink" href="#options_16" title="Permanent link">&para;</a></h6>
-<ul>
-<li><code>--json</code></li>
-</ul>
-<h2 id="dadrock-task-run"><code>dadrock task run</code><a class="headerlink" href="#dadrock-task-run" title="Permanent link">&para;</a></h2>
-<p>Run one resolved task package with a local ACP agent.</p>
-<p><strong>Usage:</strong> <code>dadrock task run [OPTIONS] --input-json &lt;INPUT_JSON&gt; &lt;TASK_ID&gt;</code></p>
-<h6 id="arguments_12"><strong>Arguments:</strong><a class="headerlink" href="#arguments_12" title="Permanent link">&para;</a></h6>
+<h6 id="arguments_13"><strong>Arguments:</strong><a class="headerlink" href="#arguments_13" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>&lt;TASK_ID&gt;</code></li>
 </ul>
 <h6 id="options_17"><strong>Options:</strong><a class="headerlink" href="#options_17" title="Permanent link">&para;</a></h6>
 <ul>
+<li><code>--json</code></li>
+</ul>
+<h2 id="dadrock-task-run"><code>dadrock task run</code><a class="headerlink" href="#dadrock-task-run" title="Permanent link">&para;</a></h2>
+<p>Run one resolved task package with a local ACP agent.</p>
+<p><strong>Usage:</strong> <code>dadrock task run [OPTIONS] &lt;TASK_ID&gt;</code></p>
+<h6 id="arguments_14"><strong>Arguments:</strong><a class="headerlink" href="#arguments_14" title="Permanent link">&para;</a></h6>
+<ul>
+<li><code>&lt;TASK_ID&gt;</code></li>
+</ul>
+<h6 id="options_18"><strong>Options:</strong><a class="headerlink" href="#options_18" title="Permanent link">&para;</a></h6>
+<ul>
 <li><code>--input-json &lt;INPUT_JSON&gt;</code></li>
+<li><code>--path &lt;PATH&gt;</code> — File or directory to inspect</li>
+<li><code>--context &lt;CONTEXT&gt;</code> — Describe the decision to capture</li>
+<li><code>--focus &lt;FOCUS&gt;</code> — Focus the code review on a topic</li>
+<li><code>--limit &lt;LIMIT&gt;</code> — Maximum initial candidates (code-to-record defaults to 5)</li>
 <li><code>--json</code></li>
 <li><code>--permission &lt;PERMISSION&gt;</code></li>
 </ul>
@@ -3048,29 +3355,29 @@
 <h2 id="dadrock-task-runs"><code>dadrock task runs</code><a class="headerlink" href="#dadrock-task-runs" title="Permanent link">&para;</a></h2>
 <p>List persisted local task runs.</p>
 <p><strong>Usage:</strong> <code>dadrock task runs [OPTIONS]</code></p>
-<h6 id="options_18"><strong>Options:</strong><a class="headerlink" href="#options_18" title="Permanent link">&para;</a></h6>
+<h6 id="options_19"><strong>Options:</strong><a class="headerlink" href="#options_19" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h2 id="dadrock-task-result"><code>dadrock task result</code><a class="headerlink" href="#dadrock-task-result" title="Permanent link">&para;</a></h2>
 <p>Read a persisted task run result.</p>
 <p><strong>Usage:</strong> <code>dadrock task result [OPTIONS] &lt;RUN_ID&gt;</code></p>
-<h6 id="arguments_13"><strong>Arguments:</strong><a class="headerlink" href="#arguments_13" title="Permanent link">&para;</a></h6>
+<h6 id="arguments_15"><strong>Arguments:</strong><a class="headerlink" href="#arguments_15" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>&lt;RUN_ID&gt;</code></li>
 </ul>
-<h6 id="options_19"><strong>Options:</strong><a class="headerlink" href="#options_19" title="Permanent link">&para;</a></h6>
+<h6 id="options_20"><strong>Options:</strong><a class="headerlink" href="#options_20" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--json</code></li>
 </ul>
 <h2 id="dadrock-preview"><code>dadrock preview</code><a class="headerlink" href="#dadrock-preview" title="Permanent link">&para;</a></h2>
 <p>Serve the local web review UI.</p>
 <p><strong>Usage:</strong> <code>dadrock preview [OPTIONS] [DIRECTORY]</code></p>
-<h6 id="arguments_14"><strong>Arguments:</strong><a class="headerlink" href="#arguments_14" title="Permanent link">&para;</a></h6>
+<h6 id="arguments_16"><strong>Arguments:</strong><a class="headerlink" href="#arguments_16" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>&lt;DIRECTORY&gt;</code></li>
 </ul>
-<h6 id="options_20"><strong>Options:</strong><a class="headerlink" href="#options_20" title="Permanent link">&para;</a></h6>
+<h6 id="options_21"><strong>Options:</strong><a class="headerlink" href="#options_21" title="Permanent link">&para;</a></h6>
 <ul>
 <li><code>--port &lt;PORT&gt;</code></li>
 </ul>
@@ -3114,7 +3421,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../dadrock/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+          <a href="../web/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Web UI">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -3124,20 +3431,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Overview
+                Web UI
               </div>
             </div>
           </a>
         
         
           
-          <a href="../web/" class="md-footer__link md-footer__link--next" aria-label="Next: Web UI">
+          <a href="../ide/" class="md-footer__link md-footer__link--next" aria-label="Next: Editor integration">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Web UI
+                Editor integration
               </div>
             </div>
             <div class="md-footer__button md-icon">

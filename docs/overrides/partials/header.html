@@ -13,20 +13,22 @@
       {% include ".icons/" ~ icon ~ ".svg" %}
     </label>
 
+    {#- Labels match the sidebar nav. A link is marked active when the current
+        page lives under its section (url prefix match). -#}
+    {% set current = page.url if page and page.url else "" %}
     <nav class="dadr-header-nav" aria-label="Primary">
-      <a href="{{ 'getting-started/' | url }}" class="dadr-header-nav__link">Get started</a>
-      <a href="{{ 'specification/' | url }}" class="dadr-header-nav__link">Specification: DADR</a>
-      <a href="{{ 'dadrock/dadrock' | url }}" class="dadr-header-nav__link">Tool: dadrock</a>
+      {% for section, href, label in [
+        ("getting-started/", "getting-started/", "Get started"),
+        ("specification/", "specification/", "Specification"),
+        ("dadrock/", "dadrock/dadrock/", "dadrock"),
+      ] %}
+        {% set active = current[:section | length] == section %}
+        <a href="{{ href | url }}" class="dadr-header-nav__link{% if active %} dadr-header-nav__link--active{% endif %}"{% if active %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
     </nav>
 
-    {% if config.theme.palette %}
-      {% if not config.theme.palette is mapping %}
-        {% include "partials/palette.html" %}
-      {% endif %}
-    {% endif %}
-    {% if not config.theme.palette is mapping %}
-      {% include "partials/javascripts/palette.html" %}
-    {% endif %}
+    {#- Light mode only: no palette toggle, and no script restoring a scheme
+        a visitor may have stored from an earlier version of the site. -#}
     {% if config.extra.alternate %}
       {% include "partials/alternate.html" %}
     {% endif %}
