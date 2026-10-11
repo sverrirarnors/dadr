@@ -61,7 +61,7 @@ dadrock task run context-to-record --context "Explain our choice of sample restr
 
 The limit asks the agent to prioritize a small batch, rather than treating every operation as a decision. It is a drafting request, not a hard guarantee on model output. The [web interface](dadrock/web.md) offers the same drafting actions, and the results of task runs, including those started from the command line, land in its Inbox.
 
-On the command line, tool permission requests default to `deny`. When your selected workflow needs tools, explicitly choose the appropriate permission mode with `--permission allow-once` or `--permission allow-always`. Task runs started from the web interface allow each request once. This does not authorize an agent to accept decisions on your behalf.
+On the command line, tool permission requests default to `deny`. When your selected workflow needs tools, explicitly choose the appropriate permission mode: `--permission allow-reads` approves, once each, requests for tools that the agent labels as reading, searching, or thinking, and denies every other request; `--permission allow-once` or `--permission allow-always` approves every request. Task runs started from the web interface use `allow-reads`: the agent may read the project, and its requests to edit files, run commands, or fetch from the network are denied. Each decision is written to the run's log. None of these modes authorizes an agent to accept decisions on your behalf.
 
 `dadrock agent draft` remains available for compatibility. New workflows should use `task run context-to-record`.
 
@@ -77,6 +77,14 @@ dadrock task result RUN_ID
 Built-in workflows include drafting, editing candidates, [drafting successors](changing.md#drafting-a-successor) for accepted decisions, merging drafts, finding conflicts, and synthesizing accepted decisions into a spec. The built-in tasks are the task guides of the `dadr` skill, the files in `skills/dadr/tasks/` of this repository. Each is one Markdown file: its YAML front matter is the task manifest (id, inputs, requirements, and output kind) and its body is the prompt. Every task run gets read-only access to the [MCP server](#mcp) plus task-result submission. `dadrock task show <task-id>` prints a task's prompt, and `--json` adds its manifest.
 
 To customize a task, copy its guide with `dadrock task show <task-id> --raw > dadr/tasks/<task-id>.md` and adapt it. A project task overrides a user task in `~/.dadrock/tasks/<task-id>.md` (or `$DADROCK_TASKS_DIR`), which overrides the built-in task with the same id. The file name must match the `id` in the front matter; `dadrock task list` reports files that do not load, including task directories in the old `task.toml` layout. Friendly input flags cover `code-to-record` (`--path`, `--focus`, `--limit`), `context-to-record` (`--context`), and `decisions-to-spec` (`--focus`). Other tasks, including your own, take their inputs, such as `record_id` or `record_ids`, as JSON with `--input-json`; do not combine it with the friendly flags.
+
+Three more flags give a task context, the material the web interface attaches to a draft, and work with either kind of input: `--instructions TEXT`, `--record QUERY` (a record id, short id, or title), and `--attach PATH` (a file or folder). Repeat `--record` and `--attach` for several. A task refuses a flag its manifest has no use for: `--attach` needs a task that reads files (`paths` other than `none`), `--instructions` one that takes notes (`notes` other than `none`), and tasks that choose their records by scope, such as `find-conflicts`, refuse `--record`. The built-in `custom` task, for DADR requests no dedicated task covers, needs only instructions; records and files are optional:
+
+```sh
+dadrock task run custom --instructions "Summarize the sample restrictions" --record 0198c3a1b2c4 --attach analysis/
+```
+
+A run is created only once a local agent has been found. Without one, `dadrock task run` fails with a message saying how to configure an agent, and the web interface shows the same message where you started the task.
 
 Runs are persisted under `dadr/runs/`, which is ignored by default and may contain source excerpts or model transcripts. Output kinds determine how results are rendered. Protocol and run metadata stay outside record front matter.
 
