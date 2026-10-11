@@ -69,7 +69,7 @@ report the exclusion count and the missingness pattern.
 | `status` | One of `candidate \| accepted \| rejected`. Set on creation; changed only via `dadrock status` lifecycle commands. |
 | `id` | UUIDv7 allocated by `dadrock new`. **Never write by hand.** |
 | `tags` | Optional; follow project conventions (see [tags.md](tags.md)). |
-| `successors` | Optional list of UUIDv7 ids. Names accepted replacements; a non-empty list makes an accepted record superseded. Written only by `dadrock supersede`. |
+| `successors` | Optional list of UUIDv7 ids. Names accepted replacements; a non-empty list makes an accepted record superseded. Written by Dadrock during replacement acceptance or an explicit `dadrock supersede` action. |
 | `bibliography` | Optional list of bibliographic references. |
 
 ### Body — four sections
@@ -116,7 +116,7 @@ Downstream effects on sample size, estimand, robustness obligations, or reportin
 - Note follow-ups the analyst should consider.
 - For records produced by supersession, note any prior result that may need to be re-run.
 
-## Mandatory tags
+## Suggested tags
 
 Every record carries at minimum:
 
