@@ -435,6 +435,70 @@ body,
   --md-mermaid-font-family: var(--font-heading);
 }
 
+/* ============ Hero workflow diagram ============ */
+/* Hand-placed inline SVG (not Mermaid) so the spine stays stacked and the
+   loop edge never crosses another edge. Scales with the column via viewBox. */
+.md-typeset .hero-diagram {
+  max-width: 60rem;
+  margin: 0 auto;
+}
+
+.md-typeset .hero-diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--font-heading);
+}
+
+.hero-diagram .wf-box {
+  fill: #ffffff;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.hero-diagram .wf-accept {
+  fill: #f0fdf4;
+  stroke: #16a34a;
+}
+
+.hero-diagram .wf-reject {
+  fill: #fef2f2;
+  stroke: #dc2626;
+}
+
+.hero-diagram .wf-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: #0f172a;
+}
+
+.hero-diagram .wf-accept + text {
+  fill: #052e16;
+}
+
+.hero-diagram .wf-reject + text {
+  fill: #450a0a;
+}
+
+.hero-diagram .wf-text {
+  font-size: 14px;
+  fill: #1e293b;
+}
+
+.hero-diagram .wf-edge {
+  fill: none;
+  stroke: #475569;
+  stroke-width: 1.25;
+}
+
+.hero-diagram .wf-loop {
+  stroke-dasharray: 3 4;
+}
+
+.hero-diagram .wf-arrowhead {
+  fill: #475569;
+}
+
 /* ============ Pull-quote ============ */
 .pull {
   border-left: 3px solid var(--dadr-accent);

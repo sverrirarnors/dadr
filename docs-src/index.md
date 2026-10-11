@@ -9,67 +9,244 @@ hide:
 
 <div class="hero" markdown>
 <img src="assets/dadr_logo.svg" alt="DADR — Data Analysis Decision Records" class="hero-logo">
-<p class="hero-tagline">Keep a record of the <b>important choices behind your analysis</b>, so you and your collaborators can remember why you made them.</p>
+<br>
+<p class="hero-tagline"><b>Record human decisions</b> in a simple file format. <br><b>Implement the data analysis</b> using any tools you like. <br><b>Assess conformity</b> of the code with decisions automatically.</p>
+
+<div class="hero-diagram">
+<svg class="wf" viewBox="0 0 1080 620" role="img" aria-labelledby="wf-title-id">
+<title id="wf-title-id">DADR workflow: draft, review, accept or reject, then audit, report, or supersede</title>
+<defs>
+<marker id="wf-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" class="wf-arrowhead"/>
+</marker>
+</defs>
+<path d="M530.0,160 V210" class="wf-edge" marker-end="url(#wf-arrow)"/>
+<path d="M530.0,310 V360" class="wf-edge" marker-end="url(#wf-arrow)"/>
+<path d="M640.0,310 C640.0,340 860.0,330 860.0,360" class="wf-edge" marker-end="url(#wf-arrow)"/>
+<path d="M530.0,410 V460" class="wf-edge" marker-end="url(#wf-arrow)"/>
+<path d="M500.0,410 C500.0,450 180.0,420 180.0,460" class="wf-edge" marker-end="url(#wf-arrow)"/>
+<path d="M560.0,410 C560.0,450 880.0,420 880.0,460" class="wf-edge" marker-end="url(#wf-arrow)"/>
+<path d="M1040,530.0 H1065 V90.0 H690.0" class="wf-edge wf-loop" marker-end="url(#wf-arrow)"/>
+<rect x="370.0" y="20" width="320" height="140" rx="2" class="wf-box"/>
+<text x="530.0" y="50" text-anchor="middle" class="wf-title">Draft</text>
+<text x="386.0" y="74" class="wf-text"><tspan x="386.0" dy="0">• Write a data analysis decision</tspan><tspan x="398.0" dy="22">from scratch</tspan><tspan x="386.0" dy="22">• Ask an LLM to read an existing</tspan><tspan x="398.0" dy="22">code base and identify key decisions</tspan></text>
+<rect x="370.0" y="210" width="320" height="100" rx="2" class="wf-box"/>
+<text x="530.0" y="240" text-anchor="middle" class="wf-title">Review</text>
+<text x="386.0" y="264" class="wf-text"><tspan x="386.0" dy="0">Only a human analyst is allowed to</tspan><tspan x="386.0" dy="22">approve or reject decision records</tspan></text>
+<rect x="470.0" y="360" width="120" height="50" rx="2" class="wf-box wf-accept"/>
+<text x="530.0" y="390.0" text-anchor="middle" class="wf-title">Accept</text>
+<rect x="800.0" y="360" width="120" height="50" rx="2" class="wf-box wf-reject"/>
+<text x="860.0" y="390.0" text-anchor="middle" class="wf-title">Reject</text>
+<rect x="20" y="460" width="320" height="140" rx="2" class="wf-box"/>
+<text x="180.0" y="490" text-anchor="middle" class="wf-title">Audit</text>
+<text x="36" y="514" class="wf-text"><tspan x="36" dy="0">• Substantive review: humans must agree</tspan><tspan x="48" dy="22">with all decisions</tspan><tspan x="36" dy="22">• Code review: AI ensures that the code</tspan><tspan x="48" dy="22">faithfully implements decisions</tspan></text>
+<rect x="370" y="460" width="320" height="140" rx="2" class="wf-box"/>
+<text x="530.0" y="490" text-anchor="middle" class="wf-title">Report</text>
+<text x="386" y="514" class="wf-text"><tspan x="386" dy="0">• Methods section</tspan><tspan x="386" dy="22">• Decision tables</tspan><tspan x="386" dy="22">• Onboarding documents</tspan></text>
+<rect x="720" y="460" width="320" height="140" rx="2" class="wf-box"/>
+<text x="880.0" y="490" text-anchor="middle" class="wf-title">Supersede</text>
+<text x="736" y="514" class="wf-text"><tspan x="736" dy="0">• Revert a past decision</tspan><tspan x="736" dy="22">• Tweak a previous choice</tspan></text>
+</svg>
+</div>
 </div>
 
-## Why did we exclude these observations?
+<div class="problem" markdown>
 
-Months later, the code may still tell you which rows were dropped. A decision record tells you why. Each important choice gets one short Markdown file:
+## Problem 1: Opacity
 
-```markdown
----
-title: Exclude observations without treatment assignment
-status: accepted
-id: 01938c20-a3b4-7000-8000-111122223333
----
+<div class="problem-body" markdown>
 
-## Context
+<div class="problem-prose" markdown>
+Every data analysis rests on dozens of choices: which observations to include, how to code key variables, which model to fit, how to quantify uncertainty. These choices matter: *Many Analysts* studies show that independent teams given the same data and hypotheses routinely reach different results.[^many-analysts]
 
-The assignment log is missing treatment assignment for 47 of 8,213
-respondents. We could not recover it from the original records.
+[^many-analysts]:
+    *Many Analysts* studies:
 
-## Decision
+    - Silberzahn et al. (2018), "Many Analysts, One Data Set: Making Transparent How Variations in Analytic Choices Affect Results," *Advances in Methods and Practices in Psychological Science* 1(3): 337–356, [doi:10.1177/2515245917747646](https://doi.org/10.1177/2515245917747646).
+    - Botvinik-Nezer et al. (2020), "Variability in the Analysis of a Single Neuroimaging Dataset by Many Teams," *Nature* 582: 84–88, [doi:10.1038/s41586-020-2314-9](https://doi.org/10.1038/s41586-020-2314-9).
+    - Huntington-Klein et al. (2021), "The Influence of Hidden Researcher Decisions in Applied Microeconomics," *Economic Inquiry* 59(3): 944–960, [doi:10.1111/ecin.12992](https://doi.org/10.1111/ecin.12992).
+    - Breznau et al. (2022), "Observing Many Researchers Using the Same Data and Hypothesis Reveals a Hidden Universe of Uncertainty," *PNAS* 119(44): e2203150119, [doi:10.1073/pnas.2203150119](https://doi.org/10.1073/pnas.2203150119).
 
-Exclude those 47 respondents from the treatment-effect analysis.
+Most of these choices never appear in a methods section, and reconstructing them from code and data after the fact is an archeology project.
+</div>
 
-## Alternatives
+<div class="pull pull--aside" markdown>
+A simple way to record what was decided, why, what alternatives were considered, and what the consequences are.
+</div>
 
-Recover assignment from the original records: attempted without success.
-Treat missing assignments as control: rejected because the assignment
-is unknown, not evidence of assignment to control.
+</div>
 
-## Consequences
+</div>
 
-The sample falls to 8,166. Report the exclusions and investigate whether
-missing assignment is associated with observed respondent characteristics.
-```
+<div class="problem" markdown>
 
-## Write, review, remember
+## Problem 2: Drift
 
-**DADR** is the file format: four sections, a title, a status, and an ID. **Dadrock** is the tool that helps you write, review, and find these records.
+<div class="problem-body" markdown>
 
-Draft a candidate yourself or ask an agent for help. Review what it says and why, then accept or reject it. Once approved, the decision's substantive content is preserved. Changing your mind creates a linked replacement; minor corrections remain possible. The old record remains accepted, with successors identifying its replacements.
+<div class="problem-prose" markdown>
+On long projects, analysts lose track of key decisions and the reasons behind them. The code drifts from the original intent, and minor-looking choices can change how results are interpreted. The risk grows when analysis is delegated to coding agents, which produce a lot of hard-to-review code.
+</div>
 
-Start with a few consequential choices. Tags, agents, and integrations are optional. You can keep the files alongside your analysis and read them in any text editor.
+<div class="pull pull--aside" markdown>
+A human-approved, auditable, and authoritative record of the key decisions made in a project.
+</div>
+
+</div>
+
+</div>
+
+
+## Solution: Data Analysis Decision Records
+
+Data Analysis Decision Records (DADR) are designed to make our key analytical choices explicit. Each decision becomes a short Markdown record, stored alongside the code, data, and prose of a project. The DADR markdown files are human-editable, LLM-readable, and version-controllable. They include meta-data fields and tags that enable external tools to track decision flows, audit the faithfulness of a codebase to recorded decisions, and generate reports and narratives directly from the decision ledger.
+
+DADR is not meant to be a comprehensive record of every thought, but rather a focused ledger of the key decisions that shape an analysis. It is a simple specification inspired by the [Architecture Decision Record](https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-decision-record), a proven and popular development practice in the software engineering community.
+
+## Audience
+
+DADR serves three audiences:
+
+<div class="audience-grid" markdown>
+
+<div class="audience" markdown>
+<div class="audience-icon" markdown>:lucide-user:</div>
+**Researcher**
+
+A transparent reminder of past decisions and the reasons behind them.
+</div>
+
+<div class="audience" markdown>
+<div class="audience-icon" markdown>:lucide-users:</div>
+**Readers**
+
+People who want to understand which decisions were made and why, without having to reconstruct the analyst's intent from code or git commit history.
+</div>
+
+<div class="audience" markdown>
+<div class="audience-icon" markdown>:lucide-bot:</div>
+**LLMs**
+
+Machines can verify if the analyst's intent is implemented faithfully in the code, a pre-analysis plan, or a report.
+</div>
+
+</div>
+
+## Frictionless
+
+DADR is easy to implement because automated tools and LLMs do all the hard work! In the vast majority of cases, all the analyst needs to do is click "Accept" or "Reject" to determine if a candidate decision should enter the permanent record.
+
+A decision can be initiated in several ways:
+
+1. The LLM agent walks a code base to detect important decisions and drafts candidate decisions for them.[^static-analysis]
+2. The LLM agent detects a change in the code, analyzes the change, and drafts a candidate decision if necessary (Git hook).
+3. The LLM agent drafts a candidate decision based on analyst-supplied prompt and context.
+4. The analyst drafts a candidate decision manually.
+
+[^static-analysis]: The agent can have access to static analysis or instrumentation tools to better infer the consequences of a code chunk. Supplying these tools is on the roadmap for the **dadrock** tool.
+
+<div class="principle" markdown>
+Every candidate decision <b>must</b> be approved by the human analyst before it enters the permanent record.
+</div>
 
 <figure class="screenshot" markdown>
 ![Reviewing a candidate decision in the dadrock web UI, with Accept and Reject buttons](assets/dadrock-review-light.webp){ loading=lazy }
 <figcaption>Reviewing a candidate in the <a href="dadrock/web/">dadrock web UI</a>.</figcaption>
 </figure>
 
-## Why keep decisions?
+## New possibilities
 
-Analysis choices can materially affect results. In Many Analysts studies, independent teams working with the same data and questions reached different conclusions; see [Silberzahn et al. (2018)](https://doi.org/10.1177/2515245917747646) and [Breznau et al. (2022)](https://doi.org/10.1073/pnas.2203150119). Recording consequential choices helps collaborators understand those differences and helps you notice when an analysis departs from its original intent.
+A complete, structured trace of analytic decisions is more than documentation. It is an asset that downstream tools and humans can act on.
 
-## What Dadrock does today
+<div class="feature-grid" markdown>
 
-Dadrock creates and organizes records, provides a local web review interface, links replacement decisions, and checks record structure and references. With a configured local agent, it can propose drafts from your context or code and help review conflicting records.
+<div class="feature" markdown>
+#### Faithfulness
+Compare code, plan, and manuscript against recorded decisions to flag drift, undocumented choices, or contradictions. An LLM walks the relevant code paths and produces a discrepancy report for human triage.
+</div>
 
-An agent can identify a sample restriction without knowing your reason for choosing it. Supply that reason during review; accepting a plausible description is not a substitute for endorsing the decision.
+<div class="feature" markdown>
+#### Compliance
+Cross-check decisions against a Statistical Analysis Plan (SAP), a Pre-Analysis Plan (PAP), Pre-registration, or data cleaning plan to surface deviations and unexecuted commitments.
+</div>
 
-Automated comparisons of code, plans, and manuscripts against decisions are [roadmap ideas](roadmap.md), not guarantees provided by current validation.
+<div class="feature" markdown>
+#### Multiverse and robustness
+Automatically surface the choices that need to be subjected to sensitivity, robustness, or multiverse analysis.
+</div>
+
+<div class="feature" markdown>
+#### Decision flow
+Follow how analytic choices evolved: which decisions replaced which, when, and why.
+</div>
+
+<div class="feature" markdown>
+#### Drafting
+Generate methods sections, appendices, and decision tables directly from the trace, with citations back to the records.
+</div>
+
+<div class="feature" markdown>
+#### Onboarding
+Hand a collaborator or new contributor a readable narrative instead of a code-archaeology assignment.
+</div>
+
+<div class="feature" markdown>
+#### Replication and reuse
+Give independent analysts a self-contained rationale for every consequential choice.
+</div>
+
+<div class="feature" markdown>
+#### Coverage and audit
+Report which analysis activities are backed by decisions, which are unreviewed, and which have gone stale.
+</div>
+
+<div class="feature" markdown>
+#### Teaching
+Use real annotated analyses to show how defensible alternatives were considered and chosen.
+</div>
+
+</div>
+
+## Example
+
+```markdown
+---
+title: Drop observations with missing treatment assignment
+status: accepted
+id: 01938c20-a3b4-7000-8000-111122223333
+tags:
+  - kind/sample
+  - confidence/high
+---
+
+## Context
+
+The randomization log is missing the treatment field for 47 of 8,213
+respondents. Without an assignment we cannot estimate either
+intent-to-treat or per-protocol effects for those rows. This extends
+the sampling rule established in [[01938b8e4d70]].
+
+## Decision
+
+> #axis/sample/complete-case
+> Drop the 47 respondents without recorded treatment assignment from
+> the analysis sample.
+
+## Alternatives
+
+- Multiple imputation of the assignment indicator (rejected: assignment
+  is a treatment, not a covariate; imputing it would invent
+  counterfactual exposures).
+- Coding the missing rows as control (rejected: silently biases the ITT
+  estimate toward the null).
+
+## Consequences
+
+The analysis sample drops from 8,213 to 8,166. Power calculations need
+to be re-run; see [[01938c30b1e2]].
+```
 
 <div class="hero-buttons" style="margin-top: 2.5rem">
-  <a class="md-button" href="getting-started/">Create your first decision</a>
-  <a class="md-button" href="core/">The format in one page</a>
+  <a class="md-button" href="getting-started/">Get started</a>
+  <a class="md-button" href="specification/">Read the specification</a>
 </div>
