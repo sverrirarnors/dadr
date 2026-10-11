@@ -612,7 +612,6 @@ describe('RealApi task commands', () => {
                     },
                   ],
                   output: { kind: 'conflict_set.v1' },
-                  mcp_access: 'read_only',
                   tools: [{ name: 'dadrock.list_records', mode: 'read' }],
                 },
                 source: { kind: 'builtin', id: 'builtin:find-conflicts' },
@@ -630,7 +629,6 @@ describe('RealApi task commands', () => {
     const listing = await api.listTasks();
 
     expect(listing.tasks[0]?.manifest.id).toBe('find-conflicts');
-    expect(listing.tasks[0]?.manifest.mcp_access).toBe('read_only');
     expect(fakeFetch).toHaveBeenCalledWith(
       'http://example.test/api/tasks',
       expect.objectContaining({ method: 'GET' }),

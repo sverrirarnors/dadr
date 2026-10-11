@@ -284,7 +284,6 @@ function taskPackage(
       inputs,
       requirements: taskRequirementsFor(id, inputs),
       output: { kind: outputKind },
-      mcp_access: id === 'context-to-record' || id === 'decisions-to-spec' ? 'read_only' : 'full',
       tools: [],
     },
     source: {
