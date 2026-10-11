@@ -603,7 +603,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             status: RecordStatus::Candidate,
             id: "01938ba4-bcd0-7e00-8b00-000000000015",
             successors: &[],
-            tags: &["kind/model", "writer/agent", "confidence/low", "workflow/question"],
+            tags: &["kind/modeling", "writer/agent", "confidence/low", "workflow/question"],
             extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
@@ -738,7 +738,7 @@ fn seed_broken_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, Dadr
             "status: accepted\n",
             "id: 01938b9b-bcd0-7e00-8b00-00000000000d\n",
             "tags:\n",
-            "  - kind/example\n",
+            "  - kind/quality\n",
             "---\n\n",
             "## Context\n\n",
             "This intentionally broken record exists for validation screencasts.\n\n",
@@ -946,7 +946,7 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
                     {
                         "id": "formula-choice",
                         "title": "Fit body mass OLS formula",
-                        "tags": ["kind/model", "writer/agent", "confidence/medium"],
+                        "tags": ["kind/modeling", "writer/agent", "confidence/medium"],
                         "body_markdown": "## Context\n\nThe script models body mass with bill length, flipper length, and an Adelie dummy.\n\n## Decision\n\nFit `body_mass_g ~ bill_length_mm + flipper_length_mm + is_adelie` with statsmodels OLS.\n\n## Alternatives\n\nAdd island fixed effects or interaction terms.\n\n## Consequences\n\nThe compact formula is suitable for a demo but not a complete biological analysis.\n",
                         "source_references": [{"path": "analysis/penguins_ols.py"}],
                         "confidence": "medium",

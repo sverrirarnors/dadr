@@ -187,7 +187,7 @@ async fn dadrock_mcp_stdio_lists_and_calls_tools() {
             CallToolRequestParams::new("dadrock.create_candidate").with_arguments(json_object(
                 json!({
                     "title": "Create a candidate through MCP",
-                    "tags": ["kind/test", "writer/agent"],
+                    "tags": ["kind/quality", "writer/agent"],
                     "body_markdown": "## Context\n\nThe MCP integration test needs a candidate with complete sections.\n\n## Decision\n\nCreate a candidate through the Dadrock MCP command surface.\n\n## Consequences\n\nThis exercises the same command facade as the CLI.\n\n## Status\n\nCandidate for test verification.\n"
                 }),
             )),

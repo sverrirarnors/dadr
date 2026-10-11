@@ -450,7 +450,7 @@ mod tests {
         let candidate = create_candidate_with_body(
             &project,
             "Use Markdown records",
-            &["kind/design".to_owned()],
+            &["kind/setup".to_owned()],
             "## Context\nInitial context.\n\n## Decision\nInitial decision.\n\n## Alternatives\nInitial alternative.\n\n## Consequences\nInitial consequence.\n",
         )
         .unwrap();
@@ -458,7 +458,7 @@ mod tests {
         let original_content = fs::read_to_string(&candidate.path).unwrap();
 
         let response = parse_agent_response_text(r###"```json
-{"intent":"revise_candidate","confidence":"high","summary":"Tightened the candidate.","frontmatter":{"title":"Use Markdown with TOML frontmatter","tags":["kind/format"]},"body_markdown":"## Context\nDADR records need readable local storage.\n\n## Decision\nUse Markdown files with TOML frontmatter.\n\n## Alternatives\nUse a database-first record store.\n\n## Consequences\nRecords stay reviewable in ordinary editors.","source_references":[],"activity_observations":[],"warnings":[],"provenance":{"model":"local-test","tool_runs":[]}}
+{"intent":"revise_candidate","confidence":"high","summary":"Tightened the candidate.","frontmatter":{"title":"Use Markdown with TOML frontmatter","tags":["kind/output"]},"body_markdown":"## Context\nDADR records need readable local storage.\n\n## Decision\nUse Markdown files with TOML frontmatter.\n\n## Alternatives\nUse a database-first record store.\n\n## Consequences\nRecords stay reviewable in ordinary editors.","source_references":[],"activity_observations":[],"warnings":[],"provenance":{"model":"local-test","tool_runs":[]}}
 ```"###).unwrap();
         let index = ProjectIndex::scan(&project).unwrap();
         let proposal =
@@ -501,7 +501,7 @@ mod tests {
         assert!(content.contains("status: candidate"));
         assert!(content.contains(&format!("id: {original_id}")));
         assert!(content.contains("Use Markdown with TOML frontmatter"));
-        assert!(content.contains("kind/format"));
+        assert!(content.contains("kind/output"));
         assert!(content.contains("writer/agent"));
         assert!(content.contains("confidence/high"));
         assert!(content.contains("Use Markdown files with TOML frontmatter."));
