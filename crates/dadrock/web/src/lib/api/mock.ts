@@ -147,8 +147,8 @@ const taskRuns: TaskRun[] = [];
 const taskResults = new Map<string, TaskResult>();
 const taskLogs = new Map<string, TaskRunLogEntry[]>();
 const taskRunPollsUntilSuccess = new Map<string, number>();
-/** Candidate id to the id of the decision its `## Supersedes` section names. */
-const pendingSupersedes = new Map<string, string>();
+/** Candidate id to the ids of the decisions its `## Supersedes` section names. */
+const pendingSupersedes = new Map<string, string[]>();
 const supersessionEdges = new Map<string, Set<string>>([
   [
     '0193fb1f-a3a0-7000-8000-000000000001',
@@ -202,13 +202,13 @@ const taskPackages: TaskPackage[] = [
     { name: 'record_ids', label: 'Candidate records', type: 'textarea', options: [], required: true },
     { name: 'merge_goal', label: 'Merge goal', type: 'textarea', options: [], required: false },
   ]),
-  taskPackage('edit-record', 'Edit record', 'Revise any existing DADR while preserving its lifecycle status until you choose what to do next.', 'record_revision.v1', [
-    { name: 'record_id', label: 'Record', type: 'text', options: [], required: true },
+  taskPackage('edit-record', 'Edit record', 'Revise a candidate DADR before it is accepted or rejected.', 'record_revision.v1', [
+    { name: 'record_id', label: 'Candidate', type: 'text', options: [], required: true },
     { name: 'requested_changes', label: 'Requested changes', type: 'textarea', options: [], required: true },
   ]),
-  taskPackage('supersede-record', 'Supersede record', 'Draft a successor candidate for an accepted DADR when the project decision has changed.', 'supersession_proposal.v1', [
-    { name: 'record_id', label: 'Record to supersede', type: 'text', options: [], required: true },
-    { name: 'reason', label: 'Reason', type: 'textarea', options: [], required: true },
+  taskPackage('supersede-record', 'Supersede record', 'Draft a successor candidate that supersedes one or more accepted DADRs when the decision has changed.', 'supersession_proposal.v1', [
+    { name: 'record_ids', label: 'Records to supersede', type: 'textarea', options: [], required: true },
+    { name: 'requested_changes', label: 'Requested changes', type: 'textarea', options: [], required: true },
   ]),
 ];
 
@@ -322,11 +322,20 @@ function taskRequirementsFor(id: string, inputs: TaskPackage['manifest']['inputs
   );
 
   return {
-    records: id === 'custom' ? 'many' : hasInput('record_ids') ? 'many' : hasInput('record_id') ? 'one' : 'none',
+    records:
+      id === 'supersede-record'
+        ? 'one_or_more'
+        : id === 'custom'
+          ? 'many'
+          : hasInput('record_ids')
+            ? 'many'
+            : hasInput('record_id')
+              ? 'one'
+              : 'none',
     record_status:
       id === 'supersede-record'
         ? 'accepted'
-        : id === 'merge-records'
+        : id === 'merge-records' || id === 'edit-record'
           ? 'candidate'
           : 'all',
     paths:
@@ -402,17 +411,17 @@ function taskResultFor(request: RunTaskRequest): TaskResult {
         warnings: [],
       };
     case 'supersede-record': {
-      const predecessorId = String(request.input.record_id ?? '');
-      const predecessor = mockRecords.find((record) => record.id === predecessorId);
-      const supersedes = predecessor ? `## Supersedes\n\n[[${predecessor.id}|${predecessor.title}]]\n\n` : '';
+      const predecessorIds = String(request.input.record_ids ?? '')
+        .split(/\r?\n/)
+        .map((id) => id.trim())
+        .filter(Boolean);
       return {
         kind: 'supersession_proposal.v1',
         summary: 'Mock supersession proposal.',
-        superseded_record_id: predecessorId,
+        superseded_record_ids: predecessorIds,
         superseding_title: 'Superseding candidate',
-        superseding_body_markdown: `${supersedes}## Context\nA previous decision needs a successor.\n\n## Decision\nSupersede the older record.\n\n## Alternatives\nKeep both records active.\n\n## Consequences\nThe ledger has one current decision for this issue.`,
-        rationale: String(request.input.reason ?? 'No rationale supplied.'),
-        suggested_actions: ['Write a candidate and review it.'],
+        superseding_body_markdown: `## Context\nA previous decision needs a successor.\n\n## Decision\nSupersede the older record.\n\n## Alternatives\nKeep both records active.\n\n## Consequences\nThe ledger has one current decision for this issue.`,
+        rationale: String(request.input.requested_changes ?? 'No rationale supplied.'),
       };
     }
     case 'edit-record':
@@ -567,7 +576,10 @@ export class MockApi implements DadrApi {
         record,
         predecessors,
         successors,
-        pending_supersedes: mockRecords.find((item) => item.id === pendingSupersedes.get(record.id)) ?? null,
+        pending_supersedes: (pendingSupersedes.get(record.id) ?? [])
+          .map((predecessorId) => mockRecords.find((item) => item.id === predecessorId))
+          .filter(Boolean),
+        stale_supersedes: [],
         diagnostics: [],
       }),
     ) as RecordLifecycle;
@@ -608,20 +620,23 @@ export class MockApi implements DadrApi {
   }
 
   async createCandidate(request: CreateCandidateRequest): Promise<MutationResponse> {
-    const predecessor = request.supersedes
-      ? mockRecords.find((item) => item.id === request.supersedes)
-      : undefined;
-    if (request.supersedes && (!predecessor || predecessor.status !== 'accepted' || predecessor.superseded)) {
+    const supersedes =
+      typeof request.supersedes === 'string' ? [request.supersedes] : (request.supersedes ?? []);
+    const predecessors = supersedes.map((id) => mockRecords.find((item) => item.id === id));
+    if (predecessors.some((predecessor) => !predecessor || predecessor.status !== 'accepted' || predecessor.superseded)) {
       throw new Error('a successor can supersede only a current accepted decision');
     }
-    // Like Dadrock, write `## Supersedes` as the first section of the body,
-    // labeled with the predecessor's title, unless the draft already has one.
+    // Like Dadrock, write `## Supersedes` as the first section of the body: one
+    // link per predecessor, labeled with its title, then the reason, unless the
+    // draft already has the section.
+    const links = predecessors.map((predecessor) => `[[${predecessor!.id}|${predecessor!.title.trim()}]]\n`).join('');
+    const reason = request.supersedes_reason?.trim() ? `\n${request.supersedes_reason.trim()}\n` : '';
     const body =
-      predecessor && !/^## Supersedes\s*$/m.test(request.body_markdown)
-        ? `## Supersedes\n\n[[${predecessor.id}|${predecessor.title.trim()}]]\n\n${request.body_markdown.trimStart()}`
+      predecessors.length && !/^## Supersedes\s*$/m.test(request.body_markdown)
+        ? `## Supersedes\n\n${links}${reason}\n${request.body_markdown.trimStart()}`
         : request.body_markdown;
     const record = newCandidateRecord(request.title, request.tags, body);
-    if (predecessor) pendingSupersedes.set(record.id, predecessor.id);
+    if (predecessors.length) pendingSupersedes.set(record.id, supersedes);
     return {
       message: `created candidate ${record.id}`,
       changed_paths: [record.path],
@@ -789,11 +804,17 @@ export class MockApi implements DadrApi {
       throw new Error(`mock record ${id} not found`);
     }
     if (status === 'accepted' && pendingSupersedes.has(id)) {
-      const old = mockRecords.find((item) => item.id === pendingSupersedes.get(id));
-      if (!old || old.status !== 'accepted' || old.superseded) throw new Error('Previous decision is no longer current');
-      old.superseded = true;
-      old.path = old.path.replace('dadr/ledger/', 'dadr/archive/');
-      supersessionEdges.set(old.id, new Set([id]));
+      const predecessors = (pendingSupersedes.get(id) ?? []).map((predecessorId) =>
+        mockRecords.find((item) => item.id === predecessorId),
+      );
+      if (predecessors.some((old) => !old || old.status !== 'accepted' || old.superseded)) {
+        throw new Error('Previous decision is no longer current');
+      }
+      for (const old of predecessors) {
+        old!.superseded = true;
+        old!.path = old!.path.replace('dadr/ledger/', 'dadr/archive/');
+        supersessionEdges.set(old!.id, new Set([id]));
+      }
       pendingSupersedes.delete(id);
     }
     record.status = status;

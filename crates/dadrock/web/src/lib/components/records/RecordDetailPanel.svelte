@@ -347,14 +347,25 @@
           Check both what was done and why. Accepting means you endorse this decision and its explanation.
         {/if}
       </Alert>
-      {#if lifecycle.data.pending_supersedes}
+      {#if lifecycle.data.pending_supersedes.length}
         <Alert class="mt-2" variant="neutral" title="Proposed successor">
           Accepting will supersede
-          <a class="text-accent underline" href={resolve(recordHref(lifecycle.data.pending_supersedes.id))}>
-            {lifecycle.data.pending_supersedes.title}
-          </a>, which moves to the archive unchanged.
+          {#each lifecycle.data.pending_supersedes as predecessor, index (predecessor.id)}
+            {index ? ', ' : ''}<a class="text-accent underline" href={resolve(recordHref(predecessor.id))}>
+              {predecessor.title}
+            </a>
+          {/each}{lifecycle.data.pending_supersedes.length === 1 ? ', which moves' : ', which move'} to the archive unchanged.
         </Alert>
       {/if}
+      {#each lifecycle.data.stale_supersedes as stale (stale.predecessor.id)}
+        <Alert class="mt-2" variant="warning" title="Predecessor already superseded">
+          <a class="text-accent underline" href={resolve(recordHref(stale.predecessor.id))}>{stale.predecessor.title}</a>
+          was superseded after this candidate was drafted. The decision now in force:
+          {#each stale.current_successors as current, index (current.id)}
+            {index ? ', ' : ''}<a class="text-accent underline" href={resolve(recordHref(current.id))}>{current.title}</a>
+          {/each}. Point <code>## Supersedes</code> at the current decision, or reject this candidate.
+        </Alert>
+      {/each}
     {:else}
       <Alert class="mt-3" variant="info" data-record-candidate-notice>
         This is a candidate.

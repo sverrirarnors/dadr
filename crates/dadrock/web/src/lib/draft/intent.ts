@@ -57,7 +57,7 @@ export function resolveDraftIntent(
       if (!text) return fail('Explain what changed and why.');
       return ok('supersede-record', `Draft a successor for “${record.title}”`, {
         task_id: 'supersede-record',
-        input: { record_id: record.id, reason: text },
+        input: { record_ids: record.id, requested_changes: text },
         context: context({ records: [record.id], paths }),
       });
     }

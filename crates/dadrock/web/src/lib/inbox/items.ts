@@ -19,7 +19,10 @@ export interface CandidateProposal {
   title: string;
   tags: string[];
   body_markdown: string;
-  supersedes?: string;
+  /** Records the saved candidate supersedes: one, or several for a merge. */
+  supersedes?: string[];
+  /** Why the decision changed; Dadrock writes it into `## Supersedes`. */
+  supersedes_reason?: string;
   confidence?: string;
   warnings: string[];
 }
@@ -57,7 +60,8 @@ export interface ProposalItem extends InboxItemBase {
   taskId: string;
   proposal: CandidateProposal;
   summary: string;
-  supersededRecord?: RecordSummary;
+  /** The predecessors found in the project, in the proposal's order. */
+  supersededRecords?: RecordSummary[];
 }
 
 export interface RevisionItem extends InboxItemBase {
@@ -367,20 +371,31 @@ function itemsForResult(
     case 'supersession_proposal.v1': {
       const body = stringField(result, 'superseding_body_markdown');
       if (!body.trim()) return [];
-      const supersedes = stringField(result, 'superseded_record_id');
-      const supersededRecord = byId.get(supersedes);
+      const supersedes = stringArrayField(result, 'superseded_record_ids');
+      // Results saved before merges were supported name one record.
+      const legacy = stringField(result, 'superseded_record_id');
+      if (!supersedes.length && legacy) supersedes.push(legacy);
+      const supersededRecords = supersedes
+        .map((id) => byId.get(id))
+        .filter((record): record is RecordSummary => Boolean(record));
+      const rationale = stringField(result, 'rationale');
       const proposal: CandidateProposal = {
         title: stringField(result, 'superseding_title') || 'Successor decision',
         tags: stringArrayField(result, 'tags'),
         body_markdown: body,
         warnings: [],
       };
-      if (supersedes) proposal.supersedes = supersedes;
+      if (supersedes.length) proposal.supersedes = supersedes;
+      // Dadrock writes `## Supersedes` with the rationale as the reason, unless
+      // an older result already wrote the section into the body.
+      if (rationale && !/^## Supersedes[ \t]*$/m.test(body)) proposal.supersedes_reason = rationale;
       const item: ProposalItem = {
         kind: 'proposal',
         id: proposalItemId(run.id, 'supersession'),
         title: proposal.title,
-        subtitle: supersededRecord ? `Supersedes “${supersededRecord.title}”` : 'Successor drafted by the agent',
+        subtitle: supersededRecords.length
+          ? `Supersedes ${supersededRecords.map((record) => `“${record.title}”`).join(', ')}`
+          : 'Successor drafted by the agent',
         runId: run.id,
         taskId: run.task_id,
         proposal,
@@ -388,7 +403,7 @@ function itemsForResult(
           .filter(Boolean)
           .join('\n\n'),
       };
-      if (supersededRecord) item.supersededRecord = supersededRecord;
+      if (supersededRecords.length) item.supersededRecords = supersededRecords;
       return [item];
     }
     case 'record_revision.v1': {

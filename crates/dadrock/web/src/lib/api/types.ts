@@ -13,7 +13,10 @@ import type {
 } from './schemas';
 
 export interface CreateCandidateRequest {
-  supersedes?: string | undefined;
+  /** One record, or several for a merge, that the new candidate supersedes. */
+  supersedes?: string | string[] | undefined;
+  /** Why the decision changed; written into `## Supersedes` after the links. */
+  supersedes_reason?: string | undefined;
   title: string;
   tags: string[];
   body_markdown: string;

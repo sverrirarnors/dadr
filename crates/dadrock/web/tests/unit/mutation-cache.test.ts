@@ -46,6 +46,8 @@ describe('applyMutationResponse', () => {
   it('sets the snapshot and updates cached lifecycle summaries from it', async () => {
     const queryClient = new QueryClient();
     const lifecycle: RecordLifecycle = {
+      pending_supersedes: [],
+      stale_supersedes: [],
       record: candidate,
       predecessors: [],
       successors: [],
@@ -66,6 +68,8 @@ describe('applyMutationResponse', () => {
 
     expect(queryClient.getQueryData(['snapshot'])).toEqual(response.snapshot);
     expect(queryClient.getQueryData(['record-lifecycle', candidate.id])).toEqual({
+      pending_supersedes: [],
+      stale_supersedes: [],
       record: accepted,
       predecessors: [],
       successors: [],

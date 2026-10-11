@@ -83,7 +83,7 @@ describe('buildInboxGroups', () => {
         ],
       },
       'r-rev': { kind: 'record_revision.v1', record_id: 'cand-old', body_markdown: '## Decision\nnew', change_explanation: 'Clearer', summary: 'rev' },
-      'r-sup': { kind: 'supersession_proposal.v1', superseded_record_id: 'acc-1', superseding_title: 'Use DuckDB', superseding_body_markdown: '## Decision\nDuckDB', rationale: 'faster' },
+      'r-sup': { kind: 'supersession_proposal.v1', superseded_record_ids: ['acc-1'], superseding_title: 'Use DuckDB', superseding_body_markdown: '## Decision\nDuckDB', rationale: 'faster' },
       'r-con': { kind: 'conflict_set.v1', summary: '', findings: [{ id: 'f1', title: 'Overlap', left_record_id: 'acc-1', right_record_id: 'cand-old', relationship: 'overlap', conflict_explanation: 'both', suggested_actions: [] }] },
       'r-rep': { kind: 'markdown_report.v1', title: 'Audit', body_markdown: '## Findings\nnone' },
     };
@@ -93,11 +93,37 @@ describe('buildInboxGroups', () => {
     expect(items.find((item) => item.kind === 'running')).toMatchObject({ id: 'running:r-live', title: 'Drafting a decision' });
     const proposals = items.filter((item) => item.kind === 'proposal');
     expect(proposals.map((item) => item.id)).toEqual(['proposal:r-sup:supersession', 'proposal:r-batch:a']);
-    expect(proposals[0]).toMatchObject({ proposal: { supersedes: 'acc-1', title: 'Use DuckDB' }, supersededRecord: { id: 'acc-1' } });
+    expect(proposals[0]).toMatchObject({
+      proposal: { supersedes: ['acc-1'], supersedes_reason: 'faster', title: 'Use DuckDB' },
+      supersededRecords: [{ id: 'acc-1' }],
+    });
     expect(items.find((item) => item.kind === 'revision')).toMatchObject({ id: 'revision:r-rev', recordId: 'cand-old', revisedTitle: 'Older candidate', body_markdown: '## Decision\nnew' });
     expect(items.find((item) => item.kind === 'conflict')).toMatchObject({ id: 'conflict:r-con:f1', left: { id: 'acc-1' }, right: { id: 'cand-old' } });
     expect(items.find((item) => item.kind === 'report')).toMatchObject({ id: 'report:r-rep', title: 'Audit' });
     expect(countActionable(groups)).toBe(2 + 2 + 1 + 1 + 1 + 2);
+  });
+
+  it('maps merge proposals and older single-predecessor results', () => {
+    const merged = { ...snapshot, records: [...snapshot.records, record('acc-2', 'accepted', 'Use Arrow')] };
+    const runs = [
+      run('r-merge', 'supersede-record', 'succeeded', '2026-10-11T10:00:00Z'),
+      run('r-old', 'supersede-record', 'succeeded', '2026-10-11T09:00:00Z'),
+    ];
+    const results = {
+      'r-merge': { kind: 'supersession_proposal.v1', superseded_record_ids: ['acc-1', 'acc-2'], superseding_title: 'One engine', superseding_body_markdown: '## Decision\nDuckDB', rationale: 'One engine is simpler.' },
+      'r-old': { kind: 'supersession_proposal.v1', superseded_record_id: 'acc-1', superseding_title: 'Use DuckDB', superseding_body_markdown: '## Supersedes\n\n[[acc-1|Use Polars]]\n\n## Decision\nDuckDB', rationale: 'faster' },
+    };
+    const proposals = flattenInboxGroups(buildInboxGroups({ snapshot: merged, runs, results, resolved: [] })).filter(
+      (item) => item.kind === 'proposal',
+    );
+    expect(proposals[0]).toMatchObject({
+      subtitle: 'Supersedes “Use Polars”, “Use Arrow”',
+      proposal: { supersedes: ['acc-1', 'acc-2'], supersedes_reason: 'One engine is simpler.' },
+      supersededRecords: [{ id: 'acc-1' }, { id: 'acc-2' }],
+    });
+    // The older body already carries its `## Supersedes` section, so no reason is sent.
+    expect(proposals[1]).toMatchObject({ proposal: { supersedes: ['acc-1'] } });
+    expect(proposals[1]?.kind === 'proposal' ? proposals[1].proposal.supersedes_reason : 'not a proposal').toBeUndefined();
   });
 
   it('hides resolved items', () => {
