@@ -68,7 +68,7 @@ Do not split a choice to hit a count or merge distinct choices to fit a batch. P
 
 ### Step 3 — Draft each candidate
 
-For each consequential decision, use Dadrock's candidate-writing surface. **Do not hand-write the file** — Dadrock allocates the UUIDv7 and canonical filename.
+For each consequential decision, use Dadrock's candidate-writing surface. **Do not hand-write the file** — Dadrock allocates the UUIDv7 and names the file.
 
 #### Step 3a — Write via Dadrock
 

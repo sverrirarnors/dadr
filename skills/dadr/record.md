@@ -4,6 +4,8 @@ What a single DADR record should look like, end-to-end. Use this whenever you dr
 
 A **record** is a Markdown file with YAML front matter and four prose sections. Every record in `dadr/` (whether a candidate, accepted, superseded, or rejected) follows the same anatomy; only the `status` field and a few status-specific rules differ.
 
+Filenames carry no meaning: a record is identified by its `id` alone. `dadrock new` names the file after the title (`drop-missing-treatment.md`, or `drop-missing-treatment-<short-id>.md` when the inbox already has that name), and `dadrock accept`, `reject`, and `supersede` keep the name when they move the file between folders. Find records by id, short id, or title rather than by guessing a path.
+
 ## Lifecycle
 
 The `status` field takes one of three values: `candidate`, `accepted`, or `rejected`. "Superseded" is not a status: it is an accepted record whose `successors` array is non-empty.

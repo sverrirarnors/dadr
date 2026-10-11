@@ -109,7 +109,8 @@ The spec (`docs-src/specification.md`) is authoritative. In short:
 - Accepting or rejecting changes `status` on the **same** record and keeps its UUIDv7 `id`.
 - Dadrock's folders follow the workflow: `dadr/inbox/` (candidates), `dadr/ledger/` (accepted, not superseded), `dadr/archive/` (rejected, and accepted with `successors`). Accepting moves a record inbox → ledger, rejecting inbox → archive, and superseding moves the predecessor ledger → archive. The old `candidates/`, `accepted/`, `rejected/` layout is not read or migrated.
 - Accepted records need `## Context`, `## Decision`, `## Alternatives`, `## Consequences`, each exactly once and non-empty (`dadr::check_required_sections`).
-- The short id (first 12 hex digits of the id) must be unique per project; it prefixes filenames and is the recommended wikilink target. Record links are exactly `[[<short-id>]]` or `[[<full-id>]]`; other wikilinks are ignored.
+- The short id (first 12 hex digits of the id) must be unique per project; it is the display form and the recommended wikilink target. Record links are exactly `[[<short-id>]]` or `[[<full-id>]]`; other wikilinks are ignored.
+- Filenames carry no meaning; identity lives in front matter only. New records are named `<slug>.md` from the title, with `-<short-id>` appended only when the folder already has that name. Accept, reject, and supersede keep the filename and change only the folder (suffixing the short id on a collision); a path vacated by another move in the same operation counts as free (`records/writes.rs`).
 
 ## Conventions
 

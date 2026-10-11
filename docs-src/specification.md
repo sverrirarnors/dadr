@@ -116,13 +116,9 @@ id:        01938b8e-4d70-7abc-8def-0123456789ab
 short id:  01938b8e4d70
 ```
 
-Short ids MUST be unique within a record set. Tools that create records MUST ensure this, for example by generating a fresh `id` when the short id is already taken.
+Short ids MUST be unique within a record set. Tools that create records MUST ensure this, for example by generating a fresh `id` when the short id is already taken. The short id is the recommended form for displaying a record's identity and for [linking to it](#wikilinks).
 
-A record's filename SHOULD be its short id, a hyphen, a short kebab-case slug of its title, and `.md`:
-
-```text
-01938b8e4d70-income-preprocessing.md
-```
+Filenames are free. A short kebab-case slug of the title plus `.md`, such as `income-preprocessing.md`, is suggested. A filename carries no meaning: tools MUST NOT derive a record's identity or status from it, and a record keeps its `id` when it is renamed or moved.
 
 Authors drafting by hand can take an `id` from the [UUID v7 generator](uuidv7.md). A file without an `id` is not a valid record; tools MAY repair it by assigning a fresh `id`.
 
@@ -271,7 +267,7 @@ A **tool** conforms if it:
 4. creates records with unique short ids;
 5. never accepts a candidate without human approval, and changes accepted records only as [§6.3](#immutability) allows.
 
-A filename that does not follow [§5](#identifiers) does not make a record non-conforming.
+A record's filename and location never affect whether it conforms ([§5](#identifiers)).
 
 ---
 

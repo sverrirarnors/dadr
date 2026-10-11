@@ -9,14 +9,14 @@ The DADR format does not mandate a directory structure. **DADRock** uses this on
 ```text
 dadr/
   inbox/
-    01938ba1c4f3-country-exclusions.md
+    country-exclusions.md
   ledger/
-    01938b8e4d70-income-preprocessing.md
-    01938b8f9d71-drop-missing-treatment.md
+    income-preprocessing.md
+    drop-missing-treatment.md
   archive/
-    01938b8d9c10-deprecated-cohort-filter.md
+    deprecated-cohort-filter.md
   templates/
-    candidate.md                                    # optional
+    candidate.md                # optional
   tasks/
   runs/
     .gitignore
@@ -32,6 +32,8 @@ dadr/
 | `dadr/runs/` | Agent-run inputs, results, and logs; ignored by version control |
 
 `dadrock accept` changes a candidate's `status` to `accepted` and moves the file from `dadr/inbox/` to `dadr/ledger/`. `dadrock reject` changes it to `rejected` and moves it to `dadr/archive/`. The `id` never changes. Superseding a decision, by [accepting its successor](web.md#accepting-successors) or with `dadrock supersede`, appends the successor's `id` to the predecessor's `successors` and moves the predecessor to `dadr/archive/`; its `status` stays `accepted`.
+
+Filenames carry no meaning: DADRock identifies a record by its `id`, never by its filename. It names a new record after its title, `income-preprocessing.md`, and adds the short id, `income-preprocessing-01938b8e4d70.md`, only when the inbox already has that name. Accepting, rejecting, and superseding keep the filename and change only the folder; the short id is added only when the target folder already has that name. A name that another record leaves in the same operation counts as free, so a successor with its predecessor's title takes the predecessor's filename in the ledger. Renaming a record file does not change the record.
 
 The directory is a convenience: the front matter is authoritative. `dadrock validate` warns when a record sits in a directory that does not match its `status` and `successors`. Moving a file breaks relative Markdown links to its path; record wikilinks use ids and are unaffected. Use `dadrock config` to inspect the resolved layout. Keep the record directories in version control; run state may contain pasted context and source excerpts and is ignored by default.
 
@@ -111,7 +113,7 @@ Current validation checks:
 
 - no `date` key or ISO 8601 date/time values in front matter;
 - YAML fields, UUIDv7 IDs, four sections each appearing exactly once with text, and status/location consistency;
-- duplicate full IDs and short IDs, and filename collisions;
+- duplicate full IDs and short IDs;
 - missing or invalid successors and cycles in supersession relationships;
 - [stale successor candidates](web.md#stale-successors), and accepted records whose `## Supersedes` predecessors do not list them in `successors`;
 - broken or ambiguous record wikilinks and missing local Markdown-link targets;
@@ -138,7 +140,7 @@ For each record file in `dadr/inbox/`, `dadr/ledger/`, or `dadr/archive/` that c
 
 ```text
 dadrock validate changes: 0 error(s), 1 warning(s) (working tree against HEAD (5309d425ba44))
-[warning] record_body_edited /home/me/analysis/dadr/ledger/01938c20a3b4-winsorize-income.md: the body of accepted record `Winsorize income at p99` (01938c20a3b4) was edited since HEAD. If this changes the decision, supersede the record instead.
+[warning] record_body_edited /home/me/analysis/dadr/ledger/winsorize-income-at-p99.md: the body of accepted record `Winsorize income at p99` (01938c20a3b4) was edited since HEAD. If this changes the decision, supersede the record instead.
       ## Consequences
 
     - Estimates are less sensitive to outliers.

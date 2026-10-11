@@ -279,7 +279,7 @@ The hook should print a concise report:
 
 ```text
 DADR hook: 2 consequential changes detected
-  created dadr/inbox/01938b8e4d70-drop-missing-treatment.md
+  created dadr/inbox/drop-missing-treatment.md
   covered by 01938b89-1234-7000-8000-aaaaaaaaaaaa: analysis/models.py:88
 Routine changes ignored: 5
 Bypass: git commit --no-verify or DADR_SKIP_HOOK=1 git commit ...

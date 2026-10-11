@@ -93,6 +93,11 @@ format names no directories, so the layout below is Dadrock's alone.
 - Accepting moves a record from `inbox/` to `ledger/`; rejecting moves it from
   `inbox/` to `archive/`; superseding moves each predecessor from `ledger/` to
   `archive/`, whether through acceptance of a successor or `dadrock supersede`.
+- Moves keep the filename and change only the folder. Filenames carry no
+  meaning: a new record is named `<slug>.md` from its title, and the short id
+  is appended (`<slug>-<short-id>.md`) only when the target folder already has
+  that name. A path that another record leaves in the same operation counts as
+  free, so a successor with its predecessor's title takes its filename.
 - The location check warns when a record's folder does not match the table.
 - Moving a file breaks relative Markdown links to its path. Wikilinks and
   `#dadr/` code tags use ids and are unaffected.

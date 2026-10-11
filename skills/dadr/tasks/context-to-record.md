@@ -50,7 +50,7 @@ The total body should land in the 200–400 word window. Below ~100 means a sect
 
 ### Step 3 — Scaffold via `dadrock new`
 
-Never hand-write the record file — `dadrock new` allocates the UUIDv7 and canonical filename:
+Never hand-write the record file — `dadrock new` allocates the UUIDv7 and names the file:
 
 ```bash
 dadrock new "Drop observations with missing treatment assignment" \
