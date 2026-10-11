@@ -116,29 +116,66 @@ jobs:
           pattern: vsix-*
           path: editors/vscode/dist
           merge-multiple: true
-      - name: Publish to Marketplace
+      # `if:` cannot test secrets, so this step reads the tokens and says
+      # which registries to publish to. A registry whose token is not set is
+      # skipped with a notice; when its token is set, a failed publish fails
+      # the job.
+      - name: Check registry tokens
+        id: tokens
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        shell: bash
-        run: |
-          VERSION=$(awk -F'"' '/^version/ { print $2; exit }' Cargo.toml)
-          if [[ "$VERSION" == *-* ]]; then
-            echo "Skipping Marketplace: $VERSION is a pre-release."
-            exit 0
-          fi
-          for v in editors/vscode/dist/*.vsix; do
-            npx --prefix editors/vscode vsce publish --no-dependencies --packagePath "$v" -p "$VSCE_PAT" || true
-          done
-      - name: Publish to Open VSX
-        env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         shell: bash
         run: |
-          for v in editors/vscode/dist/*.vsix; do
-            npx --prefix editors/vscode ovsx publish "$v" -p "$OVSX_PAT" || true
-          done
+          VERSION=$(awk -F'"' '/^version/ { print $2; exit }' Cargo.toml)
+          if [ -z "${VSCE_PAT:-}" ]; then
+            echo "::notice::VSCE_PAT is not set: skipped publishing to the Visual Studio Marketplace"
+            echo "marketplace=false" >> "$GITHUB_OUTPUT"
+          elif [[ "$VERSION" == *-* ]]; then
+            echo "::notice::$VERSION is a pre-release, which the Marketplace does not take: skipped publishing there"
+            echo "marketplace=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "marketplace=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -z "${OVSX_PAT:-}" ]; then
+            echo "::notice::OVSX_PAT is not set: skipped publishing to Open VSX"
+            echo "openvsx=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "openvsx=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Attach VSIX to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.gate.outputs.tag }}
         run: gh release upload "$TAG" editors/vscode/dist/*.vsix --clobber
+      # !cancelled(): the release and the two registries are independent, so
+      # a failure on one does not skip the others. Every VSIX is tried before
+      # the step fails.
+      - name: Publish to Marketplace
+        if: ${{ !cancelled() && steps.tokens.outputs.marketplace == 'true' }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        shell: bash
+        run: |
+          failed=0
+          for v in editors/vscode/dist/*.vsix; do
+            if ! npx --prefix editors/vscode vsce publish --no-dependencies --packagePath "$v" -p "$VSCE_PAT"; then
+              echo "::error::Publishing $v to the Visual Studio Marketplace failed"
+              failed=1
+            fi
+          done
+          exit "$failed"
+      - name: Publish to Open VSX
+        if: ${{ !cancelled() && steps.tokens.outputs.openvsx == 'true' }}
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        shell: bash
+        run: |
+          failed=0
+          for v in editors/vscode/dist/*.vsix; do
+            if ! npx --prefix editors/vscode ovsx publish "$v" -p "$OVSX_PAT"; then
+              echo "::error::Publishing $v to Open VSX failed"
+              failed=1
+            fi
+          done
+          exit "$failed"

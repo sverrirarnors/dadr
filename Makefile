@@ -173,11 +173,24 @@ vscode-package-universal: vscode-sync-version
 	cd $(VSCODE_DIR) && npx vsce package --no-dependencies \
 	  -o dist/dadrock-universal-$(VERSION).vsix
 
-vscode-publish: ## Publish packaged VSIX files to VS Marketplace and Open VSX
-	@for v in $(VSIX_OUT)/*.vsix; do \
+vscode-publish: ## Publish packaged VSIX files to VS Marketplace and Open VSX (needs VSCE_PAT and OVSX_PAT)
+	@set -e; \
+	missing=""; \
+	[ -n "$${VSCE_PAT:-}" ] || missing="$$missing VSCE_PAT"; \
+	[ -n "$${OVSX_PAT:-}" ] || missing="$$missing OVSX_PAT"; \
+	if [ -n "$$missing" ]; then \
+	  echo "vscode-publish: not set:$$missing; nothing was published" >&2; \
+	  exit 1; \
+	fi; \
+	set -- $(VSIX_OUT)/*.vsix; \
+	if [ ! -e "$$1" ]; then \
+	  echo "vscode-publish: no VSIX files in $(VSIX_OUT); run vscode-package-target or vscode-package-universal first" >&2; \
+	  exit 1; \
+	fi; \
+	for v in "$$@"; do \
 	  echo "Publishing $$v"; \
-	  npx --prefix $(VSCODE_DIR) vsce publish --no-dependencies --packagePath $$v -p $$VSCE_PAT; \
-	  npx --prefix $(VSCODE_DIR) ovsx publish $$v -p $$OVSX_PAT; \
+	  npx --prefix $(VSCODE_DIR) vsce publish --no-dependencies --packagePath "$$v" -p "$$VSCE_PAT"; \
+	  npx --prefix $(VSCODE_DIR) ovsx publish "$$v" -p "$$OVSX_PAT"; \
 	done
 
 # ------------------------------------------------------------------------------

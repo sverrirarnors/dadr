@@ -12,7 +12,7 @@ DADR ("Data Analysis Decision Records") is a file-first Markdown format for capt
 - `skills/dadr/` — the agent skill shipped for DADR workflows (record anatomy, tags, task guides). The task guides in `skills/dadr/tasks/` are also the built-in task definitions compiled into `dadrock`.
 - `editors/vscode/` — the VS Code extension.
 - `desktop/` — the Tauri desktop app (`dadrock-desktop`), a window around `dadrock preview`; its own Cargo workspace (see `desktop/README.md`).
-- `packaging/linux/` + `scripts/` + `.github/workflows/` — release distribution: cargo-dist (`release.yml`), then `release-desktop.yml`, which calls the Linux package, Homebrew and Scoop workflows, and `release-vscode.yml`, which attaches VSIX files to the GitHub release (its Marketplace and Open VSX steps are best-effort, `|| true`; the extension is not listed there).
+- `packaging/linux/` + `scripts/` + `.github/workflows/` — release distribution: cargo-dist (`release.yml`), then `release-desktop.yml`, which calls the Linux package, Homebrew and Scoop workflows, and `release-vscode.yml`, which attaches VSIX files to the GitHub release (its Marketplace and Open VSX steps run only when `VSCE_PAT` / `OVSX_PAT` are set, post a notice when they are not, and fail the job when publishing fails; the tokens are not set, so the extension is not listed there).
 - `reference/` — non-normative notes on related tools.
 
 The user-facing artifacts keep the `dadr` name (`dadr/` project directory, `#dadr/...` code tags) even though the binary is `dadrock`.
