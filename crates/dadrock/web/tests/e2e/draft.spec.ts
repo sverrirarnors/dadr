@@ -3,6 +3,7 @@ import { editorValue, fillEditor } from './editor';
 
 const LAZY_FRAMES_ID = '0193fb1f-a3a0-7000-8000-000000000003';
 const PREREGISTRATION_ID = '0193fb1f-a3a0-7000-8000-000000000002';
+const ARROW_ID = '0193fb1f-a3a0-7000-8000-000000000004';
 
 function draftPage(page: Page) {
   return page.locator('[data-draft-composer]');
@@ -79,22 +80,54 @@ test('?draft=new lands on the Draft page without the parameter', async ({ page }
   await expect(draftPage(page).getByRole('heading', { name: 'Draft a decision' })).toBeVisible();
 });
 
-test('a supersede deep link can replace the decision with existing ones', async ({ page }) => {
+test('a supersede deep link can supersede the decision with existing ones', async ({ page }) => {
   await page.goto(`/ledger?id=${LAZY_FRAMES_ID}&draft=supersede&record=${LAZY_FRAMES_ID}`);
   await expect(page).toHaveURL(/\/draft$/);
   const draft = draftPage(page);
-  await expect(draft.getByRole('heading', { name: 'Replace “Use Polars lazy frames”' })).toBeVisible();
+  await expect(draft.getByRole('heading', { name: 'Supersede “Use Polars lazy frames”' })).toBeVisible();
 
-  await draft.getByRole('button', { name: 'Replace with existing decisions instead' }).click();
-  const picker = page.getByRole('dialog', { name: 'Replace with existing decisions' });
+  await draft.getByRole('button', { name: 'Supersede with existing decisions instead' }).click();
+  const picker = page.getByRole('dialog', { name: 'Supersede with existing decisions' });
   await expect(picker).toBeVisible();
   await expect(picker.getByLabel('Select Use Polars lazy frames')).toHaveCount(0);
   await picker.getByLabel('Select Use Arrow IPC snapshots').check();
   await picker.getByRole('button', { name: 'Save' }).click();
 
   await expect(picker).toHaveCount(0);
-  await expect(page).toHaveURL(new RegExp(`/ledger\\?history=1&id=${LAZY_FRAMES_ID}$`));
+  await expect(page).toHaveURL(new RegExp(`/ledger\\?archived=1&id=${LAZY_FRAMES_ID}$`));
   await expect(page.getByRole('status').filter({ hasText: 'record superseded' })).toBeVisible();
+});
+
+test('a successor written by hand starts with Supersedes and accepting it archives the predecessor', async ({ page }) => {
+  await page.goto(`/ledger?id=${ARROW_ID}&draft=supersede&record=${ARROW_ID}`);
+  const draft = draftPage(page);
+  await expect(draft.getByRole('heading', { name: 'Supersede “Use Arrow IPC snapshots”' })).toBeVisible();
+
+  await draft.getByRole('button', { name: 'Write it by hand' }).click();
+  await expect(draft.getByText('Accepting this successor supersedes the previous decision')).toBeVisible();
+  await expect(draft.getByLabel('Title')).toHaveValue('Update: Use Arrow IPC snapshots');
+  await fillEditor(
+    draft.getByLabel('Candidate Markdown'),
+    '## Context\nc\n\n## Decision\nd\n\n## Alternatives\na\n\n## Consequences\nq',
+  );
+  await draft.getByRole('button', { name: 'Create candidate' }).click();
+
+  await expect(page).toHaveURL(/\/inbox\?item=candidate%3A/);
+  const detail = page.locator('[data-inbox-detail]');
+  await expect(detail.getByText('Proposed successor')).toBeVisible();
+  const body = detail.getByRole('article');
+  await expect(body.locator('h2').first()).toHaveText('Supersedes');
+  await expect(body.getByRole('button', { name: 'Use Arrow IPC snapshots' })).toBeVisible();
+
+  await detail.getByRole('button', { name: 'Accept' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'accepted candidate' })).toBeVisible();
+
+  await page.locator('[data-app-header]').getByRole('link', { name: 'Ledger' }).click();
+  const list = page.locator('[data-ledger-list]');
+  await expect(list.getByRole('link', { name: /Update: Use Arrow IPC snapshots/ })).toBeVisible();
+  await expect(list.getByRole('link', { name: /^Use Arrow IPC snapshots/ })).toHaveCount(0);
+  await page.getByLabel('Show archived').check();
+  await expect(list.getByRole('link', { name: /^sup Use Arrow IPC snapshots/ })).toBeVisible();
 });
 
 test('a revise deep link sends the requested change to the agent', async ({ page }) => {
@@ -106,7 +139,7 @@ test('a revise deep link sends the requested change to the agent', async ({ page
   await expect(draft.getByRole('button', { name: 'Remove Adopt pre-registration for studies' })).toHaveCount(0);
   await expect(draft.getByRole('link', { name: 'Edit it in the Ledger' })).toHaveAttribute(
     'href',
-    `/ledger?history=1&id=${PREREGISTRATION_ID}&tab=edit`,
+    `/ledger?archived=1&id=${PREREGISTRATION_ID}&tab=edit`,
   );
 
   const send = draft.getByRole('button', { name: 'Send to agent' });

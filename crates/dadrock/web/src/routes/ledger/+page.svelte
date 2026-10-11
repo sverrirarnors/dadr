@@ -52,14 +52,14 @@
     const currentId = page.url.searchParams.get('id');
     const keepId = currentId && ledgerRecords(records, next).some((record) => record.id === currentId);
     void goto(
-      resolve(ledgerUrl({ q: next.q, tag: next.tag, history: next.history, id: keepId ? currentId : null })),
+      resolve(ledgerUrl({ q: next.q, tag: next.tag, archived: next.archived, id: keepId ? currentId : null })),
       { replaceState: true, noScroll: true, keepFocus: true },
     );
   }
 
   function rowHref(record: RecordSummary) {
     if (!wide) return ledgerRecordUrl(record.id);
-    return ledgerUrl({ q: filters.q, tag: filters.tag, history: filters.history, id: record.id });
+    return ledgerUrl({ q: filters.q, tag: filters.tag, archived: filters.archived, id: record.id });
   }
 </script>
 
@@ -76,7 +76,7 @@
     <ResizableWorkbenchSplit splitId="ledger" handleLabel="Resize ledger panes">
       {#snippet left()}
         <WorkbenchPane framed data-ledger-list-pane class="flex min-h-0 min-w-0 flex-col">
-          <PaneHeader title="Ledger" subtitle={ledgerSubtitle(counts, filters.history)} />
+          <PaneHeader title="Ledger" subtitle={ledgerSubtitle(counts, filters.archived)} />
 
           <PaneToolbar>
             <TextInput
@@ -91,10 +91,10 @@
               <input
                 type="checkbox"
                 class="h-3.5 w-3.5 accent-accent"
-                checked={filters.history}
-                onchange={(event) => updateFilters({ history: event.currentTarget.checked })}
+                checked={filters.archived}
+                onchange={(event) => updateFilters({ archived: event.currentTarget.checked })}
               />
-              <span>Show history</span>
+              <span>Show archived</span>
             </label>
           </PaneToolbar>
 
@@ -113,7 +113,7 @@
                   aria-current={selectedId === record.id ? 'page' : undefined}
                 >
                   <ListRow active={selectedId === record.id} class="flex items-center gap-2 py-1.5">
-                    {#if filters.history}
+                    {#if filters.archived}
                       <Badge variant={recordStatusVariant(record) as StatusVariant} mono class="uppercase">
                         {displayRecordStatus(record).slice(0, 3)}
                       </Badge>
@@ -127,11 +127,11 @@
               <li class="p-3">
                 <EmptyState>
                   {#if filters.q || filters.tag}
-                    No decisions match. Clear the search or tag filter{filters.history ? '' : ', or show history'}.
-                  {:else if filters.history}
+                    No decisions match. Clear the search or tag filter{filters.archived ? '' : ', or show archived'}.
+                  {:else if filters.archived}
                     No decisions yet. Accept a candidate in the Inbox to record one.
                   {:else}
-                    No current decisions. Show history to see superseded and rejected ones.
+                    No current decisions. Show archived to see superseded and rejected ones.
                   {/if}
                 </EmptyState>
               </li>

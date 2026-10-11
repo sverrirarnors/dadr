@@ -11,8 +11,9 @@ test('preview launch prompts to initialize an uninitialized project', async ({ p
   await expect(page.getByRole('heading', { name: 'Initialize Dadrock here?' })).toBeVisible();
   await expect(page.getByText('No Dadrock project was found in')).toBeVisible();
   await expect(page.getByText('/tmp/dadr-mock', { exact: true })).toHaveCount(2);
-  await expect(page.getByText('dadr/accepted/')).toBeVisible();
-  await expect(page.getByText('dadr/rejected/')).toBeVisible();
+  await expect(page.getByText('dadr/inbox/')).toBeVisible();
+  await expect(page.getByText('dadr/ledger/')).toBeVisible();
+  await expect(page.getByText('dadr/archive/')).toBeVisible();
   await expect(page.getByText('dadr/runs/')).toBeVisible();
 
   const draft = page.locator('[data-app-header]').getByRole('link', { name: 'Draft' });

@@ -10,7 +10,7 @@ const candidate: RecordSummary = {
   title: 'Adopt pre-registration for studies',
   status: 'candidate',
   superseded: false,
-  path: 'dadr/candidates/0002-preregister.md',
+  path: 'dadr/inbox/0002-preregister.md',
   preview: 'Candidate decision.',
   tags: ['#dadr/methodology'],
   timestamp_ms: 1730000100000,
@@ -19,14 +19,14 @@ const candidate: RecordSummary = {
 const accepted: RecordSummary = {
   ...candidate,
   status: 'accepted',
-  path: 'dadr/accepted/0002-preregister.md',
+  path: 'dadr/ledger/0002-preregister.md',
 };
 
 function snapshot(records: RecordSummary[]): Snapshot {
   return {
     project: {
       cwd: '/tmp/dadr-mock',
-      decisions_dir: '/tmp/dadr-mock/dadr/accepted',
+      decisions_dir: '/tmp/dadr-mock/dadr/ledger',
       initialized: true,
       discovery_source: 'directory',
       status: 'Project discovered.',

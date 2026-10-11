@@ -25,13 +25,13 @@ test('the project button opens a popover with the project facts and actions', as
   await expect(button).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('clearing the agent history reports it and clicking outside closes the popover', async ({ page }) => {
+test('clearing the agent runs reports it and clicking outside closes the popover', async ({ page }) => {
   await page.goto('/inbox');
   const button = page.locator('[data-app-header]').getByRole('button', { name: 'Project' });
   await button.click();
   const popover = page.getByRole('dialog', { name: 'Project' });
-  await popover.getByRole('button', { name: 'Clear agent history' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Task history cleared.' })).toBeVisible();
+  await popover.getByRole('button', { name: 'Clear agent runs' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Agent runs cleared.' })).toBeVisible();
 
   await page.locator('main').click({ position: { x: 10, y: 10 } });
   await expect(popover).toHaveCount(0);

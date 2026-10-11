@@ -57,12 +57,12 @@ describe('composerTitle', () => {
     expect(composerTitle('new', undefined)).toBe('Draft a decision');
     expect(composerTitle('merge', undefined)).toBe('Merge candidates');
     expect(composerTitle('revise', candidate)).toBe('Revise “First draft”');
-    expect(composerTitle('supersede', accepted)).toBe('Replace “Use Polars”');
+    expect(composerTitle('supersede', accepted)).toBe('Supersede “Use Polars”');
   });
 
   it('falls back when the record is unknown', () => {
     expect(composerTitle('revise', undefined)).toBe('Revise a record');
-    expect(composerTitle('supersede', undefined)).toBe('Replace a decision');
+    expect(composerTitle('supersede', undefined)).toBe('Supersede a decision');
   });
 });
 
@@ -104,7 +104,7 @@ describe('views', () => {
 });
 
 describe('manualPrefill', () => {
-  it('prefills a replacement from the original decision', () => {
+  it('prefills a successor from the decision it supersedes', () => {
     expect(manualPrefill('supersede', accepted)).toEqual({
       title: 'Update: Use Polars',
       tags: '#dadr/data #kind/tool',
@@ -119,10 +119,10 @@ describe('manualPrefill', () => {
 });
 
 describe('ledgerEditHref', () => {
-  it('opens the edit tab, showing history for records that are not current', () => {
+  it('opens the edit tab, showing archived records for records that are not current', () => {
     expect(ledgerEditHref(accepted)).toBe('/ledger?id=acc-1&tab=edit');
-    expect(ledgerEditHref(candidate)).toBe('/ledger?history=1&id=cand-1&tab=edit');
-    expect(ledgerEditHref(superseded)).toBe('/ledger?history=1&id=acc-0&tab=edit');
+    expect(ledgerEditHref(candidate)).toBe('/ledger?archived=1&id=cand-1&tab=edit');
+    expect(ledgerEditHref(superseded)).toBe('/ledger?archived=1&id=acc-0&tab=edit');
   });
 });
 

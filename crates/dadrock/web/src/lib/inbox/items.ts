@@ -318,7 +318,7 @@ function runningTitle(taskId: string): string {
     'code-to-record': 'Looking for decisions in your code',
     'context-to-record': 'Drafting a decision',
     'edit-record': 'Revising a record',
-    'supersede-record': 'Drafting a replacement',
+    'supersede-record': 'Drafting a successor',
     'merge-records': 'Merging candidates',
     'find-conflicts': 'Checking for conflicting decisions',
     custom: 'Running your request',
@@ -370,7 +370,7 @@ function itemsForResult(
       const supersedes = stringField(result, 'superseded_record_id');
       const supersededRecord = byId.get(supersedes);
       const proposal: CandidateProposal = {
-        title: stringField(result, 'superseding_title') || 'Replacement decision',
+        title: stringField(result, 'superseding_title') || 'Successor decision',
         tags: stringArrayField(result, 'tags'),
         body_markdown: body,
         warnings: [],
@@ -380,7 +380,7 @@ function itemsForResult(
         kind: 'proposal',
         id: proposalItemId(run.id, 'supersession'),
         title: proposal.title,
-        subtitle: supersededRecord ? `Replaces “${supersededRecord.title}”` : 'Replacement drafted by the agent',
+        subtitle: supersededRecord ? `Supersedes “${supersededRecord.title}”` : 'Successor drafted by the agent',
         runId: run.id,
         taskId: run.task_id,
         proposal,

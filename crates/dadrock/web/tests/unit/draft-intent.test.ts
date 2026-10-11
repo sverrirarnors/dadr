@@ -71,11 +71,15 @@ describe('resolveDraftIntent', () => {
     expect(resolveDraftIntent({ mode: 'revise', text: '', paths: [], recordIds: ['cand-1'] }, records)).toMatchObject({ ok: false });
   });
 
-  it('drafts a replacement for the attached decision', () => {
+  it('drafts a successor for the attached decision', () => {
     const result = resolveDraftIntent({ mode: 'supersede', text: 'Moved to DuckDB', paths: [], recordIds: ['acc-1'] }, records);
     expect(result).toMatchObject({
       ok: true,
-      intent: { taskId: 'supersede-record', request: { input: { record_id: 'acc-1', reason: 'Moved to DuckDB' } } },
+      intent: {
+        taskId: 'supersede-record',
+        label: 'Draft a successor for “Use Polars”',
+        request: { input: { record_id: 'acc-1', reason: 'Moved to DuckDB' } },
+      },
     });
   });
 

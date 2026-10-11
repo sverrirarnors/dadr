@@ -121,7 +121,7 @@
 
   function recordHref(recordId: string) {
     return embedded && surface === 'ledger'
-      ? ledgerUrl({ id: recordId, history: true })
+      ? ledgerUrl({ id: recordId, archived: true })
       : ledgerRecordUrl(recordId);
   }
 
@@ -348,12 +348,11 @@
         {/if}
       </Alert>
       {#if lifecycle.data.pending_supersedes}
-        <Alert class="mt-2" variant="neutral" title="Proposed replacement">
-          Accepting will replace
+        <Alert class="mt-2" variant="neutral" title="Proposed successor">
+          Accepting will supersede
           <a class="text-accent underline" href={resolve(recordHref(lifecycle.data.pending_supersedes.id))}>
             {lifecycle.data.pending_supersedes.title}
-          </a>
-          and preserve its explanation.
+          </a>, which moves to the archive unchanged.
         </Alert>
       {/if}
     {:else}

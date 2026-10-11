@@ -23,7 +23,7 @@ export function composerTitle(mode: DraftMode, record: RecordSummary | undefined
     case 'revise':
       return record ? `Revise “${record.title}”` : 'Revise a record';
     case 'supersede':
-      return record ? `Replace “${record.title}”` : 'Replace a decision';
+      return record ? `Supersede “${record.title}”` : 'Supersede a decision';
     case 'merge':
       return 'Merge candidates';
     case 'new':
@@ -80,7 +80,7 @@ export function ledgerEditHref(record: RecordSummary): LedgerHref {
   return ledgerUrl({
     id: record.id,
     tab: 'edit',
-    history: record.status !== 'accepted' || record.superseded,
+    archived: record.status !== 'accepted' || record.superseded,
   });
 }
 

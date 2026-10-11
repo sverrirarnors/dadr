@@ -73,9 +73,9 @@
     });
   }
 
-  function clearAgentHistory() {
+  function clearAgentRuns() {
     return run('clear', async () => {
-      const response = await api.clearTaskHistory();
+      const response = await api.clearTaskRuns();
       resolvedItems.clear();
       void queryClient.invalidateQueries({ queryKey: ['inbox-runs'] });
       toasts.push({ severity: 'success', message: response.message });
@@ -137,8 +137,8 @@
         <Button type="button" variant="outline" size="sm" disabled={busy !== null} onclick={validateNow}>
           {busy === 'validate' ? 'Validating' : 'Validate now'}
         </Button>
-        <Button type="button" variant="outline" size="sm" disabled={busy !== null} onclick={clearAgentHistory}>
-          {busy === 'clear' ? 'Clearing' : 'Clear agent history'}
+        <Button type="button" variant="outline" size="sm" disabled={busy !== null} onclick={clearAgentRuns}>
+          {busy === 'clear' ? 'Clearing runs' : 'Clear agent runs'}
         </Button>
       </div>
 

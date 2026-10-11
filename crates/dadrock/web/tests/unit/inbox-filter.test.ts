@@ -11,7 +11,7 @@ function record(id: string, title: string, tags: string[] = []): RecordSummary {
     title,
     status: 'candidate',
     superseded: false,
-    path: `dadr/candidates/${id}.md`,
+    path: `dadr/inbox/${id}.md`,
     preview: '',
     tags,
     timestamp_ms: 0,
@@ -31,7 +31,7 @@ const issue: InboxItem = {
   title: 'A local Markdown link points at a missing note.',
   subtitle: 'Links',
   category: 'Links',
-  diagnostic: { severity: 'error', code: 'broken_markdown_link', message: 'A local Markdown link points at a missing note.', path: 'dadr/accepted/0001.md', record_id: null, field: null, line: 3, related_paths: [] },
+  diagnostic: { severity: 'error', code: 'broken_markdown_link', message: 'A local Markdown link points at a missing note.', path: 'dadr/ledger/0001.md', record_id: null, field: null, line: 3, related_paths: [] },
 };
 const groups: InboxGroup[] = [
   { id: 'candidates', label: 'Candidates', items: [candidate] },

@@ -17,7 +17,7 @@ const records: RecordSummary[] = [
     title: 'Use Polars over pandas',
     status: 'accepted',
     superseded: false,
-    path: 'dadr/accepted/0001-use-polars.md',
+    path: 'dadr/ledger/0001-use-polars.md',
     preview: 'Use Polars for tabular transforms.',
     tags: ['#dadr/data/processing'],
     timestamp_ms: 1730000000000,
@@ -29,7 +29,7 @@ const records: RecordSummary[] = [
     title: 'Draft reproducibility checklist',
     status: 'candidate',
     superseded: false,
-    path: 'dadr/candidates/repro-checklist.md',
+    path: 'dadr/inbox/repro-checklist.md',
     preview: 'Candidate checklist.',
     tags: ['#dadr/methodology'],
     timestamp_ms: 1730000100000,
@@ -41,7 +41,7 @@ const records: RecordSummary[] = [
     title: 'Reject manual spreadsheet merge',
     status: 'rejected',
     superseded: false,
-    path: 'dadr/rejected/spreadsheet-merge.md',
+    path: 'dadr/archive/spreadsheet-merge.md',
     preview: 'Rejected merge workflow.',
     tags: ['#dadr/data/processing'],
     timestamp_ms: 1730000200000,
@@ -53,7 +53,7 @@ const records: RecordSummary[] = [
     title: 'Supersede broad transform rule',
     status: 'accepted',
     superseded: true,
-    path: 'dadr/accepted/0004-superseded-transform.md',
+    path: 'dadr/archive/0004-superseded-transform.md',
     preview: 'Old transform rule.',
     tags: ['#dadr/data/processing'],
     timestamp_ms: 1730000300000,
@@ -65,7 +65,7 @@ const records: RecordSummary[] = [
     title: 'Sample tagged record',
     status: 'rejected',
     superseded: false,
-    path: 'dadr/accepted/0005-sample.md',
+    path: 'dadr/archive/0005-sample.md',
     preview: 'Sample tag workflow.',
     tags: ['kind/sample'],
     timestamp_ms: 1730000400000,
@@ -94,7 +94,7 @@ describe('recordSearchText', () => {
   it('includes title, path, tags, id, and id prefix', () => {
     const text = recordSearchText(records[0]!);
     expect(text).toContain('use polars over pandas');
-    expect(text).toContain('dadr/accepted/0001-use-polars.md');
+    expect(text).toContain('dadr/ledger/0001-use-polars.md');
     expect(text).toContain('#dadr/data/processing');
     expect(text).toContain('0193fb1f-a3a0-7000-8000-000000000001');
     expect(text).toContain('0193fb1fa3a0');

@@ -5,7 +5,7 @@ const emptyPanel = { counts: {}, diagnostics: [] };
 const validSnapshot = {
   project: {
     cwd: '/tmp/proj',
-    decisions_dir: '/tmp/proj/dadr/accepted',
+    decisions_dir: '/tmp/proj/dadr/ledger',
     initialized: true,
     discovery_source: 'directory',
     status: 'Project discovered.',
@@ -63,7 +63,7 @@ describe('RealApi.getRecordSource', () => {
       new Response(
         JSON.stringify({
           id: '0193fb1f-a3a0-7000-8000-000000000001',
-          path: 'dadr/accepted/0001-use-polars.md',
+          path: 'dadr/ledger/0001-use-polars.md',
           content: '---\nid: 0193fb1f-a3a0-7000-8000-000000000001\n---\n\n# Use Polars',
         }),
         { headers: { 'content-type': 'application/json' } },
@@ -71,7 +71,7 @@ describe('RealApi.getRecordSource', () => {
     );
     const api = new RealApi('http://example.test', fakeFetch as typeof fetch);
     const source = await api.getRecordSource('0193fb1f-a3a0-7000-8000-000000000001');
-    expect(source.path).toBe('dadr/accepted/0001-use-polars.md');
+    expect(source.path).toBe('dadr/ledger/0001-use-polars.md');
     expect(fakeFetch).toHaveBeenCalledWith(
       'http://example.test/api/records/0193fb1f-a3a0-7000-8000-000000000001/source',
       expect.any(Object),
@@ -101,7 +101,7 @@ describe('RealApi.getRecordLifecycle', () => {
             title: 'Use Polars over pandas',
             status: 'accepted',
             superseded: true,
-            path: 'dadr/accepted/0001-use-polars.md',
+            path: 'dadr/archive/0001-use-polars.md',
             preview: 'Use Polars.',
             tags: ['#dadr/data/processing'],
             timestamp_ms: 1730000000000,
@@ -115,7 +115,7 @@ describe('RealApi.getRecordLifecycle', () => {
               title: 'Use Polars lazy frames',
               status: 'accepted',
               superseded: false,
-              path: 'dadr/accepted/0002-use-polars-lazy.md',
+              path: 'dadr/ledger/0002-use-polars-lazy.md',
               preview: 'Use lazy frames.',
               tags: ['#dadr/data/processing'],
               timestamp_ms: 1730000100000,
@@ -145,7 +145,7 @@ describe('RealApi.saveRecordSource', () => {
       new Response(
         JSON.stringify({
           message: 'saved 0193fb1f-a3a0-7000-8000-000000000001',
-          changed_paths: ['dadr/accepted/0001-use-polars.md'],
+          changed_paths: ['dadr/ledger/0001-use-polars.md'],
           focus: {
             selected_id: '0193fb1f-a3a0-7000-8000-000000000001',
             status_filter: 'accepted',
@@ -161,7 +161,7 @@ describe('RealApi.saveRecordSource', () => {
       'edited markdown',
     );
     expect(response.message).toContain('saved');
-    expect(response.changed_paths).toEqual(['dadr/accepted/0001-use-polars.md']);
+    expect(response.changed_paths).toEqual(['dadr/ledger/0001-use-polars.md']);
     expect(fakeFetch).toHaveBeenCalledWith(
       'http://example.test/api/records/0193fb1f-a3a0-7000-8000-000000000001/source',
       expect.objectContaining({
@@ -190,7 +190,7 @@ describe('RealApi.applyRecordRevision', () => {
       new Response(
         JSON.stringify({
           message: 'applied revision 0193fb1f-a3a0-7000-8000-000000000002',
-          changed_paths: ['dadr/candidates/0002-preregister.md'],
+          changed_paths: ['dadr/inbox/0002-preregister.md'],
           focus: {
             selected_id: '0193fb1f-a3a0-7000-8000-000000000002',
             status_filter: 'candidate',
@@ -293,7 +293,7 @@ describe('RealApi.createCandidate', () => {
       new Response(
         JSON.stringify({
           message: 'created candidate 0193fb1f-a3a0-7000-8000-000000000003',
-          changed_paths: ['dadr/candidates/0003-use-duckdb.md'],
+          changed_paths: ['dadr/inbox/0003-use-duckdb.md'],
           focus: {
             selected_id: '0193fb1f-a3a0-7000-8000-000000000003',
             status_filter: 'candidate',
@@ -332,7 +332,7 @@ describe('RealApi.draftCandidate', () => {
       new Response(
         JSON.stringify({
           message: 'drafted candidate 0193fb1f-a3a0-7000-8000-000000000004',
-          changed_paths: ['dadr/candidates/0004-agent-draft.md'],
+          changed_paths: ['dadr/inbox/0004-agent-draft.md'],
           snapshot: validSnapshot,
         }),
         { headers: { 'content-type': 'application/json' } },
@@ -395,9 +395,9 @@ describe('RealApi.initializeProject', () => {
           message: 'created 8 paths, reused 0 paths',
           changed_paths: [
             'dadr',
-            'dadr/accepted',
-            'dadr/candidates',
-            'dadr/rejected',
+            'dadr/inbox',
+            'dadr/ledger',
+            'dadr/archive',
             'dadr/templates',
             'dadr/tasks',
             'dadr/runs',
@@ -427,7 +427,7 @@ describe('RealApi candidate lifecycle actions', () => {
   it('posts accept and reject actions to candidate endpoints', async () => {
     const responseBody = {
       message: 'accepted candidate 0193fb1f-a3a0-7000-8000-000000000002',
-      changed_paths: ['dadr/accepted/0002-preregister.md'],
+      changed_paths: ['dadr/ledger/0002-preregister.md'],
       focus: {
         selected_id: '0193fb1f-a3a0-7000-8000-000000000002',
         status_filter: 'accepted',
@@ -468,7 +468,7 @@ describe('RealApi.supersedeRecords', () => {
   it('posts selected successors as one supersede request', async () => {
     const responseBody = {
       message: 'record superseded',
-      changed_paths: ['dadr/accepted/old.md', 'dadr/accepted/new.md'],
+      changed_paths: ['dadr/archive/old.md', 'dadr/ledger/new.md'],
       snapshot: validSnapshot,
     };
     const fakeFetch = vi.fn().mockResolvedValue(
@@ -694,11 +694,11 @@ describe('RealApi task commands', () => {
     );
   });
 
-  it('clears task run history through a mutation response', async () => {
+  it('clears task runs through a mutation response', async () => {
     const fakeFetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
-          message: 'cleared task history',
+          message: 'Agent runs cleared.',
           changed_paths: ['/tmp/proj/dadr/runs'],
           snapshot: validSnapshot,
         }),
@@ -707,9 +707,9 @@ describe('RealApi task commands', () => {
     );
     const api = new RealApi('http://example.test', fakeFetch as typeof fetch);
 
-    const response = await api.clearTaskHistory();
+    const response = await api.clearTaskRuns();
 
-    expect(response.message).toBe('cleared task history');
+    expect(response.message).toBe('Agent runs cleared.');
     expect(fakeFetch).toHaveBeenCalledWith(
       'http://example.test/api/task-runs/clear',
       expect.objectContaining({

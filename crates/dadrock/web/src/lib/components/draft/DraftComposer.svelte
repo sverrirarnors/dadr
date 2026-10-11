@@ -63,7 +63,7 @@
 
   let sending = $state(false);
   let error = $state<{ title: string; detail: string } | null>(null);
-  let picker = $state<'attach' | 'replace' | null>(null);
+  let picker = $state<'attach' | 'supersede' | null>(null);
   let pickerQuery = $state('');
   let pickerStatus = $state<RecordStatusFilter>('all');
   let root = $state<HTMLElement | undefined>();
@@ -89,7 +89,7 @@
 
   /** Where Close goes: back to the record this draft is about, else the Inbox. */
   const returnHref = $derived(
-    pinned ? ledgerUrl({ id: pinned.id, history: pinned.status !== 'accepted' || pinned.superseded }) : inboxUrl(),
+    pinned ? ledgerUrl({ id: pinned.id, archived: pinned.status !== 'accepted' || pinned.superseded }) : inboxUrl(),
   );
 
   function close() {
@@ -117,10 +117,10 @@
     picker = 'attach';
   }
 
-  function openReplacePicker() {
+  function openSupersedePicker() {
     pickerQuery = '';
     pickerStatus = 'accepted';
-    picker = 'replace';
+    picker = 'supersede';
   }
 
   function attachRecords(ids: string[]) {
@@ -157,7 +157,7 @@
     }
   }
 
-  async function replaceWithExisting(ids: string[]) {
+  async function supersedeWithExisting(ids: string[]) {
     picker = null;
     const from = pinned?.id;
     if (!from || ids.length === 0 || sending) return;
@@ -168,9 +168,9 @@
       toasts.push({ severity: 'success', message: response.message });
       await applyMutationResponse(queryClient, response);
       composer.reset();
-      await goto(resolve(ledgerUrl({ id: from, history: true }) as '/ledger'));
+      await goto(resolve(ledgerUrl({ id: from, archived: true }) as '/ledger'));
     } catch (cause) {
-      error = { title: 'Could not replace the decision', detail: errorMessage(cause) };
+      error = { title: 'Could not supersede the decision', detail: errorMessage(cause) };
     } finally {
       sending = false;
     }
@@ -270,9 +270,9 @@
               size="sm"
               class="mt-2"
               disabled={sending}
-              onclick={openReplacePicker}
+              onclick={openSupersedePicker}
             >
-              Replace with existing decisions instead
+              Supersede with existing decisions instead
             </Button>
           </div>
         {/if}
@@ -309,15 +309,15 @@
       onconfirm={attachRecords}
       oncancel={() => (picker = null)}
     />
-  {:else if picker === 'replace' && pinned}
+  {:else if picker === 'supersede' && pinned}
     <RecordSelectionDialog
-      title="Replace with existing decisions"
+      title="Supersede with existing decisions"
       {records}
       excludedIds={[pinned.id]}
       bind:query={pickerQuery}
       bind:status={pickerStatus}
       confirmLabel={() => 'Save'}
-      onconfirm={replaceWithExisting}
+      onconfirm={supersedeWithExisting}
       oncancel={() => (picker = null)}
     />
   {/if}

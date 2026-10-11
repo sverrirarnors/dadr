@@ -74,5 +74,5 @@ export interface DadrApi {
   getTaskLog(id: string): Promise<TaskRunLogEntry[]>;
   runTask(request: RunTaskRequest): Promise<TaskRun>;
   cancelTaskRun(id: string): Promise<TaskRun>;
-  clearTaskHistory(): Promise<MutationResponse>;
+  clearTaskRuns(): Promise<MutationResponse>;
 }

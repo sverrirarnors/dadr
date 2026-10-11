@@ -52,8 +52,8 @@
     palette.hide();
     if (item.recordId) {
       const record = snapshot.data?.records.find((candidate) => candidate.id === item.recordId);
-      const history = record ? record.status !== 'accepted' || record.superseded : false;
-      goto(resolve(ledgerUrl({ id: item.recordId, history })));
+      const archived = record ? record.status !== 'accepted' || record.superseded : false;
+      goto(resolve(ledgerUrl({ id: item.recordId, archived })));
       return;
     }
     if (item.route) {

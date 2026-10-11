@@ -85,9 +85,9 @@
     {/if}
 
     {#if item.proposal.supersedes}
-      <Alert variant="info" title={`Replaces “${item.supersededRecord?.title ?? item.proposal.supersedes}”`}>
-        Accepting the saved candidate will link it to the original and keep the original as history.
-        <a class="ml-1 text-accent underline" href={resolve(supersedesHref)}>Open the original</a>
+      <Alert variant="info" title={`Supersedes “${item.supersededRecord?.title ?? item.proposal.supersedes}”`}>
+        Accepting the saved candidate supersedes this decision, which moves to the archive unchanged.
+        <a class="ml-1 text-accent underline" href={resolve(supersedesHref)}>Open the predecessor</a>
       </Alert>
     {/if}
 

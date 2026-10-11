@@ -20,7 +20,7 @@
     ] as Array<{ label: string; id: string; record: RecordSummary | undefined }>,
   );
   const bothCandidates = $derived(item.left?.status === 'candidate' && item.right?.status === 'candidate');
-  const replaceable = $derived(
+  const supersedable = $derived(
     [item.left, item.right].filter((record): record is RecordSummary => Boolean(record && isCurrentDecision(record))),
   );
 
@@ -29,7 +29,7 @@
     composer.show({ mode: 'merge', recordIds: [item.left.id, item.right.id], text: item.finding.conflict_explanation });
   }
 
-  function replace(record: RecordSummary) {
+  function supersede(record: RecordSummary) {
     composer.show({ mode: 'supersede', recordIds: [record.id], text: item.finding.conflict_explanation });
   }
 
@@ -103,15 +103,15 @@
     {#if bothCandidates}
       <Button type="button" size="sm" data-inbox-action="primary" onclick={merge}>Merge</Button>
     {/if}
-    {#each replaceable as record, index (record.id)}
+    {#each supersedable as record, index (record.id)}
       <Button
         type="button"
         variant="outline"
         size="sm"
         data-inbox-action={index === 0 && !bothCandidates ? 'primary' : undefined}
-        onclick={() => replace(record)}
+        onclick={() => supersede(record)}
       >
-        Replace “{record.title}”
+        Supersede “{record.title}”
       </Button>
     {/each}
     <Button type="button" variant="outline" size="sm" class="ml-auto" data-inbox-action="secondary" onclick={dismiss}>

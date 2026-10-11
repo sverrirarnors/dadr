@@ -50,9 +50,9 @@
     <div class="mt-4 space-y-3 text-sm leading-6 text-fg-muted">
       <p>
         This creates the local Dadrock project structure in the current directory:
-        <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs text-fg">dadr/accepted/</code>,
-        <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs text-fg">dadr/candidates/</code>,
-        <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs text-fg">dadr/rejected/</code>,
+        <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs text-fg">dadr/inbox/</code>,
+        <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs text-fg">dadr/ledger/</code>,
+        <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs text-fg">dadr/archive/</code>,
         <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs text-fg">dadr/templates/</code>,
         <code class="rounded bg-bg px-1 py-0.5 font-mono text-xs text-fg">dadr/tasks/</code>,
         and

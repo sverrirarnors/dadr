@@ -316,7 +316,7 @@ export class RealApi implements DadrApi {
     return commandEnvelopeSchema(taskRunSchema).parse(await response.json()).data;
   }
 
-  async clearTaskHistory(): Promise<MutationResponse> {
+  async clearTaskRuns(): Promise<MutationResponse> {
     const response = await this.fetcher(`${this.baseUrl}/api/task-runs/clear`, {
       method: 'POST',
       headers: {

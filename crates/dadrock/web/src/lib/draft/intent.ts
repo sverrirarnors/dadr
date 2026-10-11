@@ -53,9 +53,9 @@ export function resolveDraftIntent(
     }
     case 'supersede': {
       const record = attached[0];
-      if (!record) return fail('Choose the decision to replace.');
+      if (!record) return fail('Choose the decision to supersede.');
       if (!text) return fail('Explain what changed and why.');
-      return ok('supersede-record', `Draft a replacement for “${record.title}”`, {
+      return ok('supersede-record', `Draft a successor for “${record.title}”`, {
         task_id: 'supersede-record',
         input: { record_id: record.id, reason: text },
         context: context({ records: [record.id], paths }),

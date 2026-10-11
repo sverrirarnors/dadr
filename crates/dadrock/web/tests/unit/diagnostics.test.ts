@@ -12,7 +12,7 @@ const diagnostics: Diagnostic[] = [
     severity: 'error',
     code: 'missing_front_matter',
     message: 'Missing front matter.',
-    path: 'dadr/candidates/0001-choice.md',
+    path: 'dadr/inbox/0001-choice.md',
     record_id: '0193fb1f-a3a0-7000-8000-000000000001',
     field: 'title',
     line: 7,
@@ -22,11 +22,11 @@ const diagnostics: Diagnostic[] = [
     severity: 'warning',
     code: 'stale_link',
     message: 'Link target is stale.',
-    path: 'dadr/accepted/0002-other.md',
+    path: 'dadr/ledger/0002-other.md',
     record_id: null,
     field: null,
     line: null,
-    related_paths: ['dadr/accepted/0001-choice.md'],
+    related_paths: ['dadr/ledger/0001-choice.md'],
   },
   {
     severity: 'info',
@@ -72,7 +72,7 @@ describe('diagnosticLocation', () => {
     expect(
       diagnosticLocation({
         ...diagnostics[0]!,
-        path: '/Users/vincent/repos/harvest_articles/dadr/accepted/019e14bec497-exclude-uncertain.md',
+        path: '/Users/vincent/repos/harvest_articles/dadr/ledger/019e14bec497-exclude-uncertain.md',
       }),
     ).toBe('019e14bec497-exclude-uncertain.md - line 7 - title');
   });

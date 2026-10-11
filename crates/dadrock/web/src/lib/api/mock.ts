@@ -24,7 +24,7 @@ import type {
 const fixture: Snapshot = {
   project: {
     cwd: '/tmp/dadr-mock',
-    decisions_dir: '/tmp/dadr-mock/dadr/accepted',
+    decisions_dir: '/tmp/dadr-mock/dadr/ledger',
     initialized: true,
     discovery_source: 'directory',
     status: 'Project discovered. Commands operate on the local decision records.',
@@ -37,7 +37,7 @@ const fixture: Snapshot = {
       title: 'Use Polars over pandas',
       status: 'accepted',
       superseded: true,
-      path: 'dadr/accepted/0001-use-polars.md',
+      path: 'dadr/archive/0001-use-polars.md',
       preview: 'Use Polars for tabular transformations.',
       tags: ['#dadr/data/processing'],
       timestamp_ms: 1730000000000,
@@ -49,7 +49,7 @@ const fixture: Snapshot = {
       title: 'Adopt pre-registration for studies',
       status: 'candidate',
       superseded: false,
-      path: 'dadr/candidates/0002-preregister.md',
+      path: 'dadr/inbox/0002-preregister.md',
       preview: 'Candidate decision for pre-registration practice.',
       tags: ['#dadr/methodology'],
       timestamp_ms: 1730000100000,
@@ -61,7 +61,7 @@ const fixture: Snapshot = {
       title: 'Use Polars lazy frames',
       status: 'accepted',
       superseded: false,
-      path: 'dadr/accepted/0003-use-polars-lazy.md',
+      path: 'dadr/ledger/0003-use-polars-lazy.md',
       preview: 'Use lazy frames for transformations that can benefit from deferred execution.',
       tags: ['#dadr/data/processing'],
       timestamp_ms: 1730000200000,
@@ -73,7 +73,7 @@ const fixture: Snapshot = {
       title: 'Use Arrow IPC snapshots',
       status: 'accepted',
       superseded: false,
-      path: 'dadr/accepted/0004-use-arrow-ipc.md',
+      path: 'dadr/ledger/0004-use-arrow-ipc.md',
       preview: 'Use Arrow IPC snapshots for portable intermediate data.',
       tags: ['#dadr/data/processing'],
       timestamp_ms: 1730000300000,
@@ -91,7 +91,7 @@ const fixture: Snapshot = {
         severity: 'warning',
         code: 'candidate_backlog',
         message: 'One candidate is waiting for review.',
-        path: 'dadr/candidates/0002-preregister.md',
+        path: 'dadr/inbox/0002-preregister.md',
         record_id: '0193fb1f-a3a0-7000-8000-000000000002',
         field: 'status',
         line: null,
@@ -107,7 +107,7 @@ const fixture: Snapshot = {
         severity: 'error',
         code: 'broken_markdown_link',
         message: 'A local Markdown link points at a missing note.',
-        path: 'dadr/accepted/0001-use-polars.md',
+        path: 'dadr/archive/0001-use-polars.md',
         record_id: '0193fb1f-a3a0-7000-8000-000000000001',
         field: './missing-note.md',
         line: 12,
@@ -147,7 +147,8 @@ const taskRuns: TaskRun[] = [];
 const taskResults = new Map<string, TaskResult>();
 const taskLogs = new Map<string, TaskRunLogEntry[]>();
 const taskRunPollsUntilSuccess = new Map<string, number>();
-const pendingReplacements = new Map<string, string>();
+/** Candidate id to the id of the decision its `## Supersedes` section names. */
+const pendingSupersedes = new Map<string, string>();
 const supersessionEdges = new Map<string, Set<string>>([
   [
     '0193fb1f-a3a0-7000-8000-000000000001',
@@ -176,7 +177,7 @@ function setMockInitialized(value: boolean) {
 }
 
 const uninitializedStatus =
-  'No Dadrock project found here. Initialize to create dadr/ with records, candidates, templates, tasks, and runs.';
+  'No Dadrock project found here. Initialize to create dadr/ with inbox, ledger, archive, templates, tasks, and runs.';
 
 const taskPackages: TaskPackage[] = [
   taskPackage('custom', 'Custom', 'Use a freeform prompt with selected records, files, folders, or notes when no dedicated DADR workflow fits.', 'markdown_report.v1', []),
@@ -205,7 +206,7 @@ const taskPackages: TaskPackage[] = [
     { name: 'record_id', label: 'Record', type: 'text', options: [], required: true },
     { name: 'requested_changes', label: 'Requested changes', type: 'textarea', options: [], required: true },
   ]),
-  taskPackage('supersede-record', 'Supersede record', 'Draft a replacement candidate for an accepted DADR when the project decision has changed.', 'supersession_proposal.v1', [
+  taskPackage('supersede-record', 'Supersede record', 'Draft a successor candidate for an accepted DADR when the project decision has changed.', 'supersession_proposal.v1', [
     { name: 'record_id', label: 'Record to supersede', type: 'text', options: [], required: true },
     { name: 'reason', label: 'Reason', type: 'textarea', options: [], required: true },
   ]),
@@ -239,7 +240,7 @@ function newCandidateRecord(title: string, tags: string[], body: string): Record
   const suffix = String(nextCandidate).padStart(12, '0');
   const id = `0193fb1f-a3a0-7000-8000-${suffix}`;
   nextCandidate += 1;
-  const path = `dadr/candidates/${suffix.slice(-4)}-${slugify(title)}.md`;
+  const path = `dadr/inbox/${suffix.slice(-4)}-${slugify(title)}.md`;
   const record: RecordSummary = {
     id,
     id_prefix: '0193fb1fa3a0',
@@ -371,7 +372,7 @@ function taskResultFor(request: RunTaskRequest): TaskResult {
             relationship: 'overlap',
             conflict_explanation:
               'Both records describe how intermediate data flows between steps without saying which one wins.',
-            suggested_actions: ['Replace one record with a combined decision.'],
+            suggested_actions: ['Supersede one record with a combined decision.'],
           },
         ],
       };
@@ -400,17 +401,20 @@ function taskResultFor(request: RunTaskRequest): TaskResult {
         body_markdown: `## Context\n${String(request.input.context ?? 'Task context.')}\n\n## Decision\nCreate a candidate from the supplied context.\n\n## Alternatives\nDo not record this decision.\n\n## Consequences\nThe candidate remains reviewable before acceptance.`,
         warnings: [],
       };
-    case 'supersede-record':
+    case 'supersede-record': {
+      const predecessorId = String(request.input.record_id ?? '');
+      const predecessor = mockRecords.find((record) => record.id === predecessorId);
+      const supersedes = predecessor ? `## Supersedes\n\n[[${predecessor.id}|${predecessor.title}]]\n\n` : '';
       return {
         kind: 'supersession_proposal.v1',
         summary: 'Mock supersession proposal.',
-        superseded_record_id: String(request.input.record_id ?? ''),
+        superseded_record_id: predecessorId,
         superseding_title: 'Superseding candidate',
-        superseding_body_markdown:
-          '## Context\nA previous decision needs replacement.\n\n## Decision\nSupersede the older record.\n\n## Alternatives\nKeep both records active.\n\n## Consequences\nThe ledger has one current decision for this issue.',
+        superseding_body_markdown: `${supersedes}## Context\nA previous decision needs a successor.\n\n## Decision\nSupersede the older record.\n\n## Alternatives\nKeep both records active.\n\n## Consequences\nThe ledger has one current decision for this issue.`,
         rationale: String(request.input.reason ?? 'No rationale supplied.'),
         suggested_actions: ['Write a candidate and review it.'],
       };
+    }
     case 'edit-record':
       return {
         kind: 'record_revision.v1',
@@ -521,9 +525,9 @@ export class MockApi implements DadrApi {
       message: 'created 8 paths, reused 0 paths',
       changed_paths: [
         'dadr',
-        'dadr/accepted',
-        'dadr/candidates',
-        'dadr/rejected',
+        'dadr/inbox',
+        'dadr/ledger',
+        'dadr/archive',
         'dadr/templates',
         'dadr/tasks',
         'dadr/runs',
@@ -563,7 +567,7 @@ export class MockApi implements DadrApi {
         record,
         predecessors,
         successors,
-        pending_supersedes: mockRecords.find((item) => item.id === pendingReplacements.get(record.id)) ?? null,
+        pending_supersedes: mockRecords.find((item) => item.id === pendingSupersedes.get(record.id)) ?? null,
         diagnostics: [],
       }),
     ) as RecordLifecycle;
@@ -604,8 +608,20 @@ export class MockApi implements DadrApi {
   }
 
   async createCandidate(request: CreateCandidateRequest): Promise<MutationResponse> {
-    const record = newCandidateRecord(request.title, request.tags, request.body_markdown);
-    if (request.supersedes) pendingReplacements.set(record.id, request.supersedes);
+    const predecessor = request.supersedes
+      ? mockRecords.find((item) => item.id === request.supersedes)
+      : undefined;
+    if (request.supersedes && (!predecessor || predecessor.status !== 'accepted' || predecessor.superseded)) {
+      throw new Error('a successor can supersede only a current accepted decision');
+    }
+    // Like Dadrock, write `## Supersedes` as the first section of the body,
+    // labeled with the predecessor's title, unless the draft already has one.
+    const body =
+      predecessor && !/^## Supersedes\s*$/m.test(request.body_markdown)
+        ? `## Supersedes\n\n[[${predecessor.id}|${predecessor.title.trim()}]]\n\n${request.body_markdown.trimStart()}`
+        : request.body_markdown;
+    const record = newCandidateRecord(request.title, request.tags, body);
+    if (predecessor) pendingSupersedes.set(record.id, predecessor.id);
     return {
       message: `created candidate ${record.id}`,
       changed_paths: [record.path],
@@ -655,6 +671,7 @@ export class MockApi implements DadrApi {
       return successor;
     });
     oldRecord.superseded = true;
+    oldRecord.path = oldRecord.path.replace('dadr/ledger/', 'dadr/archive/');
     const edges = supersessionEdges.get(oldRecord.id) ?? new Set<string>();
     for (const successor of successors) {
       edges.add(successor.id);
@@ -751,13 +768,13 @@ export class MockApi implements DadrApi {
     return JSON.parse(JSON.stringify(run)) as TaskRun;
   }
 
-  async clearTaskHistory(): Promise<MutationResponse> {
+  async clearTaskRuns(): Promise<MutationResponse> {
     taskRuns.splice(0, taskRuns.length);
     taskResults.clear();
     taskLogs.clear();
     taskRunPollsUntilSuccess.clear();
     return {
-      message: 'Task history cleared.',
+      message: 'Agent runs cleared.',
       changed_paths: ['/tmp/dadr-mock/dadr/runs'],
       snapshot: await this.getSnapshot(),
     };
@@ -771,18 +788,19 @@ export class MockApi implements DadrApi {
     if (!record) {
       throw new Error(`mock record ${id} not found`);
     }
-    if (status === 'accepted' && pendingReplacements.has(id)) {
-      const old = mockRecords.find((item) => item.id === pendingReplacements.get(id));
+    if (status === 'accepted' && pendingSupersedes.has(id)) {
+      const old = mockRecords.find((item) => item.id === pendingSupersedes.get(id));
       if (!old || old.status !== 'accepted' || old.superseded) throw new Error('Previous decision is no longer current');
       old.superseded = true;
+      old.path = old.path.replace('dadr/ledger/', 'dadr/archive/');
       supersessionEdges.set(old.id, new Set([id]));
-      pendingReplacements.delete(id);
+      pendingSupersedes.delete(id);
     }
     record.status = status;
     record.path =
       status === 'accepted'
-        ? record.path.replace('dadr/candidates/', 'dadr/accepted/')
-        : record.path.replace('dadr/candidates/', 'dadr/rejected/');
+        ? record.path.replace('dadr/inbox/', 'dadr/ledger/')
+        : record.path.replace('dadr/inbox/', 'dadr/archive/');
     return {
       message: `${status === 'accepted' ? 'accepted' : 'rejected'} candidate ${record.id}`,
       changed_paths: [record.path],

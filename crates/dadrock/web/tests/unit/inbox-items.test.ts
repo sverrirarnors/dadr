@@ -19,7 +19,7 @@ function record(id: string, status: RecordSummary['status'], title: string, time
 
 const emptyPanel = { counts: {}, diagnostics: [] };
 const snapshot: Snapshot = {
-  project: { cwd: '/p', decisions_dir: '/p/dadr/accepted', initialized: true, discovery_source: 'directory', status: '' },
+  project: { cwd: '/p', decisions_dir: '/p/dadr/ledger', initialized: true, discovery_source: 'directory', status: '' },
   records: [
     record('acc-1', 'accepted', 'Use Polars'),
     record('cand-old', 'candidate', 'Older candidate', 10),
@@ -37,7 +37,7 @@ const snapshot: Snapshot = {
   link_health: {
     counts: {},
     diagnostics: [
-      { severity: 'error', code: 'broken_link', message: 'Broken link.', path: 'dadr/accepted/acc-1.md', record_id: 'acc-1', field: null, line: 3, related_paths: [] },
+      { severity: 'error', code: 'broken_link', message: 'Broken link.', path: 'dadr/ledger/acc-1.md', record_id: 'acc-1', field: null, line: 3, related_paths: [] },
     ],
   },
   settings: {
@@ -105,7 +105,7 @@ describe('buildInboxGroups', () => {
     const results = {
       'r-batch': { kind: 'candidate_batch.v1', summary: '', candidates: [{ id: 'a', title: 'Keep', tags: [], body_markdown: 'x', warnings: [] }, { id: 'b', title: 'Gone', tags: [], body_markdown: 'y', warnings: [] }] },
     };
-    const resolved = ['proposal:r-batch:b', 'issue:Links:broken_link:dadr/accepted/acc-1.md:acc-1::3:Broken link.'];
+    const resolved = ['proposal:r-batch:b', 'issue:Links:broken_link:dadr/ledger/acc-1.md:acc-1::3:Broken link.'];
     const items = flattenInboxGroups(buildInboxGroups({ snapshot, runs, results, resolved }));
     expect(items.filter((item) => item.kind === 'proposal').map((item) => item.title)).toEqual(['Keep']);
     expect(items.filter((item) => item.kind === 'issue').map((item) => item.title)).toEqual(['No tag catalog.']);

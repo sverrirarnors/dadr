@@ -14,7 +14,7 @@
 
   type Props = {
     mode: DraftMode;
-    /** The decision being replaced in supersede mode. */
+    /** The decision being superseded in supersede mode. */
     record?: RecordSummary | undefined;
     agentAvailable: boolean;
     onuseagent: () => void;
@@ -83,7 +83,7 @@
 >
   {#if mode === 'supersede'}
     <Alert variant="info">
-      Accepting this replacement will link it to the previous decision and keep the previous explanation as history.
+      Accepting this successor supersedes the previous decision, which moves to the archive unchanged.
     </Alert>
   {/if}
 

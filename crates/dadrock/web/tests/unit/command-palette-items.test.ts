@@ -14,7 +14,7 @@ const records: RecordSummary[] = [
     title: 'Use Polars over pandas',
     status: 'accepted',
     superseded: false,
-    path: 'dadr/accepted/0001-use-polars.md',
+    path: 'dadr/ledger/0001-use-polars.md',
     preview: 'Use Polars for tabular transforms.',
     tags: ['#dadr/data/processing'],
     timestamp_ms: 1730000000000,

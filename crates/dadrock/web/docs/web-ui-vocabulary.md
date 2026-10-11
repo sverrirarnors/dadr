@@ -7,11 +7,20 @@ Dadrock's web UI should feel dense, quiet, and utilitarian: closer to an editor 
 There are three places, all in the header with an icon before the word. Everything else is a popover or a redirect.
 
 - **Inbox** (`/inbox`, the home route): everything that needs a human decision. Candidates, agent proposals, proposed revisions, conflicts, reports, and validation issues are one grouped list; the selected item's detail sits beside it. Empty is the success state ("Inbox zero").
-- **Ledger** (`/ledger`, `/ledger/<id>`): what has been decided. Accepted records by default; a "Show history" toggle reveals superseded and rejected records. One search box, a tag facet, and the record detail with its supersession chain.
+- **Ledger** (`/ledger`, `/ledger/<id>`): what has been decided. Current decisions (`dadr/ledger/`) by default; a "Show archived" toggle (`?archived=1`) adds the archived records (`dadr/archive/`: superseded and rejected). One search box, a tag facet, and the record detail with its supersession chain.
 - **Draft** (`/draft`): a full page, reached from the header or from a record. One text area plus attachments (files, folders, records). Where it was opened from and what is attached decide which built-in task runs (`$lib/draft/intent.ts`). Results land in the Inbox. Pages open it with `composer.show(prefill)`, which stores the prefill and navigates.
-- **Project gear**: the project name in the header opens a popover with the root path, the agent, and the few project-level actions. There is no settings page.
+- **Project gear**: the project name in the header opens a popover with the root path, the agent, and the few project-level actions (Validate now, Clear agent runs). There is no settings page.
+
+The places follow the project folders: candidates in the Inbox live in `dadr/inbox/`, and the Ledger lists `dadr/ledger/` and, on request, `dadr/archive/`.
 
 Legacy routes (`/records`, `/candidates/*`, `/tasks`, `/validation`, `/tags`, `/settings`, `/audit`, `/links`) redirect through `$lib/navigation/legacy.ts`.
+
+## Words
+
+- **Supersede** is the only verb for one record taking the place of another: "Supersede “X”", "Supersedes “X”", "Superseded by". Never "replace" or "replacement".
+- **Successor** and **predecessor** name the newer and older record of a supersession, including a successor that is still a candidate.
+- **Archived** means rejected or superseded: kept, but not in force.
+- **History** means only the chain of versions of one decision. Do not use it for the archive or for agent runs, which are "runs".
 
 ## Page Structure
 
@@ -34,7 +43,7 @@ Legacy routes (`/records`, `/candidates/*`, `/tasks`, `/validation`, `/tags`, `/
 - `StatusPanel`: live task, validation, or operation status with optional expandable detail.
 - `PanelSection`: repeated section panels inside a pane when the content is not large enough to be its own `WorkbenchPane`.
 - `KeyValueGrid`: compact settings, environment, and diagnostic facts.
-- `ListRow`: selectable rows in lists and history views.
+- `ListRow`: selectable rows in lists.
 - `StackedCard`: repeated result, diagnostic, or issue cards. Use the openable form for folded result stacks.
 - `DisclosureRow`: expandable rows in stacked result output.
 - `Alert`: errors, warnings, and important neutral notices.
@@ -46,7 +55,7 @@ Legacy routes (`/records`, `/candidates/*`, `/tasks`, `/validation`, `/tags`, `/
 ## Patterns
 
 - One visible button per verb. The redesign removed the dropdown menus; do not reintroduce `ActionMenu` for primary actions.
-- Every item in the Inbox has at most three actions, named by what they do: Accept, Reject, Edit, Revise with agent; Save as candidate, Discard; Apply, Discard; Merge, Replace, Dismiss; Open record, Fix with agent, Dismiss.
+- Every item in the Inbox has at most three actions, named by what they do: Accept, Reject, Edit, Revise with agent; Save as candidate, Discard; Apply, Discard; Merge, Supersede, Dismiss; Open record, Fix with agent, Dismiss.
 - Agent work is a verb on a thing, never a destination. Opening the composer with a record attached is how "ask the agent" works; a run's log is a detail of the running item in the Inbox.
-- Dismissed and consumed Inbox items are remembered per browser in `$lib/stores/resolved.svelte.ts`; clearing the agent history (project gear) forgets them.
+- Dismissed and consumed Inbox items are remembered per browser in `$lib/stores/resolved.svelte.ts`; Clear agent runs (project gear) deletes `dadr/runs/` and forgets them.
 - Record and candidate detail share `RecordDetailPanel` with a `surface` prop, because candidates are records filtered by status.
