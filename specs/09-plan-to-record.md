@@ -54,7 +54,8 @@ The task should combine multiple signals:
 
 Future plan-derived candidates should add:
 
-- `origin/plan-to-record` or another project-approved origin tag;
+- `writer/agent`, the recommended provenance tag
+  ([`docs-src/tags.md`](../docs-src/tags.md#other-namespaces));
 - `plan/<id>` when the plan id is known;
 - a source link to the relevant plan section;
 - a bounded excerpt or fingerprint of the plan text;

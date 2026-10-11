@@ -1,5 +1,11 @@
 # Dadrock Screencast Specification
 
+## Status
+
+Recording plan. The screencasts have not been recorded. The demo examples
+below exist (`dadrock demo --example <name>`); the episodes use the web UI's
+Inbox, Ledger, Draft page, and project gear.
+
 ## Recording Rules
 
 - Every recording is UI-only. Do not show terminal setup, command-line help, or
@@ -20,7 +26,7 @@
 | `lifecycle` | Default DADR lifecycle showcase with accepted, candidate, rejected, superseded, split, consolidated, tagged, and linked records | Workbench tour, candidate review, supersession, tags/search/navigation |
 | `candidate-review` | Focused five-candidate queue with strong, weak, editable, agent-origin, and low-confidence records | Create/review first candidates, edit-record |
 | `penguins` | Realistic Python analysis target for `code-to-record` | Code-to-record, path picker, task results |
-| `broken` | Lifecycle-style project with intentional validation defects | Validation queue and repair |
+| `broken` | Lifecycle-style project with intentional validation defects | Validation issues in the Inbox and repair |
 | `conflicts` | Lifecycle-style project with overlapping and contradictory candidates | Find conflicts, merge records, supersession follow-up |
 | `task-history` | Lifecycle/conflict project with persisted successful task runs for all important output kinds | Agent runs and typed result rendering |
 
@@ -41,13 +47,13 @@ data.
 1. **Initialize a project and create the first candidate**
    Start from an uninitialized folder in the UI. Use the initialize action and
    continue into candidate creation. Add tags, fill the four standard sections,
-   save the candidate, and show it in the candidate queue.
+   save the candidate, and show it in the Inbox.
 
 2. **Review a candidate and tour the workbench**
    Use the `candidate-review` example. Edit a candidate, run validation if
    visible, accept a strong candidate, and reject a weak one. While moving
-   through the review, show record filters, status views, the detail pane, tags,
-   links, validation entry points, settings, and task navigation.
+   through the review, show the Ledger's search, tag facet, and archived
+   toggle, the detail pane, tags, links, the project gear, and the Draft page.
 
 3. **Context to record**
    Use a populated lifecycle project. Paste a short analysis note or reviewer
@@ -64,8 +70,9 @@ data.
    accept the successor if needed, and show the old record as superseded.
 
 6. **Validation and repair**
-   Use `broken`. Open the validation queue, inspect issues, repair one missing
-   required section or malformed field, and rerun validation.
+   Use `broken`. Open the validation issues in the Inbox, repair one missing
+   required section or malformed field, and rerun validation from the project
+   gear.
 
 7. **Find conflicts**
    Use `conflicts`. Run conflict detection, inspect duplicate or contradictory

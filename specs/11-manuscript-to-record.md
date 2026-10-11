@@ -59,7 +59,8 @@ The task should combine multiple signals:
 
 Future manuscript-derived candidates should add:
 
-- `origin/manuscript-to-record` or another project-approved origin tag;
+- `writer/agent`, the recommended provenance tag
+  ([`docs-src/tags.md`](../docs-src/tags.md#other-namespaces));
 - source file, line, section, caption, or paragraph reference;
 - the surrounding sentence or a bounded excerpt when useful;
 - `confidence/low`, `confidence/medium`, or `confidence/high`;
