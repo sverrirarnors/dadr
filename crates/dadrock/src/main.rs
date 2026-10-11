@@ -1,4 +1,4 @@
-use std::process::ExitCode;
+use std::{io::Write, process::ExitCode};
 
 use anyhow::{bail, Context, Result};
 use clap::{CommandFactory, Parser};
@@ -480,6 +480,12 @@ fn task_list(args: cli::JsonArg) -> Result<ExitCode> {
 
 fn task_show(args: cli::TaskShowArgs) -> Result<ExitCode> {
     let envelope = core_commands::show_task_command(&command_context()?, &args.task_id)?;
+    if args.raw {
+        let mut stdout = std::io::stdout().lock();
+        stdout.write_all(envelope.data.document.as_bytes())?;
+        stdout.flush()?;
+        return Ok(envelope_exit_code(&envelope));
+    }
     print_envelope(&envelope, args.json, |task| {
         print_task_package(task);
         Ok(())

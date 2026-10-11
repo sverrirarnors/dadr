@@ -576,6 +576,7 @@ Show one resolved task package.
 ###### **Options:**
 
 * `--json`
+* `--raw` — Print the task file exactly as written, front matter included
 
 
 

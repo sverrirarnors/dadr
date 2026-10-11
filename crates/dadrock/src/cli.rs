@@ -432,6 +432,9 @@ pub struct TaskShowArgs {
     pub task_id: String,
     #[arg(long)]
     pub json: bool,
+    /// Print the task file exactly as written, front matter included.
+    #[arg(long, conflicts_with = "json")]
+    pub raw: bool,
 }
 
 #[derive(Debug, Args)]
@@ -911,6 +914,38 @@ mod tests {
         };
         assert_eq!(args.task_id, "find-conflicts");
         assert!(!args.json);
+        assert!(!args.raw);
+    }
+
+    #[test]
+    fn parses_task_show_raw() {
+        let cli =
+            Cli::try_parse_from(["dadrock", "task", "show", "code-to-record", "--raw"]).unwrap();
+
+        let Some(Command::Task(TaskArgs {
+            command: TaskCommand::Show(args),
+        })) = cli.command
+        else {
+            panic!("expected task show command");
+        };
+        assert_eq!(args.task_id, "code-to-record");
+        assert!(args.raw);
+        assert!(!args.json);
+    }
+
+    #[test]
+    fn rejects_task_show_raw_with_json() {
+        let error = Cli::try_parse_from([
+            "dadrock",
+            "task",
+            "show",
+            "code-to-record",
+            "--raw",
+            "--json",
+        ])
+        .unwrap_err();
+
+        assert_eq!(error.kind(), clap::error::ErrorKind::ArgumentConflict);
     }
 
     #[test]

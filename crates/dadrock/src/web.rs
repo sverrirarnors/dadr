@@ -1797,6 +1797,46 @@ mod tests {
     }
 
     #[test]
+    fn supersession_proposal_tags_reach_the_successor_candidate() {
+        let root = temp_root("proposal-tags");
+        let old = accepted_decision(&root, "Complete-case sample");
+        let result = dadrock::tasks::validate_task_output(
+            dadrock::tasks::TaskOutputKind::SupersessionProposalV1,
+            serde_json::json!({
+                "kind": "supersession_proposal.v1",
+                "summary": "Narrow the rule.",
+                "superseded_record_ids": [old],
+                "superseding_title": "Model-specific complete cases",
+                "tags": ["kind/sample", "writer/agent"],
+                "superseding_body_markdown": SECTIONS,
+                "rationale": "The broad rule drops too many rows.",
+            }),
+        )
+        .unwrap();
+        // The fields the inbox sends when it saves a proposal (ProposalDetail.svelte).
+        let successor = create_candidate(
+            &root,
+            serde_json::json!({
+                "title": result["superseding_title"],
+                "tags": result["tags"],
+                "body_markdown": result["superseding_body_markdown"],
+                "supersedes": result["superseded_record_ids"],
+                "supersedes_reason": result["rationale"],
+            }),
+        );
+        let tags = serde_json::json!(["kind/sample", "writer/agent"]);
+        let candidate = json(record_lifecycle(&root, &successor).unwrap());
+        assert_eq!(candidate["record"]["tags"], tags);
+        assert_eq!(candidate["pending_supersedes"][0]["id"], old);
+
+        accept_candidate(&post("", ""), &root, &successor).unwrap();
+        let accepted = json(record_lifecycle(&root, &successor).unwrap());
+        assert_eq!(accepted["record"]["status"], "accepted");
+        assert_eq!(accepted["record"]["tags"], tags);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn accept_endpoint_accepts_a_split_with_more_candidates() {
         let root = temp_root("split");
         let old = accepted_decision(&root, "Listwise deletion");
