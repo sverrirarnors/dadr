@@ -94,7 +94,6 @@ The specification also describes `#dadr/` annotations in code comments. DADRock 
 
 These conventions describe future tooling; DADRock does not yet scan source comments.
 
-
 In source-code comments, prefix tags with `#dadr/`. The same namespaces apply:
 
 | Pattern | Meaning |
