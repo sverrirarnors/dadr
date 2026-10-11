@@ -2,10 +2,15 @@
 
 ## Status
 
-In progress (Kata epic `dadr#zfgm`). When it lands, the format change moves
-into [`docs-src/specification.md`](../docs-src/specification.md), the Dadrock
-behavior into [`docs-src/dadrock.md`](../docs-src/dadrock.md), and this file is
+In progress (Kata epic `dadr#zfgm`). When it lands, the Dadrock behavior is
+documented in [`docs-src/dadrock/`](../docs-src/dadrock/) and this file is
 removed.
+
+Revised 2026-10-11 (`dadr#gk69`): an earlier draft froze accepted records, so
+that every edit, even a spelling fix, became a new version. That was dropped.
+Records are plain files that people edit outside any tool, nobody writes notes
+or commit messages by hand, and a freeze pushes corrections out of sight.
+Decision history is supersession; text history is Git.
 
 Before this work, the Ledger let a reviewer edit an accepted record in place
 (**Edit** and **Revise with agent**, both saved through `save_record_source`),
@@ -15,22 +20,29 @@ record detail showed only the immediate predecessors and successors.
 
 ## Purpose
 
-Make every change to a decision a new record, and show a decision's history as
-its chain of versions with the differences between them, the way `git log -p`
+Make every change of decision a new record, keep corrections in place, and show
+a decision's history as its chain of versions with the differences between
+them, plus the text edits Git recorded for each version, the way `git log -p`
 shows the history of a file. Splits (one decision superseded by several) and
 merges (several superseded by one) are part of the same model.
 
 ## Principles
 
-- **Every change is a new version.** The title and body of an accepted record
-  never change. Editing a decision drafts a successor candidate, which a human
-  accepts or rejects like any other candidate. There is no exception for small
-  corrections: a spelling fix is a new version too.
+- **Every change of decision is a new version.** Changing what was decided
+  means drafting a successor candidate, which a human accepts or rejects like
+  any other candidate.
+- **Corrections stay in place.** Fixing spelling, formatting, links, or
+  citations edits the record itself: same id, nothing to write, as §6.3 of the
+  specification already allows. The line between a correction and a change of
+  decision is a judgment that no rule can make, so the tools make every edit
+  visible instead of forbidding it.
 - **Versions, not patches.** Each record stays a complete record that reads on
   its own. Diffs are computed when shown and never stored.
-- **The history lives in the record set.** It is derived from `successors`,
-  needs no new front-matter key, and can be read without Git. Git is needed
-  only for the integrity check.
+- **Decision history lives in the record set; text history lives in Git.**
+  Supersession is derived from `successors`, needs no new front-matter key, and
+  can be read without Git. Edits to a record's text are read from Git and shown,
+  never copied into records.
+- **Agents never edit accepted text.** They only propose successors.
 - **The reason travels with the change.** The successor's `## Supersedes`
   section says why the decision changed, like a commit message.
 - **Folders follow the workflow.** What needs a decision, what is in force, and
@@ -46,31 +58,23 @@ merges (several superseded by one) are part of the same model.
 | Inbox / `dadr/inbox/` | Records waiting for a human decision: candidates. |
 | Ledger / `dadr/ledger/` | Decisions in force: accepted records without successors. |
 | archive / `dadr/archive/` | Records kept but not in force: rejected records and superseded records. |
-| history | Only the chain of versions of one decision. |
+| history | One decision's chain of versions, with the text edits Git recorded for each. |
 
 In the web UI the Ledger's toggle reads **Show archived**, and the project
 popover's **Clear agent history** reads **Clear agent runs** (task runs live
 in `dadr/runs/`).
 
-## Proposed change to the format
+## The format
 
-Replace the text of §6.3 Immutability with:
+§6.3 Immutability keeps its wording: `id` and `status` never change, entries
+are never removed from `successors`, and the meaning of the title and body
+never changes; corrections that leave the meaning intact are allowed, and
+changing a decision means superseding it. One sentence is added after "The
+second requires a reviewer's judgment.":
 
-> Candidates MAY be edited freely. Once a record is accepted or rejected:
->
-> - its `id`, `status`, `title`, and body MUST NOT change;
-> - entries MUST NOT be removed from `successors`.
->
-> `tags` and keys outside DADR MAY change, and an accepted record gains
-> `successors` entries when it is superseded. To change a decision, however
-> slightly, create a new candidate, accept it, and supersede the old record.
->
-> These rules can be checked mechanically, for example against
-> version-control history.
+> Tools can support that judgment by listing edits to accepted records, for
+> example from version-control history.
 
-The current text lets accepted records take corrections that keep their
-meaning, which needs a reviewer's judgment; the new text does not. Freezing
-rejected records follows from §6.1, which already treats rejection as final.
 §6.2 needs no change: `successors` is already many-to-many and acyclic. The
 format names no directories, so the layout below is Dadrock's alone.
 
@@ -95,21 +99,19 @@ format names no directories, so the layout below is Dadrock's alone.
 
 ## Editing records
 
-- **Candidates** are edited freely, as today.
-- **Accepted records:** **Edit** opens a full-page successor draft pre-filled
-  with the record's exact title, body, and tags, plus a `## Supersedes` section
-  linking the record, with the reason left for the analyst to write. Saving
-  creates a candidate in the Inbox; the accepted record does not change.
-  Because the starting text is identical, the diff shows only what changed.
-  **Revise with agent** runs `supersede-record`. Tags stay editable in place.
-- **Rejected records** have no **Edit** or **Revise**. Revisiting one means
-  drafting a new, unlinked candidate.
-- Every server-side write path (`save_record_source`, applying an agent
-  revision, MCP) refuses to change the `id`, `status`, `title`, or body of an
-  accepted or rejected record, or to change its `successors` other than through
-  supersession. Body comparison normalizes line endings. `tags` and keys
-  outside DADR may change.
-- `edit-record` only targets candidates.
+- **Edit** works in place on every record: candidates freely; accepted,
+  rejected, and superseded records for corrections. The save path refuses to
+  change `id`, `status`, or `successors` (supersession adds successors), and an
+  accepted record keeps its four required sections. Title, body, tags, and keys
+  outside DADR may change. Line endings are normalized when comparing.
+- **Supersede** on a decision in force opens a full-page successor draft
+  pre-filled with the record's exact title, body, and tags, plus a
+  `## Supersedes` section linking the record and an optional reason. Because
+  the starting text is identical, the diff shows only what changed.
+- **Revise with agent** on a decision in force runs `supersede-record`; on a
+  candidate it runs `edit-record`. Archived records have no **Supersede** or
+  **Revise**. Agents never edit accepted text: `edit-record` only targets
+  candidates, and no MCP tool rewrites a record's text.
 - `supersede-record` takes one or more predecessors (several for a merge). Its
   prompt starts from the predecessor's text and changes only what the request
   requires; it does not rewrite Context to narrate the supersession. Its output
@@ -184,7 +186,24 @@ For a record R:
   from the successor's `## Supersedes` section;
 - **neighbors**: records at the other end of a link that are not versions (the
   other half of a split, the other input of a merge), shown as one-line entries
-  without their own history.
+  without their own history;
+- **text edits**: for each version, the edits Git recorded to its title or body
+  since it was accepted or rejected, newest first.
+
+### Text edits from Git
+
+- Read with `git log --follow` on the version's file, which follows the moves
+  between `inbox/`, `ledger/`, and `archive/`. The baseline is the earliest
+  commit in which the file's front matter says `accepted` or `rejected`; every
+  later commit whose title or body (without `## Supersedes`, line endings
+  normalized) differs from the previous commit's is an edit. Changes to tags,
+  `successors`, or the folder alone are not edits.
+- An uncommitted change in the working tree (title or body differing from
+  `HEAD`) is listed first, without a commit.
+- Each edit has the commit (full and short hash), author, author date (ISO 8601,
+  from Git), subject, which of title and body changed, and with `--patch` the
+  diff. Candidates have no edits. Outside a Git repository, or without `git`,
+  `edits` is null and everything else works.
 
 The history is marked at the opened version. Along a chain, opening any
 version shows the same versions; across a split or a merge, the branches that
@@ -218,9 +237,14 @@ dadrock diff OLD NEW             # compare any two records
 Both are read-only `dadrock::commands` functions returning a `CommandEnvelope`,
 listed in `commands::COMMANDS`, and available through the web API
 (`/api/records/{id}/history`) and MCP. The JSON form lists `versions` (id,
-short id, title, status, superseded, current, path, tags, and body without
-`## Supersedes`), `links` (predecessor, successor, reason, and with `--patch`
-the diff lines), and `neighbors` (summaries).
+short id, title, status, superseded, current, path, tags, body without
+`## Supersedes`, and `edits`), `links` (predecessor, successor, reason, and with
+`--patch` the diff lines), and `neighbors` (summaries). Each edit is
+`{commit, short_commit, author, date, subject, title_changed, body_changed}`
+plus `diff` with `--patch`; `commit`, `short_commit`, `author`, `date`, and
+`subject` are null for the uncommitted working-tree edit. In text output, a
+version with edits gets a line such as `edited 2 times since accepted (latest
+2026-10-01, Alice)`, and `--patch` prints each edit's diff.
 
 A split whose predecessor had an earlier version:
 
@@ -251,33 +275,46 @@ A merge:
   where the reviewer selects which to accept together. Stale successor
   candidates are flagged with a **Retarget** action.
 - **Ledger.** Every record has a **History** view, replacing the one-step
-  predecessor and successor links. The **Show archived** toggle lists archived
-  records of every decision; the History view shows the versions of one.
+  predecessor and successor links, with each version's text edits (date,
+  author, subject, expandable diff; "not committed yet" for working-tree
+  edits). A record edited since acceptance is marked as such. The **Show
+  archived** toggle lists archived records of every decision; the History view
+  shows the versions of one.
+- **Record actions.** **Edit** in place on every record, with a note on
+  accepted and archived records that corrections stay in the record and show
+  in History, and that changing the decision means **Supersede**. **Supersede**
+  (decisions in force only) opens the pre-filled successor draft.
 
-## Integrity check: a Git diff
+## Git check: `dadrock validate changes`
 
 ```bash
 dadrock validate changes                       # working tree against HEAD
 dadrock validate changes --staged              # index against HEAD (pre-commit)
 dadrock validate changes --base origin/main    # CI
+dadrock validate changes --strict              # text edits are errors too
 ```
 
-- For each record file under `dadr/` that changed between the base revision and
-  the working tree (or the index with `--staged`), with rename detection: if
-  the file was accepted or rejected at the base, its `id`, `status`, `title`,
-  and body must be unchanged, and its `successors` must still contain every
-  earlier entry. `tags` and keys outside DADR may differ.
-- A violation is an error that names the record and suggests drafting a
-  successor. Deleting an accepted or rejected record is a warning.
-- Comparing each change with the previous revision is enough when every change
-  is checked: the invariant carries forward.
+For each record file under `dadr/` that changed between the base revision and
+the working tree (or the index with `--staged`), with rename detection, and
+that was accepted or rejected at the base:
+
+- **Errors:** a changed `id` or `status`, a removed `successors` entry, or a
+  file that no longer parses.
+- **Warnings, with the diff:** a changed title (`record_title_edited`) or body
+  (`record_body_edited`). They appear in CI logs and pull-request checks so a
+  reviewer can tell a correction from a change of decision, without blocking.
+  The text output prints the diff under the warning; the JSON issue carries it.
+  `--strict` makes them errors, for projects that want accepted text frozen.
+  There is no project configuration file; CI and hooks pass the flag.
+- Deleting an accepted or rejected record is a warning.
 - Outside a Git repository the command fails with a clear message; ordinary
   validation is unchanged.
 
-Considered and set aside: a digest in front matter (recomputable by whoever
-edits the body, noise in a hand-written format, missing on records accepted by
-hand) and a lockfile of digests (new ids sort last, so branches that each
-accept a record conflict).
+Considered and set aside: freezing accepted text by default (see Status), a
+`## Corrections` section written by hand or generated (people do not write
+notes; generated entries duplicate Git), classifying an edit by the section it
+touches (surprising), and a digest in front matter (says that the text changed
+but not how, flags every correction).
 
 ## Open questions
 
