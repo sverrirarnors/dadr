@@ -42,12 +42,41 @@ fn assert_success(output: &Output) {
     );
 }
 
-/// The one record `dadrock list` finds for `--tag` and `--query`.
-fn listed_record(root: &Path, tag: &str, query: &str) -> serde_json::Value {
-    let output = run(root, &["list", "--tag", tag, "--query", query, "--unique"]);
+/// The one record `dadrock list <filters>` finds.
+fn unique_record(root: &Path, filters: &[&str]) -> serde_json::Value {
+    let mut args = vec!["list", "--unique"];
+    args.extend(filters);
+    let output = run(root, &args);
     assert_success(&output);
     let envelope: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     envelope["data"][0].clone()
+}
+
+/// The one record `dadrock list` finds for `--tag` and `--query`.
+fn listed_record(root: &Path, tag: &str, query: &str) -> serde_json::Value {
+    unique_record(root, &["--tag", tag, "--query", query])
+}
+
+#[test]
+fn help_after_an_unquoted_query_shows_help_instead_of_running() {
+    let root = temp_project("reject-help");
+    assert_success(&run(&root, &["new", "Drop", "missing", "rows"]));
+
+    let output = run(&root, &["reject", "Drop", "missing", "--help"]);
+    assert_success(&output);
+    assert!(
+        stdout(&output).contains("Usage: dadrock reject"),
+        "{}",
+        stdout(&output)
+    );
+    let record = unique_record(&root, &["--query", "Drop missing rows"]);
+    assert_eq!(record["status"], "candidate");
+
+    assert_success(&run(&root, &["reject", "Drop", "missing", "rows"]));
+    let record = unique_record(&root, &["--query", "Drop missing rows"]);
+    assert_eq!(record["status"], "rejected");
+
+    fs::remove_dir_all(root).unwrap();
 }
 
 #[test]

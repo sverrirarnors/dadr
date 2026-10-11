@@ -86,7 +86,7 @@ impl Default for Command {
 #[derive(Debug, Args)]
 pub struct HelpArgs {
     /// The command to describe, such as `validate changes`.
-    #[arg(num_args = 0.., trailing_var_arg = true)]
+    #[arg(num_args = 0..)]
     pub topic: Vec<String>,
 }
 
@@ -248,7 +248,7 @@ pub struct StatusArgs {
     pub command: Option<StatusCommand>,
     /// The record to inspect: full id, id prefix, filename, or title; the
     /// words join into one query.
-    #[arg(num_args = 0.., trailing_var_arg = true)]
+    #[arg(num_args = 0..)]
     pub query: Vec<String>,
 }
 
@@ -270,7 +270,7 @@ pub enum StatusCommand {
 pub struct QueryArgs {
     /// The candidate: full id, id prefix, filename, or title; the words join
     /// into one query.
-    #[arg(required = true, num_args = 1.., trailing_var_arg = true)]
+    #[arg(required = true, num_args = 1..)]
     pub query: Vec<String>,
 }
 
@@ -456,7 +456,7 @@ pub struct AgentDraftArgs {
     #[arg(long = "no-mcp")]
     pub no_mcp: bool,
     /// The decision to draft; the words join into one prompt.
-    #[arg(required = true, num_args = 1.., trailing_var_arg = true)]
+    #[arg(required = true, num_args = 1..)]
     pub prompt: Vec<String>,
 }
 
@@ -689,6 +689,95 @@ mod tests {
 
         assert!(Cli::try_parse_from(["dadrock", "new", "-1", "codes", "missing"]).is_err());
         assert!(Cli::try_parse_from(["dadrock", "new", "--quiet"]).is_err());
+    }
+
+    #[test]
+    fn parses_agent_draft_options_after_the_prompt() {
+        let cli = Cli::try_parse_from([
+            "dadrock", "agent", "draft", "Drop", "missing", "rows", "--write", "--json",
+        ])
+        .unwrap();
+        let Some(Command::Agent(AgentArgs {
+            command: AgentCommand::Draft(args),
+        })) = cli.command
+        else {
+            panic!("expected agent draft command");
+        };
+        assert_eq!(args.prompt, ["Drop", "missing", "rows"]);
+        assert!(args.write);
+        assert!(args.json);
+
+        let cli = Cli::try_parse_from([
+            "dadrock",
+            "agent",
+            "draft",
+            "--permission",
+            "allow-once",
+            "x",
+            "--write",
+        ])
+        .unwrap();
+        let Some(Command::Agent(AgentArgs {
+            command: AgentCommand::Draft(args),
+        })) = cli.command
+        else {
+            panic!("expected agent draft command");
+        };
+        assert_eq!(args.prompt, ["x"]);
+        assert!(args.write);
+        assert!(matches!(args.permission, PermissionPolicyArg::AllowOnce));
+    }
+
+    #[test]
+    fn free_text_arguments_stop_at_help() {
+        for args in [
+            &["dadrock", "reject", "Use", "imputation", "--help"][..],
+            &["dadrock", "status", "reject", "Use", "imputation", "--help"][..],
+            &["dadrock", "status", "Use", "imputation", "--help"][..],
+            &["dadrock", "agent", "draft", "Drop", "rows", "--help"][..],
+            &["dadrock", "help", "validate", "--help"][..],
+        ] {
+            let error = Cli::try_parse_from(args).unwrap_err();
+            assert_eq!(error.kind(), ErrorKind::DisplayHelp, "{args:?}");
+        }
+    }
+
+    #[test]
+    fn free_text_words_join_into_one_query() {
+        let cli = Cli::try_parse_from(["dadrock", "reject", "Use", "imputation"]).unwrap();
+        let Some(Command::Reject(args)) = cli.command else {
+            panic!("expected reject command");
+        };
+        assert_eq!(args.joined(), "Use imputation");
+
+        let cli =
+            Cli::try_parse_from(["dadrock", "status", "reject", "Use", "imputation"]).unwrap();
+        let Some(Command::Status(StatusArgs {
+            command: Some(StatusCommand::Reject(args)),
+            ..
+        })) = cli.command
+        else {
+            panic!("expected status reject command");
+        };
+        assert_eq!(args.joined(), "Use imputation");
+
+        let cli = Cli::try_parse_from(["dadrock", "status", "Use", "imputation"]).unwrap();
+        let Some(Command::Status(StatusArgs {
+            command: None,
+            query,
+        })) = cli.command
+        else {
+            panic!("expected status query");
+        };
+        assert_eq!(query, ["Use", "imputation"]);
+
+        let cli = Cli::try_parse_from(["dadrock", "help", "validate", "changes"]).unwrap();
+        let Some(Command::Help(args)) = cli.command else {
+            panic!("expected help command");
+        };
+        assert_eq!(args.topic, ["validate", "changes"]);
+
+        assert!(Cli::try_parse_from(["dadrock", "reject", "--", "-1", "codes"]).is_ok());
     }
 
     #[test]
