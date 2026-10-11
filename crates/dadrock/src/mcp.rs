@@ -20,8 +20,8 @@ use serde_json::{json, Value};
 use crate::{
     agent::types::AgentProjectSnapshot,
     commands::{
-        self, CommandContext, CommandEnvelope, ListRecordsRequest, RecordViewFilter,
-        SupersedeRecordsRequest, ValidateRecordsResult,
+        self, CommandContext, CommandEnvelope, ListRecordsRequest, NewSuccessorRequest,
+        RecordViewFilter, SupersedeRecordsRequest, ValidateRecordsResult,
     },
     error::{DadrError, DomainErrorKind},
     index::ProjectIndex,
@@ -233,7 +233,7 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_CREATE_CANDIDATE,
-                "Run `dadrock new` to create a candidate DADR from a title, tags, and optional body Markdown.",
+                "Run `dadrock new` to create a candidate DADR from a title, tags, and optional body Markdown. With `supersedes`, the candidate is a successor: Dadrock writes its `## Supersedes` section first in the body, linking each named current decision, then `supersedes_reason`. Accepting it supersedes those decisions.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {
@@ -242,7 +242,16 @@ impl DadrockMcpServer {
                             "type": "array",
                             "items": {"type": "string"}
                         },
-                        "body_markdown": {"type": "string"}
+                        "body_markdown": {"type": "string"},
+                        "supersedes": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Accepted, current records the candidate supersedes (several for a merge)."
+                        },
+                        "supersedes_reason": {
+                            "type": "string",
+                            "description": "Why the decision changed, written in `## Supersedes` after the links."
+                        }
                     },
                     "required": ["title"],
                     "additionalProperties": false
@@ -251,11 +260,16 @@ impl DadrockMcpServer {
             ),
             write_tool(
                 TOOL_ACCEPT_RECORD,
-                "Run `dadrock status accept` to convert a valid candidate into an accepted decision in the ledger. A `## Supersedes` section links the named predecessor and moves it to the archive.",
+                "Run `dadrock status accept` to convert a valid candidate into an accepted decision in the ledger. `with` accepts more candidates in the same operation. Each record named in a `## Supersedes` section of the set gains every candidate in the set that names it as a successor and moves to the archive; nothing changes if any check fails.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {
-                        "query": {"type": "string"}
+                        "query": {"type": "string"},
+                        "with": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "More candidates to accept together with `query`, such as the other halves of a split."
+                        }
                     },
                     "required": ["query"],
                     "additionalProperties": false
@@ -492,6 +506,19 @@ impl DadrockMcpServer {
     ) -> Result<CommandEnvelope<NewRecordResult>, DadrError> {
         let title = required_string(&arguments, "title")?;
         let tags = optional_string_array(&arguments, "tags")?;
+        let supersedes = optional_string_array(&arguments, "supersedes")?;
+        if !supersedes.is_empty() {
+            return commands::new_successor_record(
+                &self.context,
+                NewSuccessorRequest {
+                    title,
+                    tags,
+                    body_markdown: optional_string(&arguments, "body_markdown"),
+                    supersedes,
+                    reason: optional_string(&arguments, "supersedes_reason"),
+                },
+            );
+        }
         if let Some(body_markdown) = optional_string(&arguments, "body_markdown") {
             commands::new_record_with_body(&self.context, &title, &tags, &body_markdown)
         } else {
@@ -503,8 +530,9 @@ impl DadrockMcpServer {
         &self,
         arguments: Option<JsonObject>,
     ) -> Result<CommandEnvelope<AcceptRecordResult>, DadrError> {
-        let query = required_string(&arguments, "query")?;
-        commands::accept_record(&self.context, &query)
+        let mut queries = vec![required_string(&arguments, "query")?];
+        queries.extend(optional_string_array(&arguments, "with")?);
+        commands::accept_records(&self.context, &queries)
     }
 
     fn reject_record(

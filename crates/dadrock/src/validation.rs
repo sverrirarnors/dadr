@@ -13,7 +13,9 @@ use crate::{
     links::{check_project_links, LinkIssue, LinkIssueCode},
     model::{Record, RecordStatus},
     project::{utf8_to_path, ProjectContext},
-    records::{check_required_sections, ScannedRecord},
+    records::{
+        check_required_sections, current_successors, record_list, supersedes_section, ScannedRecord,
+    },
     tags::{build_tag_report, TagIssue},
     text::write_serde_label,
 };
@@ -45,6 +47,11 @@ pub enum ProjectValidationIssueCode {
     UnresolvedSuccessor,
     InvalidSuccessor,
     SuccessorCycle,
+    /// A candidate's `## Supersedes` names a record superseded since.
+    StaleSupersedes,
+    /// An accepted record's `## Supersedes` names a record that does not list
+    /// it in `successors`.
+    UnlinkedSupersedes,
     StatusLocationMismatch,
     BrokenWikilink,
     AmbiguousWikilink,
@@ -158,6 +165,7 @@ pub fn validate_project_index(index: &ProjectIndex) -> ProjectValidationReport {
     add_duplicate_id_issues(scanned, &mut issues);
     add_short_id_collision_issues(scanned, &mut issues);
     add_successor_graph_issues(scanned, &mut issues);
+    add_supersedes_issues(index, &mut issues);
     add_link_issues(index, &mut issues);
 
     sort_issues(&mut issues);
@@ -549,6 +557,67 @@ fn add_successor_graph_issues(scanned: &[ScannedRecord], issues: &mut Vec<Projec
         }
         issues.push(issue);
     }
+}
+
+/// Check `## Supersedes` sections against the successor graph. A malformed
+/// section or a missing predecessor is reported elsewhere: by the record's
+/// lifecycle data and by the link check.
+fn add_supersedes_issues(index: &ProjectIndex, issues: &mut Vec<ProjectValidationIssue>) {
+    for scanned_record in index.scanned_records() {
+        let Some(record) = &scanned_record.record else {
+            continue;
+        };
+        let Ok(Some(section)) = supersedes_section(&record.body.raw_markdown) else {
+            continue;
+        };
+        let id = record.front_matter.id;
+        let title = &record.front_matter.title;
+        for predecessor_id in section.ids {
+            let Some(predecessor) = index.summary_by_id(predecessor_id) else {
+                continue;
+            };
+            let issue = match record.front_matter.status {
+                RecordStatus::Candidate if predecessor.superseded => {
+                    let current = current_successors(index, predecessor_id);
+                    let mut related = vec![predecessor.path.clone()];
+                    related.extend(current.iter().map(|record| record.path.clone()));
+                    ProjectValidationIssue::warning(
+                        ProjectValidationIssueCode::StaleSupersedes,
+                        format!(
+                            "`{title}` supersedes `{}`, which is already superseded by {}; retarget `## Supersedes` at the current decision, or reject the candidate",
+                            predecessor.title,
+                            record_list(&current)
+                        ),
+                    )
+                    .with_related_paths(related)
+                }
+                RecordStatus::Accepted if !lists_successor(index, predecessor_id, id) => {
+                    ProjectValidationIssue::warning(
+                        ProjectValidationIssueCode::UnlinkedSupersedes,
+                        format!(
+                            "`{title}` names `{}` in `## Supersedes`, but `{}` does not list it in `successors`",
+                            predecessor.title, predecessor.title
+                        ),
+                    )
+                    .with_related_paths(vec![predecessor.path.clone()])
+                }
+                _ => continue,
+            };
+            issues.push(
+                issue
+                    .with_path(scanned_record.path.clone())
+                    .with_record_id(id)
+                    .with_field(Some("body".to_owned())),
+            );
+        }
+    }
+}
+
+fn lists_successor(index: &ProjectIndex, predecessor: RecordId, successor: RecordId) -> bool {
+    index
+        .scanned_by_id(predecessor)
+        .and_then(|scanned| scanned.record.as_ref())
+        .is_some_and(|record| record.front_matter.successors.contains(&successor))
 }
 
 fn records_by_id(scanned: &[ScannedRecord]) -> BTreeMap<RecordId, Vec<Utf8PathBuf>> {

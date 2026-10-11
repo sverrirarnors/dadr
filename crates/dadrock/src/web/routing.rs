@@ -63,7 +63,7 @@ pub(super) fn route_request(
                 return super::save_record_source(request, cwd, query);
             }
             if let Some(query) = candidate_action_query(action_path, "/accept") {
-                return super::accept_candidate(cwd, query);
+                return super::accept_candidate(request, cwd, query);
             }
             if let Some(query) = candidate_action_query(action_path, "/reject") {
                 return super::reject_candidate(cwd, query);

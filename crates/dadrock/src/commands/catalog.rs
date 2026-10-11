@@ -172,11 +172,11 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["accept"],
-        usage: "accept <candidate-query>",
-        description: "Accept a candidate and move it to the ledger.",
+        usage: "accept <candidate-query> [--with <candidate-query>]...",
+        description: "Accept a candidate and move it to the ledger; --with accepts more candidates in the same operation. Records named in `## Supersedes` move to the archive.",
         mutation: CommandMutation::Writes,
         supports_json: true,
-        exit_behavior: "Exits non-zero when the candidate is unresolved, ambiguous, invalid, or cannot be moved.",
+        exit_behavior: "Exits non-zero when any candidate is unresolved, ambiguous, invalid, or cannot be moved, or a record named in `## Supersedes` cannot be superseded; nothing changes then.",
         subcommands: &[],
     },
     CommandInfo {
@@ -199,11 +199,11 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["status", "accept"],
-        usage: "status accept <candidate-query>",
-        description: "Accept a candidate and move it to the ledger.",
+        usage: "status accept <candidate-query> [--with <candidate-query>]...",
+        description: "Accept a candidate and move it to the ledger; --with accepts more candidates in the same operation. Records named in `## Supersedes` move to the archive.",
         mutation: CommandMutation::Writes,
         supports_json: true,
-        exit_behavior: "Exits non-zero when the candidate is unresolved, ambiguous, invalid, or cannot be moved.",
+        exit_behavior: "Exits non-zero when any candidate is unresolved, ambiguous, invalid, or cannot be moved, or a record named in `## Supersedes` cannot be superseded; nothing changes then.",
         subcommands: &[],
     },
     CommandInfo {

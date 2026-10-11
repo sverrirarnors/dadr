@@ -952,15 +952,15 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
         (
             "supersede-record",
             "01938bb2-bcd0-7e00-8b00-000000000018",
-            json!({"record_id": ID_COMPLETE_CASE, "reason": "Narrow the broad complete-case rule to model-specific missingness handling."}),
+            json!({"record_ids": ID_CLUSTER_SE, "requested_changes": "Cluster by site and survey wave."}),
             json!({
                 "kind": "supersession_proposal.v1",
-                "summary": "Draft a narrower successor for the broad complete-case rule.",
-                "superseded_record_id": ID_COMPLETE_CASE,
-                "superseding_title": "Use model-specific complete cases",
-                "superseding_body_markdown": "## Context\n\nThe original complete-case decision was broader than the current model requires.\n\n## Decision\n\nDrop missing rows only for variables required by each model.\n\n## Alternatives\n\nKeep the broad complete-case rule for all fields.\n\n## Consequences\n\nEach model reports its own analysis sample and the old broad rule is superseded.\n",
-                "rationale": "The successor narrows the rule and better matches the current analysis code.",
-                "suggested_actions": ["Write superseding candidate", "Review old record"]
+                "summary": "Cluster standard errors by site and survey wave.",
+                "superseded_record_ids": [ID_CLUSTER_SE],
+                "superseding_title": "Use cluster-robust standard errors",
+                "tags": ["kind/inference", "multiverse/se-type/cluster-robust"],
+                "superseding_body_markdown": "## Context\n\nObservations are nested within sites. The demo code tag example is in [examples/code-tags.py](../examples/code-tags.py).\n\n## Decision\n\nUse cluster-robust standard errors clustered by site and survey wave.\n\n## Alternatives\n\nUse heteroskedasticity-robust standard errors. This ignores site clustering.\n\n## Consequences\n\nInference is slightly more conservative. Code comments may carry tags like #dadr/kind/inference and #dadr/01938b94bcd0.\n",
+                "rationale": "Respondents interviewed in the same wave share timing shocks, so clustering by site alone understates the standard errors."
             }),
         ),
         (

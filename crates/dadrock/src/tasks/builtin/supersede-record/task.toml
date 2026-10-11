@@ -1,25 +1,25 @@
 id = "supersede-record"
 title = "Supersede record"
-description = "Draft a successor candidate for an accepted DADR when the project decision has changed."
-version = 1
+description = "Draft a successor candidate that supersedes one or more accepted DADRs when the decision has changed."
+version = 2
 
 [input]
 mode = "form"
 
 [[inputs]]
-name = "record_id"
-label = "Record to supersede"
-type = "text"
+name = "record_ids"
+label = "Records to supersede"
+type = "textarea"
 required = true
 
 [[inputs]]
-name = "reason"
-label = "Reason"
+name = "requested_changes"
+label = "Requested changes"
 type = "textarea"
 required = true
 
 [requirements]
-records = "one"
+records = "one_or_more"
 record_status = "accepted"
 paths = "none"
 notes = "required"

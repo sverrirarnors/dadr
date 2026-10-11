@@ -134,7 +134,53 @@ pub fn validate_task_context_requirements(
             "this task requires notes or instructions".to_owned(),
         ));
     }
+    if task.source.kind == crate::tasks::TaskSourceKind::Builtin {
+        validate_builtin_record_inputs(project, task, input, context)?;
+    }
     validate_record_requirements(project, requirements, input, context)?;
+    Ok(())
+}
+
+/// Record checks for built-in tasks that change decisions. Accepted and
+/// rejected records are frozen, so `edit-record` revises only candidates, and
+/// `supersede-record` drafts a successor only for current decisions.
+fn validate_builtin_record_inputs(
+    project: &ProjectContext,
+    task: &TaskPackage,
+    input: &Value,
+    context: &TaskContext,
+) -> Result<(), DadrError> {
+    let task_id = task.manifest.id.as_str();
+    if !matches!(task_id, "edit-record" | "supersede-record") {
+        return Ok(());
+    }
+    let queries = task_record_queries(input, context);
+    if queries.is_empty() {
+        return Ok(());
+    }
+    let index = ProjectIndex::scan(project)?;
+    for query in queries {
+        let record = index.resolve_one(&query)?.record;
+        let refusal = match (task_id, record.status) {
+            ("edit-record", RecordStatus::Accepted) => format!(
+                "`{}` is accepted, so it cannot be edited; draft a successor that supersedes it with the supersede-record task",
+                record.title
+            ),
+            ("edit-record", RecordStatus::Rejected) => format!(
+                "`{}` is rejected, so it cannot be edited; draft a new candidate instead",
+                record.title
+            ),
+            ("supersede-record", RecordStatus::Accepted) if record.superseded => format!(
+                "`{}` is already superseded by {}; draft a successor of the current decision instead",
+                record.title,
+                crate::records::record_list(&crate::records::current_successors(
+                    &index, record.id
+                ))
+            ),
+            _ => continue,
+        };
+        return Err(DadrError::InvalidInput(refusal));
+    }
     Ok(())
 }
 
@@ -239,12 +285,19 @@ fn validate_record_requirements(
                 "this task requires exactly one record".to_owned(),
             ));
         }
+        TaskRecordRequirement::OneOrMore if record_queries.is_empty() => {
+            return Err(DadrError::InvalidInput(
+                "this task requires at least one record".to_owned(),
+            ));
+        }
         TaskRecordRequirement::Many if record_queries.len() < 2 => {
             return Err(DadrError::InvalidInput(
                 "this task requires at least two records".to_owned(),
             ));
         }
-        TaskRecordRequirement::One | TaskRecordRequirement::Many => {}
+        TaskRecordRequirement::One
+        | TaskRecordRequirement::OneOrMore
+        | TaskRecordRequirement::Many => {}
     }
 
     if matches!(

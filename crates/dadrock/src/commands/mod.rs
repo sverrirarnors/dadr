@@ -31,9 +31,10 @@ pub use project::{
     demo_project, demo_project_with_example, initialize_project, show_config, show_dir,
 };
 pub use records::{
-    accept_record, list_records_command, list_tags, new_record, new_record_with_body,
-    reject_record, save_record_source, show_status, supersede, supersede_records, validate_links,
-    validate_project, validate_records, validate_tags, ListRecordsRequest, RecordViewFilter,
+    accept_record, accept_records, list_records_command, list_tags, new_record,
+    new_record_with_body, new_successor_record, reject_record, save_record_source, show_status,
+    supersede, supersede_records, validate_links, validate_project, validate_records,
+    validate_tags, ListRecordsRequest, NewSuccessorRequest, RecordViewFilter,
     SaveRecordSourceRequest, SaveRecordSourceResult, SupersedeRecordsRequest,
     ValidateRecordsResult, ValidatedRecord,
 };
