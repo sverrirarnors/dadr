@@ -18,7 +18,7 @@ dadrock mcp serve --read-only
 dadrock mcp serve path/to/project
 ```
 
-The normal server exposes inspection and mutation tools through the same command layer as the CLI: listing, searching, and reading records, lifecycle status, tags, tasks and task runs, validation, and a project snapshot; plus creating candidates, accepting, rejecting, superseding, and submitting task results. Use read-only mode for clients that should only inspect records. Human approval is still required for acceptance or rejection.
+The normal server exposes inspection and mutation tools through the same command layer as the CLI: listing, searching, and reading records, lifecycle status, tags, tasks and task runs, validation, and a project snapshot; plus creating candidates and submitting task results. Use read-only mode for clients that should only inspect records. Lifecycle actions are not exposed over MCP: humans accept, reject, and supersede records in the [web interface](dadrock/web.md) (also available in an [editor panel](dadrock/editors.md)) or with the CLI.
 
 Register the server with your client as a stdio command. The configuration file and its location depend on the client; many accept an entry like this:
 

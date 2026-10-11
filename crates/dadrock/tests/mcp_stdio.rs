@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, process, time::Duration};
+use std::{collections::BTreeSet, fs, path::PathBuf, process, time::Duration};
 
 use camino::Utf8PathBuf;
 use dadrock::{
@@ -8,7 +8,8 @@ use dadrock::{
     RecordId,
 };
 use rmcp::{
-    model::{CallToolRequestParams, JsonObject},
+    model::{CallToolRequestParams, ErrorCode, JsonObject},
+    service::ServiceError,
     transport::TokioChildProcess,
     ServiceExt,
 };
@@ -205,31 +206,50 @@ async fn dadrock_mcp_stdio_lists_and_calls_tools() {
         1
     );
 
+    // Accepting, rejecting, and superseding are human decisions: the server
+    // neither lists nor runs them, and the candidate stays where it was.
+    let listed: BTreeSet<_> = tools.iter().map(|tool| tool.name.to_string()).collect();
     let id = create["data"]["id"]
         .as_str()
         .expect("created candidate id")
         .to_owned();
-    let reject = client
-        .peer()
-        .call_tool(
-            CallToolRequestParams::new("dadrock.reject_record")
-                .with_arguments(json_object(json!({ "query": id }))),
-        )
-        .await
-        .expect("reject candidate through MCP");
-    let reject = reject.structured_content.expect("reject envelope");
-    assert_eq!(reject["command"], "status reject");
-    assert_eq!(reject["data"]["status"], "rejected");
+    let candidate_path = PathBuf::from(create["data"]["path"].as_str().expect("candidate path"));
+    let candidate_source = fs::read_to_string(&candidate_path).expect("read candidate");
+    for (name, arguments) in [
+        ("dadrock.accept_record", json!({ "query": id })),
+        ("dadrock.reject_record", json!({ "query": id })),
+        (
+            "dadrock.supersede_records",
+            json!({ "from": [id], "to": [id] }),
+        ),
+    ] {
+        assert!(!listed.contains(name), "{name} is listed");
+        let error = client
+            .peer()
+            .call_tool(CallToolRequestParams::new(name).with_arguments(json_object(arguments)))
+            .await
+            .expect_err("lifecycle tools are not served over MCP");
+        let ServiceError::McpError(error) = error else {
+            panic!("{name}: expected an MCP error, got {error:?}");
+        };
+        assert_eq!(error.code, ErrorCode::INVALID_PARAMS, "{name}");
+        assert_eq!(error.message, format!("unknown Dadrock MCP tool `{name}`"));
+    }
     assert_eq!(
-        reject["changed_paths"]
-            .as_array()
-            .expect("changed paths")
-            .len(),
-        2
+        fs::read_to_string(&candidate_path).expect("candidate still in place"),
+        candidate_source
     );
+    assert!(is_empty_or_missing(&root.join("dadr/accepted")));
+    assert!(is_empty_or_missing(&root.join("dadr/rejected")));
 
     let _ = tokio::time::timeout(Duration::from_secs(2), client.close()).await;
     let _ = fs::remove_dir_all(root);
+}
+
+fn is_empty_or_missing(dir: &std::path::Path) -> bool {
+    dir.read_dir()
+        .map(|mut entries| entries.next().is_none())
+        .unwrap_or(true)
 }
 
 fn json_object(value: Value) -> JsonObject {

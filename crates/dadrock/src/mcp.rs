@@ -21,14 +21,13 @@ use crate::{
     agent::types::AgentProjectSnapshot,
     commands::{
         self, CommandContext, CommandEnvelope, ListRecordsRequest, RecordViewFilter,
-        SupersedeRecordsRequest, ValidateRecordsResult,
+        ValidateRecordsResult,
     },
     error::{DadrError, DomainErrorKind},
     index::ProjectIndex,
     links::LinkCheckReport,
     records::{
-        AcceptRecordResult, FindRecordsResult, FoundRecord, NewRecordResult, RecordStatusResult,
-        RejectRecordResult, ScannedRecordSummary, SupersedeRecordsResult,
+        FindRecordsResult, FoundRecord, NewRecordResult, RecordStatusResult, ScannedRecordSummary,
     },
     tags::TagReport,
     tasks::{PersistedTaskRun, TaskListing, TaskPackage},
@@ -48,9 +47,6 @@ const TOOL_LIST_TASK_RUNS: &str = "dadrock.list_task_runs";
 const TOOL_GET_TASK_RUN: &str = "dadrock.get_task_run";
 const TOOL_SUBMIT_TASK_RESULT: &str = "dadrock.submit_task_result";
 const TOOL_CREATE_CANDIDATE: &str = "dadrock.create_candidate";
-const TOOL_ACCEPT_RECORD: &str = "dadrock.accept_record";
-const TOOL_REJECT_RECORD: &str = "dadrock.reject_record";
-const TOOL_SUPERSEDE_RECORDS: &str = "dadrock.supersede_records";
 const TOOL_VALIDATE_PROJECT: &str = "dadrock.validate_project";
 const TOOL_VALIDATE_RECORDS: &str = "dadrock.validate_records";
 const TOOL_VALIDATE_LINKS: &str = "dadrock.validate_links";
@@ -253,52 +249,6 @@ impl DadrockMcpServer {
                 })),
                 false,
             ),
-            write_tool(
-                TOOL_ACCEPT_RECORD,
-                "Run `dadrock status accept` to convert a valid candidate into an accepted decision.",
-                object_schema(json!({
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string"}
-                    },
-                    "required": ["query"],
-                    "additionalProperties": false
-                })),
-                true,
-            ),
-            write_tool(
-                TOOL_REJECT_RECORD,
-                "Run `dadrock status reject` to reject a candidate and move it into the rejected records directory.",
-                object_schema(json!({
-                    "type": "object",
-                    "properties": {
-                        "query": {"type": "string"}
-                    },
-                    "required": ["query"],
-                    "additionalProperties": false
-                })),
-                true,
-            ),
-            write_tool(
-                TOOL_SUPERSEDE_RECORDS,
-                "Run `dadrock status supersede` to link accepted successors to the accepted records they supersede.",
-                object_schema(json!({
-                    "type": "object",
-                    "properties": {
-                        "from": {
-                            "type": "array",
-                            "items": {"type": "string"}
-                        },
-                        "to": {
-                            "type": "array",
-                            "items": {"type": "string"}
-                        }
-                    },
-                    "required": ["from", "to"],
-                    "additionalProperties": false
-                })),
-                true,
-            ),
             read_tool(
                 TOOL_VALIDATE_PROJECT,
                 "Run `dadrock validate` and return project-level validation diagnostics.",
@@ -375,15 +325,6 @@ impl DadrockMcpServer {
             }
             TOOL_CREATE_CANDIDATE => {
                 serde_json::to_value(self.create_candidate(arguments)?).map_err(Into::into)
-            }
-            TOOL_ACCEPT_RECORD => {
-                serde_json::to_value(self.accept_record(arguments)?).map_err(Into::into)
-            }
-            TOOL_REJECT_RECORD => {
-                serde_json::to_value(self.reject_record(arguments)?).map_err(Into::into)
-            }
-            TOOL_SUPERSEDE_RECORDS => {
-                serde_json::to_value(self.supersede_records(arguments)?).map_err(Into::into)
             }
             TOOL_VALIDATE_PROJECT => {
                 serde_json::to_value(self.validate_project()?).map_err(Into::into)
@@ -503,31 +444,6 @@ impl DadrockMcpServer {
         }
     }
 
-    fn accept_record(
-        &self,
-        arguments: Option<JsonObject>,
-    ) -> Result<CommandEnvelope<AcceptRecordResult>, DadrError> {
-        let query = required_string(&arguments, "query")?;
-        commands::accept_record(&self.context, &query)
-    }
-
-    fn reject_record(
-        &self,
-        arguments: Option<JsonObject>,
-    ) -> Result<CommandEnvelope<RejectRecordResult>, DadrError> {
-        let query = required_string(&arguments, "query")?;
-        commands::reject_record(&self.context, &query)
-    }
-
-    fn supersede_records(
-        &self,
-        arguments: Option<JsonObject>,
-    ) -> Result<CommandEnvelope<SupersedeRecordsResult>, DadrError> {
-        let from = required_string_array(&arguments, "from")?;
-        let to = required_string_array(&arguments, "to")?;
-        commands::supersede_records(&self.context, SupersedeRecordsRequest { from, to })
-    }
-
     fn validate_project(&self) -> Result<CommandEnvelope<ProjectValidationReport>, DadrError> {
         commands::validate_project(&self.context)
     }
@@ -564,10 +480,10 @@ impl ServerHandler for DadrockMcpServer {
             .with_server_info(
                 Implementation::new("dadrock-mcp", env!("CARGO_PKG_VERSION"))
                     .with_title("Dadrock MCP")
-                    .with_description("Dadrock project and lifecycle tools"),
+                    .with_description("Dadrock project tools"),
             )
             .with_instructions(
-                "Use these tools as the structured Dadrock API. Read tools inspect DADR records, tags, project snapshots, and validation reports. Write tools call the same Dadrock command layer as the CLI and return command envelopes with changed paths and diagnostics.",
+                "Use these tools as the structured Dadrock API. Read tools inspect DADR records, tags, project snapshots, and validation reports. Write tools call the same Dadrock command layer as the CLI and return command envelopes with changed paths and diagnostics. Accepting, rejecting, and superseding records are human decisions and are not available over MCP.",
             )
     }
 
@@ -764,19 +680,6 @@ fn required_value(arguments: &Option<JsonObject>, key: &str) -> Result<Value, Da
         .ok_or_else(|| {
             DadrError::InvalidInput(format!("Dadrock MCP tool argument `{key}` is required"))
         })
-}
-
-fn required_string_array(
-    arguments: &Option<JsonObject>,
-    key: &str,
-) -> Result<Vec<String>, DadrError> {
-    let values = optional_string_array(arguments, key)?;
-    if values.is_empty() {
-        return Err(DadrError::InvalidInput(format!(
-            "Dadrock MCP tool argument `{key}` must contain at least one value"
-        )));
-    }
-    Ok(values)
 }
 
 fn optional_string(arguments: &Option<JsonObject>, key: &str) -> Option<String> {
