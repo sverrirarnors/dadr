@@ -119,7 +119,8 @@ pub fn check_project_links(index: &ProjectIndex) -> LinkCheckReport {
         };
         let mut in_fenced_code = false;
         for (line_index, line) in record.body.raw_markdown.lines().enumerate() {
-            let line_number = line_index + 1;
+            // Report the line in the file, after the front matter.
+            let line_number = record.body.line_offset + line_index + 1;
             if is_fenced_code_fence(line) {
                 in_fenced_code = !in_fenced_code;
                 continue;

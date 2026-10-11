@@ -8,6 +8,7 @@ use std::{
 
 use dadrock::{
     index::ProjectIndex,
+    links::{check_project_links, LinkIssueCode},
     project::{discover_from, init_project, ProjectContext},
     records::{accept_candidate, pending_supersedes, status_record},
     tags::{build_tag_report, TagIssueCode},
@@ -409,4 +410,52 @@ fn acceptance_refuses_invalid_inline_tags() {
     let id = "0193fb20-0000-7000-8000-000000000001";
     let path = project.candidate("Inline tag", id, &format!("> #bad//inline\n\n{SECTIONS}"));
     assert_accept_refused(&project, &path, id, "empty `/` path segments");
+}
+
+// Link and inline tag issues give the line in the file, after the front
+// matter, so `path:line` opens at the problem.
+#[test]
+fn link_and_tag_issues_report_file_lines() {
+    let project = Project::new("file-lines");
+    let id = "0193fb20-0000-7000-8000-000000000001";
+    let content = format!(
+        "---\ntitle: Lines\nstatus: accepted\nid: {id}\ntags:\n  - kind/sample\n---\n\n\
+         ## Context\n\nSee [[0193fb2fffff]].\n\n## Decision\n\nWhat #bad//tag.\n\n\
+         ## Alternatives\n\nNone considered.\n\n## Consequences\n\nEffects.\n"
+    );
+    let path = project.write("ledger", "lines", &content);
+    let line_of = |needle: &str| {
+        content
+            .lines()
+            .position(|line| line.contains(needle))
+            .unwrap()
+            + 1
+    };
+    let link_line = line_of("[[0193fb2fffff]]");
+    let tag_line = line_of("#bad//tag");
+    assert_eq!((link_line, tag_line), (11, 15));
+
+    let links = check_project_links(&project.index());
+    let broken = links
+        .issues
+        .iter()
+        .find(|issue| issue.code == LinkIssueCode::BrokenWikilink)
+        .unwrap();
+    assert_eq!(broken.line, link_line);
+
+    let tags = build_tag_report(&project.index());
+    let bad_tag = tags
+        .issues
+        .iter()
+        .find(|issue| issue.code == TagIssueCode::EmptyTagSegment)
+        .unwrap();
+    assert_eq!(bad_tag.line, Some(tag_line));
+
+    let report = project.validate();
+    let lines: Vec<_> = issues_for(&report, &path)
+        .into_iter()
+        .filter_map(|issue| issue.line.map(|line| (issue.code, line)))
+        .collect();
+    assert!(lines.contains(&(ProjectValidationIssueCode::BrokenWikilink, link_line)));
+    assert!(lines.contains(&(ProjectValidationIssueCode::InvalidTag, tag_line)));
 }
