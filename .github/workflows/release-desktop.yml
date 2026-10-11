@@ -222,17 +222,35 @@ jobs:
 
       # The contract the apt and rpm repositories rely on: the app answers
       # --version without opening a window, so it can be checked headless.
+      # On macOS the check runs inside the .dmg that ships, because Tauri
+      # deletes the intermediate .app once the disk image is built, and it
+      # also confirms that the bundled dadrock is in the app.
       - name: Check the binary runs
         if: runner.os != 'Windows'
         run: |
           set -eu
           rel="desktop/target/$TARGET/release"
+          version="$(awk -F'"' '/^version/ { print $2; exit }' desktop/Cargo.toml)"
           if [ "$RUNNER_OS" = macOS ]; then
-            app="$rel/bundle/macos/Dadrock.app/Contents/MacOS/dadrock-desktop"
+            mnt="$(mktemp -d)"
+            hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$rel"/bundle/dmg/*.dmg >/dev/null
+            trap 'hdiutil detach "$mnt" >/dev/null' EXIT
+            macos="$mnt/Dadrock.app/Contents/MacOS"
+            if [ ! -x "$macos/dadrock" ]; then
+              echo "::error::Dadrock.app does not contain the dadrock CLI"
+              exit 1
+            fi
+            # The x86_64 app is cross-compiled on an arm64 runner, so running
+            # it needs Rosetta.
+            if [ "$TARGET" = x86_64-apple-darwin ] && ! arch -x86_64 /usr/bin/true 2>/dev/null; then
+              echo "::notice::Rosetta is not available; checked the bundle contents only"
+              exit 0
+            fi
+            "$macos/dadrock" --version
+            app="$macos/dadrock-desktop"
           else
             app="$rel/dadrock-desktop"
           fi
-          version="$(awk -F'"' '/^version/ { print $2; exit }' desktop/Cargo.toml)"
           "$app" --version | tee /dev/stderr | grep -qx "dadrock-desktop ${version}"
 
       - name: Collect the release assets
