@@ -18,6 +18,9 @@ This document contains the help content for the `dadrock` command-line program.
 * [`dadrock status accept`↴](#dadrock-status-accept)
 * [`dadrock status reject`↴](#dadrock-status-reject)
 * [`dadrock status supersede`↴](#dadrock-status-supersede)
+* [`dadrock accept`↴](#dadrock-accept)
+* [`dadrock reject`↴](#dadrock-reject)
+* [`dadrock supersede`↴](#dadrock-supersede)
 * [`dadrock validate`↴](#dadrock-validate)
 * [`dadrock validate records`↴](#dadrock-validate-records)
 * [`dadrock validate links`↴](#dadrock-validate-links)
@@ -30,11 +33,19 @@ This document contains the help content for the `dadrock` command-line program.
 * [`dadrock agent check`↴](#dadrock-agent-check)
 * [`dadrock agent draft`↴](#dadrock-agent-draft)
 * [`dadrock agent skills`↴](#dadrock-agent-skills)
+* [`dadrock task`↴](#dadrock-task)
+* [`dadrock task list`↴](#dadrock-task-list)
+* [`dadrock task show`↴](#dadrock-task-show)
+* [`dadrock task run`↴](#dadrock-task-run)
+* [`dadrock task runs`↴](#dadrock-task-runs)
+* [`dadrock task result`↴](#dadrock-task-result)
 * [`dadrock preview`↴](#dadrock-preview)
 
 ## `dadrock`
 
-DADR decision records
+DADR decision records and web review UI.
+
+With no command, prints this help menu.
 
 **Usage:** `dadrock [COMMAND]`
 
@@ -43,17 +54,21 @@ DADR decision records
 * `help` — Show top-level help or detailed metadata for one command.
 * `commands` — List command metadata for automation and command discovery.
 * `completions` — Generate a shell completion script.
-* `dir` — Print the discovered decisions directory.
-* `config` — Print the resolved project configuration.
-* `init` — Create a DADR decisions directory, marker, and default config.
-* `demo` — Seed a new project with DADR records covering the core specification.
+* `dir` — Print the discovered accepted records directory.
+* `config` — Print the resolved project layout.
+* `init` — Create a Dadrock dadr/ directory.
+* `demo` — Seed a new project with a named DADR example.
 * `new` — Create a candidate decision record from the active candidate template.
 * `list` — List records, optionally filtered by lifecycle status, tag, or query.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
+* `accept` — Accept a candidate decision.
+* `reject` — Reject a candidate decision.
+* `supersede` — Link replacement decisions to the decisions they replace.
 * `validate` — Run project validation, or target records, links, or tags.
 * `tags` — Inspect DADR tag usage.
 * `mcp` — Serve Dadrock MCP tools over stdio.
 * `agent` — Call a configured local ACP agent for candidate drafting.
+* `task` — Discover, inspect, and run Dadrock task packages.
 * `preview` — Serve the local web review UI.
 
 
@@ -99,7 +114,7 @@ Generate a shell completion script.
 
 ## `dadrock dir`
 
-Print the discovered decisions directory.
+Print the discovered accepted records directory.
 
 **Usage:** `dadrock dir`
 
@@ -107,7 +122,7 @@ Print the discovered decisions directory.
 
 ## `dadrock config`
 
-Print the resolved project configuration.
+Print the resolved project layout.
 
 **Usage:** `dadrock config [OPTIONS]`
 
@@ -119,7 +134,7 @@ Print the resolved project configuration.
 
 ## `dadrock init`
 
-Create a DADR decisions directory, marker, and default config.
+Create a Dadrock dadr/ directory.
 
 **Usage:** `dadrock init [DIRECTORY]`
 
@@ -131,9 +146,9 @@ Create a DADR decisions directory, marker, and default config.
 
 ## `dadrock demo`
 
-Seed a new project with DADR records covering the core specification.
+Seed a new project with a named DADR example.
 
-**Usage:** `dadrock demo [OPTIONS] <DIRECTORY>`
+**Usage:** `dadrock demo [OPTIONS] [DIRECTORY]`
 
 ###### **Arguments:**
 
@@ -142,6 +157,12 @@ Seed a new project with DADR records covering the core specification.
 ###### **Options:**
 
 * `--json`
+* `--example <EXAMPLE>`
+
+  Default value: `lifecycle`
+
+  Possible values: `lifecycle`, `candidate-review`, `penguins`, `broken`, `conflicts`, `task-history`
+
 
 
 
@@ -189,7 +210,7 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 ###### **Subcommands:**
 
 * `accept` — Accept a candidate by converting it into an accepted decision.
-* `reject` — Reject a candidate and move it into the candidate archive.
+* `reject` — Reject a candidate and move it into the rejected records directory.
 * `supersede` — Link accepted successors to the records they supersede.
 
 ###### **Arguments:**
@@ -212,7 +233,7 @@ Accept a candidate by converting it into an accepted decision.
 
 ## `dadrock status reject`
 
-Reject a candidate and move it into the candidate archive.
+Reject a candidate and move it into the rejected records directory.
 
 **Usage:** `dadrock status reject <QUERY>...`
 
@@ -227,6 +248,43 @@ Reject a candidate and move it into the candidate archive.
 Link accepted successors to the records they supersede.
 
 **Usage:** `dadrock status supersede [OPTIONS]`
+
+###### **Options:**
+
+* `--from <FROM>`
+* `--to <TO>`
+
+
+
+## `dadrock accept`
+
+Accept a candidate decision.
+
+**Usage:** `dadrock accept <QUERY>...`
+
+###### **Arguments:**
+
+* `<QUERY>`
+
+
+
+## `dadrock reject`
+
+Reject a candidate decision.
+
+**Usage:** `dadrock reject <QUERY>...`
+
+###### **Arguments:**
+
+* `<QUERY>`
+
+
+
+## `dadrock supersede`
+
+Link replacement decisions to the decisions they replace.
+
+**Usage:** `dadrock supersede [OPTIONS]`
 
 ###### **Options:**
 
@@ -325,19 +383,23 @@ Serve Dadrock MCP tools over stdio.
 
 ###### **Subcommands:**
 
-* `serve` — Serve read-only Dadrock MCP tools over stdio.
+* `serve` — Serve Dadrock MCP tools over stdio.
 
 
 
 ## `dadrock mcp serve`
 
-Serve read-only Dadrock MCP tools over stdio.
+Serve Dadrock MCP tools over stdio.
 
-**Usage:** `dadrock mcp serve [DIRECTORY]`
+**Usage:** `dadrock mcp serve [OPTIONS] [DIRECTORY]`
 
 ###### **Arguments:**
 
 * `<DIRECTORY>`
+
+###### **Options:**
+
+* `--read-only`
 
 
 
@@ -351,7 +413,7 @@ Call a configured local ACP agent for candidate drafting.
 
 * `check` — Check that a local ACP agent can start a Dadrock session.
 * `draft` — Ask a local ACP agent to draft a candidate decision.
-* `skills` — List local Dadrock agent skills and prompt packs.
+* `skills` — List available Dadrock agent skills and prompt packs.
 
 
 
@@ -391,16 +453,118 @@ Ask a local ACP agent to draft a candidate decision.
 
 * `--agent <AGENT>`
 * `--agent-arg <AGENT_ARGS>`
-* `--skill <SKILLS>` [alias: `prompt-pack`]
+* `--skill <SKILLS>` \[alias: `prompt-pack`\]
 * `--no-mcp`
 
 
 
 ## `dadrock agent skills`
 
-List local Dadrock agent skills and prompt packs.
+List available Dadrock agent skills and prompt packs.
 
 **Usage:** `dadrock agent skills [OPTIONS]`
+
+###### **Options:**
+
+* `--json`
+
+
+
+## `dadrock task`
+
+Discover, inspect, and run Dadrock task packages.
+
+**Usage:** `dadrock task <COMMAND>`
+
+###### **Subcommands:**
+
+* `list` — List built-in, user, and project task packages.
+* `show` — Show one resolved task package.
+* `run` — Run one resolved task package with a local ACP agent.
+* `runs` — List persisted local task runs.
+* `result` — Read a persisted task run result.
+
+
+
+## `dadrock task list`
+
+List built-in, user, and project task packages.
+
+**Usage:** `dadrock task list [OPTIONS]`
+
+###### **Options:**
+
+* `--json`
+
+
+
+## `dadrock task show`
+
+Show one resolved task package.
+
+**Usage:** `dadrock task show [OPTIONS] <TASK_ID>`
+
+###### **Arguments:**
+
+* `<TASK_ID>`
+
+###### **Options:**
+
+* `--json`
+
+
+
+## `dadrock task run`
+
+Run one resolved task package with a local ACP agent.
+
+**Usage:** `dadrock task run [OPTIONS] <TASK_ID>`
+
+###### **Arguments:**
+
+* `<TASK_ID>`
+
+###### **Options:**
+
+* `--input-json <INPUT_JSON>`
+* `--path <PATH>` — File or directory to inspect
+* `--context <CONTEXT>` — Describe the decision to capture
+* `--focus <FOCUS>` — Focus the code review on a topic
+* `--limit <LIMIT>` — Maximum initial candidates (code-to-record defaults to 5)
+* `--json`
+* `--permission <PERMISSION>`
+
+  Default value: `deny`
+
+  Possible values: `deny`, `allow-once`, `allow-always`
+
+* `--agent <AGENT>`
+* `--agent-arg <AGENT_ARGS>`
+* `--no-mcp`
+
+
+
+## `dadrock task runs`
+
+List persisted local task runs.
+
+**Usage:** `dadrock task runs [OPTIONS]`
+
+###### **Options:**
+
+* `--json`
+
+
+
+## `dadrock task result`
+
+Read a persisted task run result.
+
+**Usage:** `dadrock task result [OPTIONS] <RUN_ID>`
+
+###### **Arguments:**
+
+* `<RUN_ID>`
 
 ###### **Options:**
 

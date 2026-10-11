@@ -10,8 +10,8 @@ use crate::{
             candidate_metadata_from_response, validate_draft_response, validate_revision_response,
         },
         skills::{
-            combined_prompt_pack_sha256, list_prompt_packs, resolve_prompt_packs,
-            AgentPromptPackInfo,
+            combined_prompt_pack_sha256, list_prompt_packs, render_prompt_packs,
+            resolve_prompt_packs, AgentPromptPackInfo,
         },
         types::{
             AgentCandidateSnapshot, AgentChatMessage, AgentDraftResult, AgentIntent,
@@ -72,27 +72,27 @@ pub fn draft_with_acp_agent(
         ));
     }
 
-    let (project, index) = context.initialized_index()?;
-    let records = index.list_records(None);
+    let project = context.initialized_index()?.0;
     let prompt_packs = resolve_prompt_packs(&request.prompt_packs, &project.cwd)?;
     let prompt_pack_sha256 = combined_prompt_pack_sha256(&prompt_packs);
-    let agent_request = AgentRequestEnvelope::draft_candidate(
-        request.prompt,
-        AgentProjectSnapshot::new(&project, records),
-    )?
-    .with_prompt_packs(prompt_packs);
-    let mut response = run_acp_agent(
-        &request.local_agent,
-        &agent_request,
-        AcpPromptOptions {
+    let run = crate::tasks::run_task_with_acp(
+        &project,
+        crate::tasks::TaskRunCommandRequest {
+            task_id: "context-to-record".to_owned(),
+            input: serde_json::json!({"context": request.prompt}),
+            context: crate::tasks::TaskContext {
+                instructions: Some(render_prompt_packs(&prompt_packs)),
+                ..Default::default()
+            },
+            local_agent: Some(request.local_agent),
             permission_policy: request.permission_policy,
             enable_dadrock_mcp: request.enable_dadrock_mcp,
-            dadrock_mcp_access: DadrockMcpAccess::ReadOnly,
-            ..AcpPromptOptions::default()
         },
     )?;
-    if let Some(prompt_pack_sha256) = prompt_pack_sha256 {
-        response.provenance.prompt_pack_sha256 = Some(prompt_pack_sha256);
+    let output = crate::tasks::read_task_result(&run.run_dir)?;
+    let mut response = legacy_draft_response(output)?;
+    if let Some(hash) = prompt_pack_sha256 {
+        response.provenance.prompt_pack_sha256 = Some(hash);
     }
     validate_draft_response(&response)?;
 
@@ -119,6 +119,63 @@ pub fn draft_with_acp_agent(
         },
     )
     .with_changed_paths(changed_paths))
+}
+
+/// Adapt the shared task result without changing the legacy command envelope.
+fn legacy_draft_response(output: serde_json::Value) -> Result<AgentResponseEnvelope, DadrError> {
+    let draft: crate::tasks::CandidateDraftOutput = serde_json::from_value(output.clone())?;
+    let mut warnings = draft.warnings;
+    if output.get("confidence").is_none() {
+        warnings
+            .push("Task did not supply confidence; legacy response defaults to medium.".to_owned());
+    }
+    let mut sources = Vec::new();
+    for source in draft.source_references {
+        match serde_json::from_value(source.clone()) {
+            Ok(source) => sources.push(source),
+            Err(_) => sources.push(crate::agent::types::SourceReference {
+                path: None,
+                line_start: None,
+                line_end: None,
+                excerpt: Some(
+                    source
+                        .as_str()
+                        .map(str::to_owned)
+                        .unwrap_or_else(|| source.to_string()),
+                ),
+            }),
+        }
+    }
+    Ok(AgentResponseEnvelope {
+        intent: AgentIntent::DraftCandidate,
+        confidence: output
+            .get("confidence")
+            .cloned()
+            .map(serde_json::from_value)
+            .transpose()?
+            .unwrap_or(Confidence::Medium),
+        summary: output
+            .get("summary")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or(&draft.title)
+            .to_owned(),
+        frontmatter: serde_json::json!({"title": draft.title, "tags": draft.tags}),
+        body_markdown: draft.body_markdown,
+        source_references: sources,
+        activity_observations: output
+            .get("activity_observations")
+            .cloned()
+            .map(serde_json::from_value)
+            .transpose()?
+            .unwrap_or_default(),
+        warnings,
+        provenance: output
+            .get("provenance")
+            .cloned()
+            .map(serde_json::from_value)
+            .transpose()?
+            .unwrap_or_default(),
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -304,4 +361,21 @@ fn indexed_scanned_record<'a>(
         .ok_or_else(|| {
             DadrError::ProjectInvariant(format!("indexed record `{}` is missing", summary.path))
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn task_adapter_explains_missing_confidence_and_preserves_warnings() {
+        let response = legacy_draft_response(serde_json::json!({
+            "title":"Use complete cases", "tags":[], "body_markdown":"body",
+            "warnings":["Rationale not documented"], "source_references":[]
+        }))
+        .unwrap();
+        assert_eq!(response.confidence, Confidence::Medium);
+        assert_eq!(response.summary, "Use complete cases");
+        assert_eq!(response.warnings.len(), 2);
+        assert!(response.warnings[1].contains("defaults to medium"));
+    }
 }

@@ -1989,3 +1989,29 @@ fn read_json(path: Utf8PathBuf) -> serde_json::Value {
     let content = fs::read_to_string(path).expect("read json file");
     serde_json::from_str(&content).expect("parse json file")
 }
+
+#[test]
+fn code_drafting_rejects_invalid_json_limits_before_starting_agent() {
+    let root = unique_temp_dir("dadrock-invalid-limit");
+    init_project(&root).unwrap();
+    let context = CommandContext::from_path(&root).unwrap();
+    for limit in [json!(0), json!(-1), json!(1.5), json!("5")] {
+        let error = run_task_command(
+            &context,
+            TaskRunCommandRequest {
+                task_id: "code-to-record".to_owned(),
+                input: json!({"path":".", "limit":limit}),
+                context: TaskContext {
+                    paths: vec![".".to_owned()],
+                    ..Default::default()
+                },
+                local_agent: None,
+                permission_policy: dadrock::agent::acp::AcpPermissionPolicy::Deny,
+                enable_dadrock_mcp: false,
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("positive integer"));
+    }
+    fs::remove_dir_all(root).unwrap();
+}

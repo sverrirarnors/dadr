@@ -18,6 +18,9 @@ This document contains the help content for the `dadrock` command-line program.
 * [`dadrock status accept`↴](#dadrock-status-accept)
 * [`dadrock status reject`↴](#dadrock-status-reject)
 * [`dadrock status supersede`↴](#dadrock-status-supersede)
+* [`dadrock accept`↴](#dadrock-accept)
+* [`dadrock reject`↴](#dadrock-reject)
+* [`dadrock supersede`↴](#dadrock-supersede)
 * [`dadrock validate`↴](#dadrock-validate)
 * [`dadrock validate records`↴](#dadrock-validate-records)
 * [`dadrock validate links`↴](#dadrock-validate-links)
@@ -58,6 +61,9 @@ With no command, prints this help menu.
 * `new` — Create a candidate decision record from the active candidate template.
 * `list` — List records, optionally filtered by lifecycle status, tag, or query.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
+* `accept` — Accept a candidate decision.
+* `reject` — Reject a candidate decision.
+* `supersede` — Link replacement decisions to the decisions they replace.
 * `validate` — Run project validation, or target records, links, or tags.
 * `tags` — Inspect DADR tag usage.
 * `mcp` — Serve Dadrock MCP tools over stdio.
@@ -242,6 +248,43 @@ Reject a candidate and move it into the rejected records directory.
 Link accepted successors to the records they supersede.
 
 **Usage:** `dadrock status supersede [OPTIONS]`
+
+###### **Options:**
+
+* `--from <FROM>`
+* `--to <TO>`
+
+
+
+## `dadrock accept`
+
+Accept a candidate decision.
+
+**Usage:** `dadrock accept <QUERY>...`
+
+###### **Arguments:**
+
+* `<QUERY>`
+
+
+
+## `dadrock reject`
+
+Reject a candidate decision.
+
+**Usage:** `dadrock reject <QUERY>...`
+
+###### **Arguments:**
+
+* `<QUERY>`
+
+
+
+## `dadrock supersede`
+
+Link replacement decisions to the decisions they replace.
+
+**Usage:** `dadrock supersede [OPTIONS]`
 
 ###### **Options:**
 
@@ -475,7 +518,7 @@ Show one resolved task package.
 
 Run one resolved task package with a local ACP agent.
 
-**Usage:** `dadrock task run [OPTIONS] --input-json <INPUT_JSON> <TASK_ID>`
+**Usage:** `dadrock task run [OPTIONS] <TASK_ID>`
 
 ###### **Arguments:**
 
@@ -484,6 +527,10 @@ Run one resolved task package with a local ACP agent.
 ###### **Options:**
 
 * `--input-json <INPUT_JSON>`
+* `--path <PATH>` — File or directory to inspect
+* `--context <CONTEXT>` — Describe the decision to capture
+* `--focus <FOCUS>` — Focus the code review on a topic
+* `--limit <LIMIT>` — Maximum initial candidates (code-to-record defaults to 5)
 * `--json`
 * `--permission <PERMISSION>`
 

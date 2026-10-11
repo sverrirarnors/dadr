@@ -29,7 +29,8 @@ Examples that **are not** decisions: "use `dplyr` rather than `data.table`", "re
 
 ## Granularity
 
-One choice → one candidate. Let the project tell you the count — a 200-line script might warrant 3–6 candidates, a journal replication package ~10–25, a multi-paper cohort project 50+. Do not split a single choice to inflate the count, and do not merge distinct choices to compress it. When unsure between one or two, prefer two.
+One choice → one candidate. Start with the five most consequential choices by default, or the positive integer supplied as `limit`. Return at most that many candidates, ordered by likely value to a collaborator. Do not split choices just to fill the limit. Describe deferred areas in the summary so the user can request a larger limit or a focused follow-up. Skip choices already covered by existing records. When unsure whether two choices are independently useful, prefer one coherent decision.
+
 
 ## Output
 
@@ -38,8 +39,10 @@ Return exactly one JSON object with kind `candidate_batch.v1`. The summary state
 - **title** — noun phrase describing the choice, not a question.
 - **body_markdown** — four canonical sections, `## Context`, `## Decision`, `## Alternatives`, `## Consequences`, each one to three sentences. Anchor every claim to the code. If rationale is not visible in the source, say so in Context and add a warning; do not invent motivation. If no real alternative is identifiable, write "Not applicable" in Alternatives rather than fabricating one.
 - **source_references** — specific files with line ranges (e.g. `R/clean.R:42-57`), not whole files. Multiple references when a choice spans call sites.
-- **tags** — use the project's DADR tag vocabulary. Every candidate carries `kind/<surface>` (one of `setup`, `input`, `sample`, `measurement`, `transformation`, `exploration`, `modeling`, `inference`, `robustness`, `visualization`, `communication`, `output`, `governance`, `quality`, `orchestration`) and `writer/agent`. Add `topic/`, `confidence/`, `plan/`, `multiverse/`, or `robustness/` when applicable.
+- **tags** — use the project's DADR tag vocabulary. Every candidate carries `kind/<surface>` (one of `setup`, `input`, `sample`, `measurement`, `transformation`, `exploration`, `modeling`, `inference`, `robustness`, `visualization`, `communication`, `output`, `governance`, `quality`, `orchestration`) and `writer/agent`. Add `topic/`, `confidence/`, `plan/`, `axis/`, or `robustness/` when applicable.
 - **confidence** — high only when the choice is unambiguous in the code and clearly consequential; lower it when the code permits multiple readings or downstream impact is uncertain.
 - **warnings** — flag thin evidence, ambiguity about whether the choice is deliberate, or potential overlap with an existing decision.
 
 Prefer fewer high-signal candidates over broad speculation. Returning zero candidates is correct when the scope contains no decisions worth recording.
+
+When the source does not explain why a choice was made, include the exact phrase "Rationale not documented" in Context and in warnings. Ask the reviewer to supply the reason; never infer motivation from code alone. Recommend `people/decider/` and `people/approver/` only when the supplied evidence identifies those people. Tags are optional in the format; respect existing project conventions.

@@ -57,3 +57,5 @@ Return exactly one JSON object with kind `supersession_proposal.v1`. Include:
 - **superseding_body_markdown** — the full new body with all four sections.
 - **rationale** — concise explanation of why supersession is warranted.
 - **suggested_actions** — ordered list of CLI steps the reviewer should run after accepting the proposal.
+
+Append a `## Replaces` section to superseding_body_markdown containing `[[FULL_PREDECESSOR_UUID|Previous decision]]`, using the actual full predecessor ID. This records the intended replacement while the proposal is a candidate; Dadrock links it only after human acceptance.
