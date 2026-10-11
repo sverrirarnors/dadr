@@ -43,7 +43,7 @@ Pick the workflow that matches the request:
 | "fix a typo in an accepted record", "correct a link in a decision" | A person corrects the record in place (**Edit** in the web interface, or any editor); agents do not edit accepted text. If the fix changes what was decided, use [tasks/supersede-record.md](tasks/supersede-record.md). |
 | "merge these candidates", "consolidate the duplicate drafts", "these two are the same decision" | [tasks/merge-records.md](tasks/merge-records.md) |
 | "find conflicting decisions", "resolve duplicate DADRs", "any decisions contradict each other?", "clean up dadr/" | [tasks/find-conflicts.md](tasks/find-conflicts.md) |
-| "diagnose dadr/", "health-check the DADR ledger", "audit the ledger", "what's broken in dadr/?" | Use the validation page or `dadrock validate`; deterministic diagnostics do not go through agent tasks. `dadrock validate changes` checks accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error, and a title or body edit is a warning with the diff (an error with `--strict`). |
+| "diagnose dadr/", "health-check the DADR ledger", "audit the ledger", "what's broken in dadr/?" | Use the Issues in the web interface's Inbox or `dadrock validate`; deterministic diagnostics do not go through agent tasks. `dadrock validate changes` checks accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error, and a title or body edit is a warning with the diff (an error with `--strict`). |
 | "turn accepted decisions into a spec", "write a spec from dadr/", "decisions to spec" | [tasks/decisions-to-spec.md](tasks/decisions-to-spec.md) |
 | Ad-hoc DADR request that doesn't match the rows above | [tasks/custom.md](tasks/custom.md) |
 | "what does a record look like?", "what does a candidate look like?", "how long should a DADR be?" | [record.md](record.md) |
@@ -63,7 +63,7 @@ The task guides describe the result. When you do the work yourself in the user's
    command -v dadrock && dadrock --version
    ```
    If it is absent, follow [install.md](install.md), which handles platform detection and the install method.
-2. Confirm the current directory is the project the user means (`pwd`, `ls` if unclear), then run `dadrock dir`. If no project is found, guides that draft records need `dadrock init`, which creates `dadr/` and never overwrites files; confirm with the user before running it.
+2. Confirm the current directory is the project the user means (`pwd`, `ls` if unclear), then run `dadrock dir`, which prints the project's `dadr/` directory even before it exists. If that directory does not exist, guides that draft records need `dadrock init`, which creates `dadr/` and never overwrites files; confirm with the user before running it.
 3. Guides that read accepted records (`supersede-record`, `decisions-to-spec`) need at least one. If `dadr/ledger/` has no decision in force, stop and ask the user.
 4. Take each guide's inputs from the user's request, and ask for required inputs that are missing (the candidate to revise, the changes a successor should make).
 
@@ -73,12 +73,11 @@ Read the ledger with `dadrock list` (JSON summaries; filter with `--status`, `--
 
 - **New candidates** (`code-to-record`, `context-to-record`, `merge-records`): create one record per candidate with
   ```bash
-  dadrock new "Drop observations with missing treatment assignment" \
-    --tag kind/sample \
-    --tag writer/agent
+  dadrock new --tag kind/sample --tag writer/agent \
+    "Drop observations with missing treatment assignment"
   ```
-  The title is the guide's noun-phrase title. Pass tags without `#`, one `--tag` each. The command prints a JSON envelope whose `data.path` is the new file; with `--quiet` it prints only the new id. When the MCP tool `dadrock.create_candidate` is available, call it with `title`, `tags`, and `body_markdown` instead. Never hand-write an `id` or a record file.
-- **Filling the body**: edit the created file, replacing the empty `## Context`, `## Decision`, `## Alternatives`, and `## Consequences` sections with the drafted text. Leave `id` and `status` as created. Source references become Markdown links in Context, relative to the record's directory (`[analysis/clean.R:42-57](../../analysis/clean.R#L42-L57)`). A confidence level can become a `confidence/` tag. The summary, deferred areas, and warnings go in your report to the user.
+  The title is the guide's noun-phrase title. Pass tags without `#`, one `--tag` each, before the title: words after the title become part of it. The command prints a JSON envelope whose `data.path` is the new file; with `--quiet` it prints only the new id. When the MCP tool `dadrock.create_candidate` is available, call it with `title`, `tags`, and `body_markdown` instead. Never hand-write an `id` or a record file.
+- **Filling the body**: edit the created file, filling the `## Context`, `## Decision`, `## Alternatives`, and `## Consequences` sections with the drafted text. A project template (`dadr/templates/candidate.md`) may have put placeholder text in them; replace it. Leave `id` and `status` as created. Source references become Markdown links in Context, relative to the record's directory (`[analysis/clean.R:42-57](../../analysis/clean.R#L42-L57)`). A confidence level can become a `confidence/` tag. The summary, deferred areas, and warnings go in your report to the user.
 - **Revisions** (`edit-record`): edit the candidate file in place; `dadrock status <query>` gives its path. Never edit an accepted or rejected record: a person corrects its wording in place when the meaning stays the same (**Edit** in the web interface, or any editor), and a changed decision goes through `supersede-record`. Never touch `id`, `status`, or `successors`.
 - **Successors** (`supersede-record`): create a new candidate as above, then write its body with a `## Supersedes` section first: one line per predecessor, each a link by full UUID labeled with the predecessor's title, then the guide's rationale as the reason. The four sections follow.
   ```markdown
@@ -91,7 +90,7 @@ Read the ledger with `dadrock list` (JSON summaries; filter with `--status`, `--
   ## Context
   ...
   ```
-  When the MCP tool `dadrock.create_candidate` is available, pass the four sections as `body_markdown`, the predecessor ids as `supersedes`, and the rationale as `supersedes_reason` instead; dadrock writes the `## Supersedes` section. A record has at most one `## Supersedes` section, and a section without a link is an error. Never edit a predecessor. When the user accepts the successor (`dadrock accept <new-id>`), dadrock links every predecessor and moves them to `dadr/archive/`; do not run `dadrock supersede` afterward. Several candidates that name the same predecessor (a split) are accepted together: `dadrock accept <id> --with <id>`. If a predecessor is superseded while the candidate waits, `dadrock validate` warns with `stale_supersedes` and acceptance is refused; point the link at the decision now in force. `dadrock supersede --from <old-id> --to <new-id>` is only for linking records that are all already accepted.
+  When the MCP tool `dadrock.create_candidate` is available, pass the four sections as `body_markdown`, the predecessor ids as `supersedes`, and the rationale as `supersedes_reason` instead; dadrock writes the `## Supersedes` section. A record has at most one `## Supersedes` section, and it must start with a link; acceptance refuses a candidate that breaks either rule, although `dadrock validate` does not report it. Never edit a predecessor. When the user accepts the successor (`dadrock accept <new-id>`), dadrock links every predecessor and moves them to `dadr/archive/`; do not run `dadrock supersede` afterward. Several candidates that name the same predecessor (a split) are accepted together: `dadrock accept <id> --with <id>`. If a predecessor is superseded while the candidate waits, `dadrock validate` warns with `stale_supersedes` and acceptance is refused; point the link at the decision now in force. `dadrock supersede --from <old-id> --to <new-id>` is only for linking records that are all already accepted.
 - **Reports** (`find-conflicts`, `decisions-to-spec`, `custom`): give the report to the user, or write it to a file they name. The user decides what to accept, reject, or supersede. Run `dadrock accept`, `dadrock reject`, or `dadrock supersede` only when the user explicitly asks for that specific action.
 - **Warnings**: where a guide says to flag something in the warnings (missing rationale, an unanchored claim, a disputed value), you may ask the user directly when the answer is cheap to get, and use their answer.
 

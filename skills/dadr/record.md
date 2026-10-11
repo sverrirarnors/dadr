@@ -4,7 +4,7 @@ What a single DADR record should look like, end-to-end. Use this whenever you dr
 
 A **record** is a Markdown file with YAML front matter and four prose sections. Every record in `dadr/` (whether a candidate, accepted, superseded, or rejected) follows the same anatomy; only the `status` field and a few status-specific rules differ.
 
-Filenames carry no meaning: a record is identified by its `id` alone. `dadrock new` names the file after the title (`drop-missing-treatment.md`, or `drop-missing-treatment-<short-id>.md` when the inbox already has that name), and `dadrock accept`, `reject`, and `supersede` keep the name when they move the file between folders. Find records by id, short id, or title rather than by guessing a path.
+Filenames carry no meaning: a record is identified by its `id` alone. `dadrock new` names the file after the title (`drop-missing-treatment.md`, or `drop-missing-treatment-<short-id>.md` when the inbox already has that name), and `dadrock accept`, `reject`, and `supersede` keep the name when they move the file between folders, adding the short id only when the destination already has that name. Find records by id, short id, or title rather than by guessing a path.
 
 ## Lifecycle
 
@@ -132,7 +132,7 @@ A successor candidate names the accepted records it supersedes in an optional `#
 Winsorizing at p99 still left implausible incomes in two waves.
 ```
 
-Several links make a merge. A record has at most one `## Supersedes` section, and a section without a link is an error. Accepting the candidate links every predecessor and moves it to the archive; the section stays in the body as the record of why the decision changed. Several candidates that name the same predecessor (a split) are accepted together with `dadrock accept <id> --with <id>`. See [tasks/supersede-record.md](tasks/supersede-record.md).
+Several links make a merge. A record has at most one `## Supersedes` section, and it must start with a link; acceptance refuses a candidate that breaks either rule, although `dadrock validate` does not report it. Accepting the candidate links every predecessor and moves each predecessor to the archive; the section stays in the body as the record of why the decision changed. Several candidates that name the same predecessor (a split) are accepted together with `dadrock accept <id> --with <id>`. See [tasks/supersede-record.md](tasks/supersede-record.md).
 
 ## Suggested tags
 

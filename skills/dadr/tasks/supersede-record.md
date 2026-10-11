@@ -65,7 +65,7 @@ The rationale explains why the decision changed, in one to three sentences, for 
 ## Constraints
 
 - **No lost evidence.** Do not silently drop sources or alternatives from a predecessor. Keep them, or explain in the rationale why they no longer apply.
-- **One decision per successor.** If the request splits a decision in two, draft the successor for the part the request names and mention the other part in the summary.
+- **One decision per successor.** If the request splits a decision in two, draft the successor for the part the request names and mention the other part in the summary: it needs its own successor of the same records, accepted together with this one.
 - Never edit a predecessor, and never write `successors` by hand.
 - Never accept the successor or supersede the predecessors. Those are the reviewer's actions.
 
