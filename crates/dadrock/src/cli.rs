@@ -47,6 +47,12 @@ pub enum Command {
     New(NewArgs),
     #[command(about = "List records, optionally filtered by lifecycle status, tag, or query.")]
     List(ListArgs),
+    #[command(
+        about = "Show a decision's versions as a graph, newest first, with the reason for each change."
+    )]
+    History(HistoryArgs),
+    #[command(about = "Compare two records: title, tags, and body without `## Supersedes`.")]
+    Diff(DiffArgs),
     #[command(about = "Inspect one record's lifecycle status or run lifecycle transitions.")]
     Status(StatusArgs),
     #[command(about = "Accept a candidate decision.")]
@@ -170,6 +176,28 @@ pub struct ListArgs {
     pub query: Option<String>,
     #[arg(long)]
     pub unique: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct HistoryArgs {
+    /// Print each change's diff under its link.
+    #[arg(long)]
+    pub patch: bool,
+    #[arg(long)]
+    pub json: bool,
+    /// Any version of the decision: full id, id prefix, filename, or title.
+    #[arg(required = true, num_args = 1..)]
+    pub query: Vec<String>,
+}
+
+#[derive(Debug, Args)]
+pub struct DiffArgs {
+    #[arg(long)]
+    pub json: bool,
+    /// The record to compare from: full id, id prefix, filename, or title.
+    pub old: String,
+    /// The record to compare to.
+    pub new: String,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -585,6 +613,41 @@ mod tests {
             panic!("expected preview command");
         };
         assert_eq!(args.host, "0.0.0.0");
+    }
+
+    #[test]
+    fn parses_history_query_with_flags_in_any_position() {
+        let cli =
+            Cli::try_parse_from(["dadrock", "history", "Listwise", "deletion", "--patch"]).unwrap();
+
+        let Some(Command::History(args)) = cli.command else {
+            panic!("expected history command");
+        };
+        assert_eq!(args.query, ["Listwise", "deletion"]);
+        assert!(args.patch);
+        assert!(!args.json);
+
+        let cli = Cli::try_parse_from(["dadrock", "history", "--json", "01938c20a3b4"]).unwrap();
+        let Some(Command::History(args)) = cli.command else {
+            panic!("expected history command");
+        };
+        assert_eq!(args.query, ["01938c20a3b4"]);
+        assert!(args.json);
+        assert!(Cli::try_parse_from(["dadrock", "history"]).is_err());
+    }
+
+    #[test]
+    fn parses_diff_old_and_new_queries() {
+        let cli =
+            Cli::try_parse_from(["dadrock", "diff", "old-record", "new-record", "--json"]).unwrap();
+
+        let Some(Command::Diff(args)) = cli.command else {
+            panic!("expected diff command");
+        };
+        assert_eq!(args.old, "old-record");
+        assert_eq!(args.new, "new-record");
+        assert!(args.json);
+        assert!(Cli::try_parse_from(["dadrock", "diff", "only-one"]).is_err());
     }
 
     #[test]

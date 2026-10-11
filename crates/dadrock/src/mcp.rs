@@ -17,6 +17,7 @@ use rmcp::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+use crate::history::{RecordDiffResult, RecordHistory};
 use crate::{
     agent::types::AgentProjectSnapshot,
     commands::{
@@ -41,6 +42,8 @@ const TOOL_GET_RECORD: &str = "dadrock.get_record";
 const TOOL_SEARCH_RECORDS: &str = "dadrock.search_records";
 const TOOL_RESOLVE_RECORD: &str = "dadrock.resolve_record";
 const TOOL_STATUS: &str = "dadrock.status";
+const TOOL_HISTORY: &str = "dadrock.history";
+const TOOL_DIFF: &str = "dadrock.diff";
 const TOOL_LIST_TAGS: &str = "dadrock.list_tags";
 const TOOL_LIST_TASKS: &str = "dadrock.list_tasks";
 const TOOL_GET_TASK: &str = "dadrock.get_task";
@@ -175,6 +178,32 @@ impl DadrockMcpServer {
                         "query": {"type": "string"}
                     },
                     "required": ["query"],
+                    "additionalProperties": false
+                })),
+            ),
+            read_tool(
+                TOOL_HISTORY,
+                "Run `dadrock history` and return a command envelope with the versions of the decision containing one record (newest first, each with its body without `## Supersedes`), the supersession links between them with the reason from each successor's `## Supersedes` section, and neighbors (the other half of a split, the other input of a merge). With `patch`, each link carries its diff.",
+                object_schema(json!({
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "patch": {"type": "boolean"}
+                    },
+                    "required": ["query"],
+                    "additionalProperties": false
+                })),
+            ),
+            read_tool(
+                TOOL_DIFF,
+                "Run `dadrock diff` and return a command envelope comparing two records from `old` to `new`: title change, tags added and removed, and a line diff of the bodies without `## Supersedes`.",
+                object_schema(json!({
+                    "type": "object",
+                    "properties": {
+                        "old": {"type": "string"},
+                        "new": {"type": "string"}
+                    },
+                    "required": ["old", "new"],
                     "additionalProperties": false
                 })),
             ),
@@ -359,6 +388,8 @@ impl DadrockMcpServer {
                 serde_json::to_value(self.resolve_record(arguments)?).map_err(Into::into)
             }
             TOOL_STATUS => serde_json::to_value(self.status(arguments)?).map_err(Into::into),
+            TOOL_HISTORY => serde_json::to_value(self.history(arguments)?).map_err(Into::into),
+            TOOL_DIFF => serde_json::to_value(self.diff(arguments)?).map_err(Into::into),
             TOOL_LIST_TAGS => serde_json::to_value(self.list_tags()?).map_err(Into::into),
             TOOL_LIST_TASKS => serde_json::to_value(self.list_tasks()).map_err(Into::into),
             TOOL_GET_TASK => serde_json::to_value(self.get_task(arguments)?).map_err(Into::into),
@@ -447,6 +478,24 @@ impl DadrockMcpServer {
     ) -> Result<CommandEnvelope<RecordStatusResult>, DadrError> {
         let query = required_string(&arguments, "query")?;
         commands::show_status(&self.context, &query)
+    }
+
+    fn history(
+        &self,
+        arguments: Option<JsonObject>,
+    ) -> Result<CommandEnvelope<RecordHistory>, DadrError> {
+        let query = required_string(&arguments, "query")?;
+        let patch = optional_bool(&arguments, "patch").unwrap_or(false);
+        commands::history(&self.context, &query, patch)
+    }
+
+    fn diff(
+        &self,
+        arguments: Option<JsonObject>,
+    ) -> Result<CommandEnvelope<RecordDiffResult>, DadrError> {
+        let old = required_string(&arguments, "old")?;
+        let new = required_string(&arguments, "new")?;
+        commands::diff(&self.context, &old, &new)
     }
 
     fn list_tags(&self) -> Result<CommandEnvelope<TagReport>, DadrError> {
@@ -914,6 +963,38 @@ mod tests {
         assert!(!tools
             .iter()
             .any(|tool| tool.name == "dadrock.accept_record"));
+    }
+
+    #[test]
+    fn read_only_dadrock_mcp_serves_history_and_diff() {
+        let root =
+            std::env::temp_dir().join(format!("dadrock-mcp-history-{}", crate::RecordId::new_v7()));
+        std::fs::create_dir_all(&root).unwrap();
+        crate::project::init_project(&root).unwrap();
+        let context = CommandContext::from_path(&root).unwrap();
+        let created = crate::commands::new_record(&context, "Only version", &[]).unwrap();
+        let id = created.data.id.to_string();
+        let server = DadrockMcpServer::new_with_access(context, DadrockMcpAccess::ReadOnly);
+
+        let history = server
+            .call_tool_value(
+                "dadrock.history",
+                super::object_schema(serde_json::json!({"query": id, "patch": true})).into(),
+            )
+            .unwrap();
+        assert_eq!(history["command"], "history");
+        assert_eq!(history["data"]["record"], id.as_str());
+        assert_eq!(history["data"]["versions"][0]["current"], true);
+
+        let diff = server
+            .call_tool_value(
+                "dadrock.diff",
+                super::object_schema(serde_json::json!({"old": id, "new": id})).into(),
+            )
+            .unwrap();
+        assert_eq!(diff["command"], "diff");
+        assert_eq!(diff["data"]["diff"]["changed"], false);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

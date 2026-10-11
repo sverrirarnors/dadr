@@ -3,6 +3,7 @@ pub mod commands;
 pub mod demo;
 pub mod error;
 pub(crate) mod file_store;
+pub mod history;
 pub mod ids {
     pub use dadr::{RecordId, RecordIdPrefix, RecordRef};
 }

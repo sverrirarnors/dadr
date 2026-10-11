@@ -48,6 +48,8 @@ fn dispatch_command(command: cli::Command) -> Result<ExitCode> {
         cli::Command::Demo(args) => demo(args),
         cli::Command::New(args) => new_record(args),
         cli::Command::List(args) => list(args),
+        cli::Command::History(args) => history(args),
+        cli::Command::Diff(args) => diff(args),
         cli::Command::Status(args) => status(args),
         cli::Command::Accept(args) => status_accept(args),
         cli::Command::Reject(args) => status_reject(args),
@@ -249,6 +251,37 @@ fn list(args: cli::ListArgs) -> Result<ExitCode> {
         },
     )?;
     print_json_envelope(&envelope)
+}
+
+fn history(args: cli::HistoryArgs) -> Result<ExitCode> {
+    let query = args.query.join(" ");
+    let envelope = core_commands::history(&command_context()?, &query, args.patch)?;
+    if !args.json {
+        print_command_diagnostics(&envelope.diagnostics);
+    }
+    print_envelope(&envelope, args.json, |history| {
+        print!("{}", dadrock::history::render_history_text(history));
+        Ok(())
+    })
+}
+
+fn diff(args: cli::DiffArgs) -> Result<ExitCode> {
+    let envelope = core_commands::diff(&command_context()?, &args.old, &args.new)?;
+    print_envelope(&envelope, args.json, |result| {
+        print!("{}", dadrock::history::render_diff_text(result));
+        Ok(())
+    })
+}
+
+fn print_command_diagnostics(diagnostics: &[core_commands::CommandDiagnostic]) {
+    for diagnostic in diagnostics {
+        eprintln!(
+            "[{}] {}: {}",
+            severity_label(diagnostic.severity),
+            diagnostic.code,
+            diagnostic.message
+        );
+    }
 }
 
 fn status(args: cli::StatusArgs) -> Result<ExitCode> {

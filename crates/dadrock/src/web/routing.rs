@@ -34,6 +34,12 @@ pub(super) fn route_request(
             if let Some(query) = record_source_query(record_path) {
                 return super::record_source(cwd, query);
             }
+            if let Some(query) = dynamic_segment_query(record_path, "/api/records/", "/history") {
+                return super::history::record_history(request, cwd, query);
+            }
+            if let Some(query) = dynamic_segment_query(record_path, "/api/records/", "/diff") {
+                return super::history::record_diff(request, cwd, query);
+            }
             if record_path.starts_with("/api/") {
                 json_response(404, &ApiError::not_found())
             } else {

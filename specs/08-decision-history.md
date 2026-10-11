@@ -186,7 +186,9 @@ For a record R:
   other half of a split, the other input of a merge), shown as one-line entries
   without their own history.
 
-Opening any version shows the same history, marked at the opened version.
+The history is marked at the opened version. Along a chain, opening any
+version shows the same versions; across a split or a merge, the branches that
+do not lead to or from the opened version appear as neighbors.
 Versions are listed newest first, and a record always appears above its
 predecessors; ties are broken by id timestamp. Id order alone is not enough,
 because `dadrock supersede` can link a successor created before its
