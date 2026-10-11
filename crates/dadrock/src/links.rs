@@ -11,7 +11,7 @@ use crate::{
     project::ProjectContext,
     records::{FindResolution, ScannedRecord},
     text::write_serde_label,
-    RecordId,
+    RecordId, RecordRef,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -160,22 +160,13 @@ fn add_wikilink_issues(
     issues: &mut Vec<LinkIssue>,
 ) {
     for wikilink in wikilinks_in_line(line) {
-        let query = wikilink.target.trim();
-        if query.is_empty() {
-            issues.push(
-                LinkIssue::error(
-                    LinkIssueCode::BrokenWikilink,
-                    scanned.path.clone(),
-                    line_number,
-                    wikilink.raw,
-                    "wikilink target is empty",
-                )
-                .with_optional_record_id(source_record_id(scanned)),
-            );
+        // Only short-id and full-id targets are record links; leave other
+        // wikilinks alone.
+        let Some(target) = RecordRef::parse(&wikilink.target) else {
             continue;
-        }
-
-        let result = index.find_records(query);
+        };
+        let query = wikilink.target.trim();
+        let result = index.find_record_ref(&target);
         match result.resolution {
             FindResolution::None => {
                 issues.push(

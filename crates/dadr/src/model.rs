@@ -55,13 +55,6 @@ impl Tag {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum BibliographyRef {
-    One(String),
-    Many(Vec<String>),
-}
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RecordFrontMatter {
     pub title: String,
@@ -69,8 +62,6 @@ pub struct RecordFrontMatter {
     pub id: RecordId,
     pub successors: Vec<RecordId>,
     pub tags: Vec<Tag>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bibliography: Option<BibliographyRef>,
 }
 
 impl RecordFrontMatter {

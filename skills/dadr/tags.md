@@ -1,6 +1,6 @@
 # Tags reference
 
-Tag format and the namespaces this skill uses. Distilled from the dadr `tags.md` page and specification §5.
+Tag format and the namespaces this skill uses. Distilled from the dadr `tags.md` page and specification §7.
 
 ## Where tags live
 
@@ -19,7 +19,7 @@ tags:
 ```
 
 ```markdown
-> #axis/sample/complete-case
+> #multiverse/sample/complete-case
 > Drop the 47 respondents without recorded treatment assignment.
 ```
 
@@ -30,10 +30,10 @@ df <- df[!is.na(df$treatment), ]
 
 ## Format rules
 
-- Unicode letters, digits, underscore, hyphen, forward slash.
+- Unicode letters, digits, emoji, underscore, hyphen, forward slash.
 - `/` denotes hierarchy: `kind/sample` is a child of `kind`.
 - Case-insensitive (`Kind` ≡ `kind`); use the project's existing casing.
-- Must contain at least one non-numeric character.
+- Must contain at least one character other than a digit, `_`, `-`, or `/`.
 - No whitespace; combine words with `kebab-case`, `snake_case`, `camelCase`, or `PascalCase`.
 
 ## Suggested tags for agent-drafted candidates
@@ -90,10 +90,10 @@ When annotating source code (not record files), use the `#dadr/` prefix:
 
 | Pattern | Meaning |
 |---|---|
-| `#dadr/<uuid7-prefix>` | Link surrounding code to a specific record. 12-char prefix is conventional. |
+| `#dadr/<short-id>` | Link surrounding code to a specific record, e.g. `#dadr/01938b8e4d70`. A full UUID also works. |
 | `#dadr/kind/<value>` | Inline classification (no record yet). |
 | `#dadr/topic/<value>` | Free-form topic. |
-| `#dadr/axis/<name>/<value>` | Robustness/sensitivity axis and value implemented here. |
-| `#dadr/ignore` | Suppress candidate generation for the surrounding code. |
+| `#dadr/multiverse/<axis>/<value>` | Robustness/specification axis and the value implemented here. |
+| `#dadr/ignore` | Dadrock convention: suppress candidate generation for the surrounding code. |
 
 The prefix is recommended **only in code comments** — tags inside DADR record files do not need it.

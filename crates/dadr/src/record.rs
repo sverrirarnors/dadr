@@ -3,13 +3,11 @@ use serde_yaml::{Mapping, Value};
 use crate::{
     error::{Diagnostic, DiagnosticCode},
     frontmatter::split_front_matter,
-    model::{
-        BibliographyRef, Record, RecordBody, RecordFrontMatter, RecordStatus, RecordSummary, Tag,
-    },
+    model::{Record, RecordBody, RecordFrontMatter, RecordStatus, RecordSummary, Tag},
     RecordId,
 };
 
-const UNSUPPORTED_LIFECYCLE_DATE_FIELDS: &[&str] = &["date", "created", "accepted_at"];
+const REQUIRED_SECTIONS: [&str; 4] = ["Context", "Decision", "Alternatives", "Consequences"];
 
 #[derive(Debug, Clone)]
 pub struct ParsedRecord {
@@ -63,19 +61,9 @@ pub fn parse_record_str(input: &str) -> ParsedRecord {
         };
     };
 
-    for &field in UNSUPPORTED_LIFECYCLE_DATE_FIELDS {
-        if mapping.contains_key(Value::String(field.to_owned())) {
-            diagnostics.push(
-                Diagnostic::error(
-                    DiagnosticCode::UnsupportedLifecycleDateField,
-                    format!("`{field}` is not a supported DADR lifecycle field; use the UUIDv7 timestamp"),
-                )
-                .with_field(field),
-            );
-        }
-    }
+    add_date_diagnostics(&mapping, &mut diagnostics);
 
-    let title = required_string(&mapping, "title", &mut diagnostics);
+    let title = required_title(&mapping, &mut diagnostics);
     let status = required_status(&mapping, &mut diagnostics);
     let id = required_record_id(&mapping, &mut diagnostics);
     let successors = optional_record_id_array(&mapping, "successors", &mut diagnostics);
@@ -83,7 +71,6 @@ pub fn parse_record_str(input: &str) -> ParsedRecord {
         .into_iter()
         .map(Tag::raw)
         .collect();
-    let bibliography = optional_bibliography(&mapping, &mut diagnostics);
 
     let record = match (title, status, id) {
         (Some(title), Some(status), Some(id)) => Some(Record {
@@ -93,7 +80,6 @@ pub fn parse_record_str(input: &str) -> ParsedRecord {
                 id,
                 successors,
                 tags,
-                bibliography,
             },
             body: RecordBody {
                 raw_markdown: split.body,
@@ -108,53 +94,225 @@ pub fn parse_record_str(input: &str) -> ParsedRecord {
     }
 }
 
-pub fn missing_required_sections(markdown: &str) -> Vec<&'static str> {
-    let mut has_context = false;
-    let mut has_decision = false;
-    let mut has_alternatives = false;
-    let mut has_consequences = false;
+/// How a body measures up against the four standard sections.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SectionCheck {
+    pub missing: Vec<&'static str>,
+    pub duplicated: Vec<&'static str>,
+    pub empty: Vec<&'static str>,
+}
+
+impl SectionCheck {
+    /// True when the body meets the requirements for an accepted record.
+    pub fn is_complete(&self) -> bool {
+        self.missing.is_empty() && self.duplicated.is_empty() && self.empty.is_empty()
+    }
+
+    pub fn problems(&self) -> Vec<String> {
+        let mut problems = Vec::new();
+        if !self.missing.is_empty() {
+            problems.push(format!("missing {}", self.missing.join(", ")));
+        }
+        if !self.duplicated.is_empty() {
+            problems.push(format!("repeated {}", self.duplicated.join(", ")));
+        }
+        if !self.empty.is_empty() {
+            problems.push(format!("empty {}", self.empty.join(", ")));
+        }
+        problems
+    }
+}
+
+/// Checks the `##` standard sections: each must appear exactly once and
+/// contain text other than whitespace and HTML comments.
+pub fn check_required_sections(markdown: &str) -> SectionCheck {
+    let mut occurrences = [0usize; REQUIRED_SECTIONS.len()];
+    let mut contents: [String; REQUIRED_SECTIONS.len()] = std::array::from_fn(|_| String::new());
+    let mut current: Option<usize> = None;
+    let mut fence: Option<(u8, usize)> = None;
 
     for line in markdown.lines() {
-        let Some(heading) = markdown_heading_text(line) else {
-            continue;
-        };
-        let heading = heading.to_ascii_lowercase();
-        match heading.as_str() {
-            "context" => has_context = true,
-            "decision" => has_decision = true,
-            "alternatives" => has_alternatives = true,
-            "consequences" => has_consequences = true,
-            _ => {}
+        if let Some((ch, len, bare)) = code_fence_marker(line) {
+            fence = match fence {
+                None => Some((ch, len)),
+                Some((open_ch, open_len)) if bare && ch == open_ch && len >= open_len => None,
+                open => open,
+            };
+        } else if fence.is_none() {
+            if let Some((level, text)) = atx_heading(line) {
+                if level <= 2 {
+                    current = (level == 2)
+                        .then(|| {
+                            REQUIRED_SECTIONS
+                                .iter()
+                                .position(|name| name.eq_ignore_ascii_case(text))
+                        })
+                        .flatten();
+                    if let Some(index) = current {
+                        occurrences[index] += 1;
+                    }
+                    continue;
+                }
+            }
+        }
+        if let Some(index) = current {
+            contents[index].push_str(line);
+            contents[index].push('\n');
         }
     }
 
-    let mut missing = Vec::new();
-    if !has_context {
-        missing.push("Context");
+    let mut check = SectionCheck::default();
+    for (index, name) in REQUIRED_SECTIONS.iter().enumerate() {
+        match occurrences[index] {
+            0 => check.missing.push(name),
+            1 => {}
+            _ => check.duplicated.push(name),
+        }
+        if occurrences[index] > 0 && strip_html_comments(&contents[index]).trim().is_empty() {
+            check.empty.push(name);
+        }
     }
-    if !has_decision {
-        missing.push("Decision");
-    }
-    if !has_alternatives {
-        missing.push("Alternatives");
-    }
-    if !has_consequences {
-        missing.push("Consequences");
-    }
-    missing
+    check
 }
 
-fn markdown_heading_text(line: &str) -> Option<&str> {
-    let trimmed = line.trim_start();
+/// The standard sections with no `##` heading at all.
+pub fn missing_required_sections(markdown: &str) -> Vec<&'static str> {
+    check_required_sections(markdown).missing
+}
+
+fn atx_heading(line: &str) -> Option<(usize, &str)> {
+    let trimmed = strip_block_indent(line)?;
     let level = trimmed.bytes().take_while(|byte| *byte == b'#').count();
-    if level == 0 {
+    if level == 0 || level > 6 {
         return None;
     }
     let rest = &trimmed[level..];
-    if !rest.chars().next().is_some_and(char::is_whitespace) {
+    if !rest.is_empty() && !rest.starts_with([' ', '\t']) {
         return None;
     }
-    Some(rest.trim())
+    let text = rest.trim();
+    let text = match text.trim_end_matches('#') {
+        stripped if stripped.is_empty() || stripped.ends_with([' ', '\t']) => stripped.trim_end(),
+        _ => text,
+    };
+    Some((level, text))
+}
+
+/// Returns the fence character, its run length, and whether the line is a bare
+/// fence (no info string), which is required to close an open fence.
+fn code_fence_marker(line: &str) -> Option<(u8, usize, bool)> {
+    let trimmed = strip_block_indent(line)?;
+    let ch = *trimmed.as_bytes().first()?;
+    if ch != b'`' && ch != b'~' {
+        return None;
+    }
+    let len = trimmed.bytes().take_while(|byte| *byte == ch).count();
+    let bare = trimmed[len..].trim().is_empty();
+    (len >= 3).then_some((ch, len, bare))
+}
+
+/// Strips up to three leading spaces; four or more make an indented code block.
+fn strip_block_indent(line: &str) -> Option<&str> {
+    let count = line.bytes().take_while(|byte| *byte == b' ').count();
+    (count <= 3).then(|| &line[count..])
+}
+
+fn strip_html_comments(text: &str) -> String {
+    let mut output = String::new();
+    let mut rest = text;
+    while let Some(start) = rest.find("<!--") {
+        output.push_str(&rest[..start]);
+        match rest[start + 4..].find("-->") {
+            Some(end) => rest = &rest[start + 4 + end + 3..],
+            None => return output,
+        }
+    }
+    output.push_str(rest);
+    output
+}
+
+/// Front matter never records dates or times: a record's time comes from its
+/// UUIDv7 id. Flags a `date` key and any ISO 8601 date or date-time value.
+fn add_date_diagnostics(mapping: &Mapping, diagnostics: &mut Vec<Diagnostic>) {
+    for (key, value) in mapping {
+        let field = match key {
+            Value::String(key) => key.clone(),
+            other => serde_yaml::to_string(other)
+                .unwrap_or_default()
+                .trim()
+                .to_owned(),
+        };
+        if field == "date" {
+            diagnostics.push(
+                Diagnostic::error(
+                    DiagnosticCode::DateInFrontMatter,
+                    "front matter must not contain a `date` key; a record's time comes from its UUIDv7 id",
+                )
+                .with_field(field),
+            );
+        } else if contains_iso_date(value) {
+            diagnostics.push(
+                Diagnostic::error(
+                    DiagnosticCode::DateInFrontMatter,
+                    format!(
+                        "field `{field}` contains a date; a record's time comes from its UUIDv7 id"
+                    ),
+                )
+                .with_field(field),
+            );
+        }
+    }
+}
+
+fn contains_iso_date(value: &Value) -> bool {
+    match value {
+        Value::String(text) => is_iso_date(text),
+        Value::Sequence(values) => values.iter().any(contains_iso_date),
+        Value::Mapping(mapping) => mapping.values().any(contains_iso_date),
+        Value::Tagged(tagged) => contains_iso_date(&tagged.value),
+        _ => false,
+    }
+}
+
+/// Matches an ISO 8601 date (`2026-05-07`) or date-time (`2026-05-07T14:30`,
+/// `2026-05-07 14:30:00Z`, ...).
+fn is_iso_date(text: &str) -> bool {
+    let bytes = text.trim().as_bytes();
+    let digits = |range: std::ops::Range<usize>| {
+        bytes
+            .get(range)
+            .is_some_and(|part| part.iter().all(u8::is_ascii_digit))
+    };
+    let is_date = digits(0..4)
+        && bytes.get(4) == Some(&b'-')
+        && digits(5..7)
+        && bytes.get(7) == Some(&b'-')
+        && digits(8..10);
+    if !is_date {
+        return false;
+    }
+    match bytes.get(10) {
+        None => true,
+        Some(b'T' | b't' | b' ') => {
+            digits(11..13) && bytes.get(13) == Some(&b':') && digits(14..16)
+        }
+        Some(_) => false,
+    }
+}
+
+fn required_title(mapping: &Mapping, diagnostics: &mut Vec<Diagnostic>) -> Option<String> {
+    let title = required_string(mapping, "title", diagnostics)?;
+    if title.contains(['\n', '\r']) {
+        diagnostics.push(
+            Diagnostic::error(
+                DiagnosticCode::InvalidFieldType,
+                "field `title` must be a single line",
+            )
+            .with_field("title"),
+        );
+        return None;
+    }
+    Some(title)
 }
 
 fn required_string(
@@ -307,31 +465,6 @@ fn optional_string_array(
         .collect()
 }
 
-fn optional_bibliography(
-    mapping: &Mapping,
-    diagnostics: &mut Vec<Diagnostic>,
-) -> Option<BibliographyRef> {
-    let value = mapping_get(mapping, "bibliography")?;
-    match value {
-        Value::Null => None,
-        Value::String(raw) => Some(BibliographyRef::One(raw.clone())),
-        Value::Sequence(_) => {
-            let values = optional_string_array(mapping, "bibliography", diagnostics);
-            Some(BibliographyRef::Many(values))
-        }
-        _ => {
-            diagnostics.push(
-                Diagnostic::error(
-                    DiagnosticCode::InvalidFieldType,
-                    "field `bibliography` must be a string or an array of strings",
-                )
-                .with_field("bibliography"),
-            );
-            None
-        }
-    }
-}
-
 fn mapping_get<'a>(mapping: &'a Mapping, key: &str) -> Option<&'a Value> {
     mapping.get(Value::String(key.to_owned()))
 }
@@ -363,21 +496,104 @@ mod tests {
     }
 
     #[test]
-    fn rejects_lifecycle_date_fields() {
+    fn accepts_keys_outside_dadr() {
         let parsed = parse_record_str(
             "---\n\
-             title: Bad date\n\
+             title: Extra keys\n\
              status: candidate\n\
              id: 01938b8e-4d70-7abc-8def-0123456789ab\n\
-             created: 2026-01-01\n\
+             bibliography: [refs.bib]\n\
+             author: Someone\n\
+             plan: sap-2026-05\n\
              ---\n\
              ## Context\n",
         );
 
+        assert!(parsed.record.is_some());
+        assert!(parsed.diagnostics.is_empty());
+    }
+
+    #[test]
+    fn rejects_dates_in_front_matter() {
+        for line in [
+            "date: today",
+            "created: 2026-01-01",
+            "updated: \"2026-01-01T10:15:00Z\"",
+            "history:\n  - accepted: 2026-01-01 10:15",
+        ] {
+            let parsed = parse_record_str(&format!(
+                "---\n\
+                 title: Dated\n\
+                 status: candidate\n\
+                 id: 01938b8e-4d70-7abc-8def-0123456789ab\n\
+                 {line}\n\
+                 ---\n"
+            ));
+            assert!(
+                parsed
+                    .diagnostics
+                    .iter()
+                    .any(|diag| diag.code == DiagnosticCode::DateInFrontMatter),
+                "{line}"
+            );
+        }
+    }
+
+    #[test]
+    fn iso_date_detection_is_exact() {
+        assert!(is_iso_date("2026-05-07"));
+        assert!(is_iso_date("2026-05-07T14:30:00Z"));
+        assert!(is_iso_date("2026-05-07 14:30"));
+        assert!(!is_iso_date("sap-2026-05-07"));
+        assert!(!is_iso_date("2026-05"));
+        assert!(!is_iso_date("2026-05-07-draft"));
+        assert!(!is_iso_date("01938b8e-4d70-7abc-8def-0123456789ab"));
+    }
+
+    #[test]
+    fn rejects_multiline_title() {
+        let parsed = parse_record_str(
+            "---\n\
+             title: \"First line\\nsecond line\"\n\
+             status: candidate\n\
+             id: 01938b8e-4d70-7abc-8def-0123456789ab\n\
+             ---\n",
+        );
+
+        assert!(parsed.record.is_none());
         assert!(parsed
             .diagnostics
             .iter()
-            .any(|diag| diag.code == DiagnosticCode::UnsupportedLifecycleDateField));
+            .any(|diag| diag.field.as_deref() == Some("title")));
+    }
+
+    #[test]
+    fn complete_sections_pass() {
+        let check = check_required_sections(
+            "# Title\n\n## Context\nWhy.\n\n## decision ##\nWhat.\n\n\
+             ## Alternatives\nNone considered.\n### Detail\n\n## Consequences\nEffects.\n",
+        );
+        assert!(check.is_complete(), "{check:?}");
+    }
+
+    #[test]
+    fn reports_missing_repeated_and_empty_sections() {
+        let check = check_required_sections(
+            "## Context\nWhy.\n\n## Decision\n<!-- fill in -->\n\n\
+             ## Context\nAgain.\n\n### Alternatives\nNot a level-2 heading.\n",
+        );
+        assert_eq!(check.missing, vec!["Alternatives", "Consequences"]);
+        assert_eq!(check.duplicated, vec!["Context"]);
+        assert_eq!(check.empty, vec!["Decision"]);
+    }
+
+    #[test]
+    fn ignores_headings_inside_code_fences() {
+        let check = check_required_sections(
+            "## Context\nWhy.\n\n```markdown\n## Decision\n```\n\n\
+             ## Decision\nWhat.\n\n## Alternatives\nNone.\n\n## Consequences\nEffects.\n",
+        );
+        assert!(check.is_complete(), "{check:?}");
     }
 
     #[test]
@@ -396,21 +612,5 @@ mod tests {
             .iter()
             .any(|diag| diag.code == DiagnosticCode::MissingRequiredField
                 && diag.field.as_deref() == Some("id")));
-    }
-
-    #[test]
-    fn bibliography_null_is_treated_as_absent() {
-        let parsed = parse_record_str(
-            "---\n\
-             title: Null bibliography\n\
-             status: candidate\n\
-             id: 01938b8e-4d70-7abc-8def-0123456789ab\n\
-             bibliography: null\n\
-             ---\n\
-             ## Context\n",
-        );
-
-        assert!(parsed.diagnostics.is_empty());
-        assert_eq!(parsed.record.unwrap().front_matter.bibliography, None);
     }
 }

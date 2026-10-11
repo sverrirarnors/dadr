@@ -10,8 +10,9 @@ use dadrock::{
     links::{check_project_links, LinkIssueCode},
     project::{discover_from, init_project, ProjectContext},
     records::{
-        accept_candidate, create_candidate, reject_candidate, scan_records, status_record,
-        supersede_record, supersede_records, FindResolution, MatchKind,
+        accept_candidate, create_candidate, create_candidate_with_body, reject_candidate,
+        scan_records, status_record, supersede_record, supersede_records, FindResolution,
+        MatchKind,
     },
     tags::{build_tag_report, normalize_tag_filter, record_ids_for_tag, TagIssueCode},
     tasks::{list_task_runs, read_task_result},
@@ -41,6 +42,9 @@ fn records_dir(root: &std::path::Path) -> PathBuf {
     dadr_dir(root).join("accepted")
 }
 
+const FILLED_SECTIONS: &str = "## Context\n\nWhy.\n\n## Decision\n\nWhat.\n\n\
+                               ## Alternatives\n\nNone considered.\n\n## Consequences\n\nEffects.\n";
+
 fn write_record(root: &std::path::Path, prefix: &str, title: &str, status: &str, id: &str) {
     write_record_with_successors(root, prefix, title, status, id, &[]);
 }
@@ -62,8 +66,8 @@ fn write_record_with_successors(
             front_matter.push('\n');
         }
     }
-    front_matter
-        .push_str("---\n\n## Context\n\n## Decision\n\n## Alternatives\n\n## Consequences\n");
+    front_matter.push_str("---\n\n");
+    front_matter.push_str(FILLED_SECTIONS);
     fs::write(
         records_dir(root).join(format!(
             "{prefix}-{}.md",
@@ -797,7 +801,7 @@ fn find_resolves_exact_id_and_prefix() {
     assert_eq!(exact.matches[0].match_kind, MatchKind::ExactId);
     assert_eq!(exact.matches[0].record.id, created.id);
 
-    let prefix = project_index(&project).find_records(&created.id.timestamp_prefix12());
+    let prefix = project_index(&project).find_records(&created.id.short_id());
     assert_eq!(prefix.resolution, FindResolution::One);
     assert_eq!(prefix.matches[0].match_kind, MatchKind::IdPrefix);
     assert_eq!(prefix.matches[0].record.id, created.id);
@@ -893,8 +897,7 @@ fn reject_moves_candidate_to_rejected_dir_and_rewrites_status() {
     let project = discover_from(&root).unwrap();
     let created = create_candidate(&project, "Rejectable candidate", &[]).unwrap();
 
-    let rejected =
-        reject_candidate(&project_index(&project), &created.id.timestamp_prefix12()).unwrap();
+    let rejected = reject_candidate(&project_index(&project), &created.id.short_id()).unwrap();
     assert_eq!(rejected.id, created.id);
     assert_eq!(rejected.status, RecordStatus::Rejected);
     assert!(!created.path.exists());
@@ -930,7 +933,7 @@ fn reject_rolls_back_created_target_when_source_remove_fails() {
     let original_permissions = fs::metadata(&candidates_dir).unwrap().permissions();
 
     fs::set_permissions(&candidates_dir, fs::Permissions::from_mode(0o500)).unwrap();
-    let error = reject_candidate(&project_index(&project), &created.id.timestamp_prefix12())
+    let error = reject_candidate(&project_index(&project), &created.id.short_id())
         .expect_err("reject should fail when the source cannot be removed");
     fs::set_permissions(&candidates_dir, original_permissions).unwrap();
 
@@ -993,7 +996,7 @@ fn save_record_source_rewrites_source_through_command() {
     let envelope = save_record_source(
         &context,
         SaveRecordSourceRequest {
-            query: created.id.timestamp_prefix12(),
+            query: created.id.short_id(),
             content: replacement.clone(),
         },
     )
@@ -1029,7 +1032,7 @@ fn save_record_source_rejects_id_changes_without_overwriting_file() {
     let error = save_record_source(
         &context,
         SaveRecordSourceRequest {
-            query: created.id.timestamp_prefix12(),
+            query: created.id.short_id(),
             content: replacement,
         },
     )
@@ -1065,7 +1068,7 @@ fn save_record_source_rejects_status_changes_without_overwriting_file() {
     let error = save_record_source(
         &context,
         SaveRecordSourceRequest {
-            query: created.id.timestamp_prefix12(),
+            query: created.id.short_id(),
             content: replacement,
         },
     )
@@ -1084,7 +1087,8 @@ fn save_record_source_rejects_invalid_accepted_record_without_overwriting_file()
     let root = temp_project("save-source-accepted-sections");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
-    let candidate = create_candidate(&project, "Complete accepted", &[]).unwrap();
+    let candidate =
+        create_candidate_with_body(&project, "Complete accepted", &[], FILLED_SECTIONS).unwrap();
     let accepted = accept_candidate(&project_index(&project), &candidate.id.to_string()).unwrap();
     let original = fs::read_to_string(&accepted.to).unwrap();
     let context = CommandContext::from_path(&root).unwrap();
@@ -1102,13 +1106,15 @@ fn save_record_source_rejects_invalid_accepted_record_without_overwriting_file()
     let error = save_record_source(
         &context,
         SaveRecordSourceRequest {
-            query: accepted.id.timestamp_prefix12(),
+            query: accepted.id.short_id(),
             content: replacement,
         },
     )
     .unwrap_err();
 
-    assert!(error.to_string().contains("missing required section"));
+    assert!(error
+        .to_string()
+        .contains("missing Decision, Alternatives, Consequences"));
     assert_eq!(fs::read_to_string(&accepted.to).unwrap(), original);
 
     fs::remove_dir_all(root).unwrap();
@@ -1137,15 +1143,15 @@ fn accept_converts_candidate_into_accepted_decision() {
     let root = temp_project("accept");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
-    let candidate = create_candidate(
+    let candidate = create_candidate_with_body(
         &project,
         "Acceptable candidate",
         &["#kind/model".to_owned()],
+        FILLED_SECTIONS,
     )
     .unwrap();
 
-    let accepted =
-        accept_candidate(&project_index(&project), &candidate.id.timestamp_prefix12()).unwrap();
+    let accepted = accept_candidate(&project_index(&project), &candidate.id.short_id()).unwrap();
     assert_eq!(accepted.id, candidate.id);
     assert_eq!(accepted.status, RecordStatus::Accepted);
     assert!(!candidate.path.exists());
@@ -1166,7 +1172,7 @@ fn accept_converts_candidate_into_accepted_decision() {
     assert_eq!(accepted_records.len(), 1);
 
     let decision_status =
-        status_record(&project_index(&project), &candidate.id.timestamp_prefix12()).unwrap();
+        status_record(&project_index(&project), &candidate.id.short_id()).unwrap();
     assert_eq!(decision_status.record.status, RecordStatus::Accepted);
     assert!(decision_status.successors.is_empty());
     assert!(decision_status.predecessors.is_empty());
@@ -1222,8 +1228,24 @@ fn accept_requires_required_sections() {
     let error = accept_candidate(&project_index(&project), "Incomplete").unwrap_err();
     assert!(error
         .to_string()
-        .contains("accept requires required sections"));
+        .contains("missing Decision, Alternatives, Consequences"));
     assert!(candidate_path.exists());
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn accept_requires_non_empty_sections() {
+    let root = temp_project("accept-empty-sections");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+    let candidate = create_candidate(&project, "Template only", &[]).unwrap();
+
+    let error = accept_candidate(&project_index(&project), &candidate.id.to_string()).unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("empty Context, Decision, Alternatives, Consequences"));
+    assert!(candidate.path.exists());
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -1633,7 +1655,8 @@ fn project_validation_passes_clean_accepted_workflow() {
     let root = temp_project("validation-clean");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
-    let candidate = create_candidate(&project, "Documented decision", &[]).unwrap();
+    let candidate =
+        create_candidate_with_body(&project, "Documented decision", &[], FILLED_SECTIONS).unwrap();
     accept_candidate(&project_index(&project), &candidate.id.to_string()).unwrap();
 
     let report = validate_project_index(&project_index(&project));
@@ -1660,6 +1683,13 @@ fn project_validation_reports_project_wide_graph_and_filename_errors() {
         "Duplicate B",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
+    );
+    write_record(
+        &root,
+        "01938b8e4d70",
+        "Same short id",
+        "accepted",
+        "01938b8e-4d70-7abc-8def-0000000000ff",
     );
     write_record_with_successors(
         &root,
@@ -1706,7 +1736,7 @@ fn project_validation_reports_project_wide_graph_and_filename_errors() {
 
     assert!(!report.ok);
     assert!(codes.contains(&ProjectValidationIssueCode::DuplicateRecordId));
-    assert!(codes.contains(&ProjectValidationIssueCode::FilenamePrefixCollision));
+    assert!(codes.contains(&ProjectValidationIssueCode::ShortIdCollision));
     assert!(codes.contains(&ProjectValidationIssueCode::UnresolvedSuccessor));
     assert!(codes.contains(&ProjectValidationIssueCode::InvalidSuccessor));
     assert!(codes.contains(&ProjectValidationIssueCode::SuccessorCycle));
@@ -1796,7 +1826,9 @@ fn validate_links_passes_resolved_wikilinks_and_local_markdown_links() {
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
         "## Context\n\
-         See [[01938b8f9d71|target decision]] and [data](../../data/input.csv).\n\n\
+         See [[01938b8f9d71|target decision]], [[01938b8f-9d71-7456-8000-fedcba987654]], \
+         and [data](../../data/input.csv). Notes like [[Reading list]] and [[cafe]] are \
+         not record links.\n\n\
          ## Decision\n\n\
          ## Alternatives\n\n\
          ## Consequences\n",
@@ -1806,6 +1838,26 @@ fn validate_links_passes_resolved_wikilinks_and_local_markdown_links() {
     let report = check_project_links(&project_index(&project));
     assert!(report.ok);
     assert!(report.issues.is_empty());
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn new_candidates_get_unique_short_ids() {
+    let root = temp_project("unique-short-ids");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+
+    let mut short_ids = std::collections::BTreeSet::new();
+    for index in 0..5 {
+        let created = create_candidate(&project, &format!("Candidate {index}"), &[]).unwrap();
+        assert!(short_ids.insert(created.id.short_id()));
+        assert!(created
+            .path
+            .file_name()
+            .unwrap()
+            .starts_with(&format!("{}-", created.id.short_id())));
+    }
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -1844,7 +1896,7 @@ fn validate_links_reports_wikilink_and_markdown_link_issues() {
              ## Decision\n\n\
              ## Alternatives\n\n\
              ## Consequences\n",
-            candidate.id.timestamp_prefix12()
+            candidate.id.short_id()
         ),
     );
 

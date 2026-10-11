@@ -40,8 +40,9 @@ dadrock validate --json
 
 Current validation checks:
 
-- YAML fields, UUIDv7 IDs, required sections, and status/location consistency;
-- duplicate IDs, filename collisions, and filename-prefix ambiguity;
+- no `date` key or ISO 8601 date/time values in front matter;
+- YAML fields, UUIDv7 IDs, four sections each appearing exactly once with text, and status/location consistency;
+- duplicate full IDs and short IDs, and filename collisions;
 - missing or invalid successors and cycles in replacement relationships;
 - broken or ambiguous record wikilinks and missing local Markdown-link targets;
 - malformed tags and unreadable candidate templates.

@@ -33,7 +33,8 @@ impl RecordId {
         self.0.get_version_num() == 7 && self.0.get_variant() == Variant::RFC4122
     }
 
-    pub fn timestamp_prefix12(&self) -> String {
+    /// The first 12 hex digits of the id: the record's short id.
+    pub fn short_id(&self) -> String {
         self.0.simple().to_string().chars().take(12).collect()
     }
 
@@ -95,6 +96,47 @@ impl fmt::Display for RecordIdPrefix {
     }
 }
 
+/// The target of a record link: a short id or a full hyphenated UUID.
+///
+/// Any other target is not a DADR record link.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RecordRef {
+    ShortId(String),
+    Full(Uuid),
+}
+
+impl RecordRef {
+    pub fn parse(input: &str) -> Option<Self> {
+        let input = input.trim();
+        if input.len() == SHORT_ID_LEN && input.chars().all(|ch| ch.is_ascii_hexdigit()) {
+            return Some(Self::ShortId(input.to_ascii_lowercase()));
+        }
+        if input.len() == FULL_ID_LEN {
+            return Uuid::try_parse(input).ok().map(Self::Full);
+        }
+        None
+    }
+
+    pub fn matches(&self, id: RecordId) -> bool {
+        match self {
+            Self::ShortId(short_id) => id.short_id() == *short_id,
+            Self::Full(uuid) => id.as_uuid() == *uuid,
+        }
+    }
+}
+
+impl fmt::Display for RecordRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ShortId(short_id) => f.write_str(short_id),
+            Self::Full(uuid) => write!(f, "{}", uuid.hyphenated()),
+        }
+    }
+}
+
+const SHORT_ID_LEN: usize = 12;
+const FULL_ID_LEN: usize = 36;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -102,7 +144,7 @@ mod tests {
     #[test]
     fn parses_valid_uuidv7() {
         let id = RecordId::parse("01938b8e-4d70-7abc-8def-0123456789ab").unwrap();
-        assert_eq!(id.timestamp_prefix12(), "01938b8e4d70");
+        assert_eq!(id.short_id(), "01938b8e4d70");
         assert!(id.is_uuid_v7());
     }
 
@@ -134,6 +176,21 @@ mod tests {
     fn rejects_short_or_hyphenated_prefix() {
         assert!(RecordIdPrefix::parse_hex("01938b8e4d7").is_err());
         assert!(RecordIdPrefix::parse_hex("01938b8e-4d70").is_err());
+    }
+
+    #[test]
+    fn record_ref_accepts_only_short_or_full_ids() {
+        let id = RecordId::parse("01938b8e-4d70-7abc-8def-0123456789ab").unwrap();
+        assert!(RecordRef::parse("01938b8e4d70").unwrap().matches(id));
+        assert!(RecordRef::parse("01938B8E4D70").unwrap().matches(id));
+        assert!(RecordRef::parse("01938b8e-4d70-7abc-8def-0123456789ab")
+            .unwrap()
+            .matches(id));
+        assert_eq!(RecordRef::parse("cafe"), None);
+        assert_eq!(RecordRef::parse("01938b8e4d7"), None);
+        assert_eq!(RecordRef::parse("01938b8e4d70a"), None);
+        assert_eq!(RecordRef::parse("01938b8e4d707abc8def0123456789ab"), None);
+        assert_eq!(RecordRef::parse("Some note"), None);
     }
 
     #[test]

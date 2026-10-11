@@ -89,9 +89,13 @@ export function renderMarkdown(markdown: string): string {
   return html.join('');
 }
 
+// Only short-id and full-id targets are DADR record links; other wikilinks stay as text.
+const RECORD_LINK =
+  /\[\[\s*([0-9a-fA-F]{12}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\s*(?:\|([^\]]+))?\]\]/g;
+
 function inlineMarkdown(text: string): string {
   let escaped = escapeHtml(text);
-  escaped = escaped.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target: string, label: string) => {
+  escaped = escaped.replace(RECORD_LINK, (_, target: string, label: string) => {
     return `<button class="wikilink" type="button" data-wikilink="${escapeAttr(target)}">${escapeHtml(
       label || target,
     )}</button>`;

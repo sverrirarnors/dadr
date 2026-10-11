@@ -921,8 +921,9 @@
 </span></code></pre></div>
 <p>Current validation checks:</p>
 <ul>
-<li>YAML fields, UUIDv7 IDs, required sections, and status/location consistency;</li>
-<li>duplicate IDs, filename collisions, and filename-prefix ambiguity;</li>
+<li>no <code>date</code> key or ISO 8601 date/time values in front matter;</li>
+<li>YAML fields, UUIDv7 IDs, four sections each appearing exactly once with text, and status/location consistency;</li>
+<li>duplicate full IDs and short IDs, and filename collisions;</li>
 <li>missing or invalid successors and cycles in replacement relationships;</li>
 <li>broken or ambiguous record wikilinks and missing local Markdown-link targets;</li>
 <li>malformed tags and unreadable candidate templates.</li>

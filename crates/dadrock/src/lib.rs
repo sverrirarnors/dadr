@@ -4,16 +4,14 @@ pub mod demo;
 pub mod error;
 pub(crate) mod file_store;
 pub mod ids {
-    pub use dadr::{RecordId, RecordIdPrefix};
+    pub use dadr::{RecordId, RecordIdPrefix, RecordRef};
 }
 pub mod index;
 pub mod links;
 pub mod markdown;
 pub mod mcp;
 pub mod model {
-    pub use dadr::{
-        BibliographyRef, Record, RecordBody, RecordFrontMatter, RecordStatus, RecordSummary, Tag,
-    };
+    pub use dadr::{Record, RecordBody, RecordFrontMatter, RecordStatus, RecordSummary, Tag};
 }
 pub(crate) mod paths;
 pub mod project;
@@ -25,5 +23,5 @@ pub mod text;
 pub mod validation;
 
 pub use error::{DadrError, Diagnostic, DiagnosticCode, IssueCounts, Severity};
-pub use ids::{RecordId, RecordIdPrefix};
+pub use ids::{RecordId, RecordIdPrefix, RecordRef};
 pub use model::{Record, RecordBody, RecordFrontMatter, RecordStatus, RecordSummary, Tag};

@@ -7,7 +7,10 @@ use camino::{Utf8Path, Utf8PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_yaml::{Mapping, Value};
 
-pub use dadr::{missing_required_sections, parse_record_str, ParsedRecord};
+pub use dadr::{
+    check_required_sections, missing_required_sections, parse_record_str, ParsedRecord,
+    SectionCheck,
+};
 
 use crate::{
     error::{DadrError, Diagnostic, DiagnosticCode},
@@ -273,10 +276,10 @@ fn create_candidate_from_body(
 ) -> Result<NewRecordResult, DadrError> {
     project.require_initialized()?;
     let index = ProjectIndex::scan(project)?;
-    let id = RecordId::new_v7();
+    let id = allocate_record_id(&index);
     let candidates_dir = project.candidates_dir();
     fs::create_dir_all(utf8_to_path(&candidates_dir))?;
-    let filename = candidate_filename(&index, id, title);
+    let filename = record_filename(id, title);
     let path = candidates_dir.join(filename);
     let content = render_candidate(id, title, tags, body_markdown);
 
@@ -503,11 +506,11 @@ pub fn accept_candidate(
         "accept requires status `candidate`",
     )?;
 
-    let missing_sections = missing_required_sections(&record.body.raw_markdown);
-    if !missing_sections.is_empty() {
+    let sections = check_required_sections(&record.body.raw_markdown);
+    if !sections.is_complete() {
         return Err(DadrError::InvalidLifecycleTransition(format!(
-            "accept requires required sections: missing {}",
-            missing_sections.join(", ")
+            "accept requires each standard section exactly once and with text: {}",
+            sections.problems().join("; ")
         )));
     }
 
@@ -521,8 +524,7 @@ pub fn accept_candidate(
         })
         .transpose()?;
 
-    let accepted_filename =
-        candidate_filename_excluding_id(index, found.record.id, &record.front_matter.title);
+    let accepted_filename = record_filename(found.record.id, &record.front_matter.title);
     let accepted_path = project.decisions_dir.join(accepted_filename);
 
     let original_content = fs::read_to_string(utf8_to_path(&found.record.path))?;
@@ -1009,34 +1011,20 @@ fn reaches_record(
         .any(|successor| reaches_record(records, successor, target_id, visited))
 }
 
-fn candidate_filename(index: &ProjectIndex, id: RecordId, title: &str) -> String {
-    candidate_filename_with_collision(
-        index.filename_prefix_exists(&id.timestamp_prefix12()),
-        id,
-        title,
-    )
-}
-
-fn candidate_filename_excluding_id(index: &ProjectIndex, id: RecordId, title: &str) -> String {
-    let prefix = id.timestamp_prefix12();
-    let prefix_exists = index.summaries().iter().any(|record| {
-        record.id != id
-            && record
-                .path
-                .file_name()
-                .is_some_and(|name| name.starts_with(&prefix))
-    });
-    candidate_filename_with_collision(prefix_exists, id, title)
-}
-
-fn candidate_filename_with_collision(prefix_exists: bool, id: RecordId, title: &str) -> String {
-    let prefix = id.timestamp_prefix12();
-    let slug = ascii_slug(title, 80, "untitled");
-    if prefix_exists {
-        format!("{id}-{slug}.md")
-    } else {
-        format!("{prefix}-{slug}.md")
+/// Allocates a UUIDv7 whose short id is not yet used in the project.
+fn allocate_record_id(index: &ProjectIndex) -> RecordId {
+    loop {
+        let id = RecordId::new_v7();
+        if !index.short_id_taken(&id.short_id()) {
+            return id;
+        }
+        // The short id is the millisecond timestamp; wait for the next one.
+        std::thread::sleep(std::time::Duration::from_millis(1));
     }
+}
+
+fn record_filename(id: RecordId, title: &str) -> String {
+    format!("{}-{}.md", id.short_id(), ascii_slug(title, 80, "untitled"))
 }
 
 fn render_candidate(id: RecordId, title: &str, tags: &[String], body_template: &str) -> String {

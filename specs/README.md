@@ -2,9 +2,10 @@
 
 This directory contains future Dadrock design notes and improvement paths that
 are not yet fully covered by the implementation or public documentation. The
-normative record format, project layout, lifecycle rules, links, tags, and
-conformance language live in
-[`docs-src/specification.md`](../docs-src/specification.md). Existing Dadrock
+normative record format, lifecycle rules, links, tags, and conformance language
+live in [`docs-src/specification.md`](../docs-src/specification.md). Dadrock's
+project layout is documented in
+[`docs-src/dadrock/dadrock.md`](../docs-src/dadrock/dadrock.md). Existing Dadrock
 behavior belongs in `docs-src/` or generated CLI docs, not in this directory.
 
 ## Spec Index

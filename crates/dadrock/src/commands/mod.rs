@@ -385,7 +385,7 @@ mod tests {
         let unique = list_records_command(
             &context,
             ListRecordsRequest {
-                query: Some(created.data.id.timestamp_prefix12()),
+                query: Some(created.data.id.short_id()),
                 unique: true,
                 ..ListRecordsRequest::default()
             },

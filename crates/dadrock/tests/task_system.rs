@@ -1654,7 +1654,14 @@ fn task_run_validation_enforces_notes_records_and_status_requirements() {
     let project = discover_from_pathbuf(&root);
     let agent_project =
         agent_project_context(&Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root"));
-    let candidate = dadrock::records::create_candidate(&project, "Candidate A", &[]).unwrap();
+    let candidate = dadrock::records::create_candidate_with_body(
+        &project,
+        "Candidate A",
+        &[],
+        "## Context\n\nWhy.\n\n## Decision\n\nWhat.\n\n\
+         ## Alternatives\n\nNone considered.\n\n## Consequences\n\nEffects.\n",
+    )
+    .unwrap();
     let second_candidate =
         dadrock::records::create_candidate(&project, "Candidate B", &[]).unwrap();
     let accepted = dadrock::records::accept_candidate(

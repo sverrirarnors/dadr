@@ -26,6 +26,17 @@ describe('renderMarkdown', () => {
     expect(html).toContain('href="https://pola.rs"');
   });
 
+  it('renders only short-id and full-id wikilinks as record links', () => {
+    const html = renderMarkdown(
+      'See [[0193fb1f-a3a0-7abc-8def-0123456789ab]], [[Reading list]], and [[cafe]].',
+    );
+
+    expect(html).toContain('data-wikilink="0193fb1f-a3a0-7abc-8def-0123456789ab"');
+    expect(html).toContain('[[Reading list]]');
+    expect(html).toContain('[[cafe]]');
+    expect(html.match(/data-wikilink/g)).toHaveLength(1);
+  });
+
   it('escapes raw HTML before applying inline markdown', () => {
     const html = renderMarkdown('Do not run <script>alert("x")</script>.');
 

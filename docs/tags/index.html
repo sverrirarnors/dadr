@@ -635,6 +635,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#optional-code-annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Optional code annotations
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -805,6 +816,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#optional-code-annotations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Optional code annotations
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -860,8 +882,20 @@
 <td>Person who reviewed and approved it</td>
 </tr>
 <tr>
+<td><code>people/reviewer/bob</code></td>
+<td>Optional project convention for a reviewer</td>
+</tr>
+<tr>
 <td><code>axis/sample/complete-case</code></td>
 <td>A choice along a robustness or specification axis</td>
+</tr>
+<tr>
+<td><code>multiverse/model/ols</code></td>
+<td>Another project convention for an alternative specification</td>
+</tr>
+<tr>
+<td><code>rejected/duplicate</code></td>
+<td>Why a candidate was closed</td>
 </tr>
 </tbody>
 </table>
@@ -881,6 +915,47 @@
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>tags
 </span></code></pre></div>
 <p>The specification also describes <code>#dadr/</code> annotations in code comments. Dadrock does not currently scan or validate those source annotations; that is <a href="../roadmap/">roadmap work</a>.</p>
+<h2 id="optional-code-annotations">Optional code annotations<a class="headerlink" href="#optional-code-annotations" title="Permanent link">&para;</a></h2>
+<p>These conventions describe future tooling; Dadrock does not yet scan source comments.</p>
+<p>In source-code comments, prefix tags with <code>#dadr/</code>. The same namespaces apply:</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#dadr/&lt;short-id&gt;</code></td>
+<td>Link the surrounding code to a record, e.g. <code>#dadr/01938c20a3b4</code>. A full UUID also works.</td>
+</tr>
+<tr>
+<td><code>#dadr/kind/&lt;value&gt;</code></td>
+<td>The kind of decision the code implements.</td>
+</tr>
+<tr>
+<td><code>#dadr/topic/&lt;value&gt;</code></td>
+<td>Free-form topic.</td>
+</tr>
+<tr>
+<td><code>#dadr/plan/&lt;id&gt;</code></td>
+<td>The plan item the code implements.</td>
+</tr>
+<tr>
+<td><code>#dadr/multiverse/&lt;axis&gt;/&lt;value&gt;</code></td>
+<td>The value of a robustness or specification axis implemented here.</td>
+</tr>
+<tr>
+<td><code>#dadr/confidence/&lt;low\|medium\|high&gt;</code></td>
+<td>Author confidence in the annotation.</td>
+</tr>
+</tbody>
+</table>
+<p>Several tags can share one comment:</p>
+<div class="language-sql highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">-- #dadr/kind/sample #dadr/topic/missingness</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">where</span><span class="w"> </span><span class="n">treatment</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+</span></code></pre></div>
 
 
 

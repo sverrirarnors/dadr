@@ -2,10 +2,13 @@
 
 ## Status
 
-Future RFC. The canonical DADR tag syntax is documented in
-[`docs-src/specification.md`](../docs-src/specification.md#tags). This spec is
-about future extraction of `#dadr/...` tags from source-code comments,
-source-range binding, and code-tag-driven inference or faithfulness checks.
+Future RFC. The code-tag syntax (`#dadr/<short-id>` links and `#dadr/<tag>`
+annotations) is documented in
+[`docs-src/specification.md`](../docs-src/specification.md#code-tags), and the
+suggested namespaces in [`docs-src/tags.md`](../docs-src/tags.md#code-tags).
+The public spec deliberately leaves the covered code range to tools. This spec
+defines that range, the `#dadr/ignore` directive, and future extraction and
+code-tag-driven inference or faithfulness checks.
 
 ## Purpose
 
@@ -21,23 +24,25 @@ Code tags are an authoring aid and retrieval mechanism. They do not replace acce
 The extractor should:
 
 - scan source comments for `#dadr/...` tags;
-- classify `#dadr/<uuid7-prefix>` tags as record references;
+- classify `#dadr/<short-id>` and `#dadr/<full-id>` tags as record references;
 - treat classification tags such as `#dadr/kind/...`, `#dadr/topic/...`,
-  `#dadr/plan/...`, `#dadr/axis/...`, and `#dadr/confidence/...` as evidence
-  on the surrounding source range;
-- treat `#dadr/ignore` as a suppression signal for candidate generation;
+  `#dadr/plan/...`, `#dadr/multiverse/...`, and `#dadr/confidence/...` as
+  evidence on the surrounding source range;
+- treat `#dadr/ignore` (the tag `ignore`) as a Dadrock-specific signal that
+  suppresses candidate generation for the bound source range;
 - preserve raw tag text, normalized tag text, file path, line number, and bound
   source range in the extraction result;
-- report ambiguous UUID prefixes rather than guessing.
+- report record references that do not resolve rather than guessing.
 
 ## Source-Range Binding
 
 A tag applies to the next logical statement or nearby code block. Parsers may
 use language-aware structure (AST, notebook cell boundaries, SQL statements,
-workflow nodes) when available. The fallback rule should match the public
-specification: when no language-aware structure exists, bind the tag to the next
-non-blank, non-comment line after the tag. For longer blocks, tag the first
-line; the parser uses surrounding structure to infer the range when it can.
+workflow nodes) when available. When no language-aware structure exists, the
+fallback binds a tag to the next non-blank, non-comment line after the tag
+comment; if the tag shares a line with executable code, it binds to that line.
+For longer blocks, authors tag the first line and the parser uses surrounding
+structure to infer the range when it can.
 
 ## How Tooling Uses Code Tags
 

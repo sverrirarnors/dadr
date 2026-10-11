@@ -23,7 +23,7 @@
     
     
       
-        <title>Dadrock overview - DADR</title>
+        <title>Dadrock - DADR</title>
       
     
     
@@ -72,7 +72,7 @@
   
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DADR">
-  <meta property="og:title" content="Dadrock overview - DADR">
+  <meta property="og:title" content="Dadrock - DADR">
   <meta property="og:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
   
     <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/dadrock/dadrock/">
@@ -82,7 +82,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="DADR — Data Analysis Decision Records">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Dadrock overview - DADR">
+  <meta name="twitter:title" content="Dadrock - DADR">
   <meta name="twitter:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
   <meta name="twitter:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
 
@@ -105,7 +105,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dadrock-overview" class="md-skip">
+        <a href="#install" class="md-skip">
           Skip to content
         </a>
       
@@ -660,8 +660,11 @@
                     
                     
                     
-                      
                     
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
                     
                   
                   <div class="md-sidebar__inner">
@@ -672,8 +675,36 @@
   
   
   
-    
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Install
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Project layout
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -691,8 +722,57 @@
   
 
 
-<h1 id="dadrock-overview">Dadrock overview<a class="headerlink" href="#dadrock-overview" title="Permanent link">&para;</a></h1>
-<p>The <a href="../">Dadrock overview</a> describes current capabilities, project layout, validation, and CI. To create your first accepted record, follow <a href="../../getting-started/">Get started</a>.</p>
+  <h1 id="__skip">Dadrock</h1>
+
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>dadrock</strong> is under heavy development — pre-alpha release. Expect breaking changes.</p>
+</div>
+<p><img src="../../assets/dadrock_logo.svg" alt="dadrock" style="display:block; margin: 0 auto 2rem; max-width: 22rem;"></p>
+<p><strong>DADR</strong> is the standard, the decision record format, and the project vocabulary. </p>
+<p><strong>dadrock</strong> is a Rust tool that implements DADR. It offers convenience functions to preview, create, edit, manage, and validate decision records. It can also direct LLM agents to execute a variety of tasks related to DADR.</p>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<p>Prebuilt binaries are published with each <a href="https://github.com/vincentarelbundock/dadr/releases">release</a>. A single-line installer script is available for macOS, Linux, and Windows. From source:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cargo<span class="w"> </span>install<span class="w"> </span>dadrock
+</span></code></pre></div>
+<p>Confirm the binary is on <code>PATH</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dadrock<span class="w"> </span>--version
+</span></code></pre></div>
+<p>See the <a href="../">current capabilities, validation, and CI overview</a>, or <a href="../../getting-started/">create your first decision</a>.</p>
+<h2 id="project-layout">Project layout<a class="headerlink" href="#project-layout" title="Permanent link">&para;</a></h2>
+<p>The DADR format does not mandate a directory structure. <strong>dadrock</strong> uses this
+one, created by <code>dadrock init</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadr/
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  accepted/
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    01938b8e4d70-income-preprocessing.md
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    01938b8f9d71-drop-missing-treatment.md
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  candidates/
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    01938ba1c4f3-country-exclusions.md
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  rejected/
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    01938b8d9c10-deprecated-cohort-filter.md
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  templates/
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    candidate.md                                    # optional
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  tasks/
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  runs/
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    .gitignore
+</span></code></pre></div>
+<ul>
+<li><code>dadr/accepted/</code> holds accepted decisions, current or superseded.</li>
+<li><code>dadr/candidates/</code> holds active candidates.</li>
+<li><code>dadr/rejected/</code> holds rejected records.</li>
+<li><code>dadr/templates/</code> holds optional template overrides for new candidates.</li>
+<li><code>dadr/tasks/</code> holds project-local task packages, such as
+  <code>dadr/tasks/&lt;task-id&gt;/task.toml</code> plus the prompt file it names.</li>
+<li><code>dadr/runs/</code> holds task run state and is ignored by version control.</li>
+</ul>
+<p><code>dadrock accept</code> changes a candidate's <code>status</code> to <code>accepted</code> and moves
+the file to <code>dadr/accepted/</code>. <code>dadrock reject</code> changes it to <code>rejected</code>
+and moves it to <code>dadr/rejected/</code>. The <code>id</code> never changes. <code>dadrock
+supersede</code> appends the new record's <code>id</code> to the old record's <code>successors</code> and
+leaves both files in <code>dadr/accepted/</code>.</p>
+<p>The directory is a convenience: <code>status</code> in the front matter is authoritative.
+<code>dadrock validate</code> warns when a record sits in a directory that does not match
+its status.</p>
 
 
 
