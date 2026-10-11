@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RecordSummary, Snapshot, TaskRun } from '../../src/lib/api';
-import { buildInboxGroups, countActionable, flattenInboxGroups } from '../../src/lib/inbox/items';
+import { buildInboxGroups, countActionable, flattenInboxGroups, previewText } from '../../src/lib/inbox/items';
 
 function record(id: string, status: RecordSummary['status'], title: string, timestamp_ms = 0): RecordSummary {
   return {
@@ -114,5 +114,13 @@ describe('buildInboxGroups', () => {
   it('returns no groups for an empty, healthy project', () => {
     const clean: Snapshot = { ...snapshot, records: [snapshot.records[0]!], project_validation: emptyPanel, link_health: emptyPanel, settings: { ...snapshot.settings, diagnostics: [] } };
     expect(buildInboxGroups({ snapshot: clean, runs: [], results: {}, resolved: [] })).toEqual([]);
+  });
+});
+
+describe('previewText', () => {
+  it('turns a record preview into one line without heading markers', () => {
+    expect(previewText('## Context Island may confound species differences.')).toBe('Island may confound species differences.');
+    expect(previewText('## Context\nA reviewer asked.\n\n## Decision\nAdd one outcome.')).toBe('A reviewer asked. Add one outcome.');
+    expect(previewText('Plain preview.')).toBe('Plain preview.');
   });
 });

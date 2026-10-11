@@ -142,6 +142,15 @@ const GROUP_ORDER: InboxGroupId[] = [
 /** Project diagnostics that only restate the inbox itself. */
 const REDUNDANT_DIAGNOSTIC_CODES = new Set(['candidate_backlog']);
 
+/** A record preview as one line of prose: section headings and markers removed. */
+export function previewText(preview: string): string {
+  return preview
+    .replace(/#{1,6}\s*(Context|Decision|Alternatives|Consequences|Open questions)\b:?\s*/gi, ' ')
+    .replace(/#{1,6}\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function candidateItemId(recordId: string): string {
   return `candidate:${recordId}`;
 }
@@ -227,7 +236,7 @@ export function buildInboxGroups(source: InboxSource): InboxGroup[] {
       kind: 'candidate',
       id: candidateItemId(record.id),
       title: record.title,
-      subtitle: record.preview,
+      subtitle: previewText(record.preview),
       record,
     });
   }
