@@ -419,6 +419,181 @@ fn source(path: &Utf8Path) -> String {
     fs::read_to_string(path).unwrap()
 }
 
+/// The id and successors in a record file's front matter.
+fn identity(path: &Utf8Path) -> (RecordId, Vec<RecordId>) {
+    let record = dadrock::records::parse_record_file(path)
+        .unwrap()
+        .record
+        .unwrap();
+    (record.front_matter.id, record.front_matter.successors)
+}
+
+#[test]
+fn a_successor_with_its_predecessors_title_takes_its_filename() {
+    let p = Project::new("same-title");
+    let old = p.accepted("Listwise deletion");
+    let ledger_path = p.project.ledger_dir().join("listwise-deletion.md");
+    assert_eq!(old.to, ledger_path);
+    let (successor, successor_path) = p.candidate("Listwise deletion", &successor_body(&[old.id]));
+    assert_eq!(
+        successor_path,
+        p.project.inbox_dir().join("listwise-deletion.md")
+    );
+
+    let envelope = accept_records(&p.context(), &ids(&[successor])).unwrap();
+    let archived_path = p.project.archive_dir().join("listwise-deletion.md");
+    assert_eq!(envelope.data.accepted[0].to, ledger_path);
+    assert_eq!(envelope.data.superseded[0].to, archived_path);
+    assert_eq!(
+        envelope.changed_paths,
+        vec![successor_path, ledger_path.clone(), archived_path.clone()]
+    );
+
+    // The successor's text is in the ledger and the predecessor's, now with
+    // its successor, in the archive.
+    assert_eq!(identity(&ledger_path), (successor, vec![]));
+    assert!(source(&ledger_path).contains("The old rule no longer fits."));
+    assert_eq!(identity(&archived_path), (old.id, vec![successor]));
+    assert!(p.files(&p.project.inbox_dir()).is_empty());
+    // The same name in two folders is normal.
+    let report = validate_project_index(&p.index());
+    assert!(
+        report.ok && report.counts.warnings == 0,
+        "{:?}",
+        report.issues
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn a_failed_same_title_acceptance_restores_both_records() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let p = Project::new("same-title-rollback");
+    let old = p.accepted("Listwise deletion");
+    let (successor, successor_path) = p.candidate("Listwise deletion", &successor_body(&[old.id]));
+    let before = (source(&old.to), source(&successor_path));
+
+    // Both records reach their new paths, then the candidate cannot leave the
+    // inbox.
+    let inbox = p.project.inbox_dir();
+    let permissions = fs::metadata(&inbox).unwrap().permissions();
+    fs::set_permissions(&inbox, fs::Permissions::from_mode(0o500)).unwrap();
+    let result = accept_candidates(&p.index(), &ids(&[successor]));
+    fs::set_permissions(&inbox, permissions).unwrap();
+
+    assert!(result.is_err());
+    assert_eq!((source(&old.to), source(&successor_path)), before);
+    assert_eq!(identity(&old.to), (old.id, vec![]));
+    assert!(p.files(&p.project.archive_dir()).is_empty());
+    assert_eq!(
+        p.files(&p.project.ledger_dir()),
+        vec!["listwise-deletion.md"]
+    );
+}
+
+#[test]
+fn splits_and_merges_with_repeated_titles_keep_every_record() {
+    let p = Project::new("repeated-titles");
+    let title = "Outcome rule";
+    let name = "outcome-rule.md";
+    let suffixed = |id: RecordId| format!("outcome-rule-{}.md", id.short_id());
+    // An earlier rejected draft already holds the name in the archive.
+    let (rejected, _) = p.candidate(title, SECTIONS);
+    reject_candidate(&p.index(), &rejected.to_string()).unwrap();
+    let old = p.accepted(title);
+    assert_eq!(old.to, p.project.ledger_dir().join(name));
+
+    // A split into two successors with the same title.
+    let (left, left_path) = p.candidate(title, &successor_body(&[old.id]));
+    let (right, right_path) = p.candidate(title, &successor_body(&[old.id]));
+    assert_eq!(left_path, p.project.inbox_dir().join(name));
+    assert_eq!(right_path, p.project.inbox_dir().join(suffixed(right)));
+    accept_candidates(&p.index(), &ids(&[left, right])).unwrap();
+    let ledger = p.project.ledger_dir();
+    let archive = p.project.archive_dir();
+    assert_eq!(identity(&ledger.join(name)), (left, vec![]));
+    assert_eq!(identity(&ledger.join(suffixed(right))), (right, vec![]));
+    assert_eq!(
+        identity(&archive.join(suffixed(old.id))),
+        (old.id, vec![left, right])
+    );
+    assert_eq!(identity(&archive.join(name)).0, rejected);
+
+    // A merge of both back into one record with the same title.
+    let (merged, merged_path) = p.candidate(title, &successor_body(&[left, right]));
+    assert_eq!(merged_path, p.project.inbox_dir().join(name));
+    accept_candidates(&p.index(), &ids(&[merged])).unwrap();
+    assert_eq!(p.files(&ledger), vec![name]);
+    assert_eq!(identity(&ledger.join(name)), (merged, vec![]));
+    assert_eq!(
+        identity(&archive.join(suffixed(left))),
+        (left, vec![merged])
+    );
+    assert_eq!(
+        identity(&archive.join(suffixed(right))),
+        (right, vec![merged])
+    );
+    assert_eq!(p.files(&archive).len(), 4);
+    assert!(p.files(&p.project.inbox_dir()).is_empty());
+    let report = validate_project_index(&p.index());
+    assert!(
+        report.ok && report.counts.warnings == 0,
+        "{:?}",
+        report.issues
+    );
+}
+
+#[test]
+fn lifecycle_moves_keep_the_filename() {
+    let p = Project::new("keep-filename");
+    // A hand-named candidate keeps its name when accepted, whatever its title.
+    let id = RecordId::new_v7();
+    let hand_named = p.project.inbox_dir().join("01938b8e4d70-legacy-name.md");
+    fs::write(
+        &hand_named,
+        format!("---\ntitle: Something else\nstatus: candidate\nid: {id}\n---\n\n{SECTIONS}"),
+    )
+    .unwrap();
+    let accepted = accept_candidate(&p.index(), &id.to_string()).unwrap();
+    assert_eq!(
+        accepted.accepted[0].to,
+        p.project.ledger_dir().join("01938b8e4d70-legacy-name.md")
+    );
+
+    // Rejecting keeps the name, with the short id only on a collision.
+    let (first, _) = p.candidate("Drop site seven", SECTIONS);
+    let rejected = reject_candidate(&p.index(), &first.to_string()).unwrap();
+    assert_eq!(
+        rejected.to,
+        p.project.archive_dir().join("drop-site-seven.md")
+    );
+    let (second, _) = p.candidate("Drop site seven", SECTIONS);
+    let rejected = reject_candidate(&p.index(), &second.to_string()).unwrap();
+    assert_eq!(
+        rejected.to,
+        p.project
+            .archive_dir()
+            .join(format!("drop-site-seven-{}.md", second.short_id()))
+    );
+
+    // So does `dadrock supersede`.
+    let old = p.accepted("Cluster by site");
+    let new = p.accepted("Cluster by site and wave");
+    let envelope = supersede_records(
+        &p.context(),
+        SupersedeRecordsRequest {
+            from: vec![old.id.to_string()],
+            to: vec![new.id.to_string()],
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        envelope.data.superseded[0].to,
+        p.project.archive_dir().join("cluster-by-site.md")
+    );
+}
+
 fn save(p: &Project, id: RecordId, content: String) -> Result<(), String> {
     save_record_source(
         &p.context(),

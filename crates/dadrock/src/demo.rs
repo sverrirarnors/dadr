@@ -56,7 +56,8 @@ pub struct DemoRecordSummary {
 }
 
 struct DemoRecordSeed {
-    /// Path under `dadr/`, starting with the record's folder.
+    /// Path under `dadr/`, starting with the record's folder. The filename is
+    /// a slug of the title, as Dadrock names new records.
     relative_path: &'static str,
     title: &'static str,
     status: RecordStatus,
@@ -83,7 +84,7 @@ const ID_REJECTED_MERGE: &str = "01938b9a-bcd0-7e00-8b00-00000000000c";
 
 const DEMO_RECORDS: &[DemoRecordSeed] = &[
     DemoRecordSeed {
-        relative_path: "archive/01938b8e4d70-complete-case-analysis-sample.md",
+        relative_path: "archive/complete-case-analysis-sample.md",
         title: "Complete-case analysis sample",
         status: RecordStatus::Accepted,
         id: ID_COMPLETE_CASE,
@@ -109,7 +110,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "archive/01938b8f9d71-outcome-scale-v1.md",
+        relative_path: "archive/outcome-scale-v1.md",
         title: "Outcome scale v1",
         status: RecordStatus::Accepted,
         id: ID_OUTCOME_SCALE,
@@ -128,7 +129,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "ledger/01938b91bcd0-audit-assignment-log.md",
+        relative_path: "ledger/audit-assignment-log.md",
         title: "Audit assignment log",
         status: RecordStatus::Accepted,
         id: ID_ASSIGNMENT_LOG,
@@ -154,7 +155,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "archive/01938b92bcd0-impute-missing-covariates.md",
+        relative_path: "archive/impute-missing-covariates.md",
         title: "Impute missing covariates",
         status: RecordStatus::Accepted,
         id: ID_COVARIATE_IMPUTATION,
@@ -183,7 +184,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "ledger/01938b93bcd0-shared-cleaning-rules.md",
+        relative_path: "ledger/shared-cleaning-rules.md",
         title: "Shared cleaning rules",
         status: RecordStatus::Accepted,
         id: ID_SHARED_CLEANING,
@@ -207,7 +208,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "ledger/01938b94bcd0-use-cluster-robust-standard-errors.md",
+        relative_path: "ledger/use-cluster-robust-standard-errors.md",
         title: "Use cluster-robust standard errors",
         status: RecordStatus::Accepted,
         id: ID_CLUSTER_SE,
@@ -228,7 +229,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "ledger/01938b95bcd0-report-specification-curve.md",
+        relative_path: "ledger/report-specification-curve.md",
         title: "Report specification curve",
         status: RecordStatus::Accepted,
         id: ID_SPEC_CURVE,
@@ -251,7 +252,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "ledger/01938b96-bcd0-7e00-8b00-000000000008-rename-primary-outcome.md",
+        relative_path: "ledger/rename-primary-outcome.md",
         title: "Rename primary outcome",
         status: RecordStatus::Accepted,
         id: ID_RENAME_OUTCOME,
@@ -272,7 +273,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "inbox/01938b97bcd0-add-negative-control-outcome.md",
+        relative_path: "inbox/add-negative-control-outcome.md",
         title: "Add negative-control outcome",
         status: RecordStatus::Candidate,
         id: ID_NEGATIVE_CONTROL,
@@ -294,7 +295,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "archive/01938b98bcd0-early-complete-case-candidate.md",
+        relative_path: "archive/early-complete-case-candidate.md",
         title: "Early complete-case candidate",
         status: RecordStatus::Rejected,
         id: ID_ACCEPTED_CANDIDATE,
@@ -321,7 +322,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "archive/01938b99bcd0-drop-site-seven-candidate.md",
+        relative_path: "archive/drop-site-seven-candidate.md",
         title: "Drop site seven candidate",
         status: RecordStatus::Rejected,
         id: ID_REJECTED_SITE,
@@ -345,7 +346,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "archive/01938b9abcd0-merge-outcome-candidate.md",
+        relative_path: "archive/merge-outcome-candidate.md",
         title: "Merge outcome candidate",
         status: RecordStatus::Rejected,
         id: ID_REJECTED_MERGE,
@@ -522,7 +523,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
 
     let candidate_records = [
         DemoRecordSeed {
-            relative_path: "inbox/01938ba0bcd0-use-adelie-and-gentoo-only.md",
+            relative_path: "inbox/use-adelie-and-gentoo-only.md",
             title: "Use Adelie and Gentoo only",
             status: RecordStatus::Candidate,
             id: "01938ba0-bcd0-7e00-8b00-000000000011",
@@ -541,7 +542,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             ),
         },
         DemoRecordSeed {
-            relative_path: "inbox/01938ba1bcd0-drop-rows-with-missing-model-variables.md",
+            relative_path: "inbox/drop-rows-with-missing-model-variables.md",
             title: "Drop rows with missing model variables",
             status: RecordStatus::Candidate,
             id: "01938ba1-bcd0-7e00-8b00-000000000012",
@@ -560,7 +561,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             ),
         },
         DemoRecordSeed {
-            relative_path: "inbox/01938ba2bcd0-use-body-mass-as-the-outcome.md",
+            relative_path: "inbox/use-body-mass-as-the-outcome.md",
             title: "Use body mass as the outcome",
             status: RecordStatus::Candidate,
             id: "01938ba2-bcd0-7e00-8b00-000000000013",
@@ -579,7 +580,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             ),
         },
         DemoRecordSeed {
-            relative_path: "inbox/01938ba3bcd0-reviewer-edit-clarify-species-dummy.md",
+            relative_path: "inbox/clarify-species-dummy-coding.md",
             title: "Clarify species dummy coding",
             status: RecordStatus::Candidate,
             id: "01938ba3-bcd0-7e00-8b00-000000000014",
@@ -598,7 +599,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             ),
         },
         DemoRecordSeed {
-            relative_path: "inbox/01938ba4bcd0-add-island-fixed-effects.md",
+            relative_path: "inbox/add-island-fixed-effects.md",
             title: "Add island fixed effects",
             status: RecordStatus::Candidate,
             id: "01938ba4-bcd0-7e00-8b00-000000000015",
@@ -730,7 +731,7 @@ fn seed_broken_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, Dadr
 
     write_support_file(
         &result.project_dir,
-        "ledger/01938b9bbcd0-broken-missing-consequences.md",
+        "ledger/broken-missing-consequences.md",
         concat!(
             "---\n",
             "title: Broken missing consequences\n",
@@ -759,7 +760,7 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
 
     let conflict_records = [
         DemoRecordSeed {
-            relative_path: "inbox/01938b9cbcd0-drop-missing-body-mass-rows.md",
+            relative_path: "inbox/drop-missing-body-mass-rows.md",
             title: "Drop missing body-mass rows",
             status: RecordStatus::Candidate,
             id: "01938b9c-bcd0-7e00-8b00-00000000000e",
@@ -778,7 +779,7 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
             ),
         },
         DemoRecordSeed {
-            relative_path: "inbox/01938b9dbcd0-use-complete-cases-for-body-mass-model.md",
+            relative_path: "inbox/use-complete-cases-for-body-mass-model.md",
             title: "Use complete cases for body-mass model",
             status: RecordStatus::Candidate,
             id: "01938b9d-bcd0-7e00-8b00-00000000000f",
@@ -797,7 +798,7 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
             ),
         },
         DemoRecordSeed {
-            relative_path: "inbox/01938b9ebcd0-reintroduce-complete-case-analysis.md",
+            relative_path: "inbox/reintroduce-complete-case-analysis.md",
             title: "Reintroduce complete-case analysis",
             status: RecordStatus::Candidate,
             id: "01938b9e-bcd0-7e00-8b00-000000000010",

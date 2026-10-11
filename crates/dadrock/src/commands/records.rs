@@ -212,11 +212,23 @@ pub fn accept_records(
     let (_, index) = context.initialized_index()?;
     let result = accept_candidates(&index, queries)?;
     let mut changed_paths = Vec::new();
-    for moved in &result.accepted {
-        changed_paths.extend(moved_paths(&moved.from, &moved.to));
-    }
-    for moved in &result.superseded {
-        changed_paths.extend(moved_paths(&moved.from, &moved.to));
+    let moves = result
+        .accepted
+        .iter()
+        .map(|moved| (&moved.from, &moved.to))
+        .chain(
+            result
+                .superseded
+                .iter()
+                .map(|moved| (&moved.from, &moved.to)),
+        );
+    for (from, to) in moves {
+        // A successor can take the path its predecessor leaves; list it once.
+        for path in moved_paths(from, to) {
+            if !changed_paths.contains(&path) {
+                changed_paths.push(path);
+            }
+        }
     }
     Ok(CommandEnvelope::new("status accept", result).with_changed_paths(changed_paths))
 }

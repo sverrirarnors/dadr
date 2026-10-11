@@ -6,11 +6,11 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use serde::{Deserialize, Serialize};
 
 use super::{
-    apply_record_writes, check_required_sections, record_file_name, record_filename,
-    require_record_status, resolve_unique_summaries, rewrite_for_converted_decision,
-    rewrite_for_superseded_record, scanned_record_for_summary, supersedable_record,
-    supersedes_section, with_supersedes_section, AcceptRecordResult, RecordMove, RecordWrite,
-    ScannedRecordSummary, SupersededRecordMove,
+    apply_record_writes, check_required_sections, relocate, require_record_status,
+    resolve_unique_summaries, rewrite_for_converted_decision, rewrite_for_superseded_record,
+    scanned_record_for_summary, supersedable_record, supersedes_section, with_supersedes_section,
+    AcceptRecordResult, RecordMove, RecordWrite, Relocation, ScannedRecordSummary,
+    SupersededRecordMove,
 };
 use crate::{
     error::DadrError,
@@ -170,24 +170,36 @@ pub fn accept_candidates(
     }
 
     // Candidates and predecessors change in one operation, so either every
-    // record changes or none does.
+    // record changes or none does. Each keeps its filename; a successor can
+    // take the name its predecessor leaves in the ledger.
     let project = index.project();
+    let relocations: Vec<_> = candidates
+        .iter()
+        .map(|candidate| Relocation {
+            from: &candidate.path,
+            id: candidate.id,
+            dir: project.ledger_dir(),
+        })
+        .chain(order.iter().map(|id| {
+            let predecessor = &successors_of[id].0;
+            Relocation {
+                from: &predecessor.path,
+                id: predecessor.id,
+                dir: project.archive_dir(),
+            }
+        }))
+        .collect();
+    let mut targets = relocate(&relocations)?.into_iter();
     let mut writes = Vec::new();
-    for candidate in &candidates {
-        let accepted_path = project
-            .ledger_dir()
-            .join(record_filename(candidate.id, &candidate.title));
+    for (candidate, accepted_path) in candidates.iter().zip(targets.by_ref()) {
         writes.push(RecordWrite::read(
             &candidate.path,
             accepted_path,
             rewrite_for_converted_decision,
         )?);
     }
-    for id in &order {
+    for (id, archived_path) in order.iter().zip(targets) {
         let (predecessor, successors) = &successors_of[id];
-        let archived_path = project
-            .archive_dir()
-            .join(record_file_name(&predecessor.path)?);
         writes.push(RecordWrite::read(
             &predecessor.path,
             archived_path,

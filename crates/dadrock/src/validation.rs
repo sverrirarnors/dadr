@@ -42,7 +42,6 @@ pub enum ProjectValidationIssueCode {
     DuplicateRequiredSection,
     EmptyRequiredSection,
     DuplicateRecordId,
-    DuplicateFilename,
     ShortIdCollision,
     UnresolvedSuccessor,
     InvalidSuccessor,
@@ -161,7 +160,6 @@ pub fn validate_project_index(index: &ProjectIndex) -> ProjectValidationReport {
     add_record_diagnostics(scanned, &mut issues);
     add_tag_issues(index, &mut issues);
     add_record_structure_issues(scanned, project, &mut issues);
-    add_duplicate_filename_issues(scanned, &mut issues);
     add_duplicate_id_issues(scanned, &mut issues);
     add_short_id_collision_issues(scanned, &mut issues);
     add_successor_graph_issues(scanned, &mut issues);
@@ -382,33 +380,6 @@ fn status_location_issue(
         .with_path(scanned.path.clone())
         .with_record_id(id),
     )
-}
-
-fn add_duplicate_filename_issues(
-    scanned: &[ScannedRecord],
-    issues: &mut Vec<ProjectValidationIssue>,
-) {
-    let mut by_name = BTreeMap::<String, Vec<Utf8PathBuf>>::new();
-    for record in scanned {
-        if let Some(file_name) = record.path.file_name() {
-            by_name
-                .entry(file_name.to_owned())
-                .or_default()
-                .push(record.path.clone());
-        }
-    }
-
-    for (file_name, paths) in by_name {
-        if paths.len() > 1 {
-            issues.push(
-                ProjectValidationIssue::error(
-                    ProjectValidationIssueCode::DuplicateFilename,
-                    format!("filename `{file_name}` is used by multiple records"),
-                )
-                .with_related_paths(paths),
-            );
-        }
-    }
 }
 
 fn add_duplicate_id_issues(scanned: &[ScannedRecord], issues: &mut Vec<ProjectValidationIssue>) {

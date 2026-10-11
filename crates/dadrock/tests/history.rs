@@ -71,14 +71,21 @@ fn write_record(
     } else {
         "archive"
     };
-    let short_id: String = id.replace('-', "").chars().take(12).collect();
-    fs::write(
-        root.join("dadr")
-            .join(folder)
-            .join(format!("{short_id}-record.md")),
-        content,
-    )
-    .unwrap();
+    // Named like Dadrock names records: a slug of the title, with the short id
+    // only when the folder already has that name.
+    let slug: String = title
+        .to_lowercase()
+        .split(|ch: char| !ch.is_ascii_alphanumeric())
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    let dir = root.join("dadr").join(folder);
+    let mut path = dir.join(format!("{slug}.md"));
+    if path.exists() {
+        let short_id: String = id.replace('-', "").chars().take(12).collect();
+        path = dir.join(format!("{slug}-{short_id}.md"));
+    }
+    fs::write(path, content).unwrap();
 }
 
 fn open(root: &Path, query: &str) -> RecordHistory {
@@ -848,7 +855,7 @@ fn diff_normalizes_line_endings() {
         body("Keep it.")
     )
     .replace('\n', "\r\n");
-    fs::write(root.join("dadr/ledger/019300000002-windows.md"), content).unwrap();
+    fs::write(root.join("dadr/ledger/same-rule-019300000002.md"), content).unwrap();
 
     let result = diff(&context(&root), unix, windows).unwrap().data;
     assert!(!result.diff.changed, "{:?}", result.diff);

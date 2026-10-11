@@ -63,13 +63,17 @@ fn md_files(dir: &std::path::Path) -> Vec<String> {
 const FILLED_SECTIONS: &str = "## Context\n\nWhy.\n\n## Decision\n\nWhat.\n\n\
                                ## Alternatives\n\nNone considered.\n\n## Consequences\n\nEffects.\n";
 
-fn write_record(root: &std::path::Path, prefix: &str, title: &str, status: &str, id: &str) {
-    write_record_with_successors(root, prefix, title, status, id, &[]);
+fn write_record(root: &std::path::Path, title: &str, status: &str, id: &str) {
+    write_record_with_successors(root, title, status, id, &[]);
+}
+
+/// A hand-written record's filename: a slug of its title.
+fn slug_filename(title: &str) -> String {
+    format!("{}.md", title.to_lowercase().replace(' ', "-"))
 }
 
 fn write_record_with_successors(
     root: &std::path::Path,
-    prefix: &str,
     title: &str,
     status: &str,
     id: &str,
@@ -86,29 +90,12 @@ fn write_record_with_successors(
     }
     front_matter.push_str("---\n\n");
     front_matter.push_str(FILLED_SECTIONS);
-    fs::write(
-        records_dir(root).join(format!(
-            "{prefix}-{}.md",
-            title.to_lowercase().replace(' ', "-")
-        )),
-        front_matter,
-    )
-    .unwrap();
+    fs::write(records_dir(root).join(slug_filename(title)), front_matter).unwrap();
 }
 
-fn write_record_with_body(
-    root: &std::path::Path,
-    prefix: &str,
-    title: &str,
-    status: &str,
-    id: &str,
-    body: &str,
-) {
+fn write_record_with_body(root: &std::path::Path, title: &str, status: &str, id: &str, body: &str) {
     fs::write(
-        records_dir(root).join(format!(
-            "{prefix}-{}.md",
-            title.to_lowercase().replace(' ', "-")
-        )),
+        records_dir(root).join(slug_filename(title)),
         format!("---\ntitle: {title}\nstatus: {status}\nid: {id}\n---\n\n{body}"),
     )
     .unwrap();
@@ -524,11 +511,10 @@ fn new_candidate_writes_canonical_candidate_without_lifecycle_dates() {
 
     assert!(created.path.is_file());
     assert_eq!(created.path.parent(), Some(project.inbox_dir().as_path()));
-    assert!(created
-        .path
-        .file_name()
-        .unwrap()
-        .ends_with("-drop-records-with-missing-treatment.md"));
+    assert_eq!(
+        created.path.file_name(),
+        Some("drop-records-with-missing-treatment.md")
+    );
     let content = fs::read_to_string(&created.path).unwrap();
     assert!(content.contains("status: candidate"));
     assert!(content.contains("kind/sample"));
@@ -629,7 +615,7 @@ fn tags_list_merges_yaml_and_inline_tags_case_insensitively() {
     let root = temp_project("tags-list");
     init_project(&root).unwrap();
     fs::write(
-        records_dir(&root).join("01938b8e4d70-tagged.md"),
+        records_dir(&root).join("tagged.md"),
         "---\n\
          title: Tagged decision\n\
          status: accepted\n\
@@ -671,7 +657,7 @@ fn tags_validate_reports_malformed_yaml_and_inline_tags() {
     let root = temp_project("tags-validate");
     init_project(&root).unwrap();
     fs::write(
-        records_dir(&root).join("01938b8e4d70-bad-tags.md"),
+        records_dir(&root).join("bad-tags.md"),
         "---\n\
          title: Bad tags\n\
          status: accepted\n\
@@ -716,7 +702,7 @@ fn tags_validate_ignores_numeric_hash_references_in_prose() {
     let root = temp_project("tags-numeric-reference");
     init_project(&root).unwrap();
     fs::write(
-        records_dir(&root).join("01938b8e4d70-numeric-reference.md"),
+        records_dir(&root).join("numeric-reference.md"),
         "---\n\
          title: Numeric reference\n\
          status: accepted\n\
@@ -747,7 +733,7 @@ fn tags_validate_reports_legacy_yaml_tag_object() {
     let root = temp_project("tags-object");
     init_project(&root).unwrap();
     fs::write(
-        records_dir(&root).join("01938b8e4d70-tag-object.md"),
+        records_dir(&root).join("tag-object.md"),
         "---\n\
          title: Tag object\n\
          status: accepted\n\
@@ -810,7 +796,7 @@ fn scanner_skips_tool_managed_directories() {
 fn scanner_reports_unreadable_records_without_aborting() {
     let root = temp_project("scan-unreadable");
     init_project(&root).unwrap();
-    let bad_path = records_dir(&root).join("01938b8e4d70-bad.md");
+    let bad_path = records_dir(&root).join("bad.md");
     fs::write(&bad_path, [0xff, 0xfe, 0xfd]).unwrap();
 
     let records = scan_records(camino::Utf8Path::from_path(&records_dir(&root)).unwrap())
@@ -889,7 +875,7 @@ fn status_reports_successors_and_predecessors() {
     let decisions = records_dir(&root);
 
     fs::write(
-        decisions.join("01938b8e4d70-original.md"),
+        decisions.join("original.md"),
         "---\n\
          title: Original decision\n\
          status: accepted\n\
@@ -904,7 +890,7 @@ fn status_reports_successors_and_predecessors() {
     )
     .unwrap();
     fs::write(
-        decisions.join("01938b8f9d71-successor.md"),
+        decisions.join("successor.md"),
         "---\n\
          title: Successor decision\n\
          status: accepted\n\
@@ -989,7 +975,7 @@ fn reject_refuses_non_candidate() {
     init_project(&root).unwrap();
     let decisions = records_dir(&root);
     fs::write(
-        decisions.join("01938b8e4d70-accepted.md"),
+        decisions.join("accepted.md"),
         "---\n\
          title: Accepted decision\n\
          status: accepted\n\
@@ -1234,7 +1220,7 @@ fn accept_refuses_non_candidate() {
     init_project(&root).unwrap();
     let decisions = records_dir(&root);
     fs::write(
-        decisions.join("01938b8e4d70-accepted.md"),
+        decisions.join("accepted.md"),
         "---\n\
          title: Accepted decision\n\
          status: accepted\n\
@@ -1260,7 +1246,7 @@ fn accept_refuses_non_candidate() {
 fn accept_requires_required_sections() {
     let root = temp_project("accept-sections");
     init_project(&root).unwrap();
-    let candidate_path = inbox_dir(&root).join("01938b8e4d70-incomplete.md");
+    let candidate_path = inbox_dir(&root).join("incomplete.md");
     fs::write(
         &candidate_path,
         "---\n\
@@ -1304,14 +1290,12 @@ fn supersede_links_accepted_records() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old decision",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "New decision",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
@@ -1349,21 +1333,18 @@ fn supersede_supports_many_to_one_successors() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "Old B",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record(
         &root,
-        "01938b91bcd0",
         "New X",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
@@ -1392,21 +1373,18 @@ fn supersede_supports_one_to_many_successors() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "New X",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record(
         &root,
-        "01938b91bcd0",
         "New Y",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
@@ -1437,28 +1415,24 @@ fn supersede_supports_many_to_many_successors() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "Old B",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record(
         &root,
-        "01938b91bcd0",
         "New X",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
     );
     write_record(
         &root,
-        "01938b92bcd0",
         "New Y",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
@@ -1508,28 +1482,24 @@ fn supersede_records_supports_many_to_many_in_one_operation() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "Old B",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record(
         &root,
-        "01938b91bcd0",
         "New X",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
     );
     write_record(
         &root,
-        "01938b92bcd0",
         "New Y",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
@@ -1573,14 +1543,13 @@ fn supersede_records_restores_every_record_when_a_move_fails() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     let nested_dir = records_dir(&root).join("nested");
     fs::create_dir_all(&nested_dir).unwrap();
-    let old_b_path = nested_dir.join("01938b8f9d71-old-b.md");
+    let old_b_path = nested_dir.join("old-b.md");
     fs::write(
         &old_b_path,
         "---\n\
@@ -1596,12 +1565,11 @@ fn supersede_records_restores_every_record_when_a_move_fails() {
     .unwrap();
     write_record(
         &root,
-        "01938b91bcd0",
         "New X",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
     );
-    let old_a_path = records_dir(&root).join("01938b8e4d70-old-a.md");
+    let old_a_path = records_dir(&root).join("old-a.md");
     let old_a_original = fs::read_to_string(&old_a_path).unwrap();
     let old_b_original = fs::read_to_string(&old_b_path).unwrap();
     let original_permissions = fs::metadata(&nested_dir).unwrap().permissions();
@@ -1630,14 +1598,12 @@ fn supersede_refuses_invalid_statuses_duplicate_and_cycle() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old accepted",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "New accepted",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
@@ -1676,7 +1642,6 @@ fn supersede_refuses_invalid_statuses_duplicate_and_cycle() {
     init_project(&root).unwrap();
     write_record_with_successors(
         &root,
-        "01938b8e4d70",
         "Cycle A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
@@ -1684,7 +1649,6 @@ fn supersede_refuses_invalid_statuses_duplicate_and_cycle() {
     );
     write_record_with_successors(
         &root,
-        "01938b8f9d71",
         "Cycle B",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
@@ -1721,28 +1685,24 @@ fn project_validation_reports_project_wide_graph_and_filename_errors() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Duplicate A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8e4d70",
         "Duplicate B",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8e4d70",
         "Same short id",
         "accepted",
         "01938b8e-4d70-7abc-8def-0000000000ff",
     );
     write_record_with_successors(
         &root,
-        "01938b8f9d71",
         "Dangling successor",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
@@ -1750,7 +1710,6 @@ fn project_validation_reports_project_wide_graph_and_filename_errors() {
     );
     write_record_with_successors(
         &root,
-        "01938b91bcd0",
         "Cycle A",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
@@ -1758,14 +1717,13 @@ fn project_validation_reports_project_wide_graph_and_filename_errors() {
     );
     write_record_with_successors(
         &root,
-        "01938b92bcd0",
         "Cycle B",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
         &["01938b91-bcd0-7e00-8b00-cafebabe0002"],
     );
     fs::write(
-        inbox_dir(&root).join("01938b93bcd0-candidate-with-successor.md"),
+        inbox_dir(&root).join("candidate-with-successor.md"),
         "---\n\
          title: Candidate with successor\n\
          status: candidate\n\
@@ -1799,21 +1757,19 @@ fn project_validation_reports_structural_and_location_issues() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Root candidate",
         "candidate",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "Root rejected",
         "rejected",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
 
     fs::write(
-        inbox_dir(&root).join("01938b91bcd0-active-accepted.md"),
+        inbox_dir(&root).join("active-accepted.md"),
         "---\n\
          title: Active accepted\n\
          status: accepted\n\
@@ -1826,7 +1782,7 @@ fn project_validation_reports_structural_and_location_issues() {
     )
     .unwrap();
     fs::write(
-        records_dir(&root).join("01938b92bcd0-incomplete-accepted.md"),
+        records_dir(&root).join("incomplete-accepted.md"),
         "---\n\
          title: Incomplete accepted\n\
          status: accepted\n\
@@ -1863,14 +1819,12 @@ fn validate_links_passes_resolved_wikilinks_and_local_markdown_links() {
     fs::write(root.join("data/input.csv"), "x\n1\n").unwrap();
     write_record(
         &root,
-        "01938b8f9d71",
         "Target decision",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record_with_body(
         &root,
-        "01938b8e4d70",
         "Source decision",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
@@ -1901,12 +1855,58 @@ fn new_candidates_get_unique_short_ids() {
     for index in 0..5 {
         let created = create_candidate(&project, &format!("Candidate {index}"), &[]).unwrap();
         assert!(short_ids.insert(created.id.short_id()));
-        assert!(created
-            .path
-            .file_name()
-            .unwrap()
-            .starts_with(&format!("{}-", created.id.short_id())));
+        assert_eq!(
+            created.path.file_name().unwrap(),
+            format!("candidate-{index}.md")
+        );
     }
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn new_candidates_append_the_short_id_only_when_the_slug_is_taken() {
+    let root = temp_project("slug-collision");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+
+    let first = create_candidate(&project, "Drop missing rows", &[]).unwrap();
+    let second = create_candidate(&project, "Drop missing rows!", &[]).unwrap();
+    assert_eq!(first.path, project.inbox_dir().join("drop-missing-rows.md"));
+    assert_eq!(
+        second.path,
+        project
+            .inbox_dir()
+            .join(format!("drop-missing-rows-{}.md", second.id.short_id()))
+    );
+
+    // Another folder's name does not count.
+    fs::write(project.ledger_dir().join("keep-outliers.md"), "notes").unwrap();
+    let third = create_candidate(&project, "Keep outliers", &[]).unwrap();
+    assert_eq!(third.path, project.inbox_dir().join("keep-outliers.md"));
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_filename_never_reserves_a_short_id() {
+    let root = temp_project("filename-identity");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+    // A file whose name starts with a short id that no record uses.
+    fs::write(
+        records_dir(&root).join("01938b8e4d70-notes.md"),
+        "---\ntitle: Notes\nstatus: accepted\nid: 01938b8f-9d71-7456-8000-fedcba987654\n---\n\n",
+    )
+    .unwrap();
+
+    let index = project_index(&project);
+    assert!(!index.short_id_taken("01938b8e4d70"));
+    assert!(index.short_id_taken("01938b8f9d71"));
+    // A query can still find a record by its filename.
+    let found = index.resolve_one("01938b8e4d70-notes").unwrap();
+    assert_eq!(found.match_kind, MatchKind::Filename);
+    assert_eq!(found.record.title, "Notes");
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -1917,14 +1917,12 @@ fn validate_links_reports_wikilink_and_markdown_link_issues() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70-a",
         "Ambiguous A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8e4d70-b",
         "Ambiguous B",
         "accepted",
         "01938b8e-4d70-7def-8000-0123456789ac",
@@ -1935,7 +1933,6 @@ fn validate_links_reports_wikilink_and_markdown_link_issues() {
 
     write_record_with_body(
         &root,
-        "01938b92bcd0",
         "Source with bad links",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
@@ -2305,12 +2302,9 @@ fn supersede_command_moves_predecessors_to_archive() {
 fn location_check_follows_status_and_successors() {
     let root = temp_project("location-check");
     init_project(&root).unwrap();
-    let write = |dir: PathBuf, prefix: &str, title: &str, status: &str, id: &str, extra: &str| {
+    let write = |dir: PathBuf, title: &str, status: &str, id: &str, extra: &str| {
         fs::write(
-            dir.join(format!(
-                "{prefix}-{}.md",
-                title.to_lowercase().replace(' ', "-")
-            )),
+            dir.join(slug_filename(title)),
             format!(
                 "---\ntitle: {title}\nstatus: {status}\nid: {id}\n{extra}---\n\n{FILLED_SECTIONS}"
             ),
@@ -2320,7 +2314,6 @@ fn location_check_follows_status_and_successors() {
     let successors = "successors:\n  - 01938b91-bcd0-7e00-8b00-cafebabe0002\n";
     write(
         inbox_dir(&root),
-        "01938b8e4d70",
         "Placed candidate",
         "candidate",
         "01938b8e-4d70-7abc-8def-0123456789ab",
@@ -2328,7 +2321,6 @@ fn location_check_follows_status_and_successors() {
     );
     write(
         records_dir(&root),
-        "01938b91bcd0",
         "Placed decision",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
@@ -2336,7 +2328,6 @@ fn location_check_follows_status_and_successors() {
     );
     write(
         archive_dir(&root),
-        "01938b92bcd0",
         "Placed superseded",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
@@ -2344,7 +2335,6 @@ fn location_check_follows_status_and_successors() {
     );
     write(
         archive_dir(&root),
-        "01938b93bcd0",
         "Placed rejected",
         "rejected",
         "01938b93-bcd0-7e00-8b00-cafebabe0004",
@@ -2356,7 +2346,6 @@ fn location_check_follows_status_and_successors() {
 
     write(
         records_dir(&root),
-        "01938b94bcd0",
         "Superseded in ledger",
         "accepted",
         "01938b94-bcd0-7e00-8b00-cafebabe0005",
@@ -2364,7 +2353,6 @@ fn location_check_follows_status_and_successors() {
     );
     write(
         archive_dir(&root),
-        "01938b95bcd0",
         "Current in archive",
         "accepted",
         "01938b95-bcd0-7e00-8b00-cafebabe0006",
@@ -2372,7 +2360,6 @@ fn location_check_follows_status_and_successors() {
     );
     write(
         archive_dir(&root),
-        "01938b96bcd0",
         "Candidate in archive",
         "candidate",
         "01938b96-bcd0-7e00-8b00-cafebabe0007",
@@ -2380,7 +2367,6 @@ fn location_check_follows_status_and_successors() {
     );
     write(
         inbox_dir(&root),
-        "01938b97bcd0",
         "Rejected in inbox",
         "rejected",
         "01938b97-bcd0-7e00-8b00-cafebabe0008",
@@ -2406,16 +2392,16 @@ fn location_check_follows_status_and_successors() {
     warnings.sort();
     assert_eq!(warnings.len(), 4, "{warnings:?}");
     assert!(
-        warnings[0].0.contains("superseded-in-ledger") && warnings[0].1.contains("`dadr/archive/`")
+        warnings[0].0.contains("candidate-in-archive") && warnings[0].1.contains("`dadr/inbox/`")
     );
     assert!(
         warnings[1].0.contains("current-in-archive") && warnings[1].1.contains("`dadr/ledger/`")
     );
     assert!(
-        warnings[2].0.contains("candidate-in-archive") && warnings[2].1.contains("`dadr/inbox/`")
+        warnings[2].0.contains("rejected-in-inbox") && warnings[2].1.contains("`dadr/archive/`")
     );
     assert!(
-        warnings[3].0.contains("rejected-in-inbox") && warnings[3].1.contains("`dadr/archive/`")
+        warnings[3].0.contains("superseded-in-ledger") && warnings[3].1.contains("`dadr/archive/`")
     );
 
     fs::remove_dir_all(root).unwrap();

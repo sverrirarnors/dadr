@@ -203,19 +203,14 @@ impl ProjectIndex {
         find_result(&target.to_string(), matches)
     }
 
-    /// Whether a short id is used by a record, or by a file that names it but
-    /// could not be parsed.
+    /// Whether a record uses a short id. Identity lives in front matter only:
+    /// a filename never reserves a short id.
     pub fn short_id_taken(&self, short_id: &str) -> bool {
-        let filename_prefix = format!("{short_id}-");
         self.scanned.iter().any(|scanned| {
             scanned
                 .record
                 .as_ref()
                 .is_some_and(|record| record.front_matter.id.short_id() == short_id)
-                || scanned
-                    .path
-                    .file_name()
-                    .is_some_and(|name| name.starts_with(&filename_prefix))
         })
     }
 }

@@ -111,14 +111,14 @@ mod tests {
         fs::create_dir_all(&root).unwrap();
         init_project(&root).unwrap();
         fs::write(
-            root.join("dadr/archive/01938c20a3b4-listwise.md"),
+            root.join("dadr/archive/listwise-deletion.md"),
             format!(
                 "---\ntitle: Listwise deletion\nstatus: accepted\nid: {OLD}\nsuccessors:\n  - {NEW}\ntags:\n  - topic/attrition\n---\n\n## Context\n\nMissing data.\n\n## Decision\n\nUse listwise deletion.\n\n## Alternatives\n\nNone.\n\n## Consequences\n\nSmaller sample.\n"
             ),
         )
         .unwrap();
         fs::write(
-            root.join("dadr/ledger/0193b2a1c0f4-imputation.md"),
+            root.join("dadr/ledger/multiple-imputation.md"),
             format!(
                 "---\ntitle: Multiple imputation\nstatus: accepted\nid: {NEW}\ntags:\n  - topic/missing-data\n---\n\n## Supersedes\n\n[[{OLD}|Listwise deletion]]\n\nComplete cases lose a third of the sample.\n\n## Context\n\nMissing data.\n\n## Decision\n\nUse multiple imputation.\n\n## Alternatives\n\nNone.\n\n## Consequences\n\nSmaller sample.\n"
             ),

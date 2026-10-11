@@ -21,11 +21,11 @@ use crate::{
     model::{Record, RecordStatus},
     project::{utf8_to_path, ProjectContext},
     templates::candidate_template_body,
-    text::ascii_slug,
 };
 
 mod rewrite;
 mod supersession;
+mod writes;
 
 pub use rewrite::check_record_rewrite;
 pub(crate) use supersession::record_list;
@@ -33,6 +33,7 @@ pub use supersession::{
     accept_candidate, accept_candidates, current_successors, pending_supersedes,
     successor_candidate_body, PendingSupersedes, StaleSupersedes,
 };
+use writes::{apply_record_writes, new_record_path, relocate, RecordWrite, Relocation};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ScannedRecord {
@@ -316,8 +317,7 @@ fn create_candidate_from_body(
     let id = allocate_record_id(&index);
     let inbox_dir = project.inbox_dir();
     fs::create_dir_all(utf8_to_path(&inbox_dir))?;
-    let filename = record_filename(id, title);
-    let path = inbox_dir.join(filename);
+    let path = new_record_path(&inbox_dir, id, title)?;
     let content = render_candidate(id, title, tags, body_markdown);
 
     file_store::write_new(&path, &content)?;
@@ -396,9 +396,13 @@ pub fn reject_candidate(
         "reject requires status `candidate`",
     )?;
 
-    let target_path = project
-        .archive_dir()
-        .join(record_file_name(&found.record.path)?);
+    let target_path = relocate(&[Relocation {
+        from: &found.record.path,
+        id: found.record.id,
+        dir: project.archive_dir(),
+    }])?
+    .pop()
+    .ok_or_else(|| DadrError::ProjectInvariant("reject planned no move".to_owned()))?;
     let write = RecordWrite::read(&found.record.path, target_path.clone(), |content| {
         rewrite_status(content, RecordStatus::Rejected)
     })?;
@@ -718,10 +722,18 @@ pub fn supersede_records(
     // operation; on failure, every record is restored.
     let new_ids: Vec<_> = new_records.iter().map(|record| record.id).collect();
     let archive_dir = index.project().archive_dir();
+    let relocations: Vec<_> = old_records
+        .iter()
+        .map(|old| Relocation {
+            from: &old.path,
+            id: old.id,
+            dir: archive_dir.clone(),
+        })
+        .collect();
     let writes = old_records
         .iter()
-        .map(|old| {
-            let archived_path = archive_dir.join(record_file_name(&old.path)?);
+        .zip(relocate(&relocations)?)
+        .map(|(old, archived_path)| {
             RecordWrite::read(&old.path, archived_path, |content| {
                 rewrite_for_superseded_record(content, &new_ids)
             })
@@ -759,94 +771,6 @@ pub fn supersede_records(
         edges,
         superseded,
     })
-}
-
-/// One record file, rewritten in place or moved to another folder.
-struct RecordWrite {
-    from: Utf8PathBuf,
-    to: Utf8PathBuf,
-    original: String,
-    updated: String,
-}
-
-impl RecordWrite {
-    fn read(
-        from: &Utf8Path,
-        to: Utf8PathBuf,
-        rewrite: impl FnOnce(&str) -> Result<String, DadrError>,
-    ) -> Result<Self, DadrError> {
-        let original = fs::read_to_string(utf8_to_path(from))?;
-        let updated = rewrite(&original)?;
-        Ok(Self {
-            from: from.to_owned(),
-            to,
-            original,
-            updated,
-        })
-    }
-
-    fn moves(&self) -> bool {
-        self.from != self.to
-    }
-}
-
-/// Apply every write or none. All targets are staged before any is committed,
-/// and the sources of moves are removed last. On an I/O error, the original
-/// files come back and moved copies are removed.
-fn apply_record_writes(writes: &[RecordWrite]) -> Result<(), DadrError> {
-    let mut targets = BTreeSet::new();
-    for write in writes {
-        if !targets.insert(&write.to) {
-            return Err(DadrError::InvalidLifecycleTransition(format!(
-                "two records would be written to `{}`",
-                write.to
-            )));
-        }
-        if write.moves() && write.to.exists() {
-            return Err(DadrError::OverwriteCollision {
-                path: write.to.clone(),
-            });
-        }
-    }
-
-    let staged = writes
-        .iter()
-        .map(|write| file_store::stage_replace(&write.to, &write.updated))
-        .collect::<Result<Vec<_>, _>>()?;
-    let committed = (|| {
-        for staged in staged {
-            staged.commit()?;
-        }
-        for write in writes.iter().filter(|write| write.moves()) {
-            file_store::remove_file(&write.from)?;
-        }
-        Ok::<_, DadrError>(())
-    })();
-    if let Err(error) = committed {
-        restore_record_writes(writes);
-        return Err(error);
-    }
-    Ok(())
-}
-
-fn restore_record_writes(writes: &[RecordWrite]) {
-    // Bring every original back before removing any moved copy, so no record
-    // is ever missing from disk.
-    for write in writes {
-        if !write.moves() || !write.from.exists() {
-            let _ = file_store::write_replace(&write.from, &write.original);
-        }
-    }
-    for write in writes.iter().filter(|write| write.moves()) {
-        if write.to.exists() {
-            let _ = file_store::remove_file(&write.to);
-        }
-    }
-}
-
-fn record_file_name(path: &Utf8Path) -> Result<&str, DadrError> {
-    path.file_name()
-        .ok_or_else(|| DadrError::ProjectInvariant(format!("record path `{path}` has no filename")))
 }
 
 fn scan_dir(dir: &Utf8Path, records: &mut Vec<ScannedRecord>) -> Result<(), DadrError> {
@@ -1166,10 +1090,6 @@ fn allocate_record_id(index: &ProjectIndex) -> RecordId {
         // The short id is the millisecond timestamp; wait for the next one.
         std::thread::sleep(std::time::Duration::from_millis(1));
     }
-}
-
-fn record_filename(id: RecordId, title: &str) -> String {
-    format!("{}-{}.md", id.short_id(), ascii_slug(title, 80, "untitled"))
 }
 
 fn render_candidate(id: RecordId, title: &str, tags: &[String], body_template: &str) -> String {
