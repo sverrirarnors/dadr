@@ -34,10 +34,10 @@ Open the printed local URL, fill in the four sections, and review the decision b
 The Rust workspace contains `crates/dadr` (format library) and `crates/dadrock` (CLI, application logic, local server). The frontend lives in `crates/dadrock/web`.
 
 ```sh
-cargo test --workspace
-make web-test
-make web-lint
-make build
+cargo test --workspace   # Rust tests
+make web-test            # web UI unit tests
+make web-lint            # web UI lint and type checks
+make build               # documentation site, into docs/
 ```
 
 Website sources are in `docs-src/`; `docs/` is generated. See [CLAUDE.md](CLAUDE.md) for contributor guidance.
