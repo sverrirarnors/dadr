@@ -464,7 +464,7 @@ fn task(args: cli::TaskArgs) -> Result<ExitCode> {
     match args.command {
         cli::TaskCommand::List(args) => task_list(args),
         cli::TaskCommand::Show(args) => task_show(args),
-        cli::TaskCommand::Run(args) => task_run(args),
+        cli::TaskCommand::Run(args) => task_run(*args),
         cli::TaskCommand::Runs(args) => task_runs(args),
         cli::TaskCommand::Result(args) => task_result(args),
     }

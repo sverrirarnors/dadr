@@ -420,7 +420,7 @@ pub enum TaskCommand {
     #[command(about = "Show one resolved task package.")]
     Show(TaskShowArgs),
     #[command(about = "Run one resolved task package with a local ACP agent.")]
-    Run(TaskRunArgs),
+    Run(Box<TaskRunArgs>),
     #[command(about = "List persisted local task runs.")]
     Runs(JsonArg),
     #[command(about = "Read a persisted task run result.")]
@@ -1187,7 +1187,7 @@ mod simple_workflow_tests {
         else {
             panic!("task run")
         };
-        args
+        *args
     }
 
     /// The built-in task's manifest requirements, without user or project
