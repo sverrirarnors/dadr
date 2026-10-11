@@ -34,6 +34,8 @@ targets = [
 pr-run-mode = "plan"
 install-path = "CARGO_HOME"
 install-updater = false
+# Installs Bun before `dist build`, so the binaries embed the web UI.
+github-build-setup = "../build-setup.yml"
 
 [profile.dist]
 inherits = "release"
