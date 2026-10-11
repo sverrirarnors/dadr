@@ -1,0 +1,52 @@
+# The `dadrock` command-line package: one description, three packages. The
+# `.deb`, the `.rpm` and the Arch `.pkg.tar.zst` are all rendered from this
+# file by scripts/make-linux-packages.sh, rather than maintained three times.
+#
+# dadrock is a single binary whose only hard dependency is libc. The web UI is
+# embedded in it, and the agents it can drive (ACP providers) are looked up on
+# PATH at run time and are entirely optional, so none of them is a dependency.
+#
+# The desktop app is a separate package (dadrock-desktop.nfpm.yaml) so that a
+# machine that only wants the CLI, a CI runner for instance, never pulls in
+# GTK and WebKit.
+#
+# Nothing here resolves a version at build time; the script supplies
+# DADROCK_VERSION and DADROCK_ARCH.
+
+name: dadrock
+version: ${DADROCK_VERSION}
+arch: ${DADROCK_ARCH}
+platform: linux
+maintainer: Vincent Arel-Bundock <vincent@arelbundock.com>
+description: |
+  Data Analysis Decision Records: the dadrock CLI and local review UI.
+  A DADR is a Markdown file that records one choice behind an empirical
+  analysis (context, decision, alternatives, consequences). dadrock drafts,
+  validates, accepts, rejects and supersedes those records, and serves a
+  local web UI for reviewing them with `dadrock preview`.
+vendor: Vincent Arel-Bundock
+homepage: https://vincentarelbundock.github.io/dadr
+license: MIT OR Apache-2.0
+section: devel
+priority: optional
+
+depends:
+  - libc6
+
+overrides:
+  rpm:
+    depends:
+      - glibc
+
+  archlinux:
+    depends:
+      - glibc
+
+contents:
+  - src: ./dist/linux-staging/dadrock
+    dst: /usr/bin/dadrock
+
+  # No LICENSE file is shipped because the repository root has none yet; add
+  # it here (and to the desktop package) once it exists.
+  - src: ./README.md
+    dst: /usr/share/doc/dadrock/README.md

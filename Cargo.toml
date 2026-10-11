@@ -7,7 +7,7 @@ resolver = "2"
 
 [workspace.package]
 edition = "2021"
-version = "0.0.1"
+version = "0.0.2"
 description = "Data Analysis Decision Records tooling and local review UI."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/vincentarelbundock/dadr"
@@ -16,6 +16,13 @@ authors = ["Vincent Arel-Bundock"]
 readme = "README.md"
 keywords = ["data-analysis", "decision-records", "reproducibility", "cli"]
 categories = ["command-line-utilities", "development-tools"]
+
+# A table with its own `version =` line on purpose: `make bump` rewrites every
+# line of this file that starts with `version = `, so the requirement dadrock
+# puts on dadr moves in step with the workspace version.
+[workspace.dependencies.dadr]
+path = "crates/dadr"
+version = "0.0.2"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
@@ -34,6 +41,8 @@ targets = [
 pr-run-mode = "plan"
 install-path = "CARGO_HOME"
 install-updater = false
+# Installs Bun before `dist build`, so the binaries embed the web UI.
+github-build-setup = "../build-setup.yml"
 
 [profile.dist]
 inherits = "release"

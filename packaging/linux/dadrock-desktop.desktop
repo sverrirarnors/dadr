@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Dadrock
+GenericName=Decision Record Reviewer
+Comment=Draft, review and accept Data Analysis Decision Records
+Exec=dadrock-desktop %f
+Icon=dadrock-desktop
+Terminal=false
+Categories=Development;
+Keywords=DADR;decision;records;analysis;
+StartupWMClass=dadrock-desktop

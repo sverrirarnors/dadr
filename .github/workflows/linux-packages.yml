@@ -1,0 +1,210 @@
+name: Linux packages
+
+# Called by release-desktop.yml with the tag once the desktop binaries are
+# published (see the note there on why this is not a workflow_run listener),
+# and runnable by hand for a tag.
+#
+# This job does not rebuild anything. It repackages binaries that are already
+# published: cargo-dist's linux-gnu tarballs for the `dadrock` package and
+# release-desktop.yml's tarballs for `dadrock-desktop`. The bytes in the .deb
+# are then the same bytes users get from the tarballs.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to package (e.g. v0.0.2). Resolved from the checked-out commit when omitted."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      # Check out the released tag, not whatever is on the default branch right
+      # now: the nfpm descriptions, the .desktop file and the icons have to be
+      # the ones that were released.
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+
+      - id: resolve
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          TAG="${INPUT_TAG:-}"
+          if [ -z "$TAG" ]; then
+            TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || true)
+          fi
+          TAG=${TAG#refs/tags/}
+
+          if [ -z "$TAG" ] || ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "No release tag found for $(git rev-parse HEAD); skipping."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag: $TAG"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Pinned deliberately and hash-checked, so a replaced upstream asset
+      # fails the job rather than building the packages with an unverified
+      # tool.
+      - name: Install nfpm
+        if: steps.resolve.outputs.proceed == 'true'
+        env:
+          NFPM_VERSION: 2.47.0
+          NFPM_SHA256: 0660ca602b2d2d2ae4781a06c692b3eeb9d437ffea05b831d76e41f4a3188783
+        run: |
+          set -eu
+          url="https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz"
+          curl -fsSL -o /tmp/nfpm.tar.gz "$url"
+          echo "${NFPM_SHA256}  /tmp/nfpm.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/nfpm.tar.gz -C /tmp nfpm
+          sudo install -m755 /tmp/nfpm /usr/local/bin/nfpm
+
+      - name: Build the packages
+        if: steps.resolve.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -eu
+          mkdir -p dist
+
+          # The manifest version is the source of truth for the package
+          # version, and the tag must agree with it. A mismatch means the tag
+          # was pushed against an unbumped manifest, which would silently
+          # publish a package whose version does not match the release.
+          version="$(awk -F'"' '/^version/ { print $2; exit }' Cargo.toml)"
+          if [ "v${version}" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match Cargo.toml version $version"
+            exit 1
+          fi
+
+          for pair in "x86_64-unknown-linux-gnu amd64" "aarch64-unknown-linux-gnu arm64"; do
+            read -r triple arch <<< "$pair"
+
+            asset="dadrock-${triple}.tar.xz"
+            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --pattern "$asset" --dir /tmp --clobber
+            rm -rf "/tmp/unpack-dadrock-${arch}"
+            mkdir -p "/tmp/unpack-dadrock-${arch}"
+            tar -xJf "/tmp/${asset}" -C "/tmp/unpack-dadrock-${arch}" --strip-components=1
+            ./scripts/make-linux-packages.sh dadrock "/tmp/unpack-dadrock-${arch}/dadrock" "$arch"
+
+            # A desktop build that failed for one architecture should not hold
+            # back the CLI packages, so a missing tarball is a warning. The
+            # apt and rpm repositories skip a missing asset the same way.
+            asset="dadrock-desktop-${triple}.tar.xz"
+            if ! gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+                   --pattern "$asset" --dir /tmp --clobber; then
+              echo "::warning::$TAG has no $asset; skipping the dadrock-desktop $arch packages"
+              continue
+            fi
+            rm -rf "/tmp/unpack-desktop-${arch}"
+            mkdir -p "/tmp/unpack-desktop-${arch}"
+            tar -xJf "/tmp/${asset}" -C "/tmp/unpack-desktop-${arch}" --strip-components=1
+            ./scripts/make-linux-packages.sh dadrock-desktop "/tmp/unpack-desktop-${arch}/dadrock-desktop" "$arch"
+          done
+
+          cd dist
+          for artifact in *.deb *.rpm *.pkg.tar.zst; do
+            sha256sum "$artifact" > "$artifact.sha256"
+          done
+          ls -l
+
+      # Proves the packages are installable and that the installed binaries
+      # run. amd64 only: the runner cannot execute the arm64 binaries.
+      - name: Install the .debs and run them
+        if: steps.resolve.outputs.proceed == 'true'
+        run: |
+          set -eu
+          sudo apt-get update
+
+          # One apt-get call for both, because dadrock-desktop depends on the
+          # exact dadrock version, which is not in any configured repository.
+          debs=(./dist/dadrock_*_amd64.deb)
+          desktop=(./dist/dadrock-desktop_*_amd64.deb)
+          if [ -f "${desktop[0]}" ]; then
+            debs+=("${desktop[0]}")
+          fi
+          sudo apt-get install -y "${debs[@]}"
+
+          dadrock --version
+          test -f /usr/share/doc/dadrock/README.md
+
+          if [ -f "${desktop[0]}" ]; then
+            # The desktop package's dependencies are written by hand. ldd
+            # proves they cover every library the binary links against.
+            if ldd /usr/bin/dadrock-desktop | grep 'not found'; then
+              echo "::error::dadrock-desktop links against libraries its package does not depend on"
+              exit 1
+            fi
+            dadrock-desktop --version
+            test -f /usr/share/applications/dadrock-desktop.desktop
+            test -f /usr/share/icons/hicolor/512x512/apps/dadrock-desktop.png
+            sudo apt-get remove -y dadrock-desktop
+          fi
+          sudo apt-get remove -y dadrock
+
+      - name: Attach to the release
+        if: steps.resolve.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -eu
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            dist/*.deb dist/*.deb.sha256 \
+            dist/*.rpm dist/*.rpm.sha256 \
+            dist/*.pkg.tar.zst dist/*.pkg.tar.zst.sha256
+
+      # Tells the apt repo to rebuild now rather than waiting for its cron.
+      # Optional: without a PAT in APT_REPO_TOKEN the packages are still
+      # published, and the nightly cron picks them up within a day.
+      - name: Nudge the apt repo
+        if: steps.resolve.outputs.proceed == 'true'
+        continue-on-error: true
+        env:
+          APT_REPO_TOKEN: ${{ secrets.APT_REPO_TOKEN }}
+        run: |
+          set -eu
+          if [ -z "${APT_REPO_TOKEN:-}" ]; then
+            echo "APT_REPO_TOKEN not set; the apt repo will pick this up on its next cron run."
+            exit 0
+          fi
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer ${APT_REPO_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/vincentarelbundock/apt/dispatches \
+            -d '{"event_type":"upstream-release"}'
+
+      # Same nudge for the RPM repo, with its own optional PAT in
+      # RPM_REPO_TOKEN, so either repo can be wired up without the other.
+      - name: Nudge the rpm repo
+        if: steps.resolve.outputs.proceed == 'true'
+        continue-on-error: true
+        env:
+          RPM_REPO_TOKEN: ${{ secrets.RPM_REPO_TOKEN }}
+        run: |
+          set -eu
+          if [ -z "${RPM_REPO_TOKEN:-}" ]; then
+            echo "RPM_REPO_TOKEN not set; the rpm repo will pick this up on its next cron run."
+            exit 0
+          fi
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer ${RPM_REPO_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/vincentarelbundock/rpm/dispatches \
+            -d '{"event_type":"upstream-release"}'

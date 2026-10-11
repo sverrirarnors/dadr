@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- App icon source. The "d" is the glyph from docs-src/assets/dadrock_logo.svg;
+       the body sits on Apple's 824px grid inside the 1024px canvas. Regenerate
+       the PNG/ICNS/ICO set with `make desktop-icons`. -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#faf9f6"/>
+  <rect x="100.5" y="100.5" width="823" height="823" rx="184.5" fill="none" stroke="#1a1a1a" stroke-opacity="0.12"/>
+  <path transform="translate(512 470) scale(2.733) translate(-145.56 -87.8)" fill="#1a1a1a"
+        d="M 212.36515,173.25308 V 0 H 176.29054 V 62.655908 c -8.54399,-10.205319 -20.41064,-18.98664 -39.63461,-18.98664 -30.14129,0 -57.909255,23.258634 -57.909255,65.741242 v 0.47466 c 0,42.48261 28.242625,65.74124 57.909255,65.74124 18.7493,0 30.85328,-8.78132 39.63461,-20.64797 v 18.27464 z M 176.7652,109.88517 c 0,21.12264 -14.00265,35.12529 -30.85329,35.12529 -16.85064,0 -31.09062,-14.00265 -31.09062,-35.12529 v -0.47466 c 0,-21.359972 14.23998,-35.125286 31.09062,-35.125286 16.85064,0 30.85329,14.002647 30.85329,35.125286 z"/>
+  <rect x="330" y="760" width="364" height="44" rx="10" fill="#d40000"/>
+</svg>

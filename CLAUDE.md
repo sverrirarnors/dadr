@@ -11,6 +11,8 @@ DADR ("Data Analysis Decision Records") is a file-first Markdown format for capt
 - **Future-work RFCs** in `specs/` (code tags, git hooks, faithfulness checks, roadmap). Implemented behavior belongs in `docs-src/`, not `specs/`.
 - `skills/dadr/` — the agent skill shipped for DADR workflows (record anatomy, tags, task guides).
 - `editors/vscode/` — the VS Code extension.
+- `desktop/` — the Tauri desktop app (`dadrock-desktop`), a window around `dadrock preview`; its own Cargo workspace (see `desktop/README.md`).
+- `packaging/linux/` + `scripts/` + `.github/workflows/` — release distribution: cargo-dist, then `release-desktop.yml`, which calls the Linux package, Homebrew and Scoop workflows.
 - `reference/` — non-normative notes on related tools.
 
 The user-facing artifacts keep the `dadr` name (`dadr/` project directory, `#dadr/...` code tags) even though the binary is `dadrock`.
@@ -42,6 +44,16 @@ bun run lint
 `web/build/` is gitignored and embedded into the binary with `rust-embed`; building without Bun (or with `--features no-js-build`) falls back to a no-assets page.
 
 The UI has three routes, `/inbox` (everything that needs a human decision), `/ledger` (what was decided), and `/draft` (the composer page), plus a project popover; Markdown bodies are edited with CodeMirror (`src/lib/components/editor/MarkdownEditor.svelte`); legacy routes (`/records`, `/tasks`, `/validation`, `/tags`, `/settings`, `/candidates/*`) redirect through `src/lib/navigation/legacy.ts`. The design vocabulary lives in `crates/dadrock/web/docs/web-ui-vocabulary.md`.
+
+### Desktop app (`desktop/`, Tauri 2)
+
+```bash
+make desktop-dev PROJECT=path   # debug dadrock + app; on NixOS runs inside desktop/shell.nix
+make desktop                    # release build (macOS .dmg / Linux binary)
+cd desktop && cargo clippy --all-targets && cargo test
+```
+
+`desktop/` is deliberately outside the root workspace so `cargo test --workspace` never needs WebKitGTK; `make bump` keeps its version in step. The app finds `dadrock` via `$DADROCK_BIN`, a sibling executable, or `PATH`, and relies on the `dadrock-preview: listening on <url>` stderr line and `DADROCK_PREVIEW_EXIT_ON_STDIN_EOF` (both in `web.rs`) — keep them stable.
 
 ### Docs site
 
@@ -109,7 +121,7 @@ The spec (`docs-src/specification.md`) is authoritative. In short:
 
 ## Onboarding and agent boundaries
 
-Agent tasks return proposals for human review. Do not invent an analyst's rationale from code alone or automatically accept a candidate. Advanced ACP/MCP integration details belong in `docs-src/llms.md`, not onboarding.
+Agent tasks return proposals for human review. Do not invent an analyst's rationale from code alone or automatically accept a candidate. Advanced ACP/MCP integration details belong in `docs-src/dadrock/llms.md`, not onboarding.
 
 Use `dadrock accept`, `dadrock reject`, and `dadrock supersede` for everyday lifecycle actions; the `status` subcommands remain compatible. A successor candidate names its predecessors in an optional `## Supersedes` section: one or more lines, each a record link by full UUID (`[[uuid]]` or `[[uuid|label]]`), then optionally the reason in ordinary Markdown. When Dadrock writes the section (`records::successor_candidate_body`), it is the first section of the body and each link is labeled with the predecessor's title. Several links are a merge; several candidates naming the same predecessor are a split, accepted together with `dadrock accept QUERY --with QUERY` (`records::accept_candidates`). Acceptance checks the whole set before writing, links each predecessor and moves it to `dadr/archive/` while preserving its body, and restores every file if a write fails. A malformed section or missing predecessor is the lifecycle diagnostic `invalid_supersedes`; validation warns about stale successor candidates (`stale_supersedes`) and accepted records whose predecessors do not list them (`unlinked_supersedes`).
 

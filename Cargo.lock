@@ -351,7 +351,7 @@ dependencies = [
 
 [[package]]
 name = "dadr"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "camino",
  "chrono",
@@ -364,7 +364,7 @@ dependencies = [
 
 [[package]]
 name = "dadrock"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "agent-client-protocol",
  "agent-client-protocol-tokio",

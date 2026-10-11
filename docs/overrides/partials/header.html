@@ -14,8 +14,9 @@
     </label>
 
     {#- Two entries: everything about the format is Documentation; the
-        dadrock page is Software. A link is active when the current page
-        belongs to it. The home page highlights neither. -#}
+        DADRock section is Software, and its link opens the section's first
+        page (Installation). A link is active when the current page belongs
+        to it. The home page highlights neither. -#}
     {% set current = page.url if page and page.url else "" %}
     {% set is_software = current[:8] == "dadrock/" %}
     {% set is_docs = current != "" and not is_software %}

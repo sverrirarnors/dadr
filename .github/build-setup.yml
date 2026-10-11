@@ -1,0 +1,5 @@
+# Steps cargo-dist runs before `dist build` (github-build-setup in Cargo.toml).
+# build.rs embeds the Svelte web UI only when Bun is on PATH; without it the
+# released binary would serve the no-assets page.
+- name: Install Bun
+  uses: oven-sh/setup-bun@v2

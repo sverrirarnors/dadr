@@ -108,8 +108,8 @@ Every candidate decision <b>must</b> be approved by the human analyst before it 
 </div>
 
 <figure class="screenshot" markdown>
-![Reviewing a candidate decision in the dadrock web UI, with Accept and Reject buttons](assets/dadrock-review-light.webp){ loading=lazy }
-<figcaption>Reviewing a candidate in the <a href="dadrock/#web-interface">dadrock web UI</a>.</figcaption>
+![Reviewing a candidate decision in the DADRock web UI, with Accept and Reject buttons](assets/dadrock-review-light.webp){ loading=lazy }
+<figcaption>Reviewing a candidate in the <a href="dadrock/web/">DADRock web UI</a>.</figcaption>
 </figure>
 
 ## New possibilities

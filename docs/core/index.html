@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://vincentarelbundock.github.io/dadr/core/">
       
       
-        <link rel="prev" href="../install/">
+        <link rel="prev" href="./..">
       
       
         <link rel="next" href="../specification/">
@@ -252,32 +252,6 @@
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../install/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Install
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -297,7 +271,7 @@
   <span class="md-ellipsis">
     
   
-  Data Analysis Decision Records
+  DADR
 
     
   </span>
@@ -314,7 +288,7 @@
   <span class="md-ellipsis">
     
   
-  Data Analysis Decision Records
+  DADR
 
     
   </span>
@@ -439,32 +413,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../llms/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  LLM agents
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../uuidv7/" class="md-nav__link">
         
   
@@ -490,28 +438,47 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../roadmap/" class="md-nav__link">
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Roadmap
+  DADRock
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
   
+  DADRock
 
-    
-      
-      
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
   
   
   
@@ -524,7 +491,149 @@
   <span class="md-ellipsis">
     
   
-  Dadrock
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web interface
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/editors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Editors
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/llms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  LLM agents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Roadmap
 
     
   </span>
@@ -636,14 +745,14 @@
 <li><strong>Alternatives:</strong> other approaches considered and why you set them aside.</li>
 <li><strong>Consequences:</strong> implications, tradeoffs, and follow-up work.</li>
 </ul>
-<p>A file also has three required YAML fields: <code>title</code>, <code>status</code>, and <code>id</code>. Dadrock generates the ID for you. Tags and links are optional; you do not need a classification system to get started.</p>
+<p>A file also has three required YAML fields: <code>title</code>, <code>status</code>, and <code>id</code>. DADRock generates the ID for you. Tags and links are optional; you do not need a classification system to get started.</p>
 <h2 id="draft-review-preserve">Draft, review, preserve<a class="headerlink" href="#draft-review-preserve" title="Permanent link">&para;</a></h2>
 <p>A new record is a <strong>candidate</strong>. A human reviews it and marks it <strong>accepted</strong> or <strong>rejected</strong>. Acceptance keeps the same ID. An agent may help draft a candidate, but cannot decide whether you endorse it.</p>
-<p>Once approved, a decision's substantive content is preserved. Changing the decision creates a replacement linked to the original; minor corrections remain possible. The original remains accepted and its <code>successors</code> field names its replacements. “Superseded” describes an accepted record with successors, not a fourth stored status. Dadrock offers a superseded filter for convenience.</p>
+<p>Once approved, a decision's substantive content is preserved. Changing the decision creates a replacement linked to the original; minor corrections remain possible. The original remains accepted and its <code>successors</code> field names its replacements. “Superseded” describes an accepted record with successors, not a fourth stored status. DADRock offers a superseded filter for convenience.</p>
 <h2 id="what-deserves-a-record">What deserves a record?<a class="headerlink" href="#what-deserves-a-record" title="Permanent link">&para;</a></h2>
 <p>Start with choices a collaborator would ask you to explain: who enters the sample, how a variable is defined, why a model was chosen, or how missing values are handled. Skip routine formatting and mechanical refactoring. A few useful explanations are better than an unmanageable review queue.</p>
 <p>Code can reveal what an analysis does without revealing why. When a draft says the rationale is unknown, supply it or leave the record as a candidate until you can review it.</p>
-<p><a href="../install/">Install dadrock</a> and <a href="../dadrock/#first-decision">record your first decision</a>, or consult the <a href="../specification/">full specification</a> for exact syntax and implementation rules.</p>
+<p><a href="../dadrock/">Install DADRock</a> and <a href="../dadrock/web/#first-decision">record your first decision</a>, or consult the <a href="../specification/">full specification</a> for exact syntax and implementation rules.</p>
 
 
 
@@ -675,7 +784,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../install/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Install">
+          <a href="./.." class="md-footer__link md-footer__link--prev" aria-label="Previous: Home">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -685,7 +794,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Install
+                Home
               </div>
             </div>
           </a>
