@@ -11,6 +11,7 @@ use crate::{
     ids::RecordId,
     index::ProjectIndex,
     markdown::scan::{byte_in_spans, inline_code_spans, is_fenced_code_fence},
+    model::Record,
     records::{ScannedRecord, ScannedRecordSummary},
     text::{normalized_tag_key, write_serde_label},
 };
@@ -47,6 +48,9 @@ pub enum TagIssueCode {
     WhitespaceInTag,
     EmptyTagSegment,
     NumericOnlyTag,
+    /// A character other than a letter, number, emoji, `_`, `-`, or `/`
+    /// (spec §7).
+    InvalidTagCharacter,
 }
 
 impl fmt::Display for TagIssueCode {
@@ -132,38 +136,14 @@ pub fn build_tag_report(index: &ProjectIndex) -> TagReport {
             continue;
         };
 
-        for tag in &record.front_matter.tags {
+        for occurrence in tag_occurrences(record) {
             add_observed_tag(
                 &mut tags,
                 &mut issues,
                 scanned_record,
                 &summary,
-                tag.as_str(),
-                TagSource::FrontMatter,
-                None,
+                &occurrence,
             );
-        }
-
-        let mut in_fenced_code = false;
-        for (line_index, line) in record.body.raw_markdown.lines().enumerate() {
-            if is_fenced_code_fence(line) {
-                in_fenced_code = !in_fenced_code;
-                continue;
-            }
-            if in_fenced_code {
-                continue;
-            }
-            for inline_tag in inline_tags_in_line(line) {
-                add_observed_tag(
-                    &mut tags,
-                    &mut issues,
-                    scanned_record,
-                    &summary,
-                    &inline_tag,
-                    TagSource::Inline,
-                    Some(line_index + 1),
-                );
-            }
         }
     }
 
@@ -191,6 +171,61 @@ pub fn build_tag_report(index: &ProjectIndex) -> TagReport {
         counts,
         issues,
     }
+}
+
+/// The tag problems in one record, front matter and inline, as
+/// `dadrock validate tags` reports them. Acceptance refuses a candidate that
+/// has any (spec §7).
+pub fn record_tag_issues(scanned_record: &ScannedRecord) -> Vec<TagIssue> {
+    let mut issues = Vec::new();
+    add_tag_field_diagnostics(scanned_record, &mut issues);
+    if let (Some(record), Some(summary)) = (&scanned_record.record, scanned_record.summary()) {
+        for occurrence in tag_occurrences(record) {
+            issues.extend(tag_shape_issues(scanned_record, &summary, &occurrence));
+        }
+    }
+    issues
+}
+
+/// A tag as written in a record.
+struct TagOccurrence {
+    raw: String,
+    source: TagSource,
+    /// The file line of an inline tag.
+    line: Option<usize>,
+}
+
+/// A record's front-matter tags, then its inline tags outside code.
+fn tag_occurrences(record: &Record) -> Vec<TagOccurrence> {
+    let mut occurrences: Vec<_> = record
+        .front_matter
+        .tags
+        .iter()
+        .map(|tag| TagOccurrence {
+            raw: tag.as_str().to_owned(),
+            source: TagSource::FrontMatter,
+            line: None,
+        })
+        .collect();
+
+    let mut in_fenced_code = false;
+    for (line_index, line) in record.body.raw_markdown.lines().enumerate() {
+        if is_fenced_code_fence(line) {
+            in_fenced_code = !in_fenced_code;
+            continue;
+        }
+        if in_fenced_code {
+            continue;
+        }
+        for inline_tag in inline_tags_in_line(line) {
+            occurrences.push(TagOccurrence {
+                raw: inline_tag,
+                source: TagSource::Inline,
+                line: Some(record.body.line_offset + line_index + 1),
+            });
+        }
+    }
+    occurrences
 }
 
 pub fn record_ids_for_tag(
@@ -244,36 +279,47 @@ fn add_tag_field_diagnostics(scanned_record: &ScannedRecord, issues: &mut Vec<Ta
     }
 }
 
+fn tag_shape_issues(
+    scanned_record: &ScannedRecord,
+    summary: &ScannedRecordSummary,
+    occurrence: &TagOccurrence,
+) -> Vec<TagIssue> {
+    let TagOccurrence { raw, source, line } = occurrence;
+    validate_tag_shape(raw, *source)
+        .into_iter()
+        .map(|code| {
+            let mut issue = TagIssue::error(
+                code,
+                scanned_record.path.clone(),
+                *source,
+                issue_message(code, raw, *source),
+            )
+            .with_record_id(summary.id)
+            .with_tag(raw.as_str());
+            if let Some(line) = line {
+                issue = issue.with_line(*line);
+            }
+            issue
+        })
+        .collect()
+}
+
 fn add_observed_tag(
     tags: &mut BTreeMap<String, TagAccumulator>,
     issues: &mut Vec<TagIssue>,
     scanned_record: &ScannedRecord,
     summary: &ScannedRecordSummary,
-    raw_tag: &str,
-    source: TagSource,
-    line: Option<usize>,
+    occurrence: &TagOccurrence,
 ) {
+    let raw_tag = occurrence.raw.as_str();
     let normalized_value = normalized_tag_value(raw_tag);
-    let issue_codes = validate_tag_shape(raw_tag, source);
-    for code in &issue_codes {
-        let mut issue = TagIssue::error(
-            *code,
-            scanned_record.path.clone(),
-            source,
-            issue_message(*code, raw_tag, source),
-        )
-        .with_record_id(summary.id)
-        .with_tag(raw_tag);
-        if let Some(line) = line {
-            issue = issue.with_line(line);
-        }
-        issues.push(issue);
-    }
-
-    let only_repairable_yaml_hash = issue_codes
+    let shape_issues = tag_shape_issues(scanned_record, summary, occurrence);
+    let only_repairable_yaml_hash = shape_issues
         .iter()
-        .all(|code| *code == TagIssueCode::LeadingHashInYamlTag);
-    if !issue_codes.is_empty() && !only_repairable_yaml_hash {
+        .all(|issue| issue.code == TagIssueCode::LeadingHashInYamlTag);
+    let skip = !shape_issues.is_empty() && !only_repairable_yaml_hash;
+    issues.extend(shape_issues);
+    if skip {
         return;
     }
 
@@ -321,7 +367,69 @@ fn validate_tag_shape(tag: &str, source: TagSource) -> Vec<TagIssueCode> {
     {
         issues.push(TagIssueCode::NumericOnlyTag);
     }
+    if !invalid_tag_characters(&normalized).is_empty() {
+        issues.push(TagIssueCode::InvalidTagCharacter);
+    }
     issues
+}
+
+/// The characters of a tag that a tag cannot contain, each once, in order.
+/// Whitespace is reported separately.
+fn invalid_tag_characters(tag: &str) -> Vec<char> {
+    let mut invalid = Vec::new();
+    for ch in tag.chars() {
+        if !ch.is_whitespace() && !is_tag_char(ch) && !invalid.contains(&ch) {
+            invalid.push(ch);
+        }
+    }
+    invalid
+}
+
+/// Whether a tag can contain `ch`. Spec §7: a tag consists of Unicode
+/// letters, numbers, emoji, `_`, `-`, and `/`.
+///
+/// In ASCII that is exact. Outside ASCII, the standard library has no table
+/// of Unicode general categories, so, like Obsidian, whose tag syntax DADR
+/// uses, this rules out whitespace, control characters, and the punctuation
+/// blocks, and accepts the rest: letters with their combining marks, numbers,
+/// and emoji with their joiners, variation selectors, and modifiers.
+pub(crate) fn is_tag_char(ch: char) -> bool {
+    if ch.is_ascii() {
+        return ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-' | '/');
+    }
+    if ch.is_alphanumeric() {
+        return true;
+    }
+    !(ch.is_whitespace() || ch.is_control() || is_punctuation_or_format(ch))
+}
+
+/// Non-ASCII punctuation, symbols next to it, and invisible format
+/// characters, which a tag cannot contain. Letters and numbers in these
+/// blocks never get here, and the emoji among them are allowed.
+fn is_punctuation_or_format(ch: char) -> bool {
+    match ch {
+        // Emoji: ©, ®, ‼, ⁉, 〰, 〽; and the zero-width joiner and non-joiner
+        // that join emoji sequences and some scripts.
+        '\u{a9}' | '\u{ae}' | '\u{203c}' | '\u{2049}' | '\u{3030}' | '\u{303d}' => false,
+        '\u{200c}' | '\u{200d}' => false,
+        // Latin-1 punctuation and symbols, ×, ÷.
+        '\u{a0}'..='\u{bf}' | '\u{d7}' | '\u{f7}' => true,
+        // General Punctuation (dashes, quotes, ellipsis, invisible
+        // operators, bidirectional controls) and Supplemental Punctuation.
+        '\u{2000}'..='\u{206f}' | '\u{2e00}'..='\u{2e7f}' => true,
+        // CJK Symbols and Punctuation.
+        '\u{3000}'..='\u{303f}' => true,
+        // Vertical forms, CJK compatibility forms, small form variants.
+        '\u{fe10}'..='\u{fe1f}' | '\u{fe30}'..='\u{fe6f}' => true,
+        // Fullwidth and halfwidth punctuation.
+        '\u{ff01}'..='\u{ff0f}'
+        | '\u{ff1a}'..='\u{ff20}'
+        | '\u{ff3b}'..='\u{ff40}'
+        | '\u{ff5b}'..='\u{ff65}' => true,
+        // Byte-order mark and other format characters.
+        '\u{61c}' | '\u{180e}' | '\u{feff}' | '\u{fff9}'..='\u{fffb}' => true,
+        _ => false,
+    }
 }
 
 fn issue_message(code: TagIssueCode, tag: &str, source: TagSource) -> String {
@@ -342,6 +450,40 @@ fn issue_message(code: TagIssueCode, tag: &str, source: TagSource) -> String {
             };
             format!("{prefix} `{tag}` must contain at least one non-numeric character")
         }
+        TagIssueCode::InvalidTagCharacter => {
+            let characters: Vec<_> = invalid_tag_characters(&normalized_tag_value(tag))
+                .into_iter()
+                .map(describe_char)
+                .collect();
+            format!(
+                "tag `{tag}` contains {}; a tag consists of letters, numbers, emoji, `_`, `-`, and `/`",
+                characters.join(", ")
+            )
+        }
+    }
+}
+
+/// A character for a message: in backticks when it is visible, otherwise by
+/// its code point.
+fn describe_char(ch: char) -> String {
+    let invisible = ch.is_control()
+        || matches!(
+            ch,
+            '\u{a0}'
+                | '\u{ad}'
+                | '\u{61c}'
+                | '\u{180e}'
+                | '\u{2000}'..='\u{200f}'
+                | '\u{2028}'..='\u{202f}'
+                | '\u{205f}'..='\u{206f}'
+                | '\u{3000}'
+                | '\u{feff}'
+                | '\u{fff9}'..='\u{fffb}'
+        );
+    if invisible {
+        format!("U+{:04X}", u32::from(ch))
+    } else {
+        format!("`{ch}`")
     }
 }
 
@@ -385,28 +527,10 @@ fn is_inline_tag_start(line: &str, index: usize) -> bool {
     previous.is_none_or(|ch| ch.is_whitespace() || matches!(ch, '>' | '[' | '{'))
 }
 
+/// An inline tag runs to the first character a tag cannot contain, as in
+/// Obsidian, so `#kind/sample.` and `#kind/sample*` carry `kind/sample`.
 fn is_inline_tag_terminator(ch: char) -> bool {
-    ch.is_whitespace()
-        || matches!(
-            ch,
-            '#' | '<'
-                | '>'
-                | '('
-                | ')'
-                | '['
-                | ']'
-                | '{'
-                | '}'
-                | '"'
-                | '\''
-                | '`'
-                | ','
-                | ';'
-                | ':'
-                | '!'
-                | '?'
-                | '.'
-        )
+    !is_tag_char(ch)
 }
 
 fn sort_issues(issues: &mut [TagIssue]) {

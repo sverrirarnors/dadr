@@ -17,6 +17,7 @@ use crate::{
     ids::RecordId,
     index::ProjectIndex,
     model::{Record, RecordStatus},
+    tags::record_tag_issues,
 };
 
 /// A predecessor named in `## Supersedes` that has been superseded since the
@@ -345,8 +346,8 @@ fn named_predecessors(
         .collect()
 }
 
-/// A candidate that can be accepted: valid, with status `candidate`, and with
-/// the four standard sections.
+/// A candidate that can be accepted: valid, with status `candidate`, with the
+/// four standard sections, and with valid tags (spec §7).
 fn acceptable_candidate<'a>(
     index: &'a ProjectIndex,
     candidate: &ScannedRecordSummary,
@@ -374,6 +375,18 @@ fn acceptable_candidate<'a>(
             "`{}` cannot be accepted: accept requires each standard section exactly once and with text: {}",
             candidate.title,
             sections.problems().join("; ")
+        )));
+    }
+    let tag_issues = record_tag_issues(scanned);
+    if !tag_issues.is_empty() {
+        let messages: Vec<_> = tag_issues
+            .iter()
+            .map(|issue| issue.message.as_str())
+            .collect();
+        return Err(DadrError::InvalidLifecycleTransition(format!(
+            "`{}` cannot be accepted: {}",
+            candidate.title,
+            messages.join("; ")
         )));
     }
     Ok(record)

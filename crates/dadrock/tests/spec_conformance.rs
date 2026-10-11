@@ -10,6 +10,7 @@ use dadrock::{
     index::ProjectIndex,
     project::{discover_from, init_project, ProjectContext},
     records::{accept_candidate, pending_supersedes, status_record},
+    tags::{build_tag_report, TagIssueCode},
     validation::{
         validate_project_index, ProjectValidationIssue, ProjectValidationIssueCode,
         ProjectValidationReport,
@@ -328,4 +329,84 @@ fn non_canonical_ids_are_reported_and_acceptance_refuses_them() {
         assert_eq!(status.record.id.to_string(), lowercase);
     }
     assert_accept_refused(&project, &path, upper, "lowercase hyphenated form");
+}
+
+// Spec §7: a tag consists of Unicode letters, numbers, emoji, `_`, `-`, and
+// `/`.
+#[test]
+fn tags_outside_the_character_set_are_reported_and_acceptance_refuses_them() {
+    let project = Project::new("tag-characters");
+    let id = "0193fb20-0000-7000-8000-000000000001";
+    let path = project.write(
+        "inbox",
+        "bad-tags",
+        &format!(
+            "---\ntitle: Bad tags\nstatus: candidate\nid: {id}\ntags:\n  - kind.sample\n  - foo:bar\n  - a,b\n  - x!y\n  - a–b\n---\n\n{SECTIONS}"
+        ),
+    );
+
+    let report = build_tag_report(&project.index());
+    assert!(!report.ok);
+    let mut flagged: Vec<_> = report
+        .issues
+        .iter()
+        .filter(|issue| issue.code == TagIssueCode::InvalidTagCharacter)
+        .map(|issue| issue.tag.as_deref().unwrap())
+        .collect();
+    flagged.sort_unstable();
+    assert_eq!(flagged, ["a,b", "a–b", "foo:bar", "kind.sample", "x!y"]);
+    assert!(report
+        .issues
+        .iter()
+        .any(|issue| issue.message.contains("`–`")));
+    assert!(!report.tags.iter().any(|tag| tag.tag == "kind.sample"));
+
+    let validation = project.validate();
+    assert!(validation
+        .issues
+        .iter()
+        .any(|issue| issue.code == ProjectValidationIssueCode::InvalidTag
+            && issue.sub_code.as_deref() == Some("invalid_tag_character")
+            && issue.severity == Severity::Error));
+
+    assert_accept_refused(&project, &path, id, "tag `kind.sample` contains `.`");
+}
+
+#[test]
+fn letters_numbers_and_emoji_are_valid_tag_characters() {
+    let project = Project::new("tag-characters-valid");
+    let id = "0193fb20-0000-7000-8000-000000000001";
+    project.write(
+        "inbox",
+        "good-tags",
+        &format!(
+            "---\ntitle: Good tags\nstatus: candidate\nid: {id}\ntags:\n  - étoile\n  - nai\u{308}ve\n  - 日本/東京\n  - हिन्दी\n  - emoji-🚀\n  - 👩‍🔬\n  - y1984\n---\n\n\
+             ## Context\n\nInline #kind/sample*, #topic/data. and *#x*.\n\n## Decision\n\nWhat.\n\n\
+             ## Alternatives\n\nNone considered.\n\n## Consequences\n\nEffects.\n"
+        ),
+    );
+
+    let report = build_tag_report(&project.index());
+    assert!(report.issues.is_empty(), "{:#?}", report.issues);
+    for tag in ["kind/sample", "topic/data", "👩‍🔬", "हिन्दी"] {
+        assert!(
+            report.tags.iter().any(|summary| summary.tag == tag),
+            "{tag}"
+        );
+    }
+    assert!(!report
+        .tags
+        .iter()
+        .any(|summary| summary.tag == "kind/sample*"));
+
+    let accepted = accept_candidate(&project.index(), id).unwrap();
+    assert_eq!(accepted.accepted.len(), 1);
+}
+
+#[test]
+fn acceptance_refuses_invalid_inline_tags() {
+    let project = Project::new("inline-tag");
+    let id = "0193fb20-0000-7000-8000-000000000001";
+    let path = project.candidate("Inline tag", id, &format!("> #bad//inline\n\n{SECTIONS}"));
+    assert_accept_refused(&project, &path, id, "empty `/` path segments");
 }
