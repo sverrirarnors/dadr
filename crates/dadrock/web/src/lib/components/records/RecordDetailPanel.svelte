@@ -529,4 +529,11 @@
     font-size: 1rem;
     font-weight: 650;
   }
+
+  :global(.record-markdown blockquote) {
+    margin: 0.5rem 0;
+    border-left: 3px solid var(--color-border);
+    padding-left: 0.75rem;
+    color: var(--color-fg-muted);
+  }
 </style>

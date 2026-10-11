@@ -13,7 +13,18 @@ export function stripFrontMatter(markdown: string): string {
 }
 
 export function renderMarkdown(markdown: string): string {
-  const lines = markdown.split(/\r?\n/);
+  return renderBlocks(markdown.split(/\r?\n/), 0);
+}
+
+// A blockquote line: up to three spaces of indentation, `>`, and one optional space.
+const QUOTE_MARKER = /^ {0,3}> ?/;
+const NESTED_QUOTE_MARKERS = /^(?: {0,3}> ?)*/;
+const HEADING = /^(#{1,3})\s+(.*)$/;
+const LIST_ITEM = /^\s*[-*]\s+(.*)$/;
+// Deeper `>` lines render as text, so hostile input cannot exhaust the stack.
+const MAX_QUOTE_DEPTH = 16;
+
+function renderBlocks(lines: string[], depth: number): string {
   const html: string[] = [];
   let paragraph: string[] = [];
   let listOpen = false;
@@ -32,8 +43,12 @@ export function renderMarkdown(markdown: string): string {
     listOpen = false;
   };
 
-  for (const line of lines) {
-    if (line.trim().startsWith('```')) {
+  let index = 0;
+  while (index < lines.length) {
+    const line = lines[index]!;
+    index += 1;
+
+    if (isFence(line)) {
       if (codeOpen) {
         html.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
         codeLines = [];
@@ -57,7 +72,16 @@ export function renderMarkdown(markdown: string): string {
       continue;
     }
 
-    const heading = line.match(/^(#{1,3})\s+(.*)$/);
+    if (depth < MAX_QUOTE_DEPTH && QUOTE_MARKER.test(line)) {
+      flushParagraph();
+      closeList();
+      const quote = collectBlockquote(lines, index - 1);
+      html.push(`<blockquote>${renderBlocks(quote.lines, depth + 1)}</blockquote>`);
+      index = quote.next;
+      continue;
+    }
+
+    const heading = line.match(HEADING);
     if (heading) {
       flushParagraph();
       closeList();
@@ -66,7 +90,7 @@ export function renderMarkdown(markdown: string): string {
       continue;
     }
 
-    const item = line.match(/^\s*[-*]\s+(.*)$/);
+    const item = line.match(LIST_ITEM);
     if (item) {
       flushParagraph();
       if (!listOpen) {
@@ -87,6 +111,49 @@ export function renderMarkdown(markdown: string): string {
   }
 
   return html.join('');
+}
+
+/**
+ * Collects the blockquote that starts at `start`: every following `>` line with its marker
+ * removed, plus lazy continuation lines (a line without `>` that continues an open paragraph).
+ * A blank line, or any line that would start another block, ends the quote.
+ */
+function collectBlockquote(lines: string[], start: number): { lines: string[]; next: number } {
+  const quoted: string[] = [];
+  let fenceOpen = false;
+  let index = start;
+
+  while (index < lines.length) {
+    const line = lines[index]!;
+    const marker = line.match(QUOTE_MARKER);
+    if (marker) {
+      const content = line.slice(marker[0].length);
+      if (isFence(content)) fenceOpen = !fenceOpen;
+      quoted.push(content);
+    } else if (!fenceOpen && continuesParagraph(quoted.at(-1)) && !startsBlock(line)) {
+      quoted.push(line);
+    } else {
+      break;
+    }
+    index += 1;
+  }
+
+  return { lines: quoted, next: index };
+}
+
+/** Whether a quoted line leaves a paragraph open, looking through nested `>` markers. */
+function continuesParagraph(line: string | undefined): boolean {
+  if (line === undefined) return false;
+  const content = line.replace(NESTED_QUOTE_MARKERS, '');
+  return Boolean(content.trim()) && !HEADING.test(content) && !isFence(content);
+}
+
+function startsBlock(line: string): boolean {
+  return !line.trim() || isFence(line) || HEADING.test(line) || LIST_ITEM.test(line);
+}
+
+function isFence(line: string): boolean {
+  return line.trim().startsWith('```');
 }
 
 // Only short-id and full-id targets are DADR record links; other wikilinks stay as text.
