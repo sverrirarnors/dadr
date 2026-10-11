@@ -1461,8 +1461,7 @@ fn run_task_prompt_demands_declared_output_kind() {
     assert!(prompt.contains("01960000000000000000000000"));
     assert!(prompt.contains("Pay attention to lifecycle drift."));
     assert!(prompt.contains("crates/dadrock/src/mcp.rs"));
-    assert!(prompt.contains("supplied task prompt is authoritative for tool use"));
-    assert!(prompt.contains("must not turn a proposal-only task into a file-writing task"));
+    assert!(prompt.contains("Task mode rules:"));
     assert!(!prompt.contains("prefer calling it with the task `run_id`"));
     assert!(prompt.contains("\"kind\": \"markdown_report.v1\""));
     assert!(prompt.contains("Dadrock task request:"));
@@ -1505,8 +1504,8 @@ fn run_task_prompt_includes_output_contract_for_declared_kind() {
 }
 
 #[test]
-fn run_task_prompt_includes_compact_dadr_task_guidance() {
-    let root = unique_temp_dir("dadrock-task-agent-dadr-guidance");
+fn run_task_prompt_includes_skill_record_and_tag_references() {
+    let root = unique_temp_dir("dadrock-task-agent-skill-references");
     fs::create_dir_all(&root).expect("create temp dir");
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
     let project = agent_project_context(&cwd);
@@ -1528,12 +1527,12 @@ fn run_task_prompt_includes_compact_dadr_task_guidance() {
 
     let prompt = run_task_prompt(&request).expect("render task prompt");
 
-    assert!(prompt.contains("DADR task guidance"));
-    assert!(prompt.contains("one consequential analytic choice"));
-    assert!(prompt.contains("Context, Decision, Alternatives, Consequences"));
-    assert!(prompt.contains("kind/<surface>"));
-    assert!(prompt.contains("writer/agent"));
-    assert!(prompt.contains("Do not accept, reject, or supersede records"));
+    assert!(prompt.contains("## Record anatomy"));
+    assert!(prompt.contains("## Tags"));
+    assert!(prompt.contains(include_str!("../../../skills/dadr/record.md").trim()));
+    assert!(prompt.contains(include_str!("../../../skills/dadr/tags.md").trim()));
+    assert!(prompt.contains("`../record.md` and `../tags.md` refer to"));
+    assert!(!prompt.contains("DADR task guidance"));
 
     let _ = fs::remove_dir_all(root);
 }
@@ -1574,8 +1573,8 @@ fn run_task_prompt_embeds_builtin_task_guide() {
 }
 
 #[test]
-fn run_task_prompt_does_not_require_external_skill_for_builtins() {
-    let root = unique_temp_dir("dadrock-task-agent-installed-skill");
+fn run_task_prompt_states_task_mode_rules() {
+    let root = unique_temp_dir("dadrock-task-agent-task-mode");
     fs::create_dir_all(&root).expect("create temp dir");
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
     let project = agent_project_context(&cwd);
@@ -1597,8 +1596,14 @@ fn run_task_prompt_does_not_require_external_skill_for_builtins() {
 
     let prompt = run_task_prompt(&request).expect("render task prompt");
 
-    assert!(prompt.contains("external skill is not required for built-in tasks"));
     assert!(prompt.contains("task id `code-to-record`"));
+    assert!(prompt.contains("dadrock decides how it is delivered"));
+    assert!(prompt.contains(
+        "Do not create, edit, move, accept, reject, or supersede records or other files."
+    ));
+    assert!(prompt.contains("proposals that a human reviews"));
+    assert!(prompt.contains("put that content in the result instead"));
+    assert!(!prompt.contains("installed `dadr` skill"));
     assert!(!prompt.contains("--- Prompt pack: dadr"));
 
     let _ = fs::remove_dir_all(root);
