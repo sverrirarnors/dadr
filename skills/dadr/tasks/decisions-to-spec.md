@@ -56,7 +56,7 @@ Group decisions by the surface the user needs:
 | `kind/transformation`, imputation, winsorization | Transformations |
 | `kind/modeling`, estimands, fixed effects, priors | Models and estimands |
 | `kind/inference`, standard errors, intervals, multiplicity | Inference |
-| `kind/robustness`, `multiverse/`, sensitivity choices | Robustness and sensitivity |
+| `kind/robustness`, `axis/`, sensitivity choices | Robustness and sensitivity |
 | `kind/communication`, tables, figures, claims | Reporting |
 | plan deviation sections, amendments | Deviations from prior plans |
 

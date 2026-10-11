@@ -4,6 +4,8 @@ title: DADR specification
 
 # DADR specification
 
+For a short introduction, see [the format in one page](core.md). This page is the full normative reference for format implementers. Suggested tag vocabularies are [documented separately](tags.md).
+
 **DADR** (Data-Analysis Decision Records) defines a file-first format for recording consequential decisions in empirical and data-analysis projects. A DADR record is a Markdown file that captures one analytic decision: the context that motivated it, the decision that was made, alternatives considered, and consequences for the analysis. Records live alongside the analysis code, manuscript, data references, and project documentation.
 
 This document is the canonical specification. It defines:
@@ -94,8 +96,8 @@ Authors rarely type the `id` by hand. Tooling allocates a fresh UUIDv7 whenever 
 Fields that classify a record by **kind**, **confidence**, **person**,
 **robustness role**, **origin**, **topic**, or **workflow state** SHOULD be
 expressed as tags rather than as dedicated front-matter entries. Decision
-ownership and review attribution SHOULD use `#decider/<handle>` and
-`#reviewer/<handle>` tags rather than dedicated `deciders` or `reviewers`
+ownership and review attribution SHOULD use `#people/decider/<handle>` and
+`#people/approver/<handle>` tags rather than dedicated `deciders` or `reviewers`
 fields.
 
 Lifecycle timestamp fields such as `date`, `created`, `accepted_at`, or `superseded_at` MUST NOT be used. DADR derives record-creation timestamps from UUIDv7 identifiers (see [Identifiers](#identifiers)).
@@ -123,7 +125,7 @@ status: candidate
 id: 01938b8f-9d71-7456-8000-fedcba987654
 tags:
   - kind/sample
-  - origin/agent
+  - writer/agent
   - confidence/high
 ---
 ```
@@ -278,7 +280,7 @@ The split keeps each syntax to one job: Markdown handles paths (so Pandoc, Quart
 References between DADR records SHOULD use wikilinks containing a UUIDv7 prefix:
 
 ```markdown
-See [[01938c20a3b4]] for the sampling rule.
+See [[01938c20a3b4|the sampling rule]].
 Compare with [[01938b8e4d70|the original preprocessing decision]].
 ```
 

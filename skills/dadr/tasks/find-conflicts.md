@@ -121,7 +121,7 @@ For projects with many `writer/agent` candidates, also cluster by overlapping `C
 | Pattern | What happened | Resolution direction |
 |---|---|---|
 | candidate ↔ candidate | Two drafts for the same surface, neither accepted | Keep one and reject the other; OR merge into a new candidate. No supersession (both are still candidates). |
-| candidate ↔ accepted | A newer candidate revises a prior accepted record | Edit candidate to be the current state, `dadrock status accept <new>`, then `dadrock status supersede --from <old> --to <new>`. |
+| candidate ↔ accepted | A newer candidate revises a prior accepted record | Edit candidate to be the current state, `dadrock status accept <new>`, then `dadrock supersede --from <old> --to <new>`. |
 | accepted ↔ accepted | Two accepted records contradict each other | Should not happen, but does. Draft a third candidate as the consolidated current state; on acceptance, supersede both. |
 | candidate ↔ rejected | Re-draft of a rejected idea | Surface to user; may be intentional (new evidence) or an oversight. Never auto-act. |
 
@@ -153,7 +153,7 @@ Conflict 1 — Treatment missingness handling
     1. Confirm A is the desired current state.
     2. Verify A's body is complete (4 sections, source link).
     3. dadrock status accept 01938b8e
-    4. dadrock status supersede --from 01938fc1 --to 01938b8e
+    4. dadrock supersede --from 01938fc1 --to 01938b8e
 
   Reason this might NOT be a conflict:
     If B describes the imputation step *after* A's row-drop, they are sequential.
@@ -181,7 +181,7 @@ Run only what the user approved:
 dadrock status accept <id>
 
 # Supersede a prior accepted record
-dadrock status supersede --from <old-id> --to <new-id>
+dadrock supersede --from <old-id> --to <new-id>
 
 # Reject a losing candidate
 dadrock status reject <id>
@@ -206,7 +206,7 @@ Confirm the successor graph is acyclic and wikilinks resolve. Report:
 
 - **Never auto-resolve.** Acceptance, supersession, and rejection all require human confirmation.
 - **Never edit accepted records' bodies** to make them agree. The supersession graph is the only legitimate way to revise an accepted decision.
-- **Never modify `successors` by hand.** Always go through `dadrock status supersede --from <id> --to <id>`.
+- **Never modify `successors` by hand.** Always go through `dadrock supersede --from <id> --to <id>`.
 - **Don't manufacture conflicts.** If you cannot point at the specific incompatible sentence in each `Decision` section, it is not a conflict.
 - **Don't conflate sequence with contradiction.** Two decisions about the same file can both hold if they describe different pipeline steps. Read the `Decision` text, not just the `Context` paths.
 - **Stop on cycles.** If A's `successors` lists B and B's `successors` lists A, surface as a project-management error and do not proceed.
@@ -225,7 +225,7 @@ Confirm the successor graph is acyclic and wikilinks resolve. Report:
 | All tag axes in use | `dadrock tags list --json` |
 | Inspect one record | `dadrock status <query>` |
 | Accept a candidate | `dadrock status accept <id>` |
-| Supersede an accepted record | `dadrock status supersede --from <old> --to <new>` |
+| Supersede an accepted record | `dadrock supersede --from <old> --to <new>` |
 | Reject a candidate | `dadrock status reject <id>` |
 | Validate the graph | `dadrock validate` |
 

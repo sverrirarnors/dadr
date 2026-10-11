@@ -78,7 +78,7 @@ Then surface the supersession plan to the user as a two-step action they will ru
 
 ```bash
 dadrock status accept <new-id>
-dadrock status supersede --from <old-id> --to <new-id>
+dadrock supersede --from <old-id> --to <new-id>
 ```
 
 Include the predecessor id, the new candidate's path and id, the one-sentence rationale, and the suggested CLI steps. **Do not run `accept` or `supersede` yourself.**
@@ -87,8 +87,8 @@ If the supersession should cascade (the predecessor itself had successors), name
 
 ## Constraints
 
-- **Never edit the predecessor's body.** Supersession leaves it intact. The relation is encoded only by `dadrock status supersede`, which writes the `successors` graph.
-- **Never modify `successors` by hand.** Always go through `dadrock status supersede --from <id> --to <id>`.
+- **Never edit the predecessor's body.** Supersession leaves it intact. The relation is encoded only by `dadrock supersede`, which writes the `successors` graph.
+- **Never modify `successors` by hand.** Always go through `dadrock supersede --from <id> --to <id>`.
 - **One predecessor per proposal.** If two accepted records need replacing by the same successor, draft one candidate that names both in Alternatives and Context; on acceptance the user runs `supersede` twice (once per predecessor).
 - **No lost evidence.** Do not silently discard sources or alternatives from the old record. Either carry them over or explain in `rationale` why they no longer apply.
 - **Acceptance is a human boundary.** This skill writes only to `dadr/candidates/`. Lifecycle transitions are user actions.
@@ -103,4 +103,4 @@ User: "supersede 01938fc1 — the SAP was amended last week to require multiple 
 4. `dadrock new "Impute missing treatment via multiple imputation (mice)" --tag kind/sample --tag writer/agent --tag plan/sap-2026 --quiet` → writes `dadr/candidates/<new-uuid>-impute-missing-treatment-....md`.
 5. Edit the four sections.
 6. `dadrock validate` → clean.
-7. Report: path of new candidate, predecessor id, rationale, suggested steps `dadrock status accept <new>` then `dadrock status supersede --from 01938fc1 --to <new>`.
+7. Report: path of new candidate, predecessor id, rationale, suggested steps `dadrock status accept <new>` then `dadrock supersede --from 01938fc1 --to <new>`.

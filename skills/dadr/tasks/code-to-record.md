@@ -68,7 +68,7 @@ One choice → one record. Project size determines candidate count, not a fixed 
 - A typical journal-article replication package warrants ~10–25.
 - A multi-paper longitudinal cohort project can easily warrant 50+ across the analysis tree.
 
-Let the project tell you. **Do not split** a single choice into multiple records to hit a number, and **do not merge** distinct choices to stay under one. If you are unsure whether something is one decision or two, prefer two — supersession can consolidate later, but splitting an accepted record requires creating two new ones.
+Let the project tell you. **Do not split** a single choice into multiple records to hit a number, and **do not merge** distinct choices to stay under one; defer lower-priority choices instead. Start with at most five consequential choices unless the user requests another scope. When uncertain, prioritize the choice a collaborator most needs explained and leave lower-priority choices for a later review batch.
 
 When the candidate list grows past ~20–30, surface the inventory to the user before drafting. They may want to prioritize the choices closest to the primary estimand first and defer the rest to a second pass.
 
@@ -115,7 +115,7 @@ See [../tags.md](../tags.md) for the full vocabulary and format rules. The manda
 - `kind/<surface>` — one of `sample`, `model`, `estimand`, `measurement`, `transformation`, `inference`, `report`, `robustness`.
 - `writer/agent` — provenance.
 
-Add `confidence/`, `topic/`, `plan/`, `multiverse/`, etc.
+Add `confidence/`, `topic/`, `plan/`, `axis/`, etc.
 when applicable. Do not invent namespaces beyond those in [../tags.md](../tags.md)
 unless the project already uses them — run `dadrock tags list` to see what's in
 play.

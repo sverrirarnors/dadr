@@ -1,108 +1,50 @@
-# CLAUDE.md
+# Contributor guidance
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+DADR is the Markdown record format. Dadrock is its CLI and local web application. Read `docs-src/specification.md` for normative format rules; implementation plans in `specs/` may describe future work and must be checked against source before documenting features as available.
 
-## Repository purpose
+## Layout
 
-DADR ("Data Analysis Decision Records") is a file-first Markdown format for capturing the choices behind an empirical analysis. This repo contains:
+- `crates/dadr`: format library (parsing, IDs, model and format rules).
+- `crates/dadrock`: application logic, commands, CLI, project discovery, validation, agents, tasks and local web server.
+- `crates/dadrock/web`: Svelte frontend; built with Bun and embedded by the Rust build script.
+- `editors/vscode`: editor extension source.
+- `docs-src`: documentation sources; `zensical.toml` controls the site. `docs/` is generated output.
+- `skills/dadr`: agent-facing workflow guidance.
 
-- The **`dadrock`** Rust binary (CLI + web UI) that implements the DADR tooling — workspace under `crates/`.
-- The **specification** (`docs-src/specification.md`) and supporting docs site, built with [Zensical](https://zensical.org) (`zensical.toml`, output to `docs/`).
-- **Working specs** in `specs/` covering material more detailed than the website summaries (architecture, inference, faithfulness checks, roadmap). The website is authoritative for the format itself; `specs/` is authoritative for implementation choices.
-- `implementation/` (backlog/plan) and `reference/` (notes on related tools) are non-normative working notes.
-- DADR's own decisions are drafted in `draft/decisions/`.
+## Commands
 
-The user-facing standard artifacts keep the `dadr` name (`dadr.toml`, `.dadr-dir`, `decisions/`, `#dadr/...` tags) even though the binary is `dadrock`.
-
-## Common commands
-
-### Rust (the binary)
-
-```bash
-cargo build                                   # debug build of the workspace
-cargo build --release
-cargo test                                    # run all unit + integration tests
-cargo test -p dadrock-core                    # one crate
-cargo test -p dadrock-core project_commands   # one integration-test file
-cargo test -p dadrock-core -- new_record_creates_candidate   # one test by name (substring)
-cargo clippy --workspace --all-targets        # lints (workspace forbids unsafe_code)
+```sh
+cargo build
+cargo test --workspace
+cargo test -p dadr
+cargo test -p dadrock
+cargo clippy --workspace --all-targets
 cargo fmt --all
-cargo install --path crates/dadrock --bin dadrock       # install via `make install`
+make web-test
+make web-lint
+make install
+make build
+make serve
 ```
 
-The web UI server and CLI live in `crates/dadrock`; the core crate has integration tests under `crates/dadrock-core/tests/`. Tests build temporary projects in `std::env::temp_dir()` and assert on returned envelopes.
+Rust and Bun are required for a build with the embedded web UI. `no-js-build` permits a CLI-only build; preview then shows a no-assets notice. `make build` regenerates CLI documentation and the website. `make web-deps` installs the Python documentation dependencies, not frontend dependencies.
 
-### Docs site
+## Records and lifecycle
 
-The Makefile wraps the Python doc-site toolchain:
+`dadrock init` creates `dadr/accepted/`, `dadr/candidates/`, `dadr/rejected/`, `dadr/templates/`, `dadr/tasks/`, and `dadr/runs/`. Use project discovery helpers rather than assuming paths in application code. Init is idempotent; demos require a new or empty target directory.
 
-```bash
-make serve     # uv run zensical serve  (live reload)
-make build     # uv run zensical build  (writes to docs/)
-make clean     # rm -rf docs
-make install   # cargo install the dadrock binary
-```
+A record has three required fields (`title`, `status`, `id`) and four sections (`Context`, `Decision`, `Alternatives`, `Consequences`). `successors`, `tags`, and bibliography metadata are optional. Stored statuses are `candidate`, `accepted`, and `rejected`. Superseded is a derived state: an accepted record with a non-empty successors list.
 
-`make web-deps` (== `uv sync`) installs Python deps into `.venv/`.
+Acceptance preserves the ID and moves a candidate to the accepted directory. Rejection also preserves identity. A changed decision gets a separate record; supersession links accepted successors to their predecessors. Preserve accepted substantive content; the specification permits minor non-substantive corrections. Never infer human approval from agent output.
 
-## Architecture
+## Application boundaries
 
-### Workspace layout
+Route CLI and web mutations through `dadrock::commands` so `CommandEnvelope` diagnostics and changed paths stay consistent. Keep web handlers thin. Command metadata and generated CLI documentation must agree with the CLI definition. Running `dadrock` without a subcommand prints help; `dadrock preview` starts the web interface.
 
-Two crates, both under `crates/`:
+IDs must be UUIDv7. Use existing ID generation and parsing helpers. Preserve the distinction between recoverable record diagnostics and fatal application errors. Respect the workspace's unsafe-code prohibition.
 
-- **`dadrock-core`** — pure library: parsing, the project model, command implementations, agent (ACP) plumbing. No terminal code, no `anyhow`. All errors flow through `DadrError` (`error.rs`) plus per-domain `Diagnostic` lists.
-- **`dadrock`** — the `dadrock` binary. `main.rs` is a hand-written argv router; with no args it starts the local web preview server with the same defaults as `dadrock preview`.
+Agent tasks return proposals for human review. Do not invent an analyst's rationale from code alone or automatically accept a candidate. Advanced ACP/MCP integration details belong in `docs-src/llms.md`, not onboarding.
 
-`unsafe_code = "forbid"` is set as a workspace lint.
+## Documentation checks
 
-### Command surface (the heart of `dadrock-core`)
-
-Every CLI verb in `crates/dadrock/src/main.rs` delegates to a function in `dadrock_core::commands` that returns a `CommandEnvelope<T>`:
-
-```
-CommandEnvelope { command, ok, data, diagnostics, changed_paths }
-```
-
-This same envelope is what `--json` prints and what the web API returns after mutations. **Do not bypass `commands::*` from the binary or web handlers** — every mutation should go through a command function so JSON output, diagnostics, and `changed_paths` stay consistent across surfaces. `CommandContext::current_dir()` → `discover_project()` is the standard entry; `commands::COMMANDS` is the single source of truth for the command catalog (`dadrock commands`, completions, help).
-
-Command modules in `dadrock-core` and what they own:
-
-| Module | Owns |
-|---|---|
-| `project` | Project discovery (`.dadr-dir` marker → `decisions/` dir → fallback), `dadr.toml` parsing, `init` |
-| `records` | Record file I/O, candidate creation, lifecycle transitions (accept/reject/supersede), find/list/scan |
-| `model` | `Record`, `RecordFrontMatter`, `RecordStatus`, `Tag`, `BibliographyRef` (the on-disk schema) |
-| `ids` | `RecordId` — UUIDv7 only; non-v7 UUIDs are a parse error |
-| `markdown::frontmatter` | Splitting `---` front matter from the body |
-| `tags` | `#dadr/...` tag normalization, listing, validation |
-| `links` | Wikilink discovery and validation (consumed by `validate links`) |
-| `templates` | Project templates with built-in fallbacks (`TemplateSource::{Project,BuiltIn}`) |
-| `validation` | Project validation engine behind `validate` |
-| `demo` | Seeded showcase project |
-| `agent` | ACP (Agent Client Protocol) integration — drafting and revising candidates via locally installed ACP agents |
-
-### Records and lifecycle
-
-A record is a Markdown file with YAML front matter (`title`, `status`, `id`, `successors`, `tags`, optional `bibliography`) and four prose sections (`Context`, `Decision`, `Alternatives`, `Consequences`). `RecordStatus` is `candidate | accepted | rejected | superseded`. Candidates live in `<decisions>/candidates/`; accepted/superseded records live at the project root. Acceptance and supersession **never edit in place** — they create a new record (fresh UUIDv7) and update the predecessor's `status` and `successors`.
-
-### Agent (ACP) integration
-
-`crates/dadrock-core/src/agent.rs` (~2.4k lines, the heaviest module) wraps `agent-client-protocol` + `agent-client-protocol-tokio` to drive locally installed ACP providers (`claude-agent-acp`, `claude-code-acp`, `gemini-acp`, etc.). Provider resolution: `--agent` flag → `DADROCK_ACP_AGENT` env → `KNOWN_ACP_PROVIDERS` auto-detect on `PATH`. The protocol identifier `dadrock-agent-draft` v1 (`DADROCK_DRAFT_PROTOCOL`/`DADROCK_DRAFT_VERSION`) defines the structured envelope agents must return; `validate_draft_response` / `validate_revision_response` enforce shape before anything is written to disk.
-
-### Web UI
-
-`crates/dadrock/src/web.rs` owns the local preview server and API routes. Static assets live under `crates/dadrock/src/web/static/`. The web handlers should stay thin: parse HTTP requests, call `dadrock_core::commands` or read-only project/index helpers, and return JSON snapshots or mutation envelopes.
-
-## Conventions worth knowing
-
-- **Paths** use `camino::Utf8PathBuf` end-to-end. Treat non-UTF8 paths as a hard error (`path_to_utf8` in `project/mod.rs`).
-- **IDs** are UUIDv7 only. `RecordId::parse` rejects v4. Generate via `RecordId::new_v7()`.
-- **Errors**: `dadrock-core` uses `thiserror`/`DadrError`; `dadrock` uses `anyhow` at the binary boundary (`main.rs`, `web.rs`). Don't pull `anyhow` into the core crate.
-- **Diagnostics vs. errors**: parse-time issues become `Diagnostic` entries on `ParsedRecord` so a single bad file doesn't fail a whole command. Reserve `DadrError` for genuinely fatal conditions.
-- **Idempotency**: `dadrock init` must never overwrite an existing config or record. `dadrock demo` is intentionally *not* idempotent (it requires an empty `decisions/`).
-- **JSON output**: most commands accept `--json`; the web API uses the same `CommandEnvelope`. New commands should preserve this dual-output contract.
-
-## Spec ↔ implementation mapping
-
-When changing behavior, check the relevant spec first. The website (`docs-src/`) is authoritative for the format and the user-facing CLI; `specs/` is authoritative for implementation choices not yet on the website. `specs/SPEC_COVERAGE_MATRIX.md` is the ledger that tracks which spec clauses have implementation coverage.
+Document only behavior implemented in source. Keep planned features in `docs-src/roadmap.md`. In particular, current validation does not establish code faithfulness or compare accepted files against Git history. Do not promise release binaries, registry packages, or editor integrations without checking their availability.

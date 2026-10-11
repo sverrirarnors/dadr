@@ -1,16 +1,28 @@
-# Web
+# Review decisions in your browser
 
-**dadrock** can launch a localhost web server for interactive browsing, review, validation, and lifecycle management of decision records:
-
-```bash
+```sh
 dadrock preview
 dadrock preview --port 4005 path/to/project
 ```
 
-The preview UI is the interactive workbench: a split record browser with lifecycle filters, candidate accept/reject actions, supersession controls, project and record validation queues, link health, settings, and local ACP agent drafting when an agent provider is configured.
+Open the local URL printed in the terminal. Use **Decisions** to find existing records and **To review** to work through candidates. Open a candidate, edit its explanation, save it, and accept or reject it.
 
-## Tasks
+Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply missing rationale before endorsing the decision.
 
-The preview UI includes a Tasks tab for agent-assisted workflows over the decision ledger. Tasks can be built in, project-local under `dadr/tasks/`, or user-installed. Runs are saved under `dadr/runs/` and ignored by default because they may contain pasted context, source excerpts, and model transcripts.
+When an accepted choice changes, use **Change this decision** to prepare a replacement and link it to the original. The original stays available as history. The replacement starts as a candidate; accepting it also links the original to its replacement.
 
-Typed task results drive the matching UI: candidate drafts open in a one-panel editor, conflict findings use side-by-side review, diagnosis reports render as issue lists, and unknown third-party output kinds fall back to a report view with raw JSON.
+Dadrock records this intention in an optional Markdown section:
+
+```markdown
+## Replaces
+
+[[01938c20-a3b4-7000-8000-111122223333|Previous decision]]
+```
+
+The link uses the original record's full UUID. Keep this section if the candidate should replace that decision: it preserves the intended relationship after reloading or accepting through the CLI. On acceptance, Dadrock validates the predecessor and updates its successors together with accepting the replacement, preserving the old body. This is a Dadrock convention, not an additional required section of the DADR format.
+
+## Optional drafting
+
+With a [configured agent](../llms.md), use drafting actions to propose decisions from code or supplied context. Start with a small batch and review it before asking for more. Agent outputs remain proposals.
+
+Advanced controls provide tags, validation, agent workflow configuration, and run history. Local run state is stored under `dadr/runs/` and ignored by default because it may contain pasted context, source excerpts, and model transcripts.
