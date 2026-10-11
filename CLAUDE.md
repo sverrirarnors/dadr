@@ -91,7 +91,7 @@ Key `dadrock` modules:
 | `links` | Wikilink and Markdown-link checks |
 | `tags` | Tag normalization, listing, validation |
 | `templates` | Candidate template with built-in fallback |
-| `tasks` | Task packages (`tasks/builtin/*/prompt.md`), runs under `dadr/runs/` |
+| `tasks` | Task documents (`<id>.md`: YAML manifest front matter + prompt body); built-ins embed `skills/dadr/tasks/*.md`; runs under `dadr/runs/` |
 | `agent` | ACP integration for drafting and revising candidates via local agents |
 | `mcp` | MCP server |
 | `demo` | Seeded example projects (`dadrock demo --example ...`) |

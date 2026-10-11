@@ -28,7 +28,7 @@ dadr/
 | `dadr/accepted/` | Accepted decisions, including those later replaced |
 | `dadr/rejected/` | Rejected proposals |
 | `dadr/templates/` | Optional template overrides for new candidates |
-| `dadr/tasks/` | Optional project-specific agent workflows (`dadr/tasks/<task-id>/task.toml` plus its prompt file) |
+| `dadr/tasks/` | Optional project-specific agent workflows (`dadr/tasks/<task-id>.md`: a YAML front-matter manifest followed by the prompt) |
 | `dadr/runs/` | Agent-run inputs, results, and logs; ignored by version control |
 
 `dadrock accept` changes a candidate's `status` to `accepted` and moves the file to `dadr/accepted/`. `dadrock reject` changes it to `rejected` and moves it to `dadr/rejected/`. The `id` never changes. `dadrock supersede` appends the new record's `id` to the old record's `successors` and leaves both files in `dadr/accepted/`.
