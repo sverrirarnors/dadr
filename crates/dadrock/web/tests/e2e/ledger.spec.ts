@@ -129,8 +129,9 @@ test('selecting a row shows the record and its history', async ({ page }) => {
     'href',
     `/ledger?archived=1&id=${lazyFramesId}`,
   );
+  // An archived record is corrected in place, never superseded or revised.
   await expect(detail(page).getByRole('button', { name: 'Supersede' })).toHaveCount(0);
-  await expect(detail(page).getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
+  await expect(detail(page).getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
   await expect(detail(page).getByRole('button', { name: 'Revise with agent' })).toHaveCount(0);
   await expect(list(page).getByRole('link', { name: /Use Polars over pandas/ })).toHaveAttribute('aria-current', 'page');
 });

@@ -87,6 +87,22 @@ export function mergedSuccessorBody(bodies: string[]): string {
   return preambles.length ? `${preambles.join('\n\n')}\n\n${merged}` : merged;
 }
 
+/**
+ * Why a body does not meet the acceptance requirements: each required section
+ * exactly once and not empty. Empty when it meets them.
+ */
+export function requiredSectionProblems(body: string): string[] {
+  const headings = bodyHeadings(body).filter((heading) => heading.level === 2);
+  const sections = bodySections(body);
+  return REQUIRED_SECTIONS.flatMap((name) => {
+    const count = headings.filter((heading) => heading.title === name).length;
+    if (count === 0) return [`\`## ${name}\` is missing`];
+    if (count > 1) return [`\`## ${name}\` appears ${count} times`];
+    if (!sections.get(name)?.trim()) return [`\`## ${name}\` is empty`];
+    return [];
+  });
+}
+
 /** The text before a body's first level-1 or level-2 heading, trimmed. */
 export function bodyPreamble(body: string): string {
   const lines = bodyLineTexts(body);

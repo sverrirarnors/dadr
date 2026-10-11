@@ -26,7 +26,11 @@
     ].filter((fact): fact is NonNullable<typeof fact> => fact !== null),
   );
 
-  /** Candidates change in place; a decision in force gets a successor; archived records never change. */
+  /**
+   * The agent revises a candidate in place and drafts a successor of a
+   * decision in force. It never edits decided text, so an archived record is
+   * corrected by hand: Open record.
+   */
   const fixable = $derived(
     item.record ? item.record.status === 'candidate' || isCurrentDecision(item.record) : false,
   );

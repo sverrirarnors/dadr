@@ -82,8 +82,8 @@
         <RenderedMarkdown markdown={reason} />
       </div>
     {:else}
-      <Alert variant="warning" data-successor-reason-missing>
-        No reason given. Edit the candidate and write why the decision changes under the links in
+      <Alert variant="neutral" data-successor-reason-missing>
+        No reason given. To add one, edit the candidate and write why the decision changes under the links in
         <code>## Supersedes</code>.
       </Alert>
     {/if}

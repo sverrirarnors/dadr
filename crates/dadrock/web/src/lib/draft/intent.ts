@@ -45,8 +45,9 @@ export function resolveDraftIntent(
       const record = attached[0];
       if (!record) return fail('Choose the record to revise.');
       if (record.status !== 'candidate') {
-        // Only candidates change in place; a decision in force gets a successor.
-        if (!isCurrent(record)) return fail(`“${record.title}” is archived and cannot change.`);
+        // The agent revises only candidates in place; a decision in force gets a
+        // successor, and archived records are corrected by hand.
+        if (!isCurrent(record)) return fail(`“${record.title}” is archived; correct it with Edit in the Ledger.`);
         if (!text) return fail('Describe what should change.');
         return supersede([record], text, paths);
       }

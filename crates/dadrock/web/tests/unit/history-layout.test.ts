@@ -20,7 +20,7 @@ function summary(n: number, title: string, current = false): HistoryRecord {
 }
 
 function version(n: number, title: string, current = false) {
-  return { ...summary(n, title, current), body: `${title}\n` };
+  return { ...summary(n, title, current), body: `${title}\n`, edits: null };
 }
 
 function link(predecessor: number, successor: number, reason: string | null = null): HistoryLink {

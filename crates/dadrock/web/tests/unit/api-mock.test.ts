@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MockApi, resetMockProject } from '../../src/lib/api/mock';
 import { mockId } from '../../src/lib/api/mock-records';
-import { rewriteTags } from '../../src/lib/records/front-matter';
 import { supersedesSection } from '../../src/lib/records/supersedes';
 
 const api = new MockApi();
@@ -107,28 +106,111 @@ describe('mock lifecycle', () => {
   });
 });
 
-describe('mock frozen records', () => {
-  it('lets the tags of accepted and rejected records change', async () => {
+describe('mock corrections in place', () => {
+  it('lets the title, body, tags, and other keys of accepted and rejected records change', async () => {
     for (const id of [IMPUTATION, SAS]) {
       const { content } = await api.getRecordSource(id);
-      const response = await api.saveRecordSource(id, rewriteTags(content, ['topic/new']));
-      expect(response.snapshot.records.find((record) => record.id === id)?.tags).toEqual(['topic/new']);
+      const edited = content
+        .replace(/^title: (.*)$/m, 'title: $1 (corrected)')
+        .replace(/^tags:\n(?: {2}- .*\n)*/m, 'tags:\n  - topic/new\n')
+        .replace('---\n\n', 'bibliography: refs.bib\n---\n\n')
+        .replace('## Consequences\n\n', '## Consequences\n\nCorrected. ');
+      const response = await api.saveRecordSource(id, edited);
+      const summary = response.snapshot.records.find((record) => record.id === id);
+      expect(summary).toMatchObject({ id, tags: ['topic/new'], title: expect.stringMatching(/\(corrected\)$/) });
+      expect(summary?.status).toBe(id === SAS ? 'rejected' : 'accepted');
+      expect((await api.getRecordSource(id)).content).toContain('bibliography: refs.bib');
     }
   });
 
-  it('refuses to change the title or body of an accepted or rejected record', async () => {
+  it('refuses to change the id, status, or successors of a decided record', async () => {
     const { content } = await api.getRecordSource(IMPUTATION);
-    await expect(api.saveRecordSource(IMPUTATION, `${content}\nMore.\n`)).rejects.toThrow(/body cannot change/);
     await expect(
-      api.saveRecordSource(IMPUTATION, content.replace('title: Multiple imputation for income', 'title: Other')),
-    ).rejects.toThrow(/title cannot change/);
+      api.saveRecordSource(IMPUTATION, content.replace('status: accepted', 'status: rejected')),
+    ).rejects.toThrow(/`status` cannot change\. To change the decision, supersede it/);
+    await expect(api.saveRecordSource(IMPUTATION, content.replace(`id: ${IMPUTATION}`, `id: ${mockId(9999)}`))).rejects.toThrow(
+      /`id` cannot change/,
+    );
+    const listwise = await api.getRecordSource(LISTWISE);
+    await expect(
+      api.saveRecordSource(LISTWISE, listwise.content.replace(/successors:\n {2}- .*\n/, '')),
+    ).rejects.toThrow(/`successors` cannot change/);
     const rejected = await api.getRecordSource(SAS);
-    await expect(api.saveRecordSource(SAS, `${rejected.content}x`)).rejects.toThrow(/draft a new candidate/);
+    await expect(
+      api.saveRecordSource(SAS, rejected.content.replace('status: rejected', 'status: accepted')),
+    ).rejects.toThrow(/draft a new candidate/);
+  });
+
+  it('keeps the four required sections of an accepted record', async () => {
+    const { content } = await api.getRecordSource(IMPUTATION);
+    await expect(
+      api.saveRecordSource(IMPUTATION, content.replace('## Alternatives', '## Options')),
+    ).rejects.toThrow(/`## Alternatives` is missing/);
+    // A rejected record keeps its text but not necessarily the sections.
+    const rejected = await api.getRecordSource(SAS);
+    await expect(api.saveRecordSource(SAS, rejected.content.replace('## Alternatives', '## Options'))).resolves.toBeDefined();
   });
 
   it('lets candidates change freely', async () => {
     const { content } = await api.getRecordSource(INCOME);
     const response = await api.saveRecordSource(INCOME, content.replace('Winsorize income at p99', 'Winsorize income at p98'));
     expect(response.snapshot.records.find((record) => record.id === INCOME)?.title).toBe('Winsorize income at p98');
+  });
+});
+
+describe('mock text edits', () => {
+  it('lists the working-tree edit, then each commit, newest first, with diffs on request', async () => {
+    const history = await api.getRecordHistory(IMPUTATION, { patch: true });
+    const version = history.versions.find((entry) => entry.id === IMPUTATION);
+    expect(version?.edits).toHaveLength(2);
+    const [working, committed] = version?.edits ?? [];
+    expect(working).toMatchObject({
+      commit: null,
+      short_commit: null,
+      author: null,
+      date: null,
+      subject: null,
+      title_changed: false,
+      body_changed: true,
+    });
+    expect(working?.diff?.lines).toContainEqual({
+      kind: 'added',
+      text: 'The full sample is kept; estimates pool across imputations with Rubin’s rules (Rubin 1987).',
+    });
+    expect(committed).toMatchObject({
+      short_commit: 'e3b1c9a',
+      author: 'Alice Martin',
+      date: '2026-10-01T14:22:05+02:00',
+      subject: 'Fix a typo in the imputation decision',
+      title_changed: false,
+      body_changed: true,
+    });
+    expect(committed?.diff?.lines.filter((line) => line.kind !== 'context')).toEqual([
+      { kind: 'removed', text: 'Impute income with chained equatoins and pool 20 imputations.' },
+      { kind: 'added', text: 'Impute income with chained equations and pool 20 imputations.' },
+    ]);
+    expect((await api.getRecordHistory(IMPUTATION)).versions[0]?.edits?.[0]?.diff).toBeUndefined();
+  });
+
+  it('has no edits for unedited records and candidates', async () => {
+    const history = await api.getRecordHistory(LISTWISE);
+    expect(history.versions.find((entry) => entry.id === LISTWISE)?.edits).toEqual([]);
+    expect((await api.getRecordHistory(INCOME)).versions.find((entry) => entry.id === INCOME)?.edits).toEqual([]);
+  });
+
+  it('lists a correction saved in place as not committed yet, but not a change of tags alone', async () => {
+    const { content } = await api.getRecordSource(POLARS);
+    await api.saveRecordSource(POLARS, content.replace(/^tags:\n(?: {2}- .*\n)*/m, 'tags:\n  - kind/library\n'));
+    expect((await api.getRecordHistory(POLARS)).versions[0]?.edits).toEqual([]);
+
+    await api.saveRecordSource(POLARS, content.replace('The full panel fits in memory.', 'The full panel fits in memory (32 GB).'));
+    const edits = (await api.getRecordHistory(POLARS)).versions[0]?.edits;
+    expect(edits).toEqual([expect.objectContaining({ commit: null, body_changed: true, title_changed: false })]);
+  });
+
+  it('reports no edits outside a Git repository', async () => {
+    resetMockProject('history', { git: false });
+    const history = await api.getRecordHistory(IMPUTATION, { patch: true });
+    expect(history.versions.map((version) => version.edits)).toEqual([null, null]);
   });
 });

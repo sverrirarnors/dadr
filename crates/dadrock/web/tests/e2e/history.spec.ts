@@ -46,13 +46,13 @@ function status(page: Page, text: string | RegExp) {
   return page.getByRole('status').filter({ hasText: text });
 }
 
-test('Edit drafts a successor that the Inbox reviews as changes, and History keeps both versions', async ({ page }) => {
+test('Supersede drafts a successor that the Inbox reviews as changes, and History keeps both versions', async ({ page }) => {
   await page.goto(`/ledger?id=${ARROW_ID}`);
-  await ledgerDetail(page).getByRole('button', { name: 'Edit', exact: true }).click();
+  await ledgerDetail(page).getByRole('button', { name: 'Supersede' }).click();
 
   await expect(page).toHaveURL(/\/draft$/);
   const draft = page.locator('[data-draft-composer]');
-  await expect(draft.getByRole('heading', { name: 'Edit “Use Arrow IPC snapshots”' })).toBeVisible();
+  await expect(draft.getByRole('heading', { name: 'Supersede “Use Arrow IPC snapshots”' })).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(draft.getByLabel('Title')).toHaveValue('Use Arrow IPC snapshots');
   await expect(draft.getByLabel('Tags')).toHaveValue('#dadr/data/processing');
@@ -62,13 +62,14 @@ test('Edit drafts a successor that the Inbox reviews as changes, and History kee
   expect(original).toContain('## Decision\n\nUse Arrow IPC snapshots for portable intermediate data.');
   expect(original).not.toContain('## Supersedes');
 
+  // The reason is optional; an unchanged successor is not.
   const reason = draft.getByLabel('Why does this decision change?');
   await expect(reason).toBeFocused();
   const create = draft.getByRole('button', { name: 'Create candidate' });
   await expect(create).toBeDisabled();
+  await expect(draft.locator('[data-draft-successor-hint]')).toHaveText('Nothing has changed yet. Edit the text, then save.');
   await reason.fill('Parquet files compress better and every tool reads them.');
   await expect(create).toBeDisabled();
-  await expect(draft.locator('[data-draft-successor-hint]')).toHaveText('Nothing has changed yet. Edit the text, then save.');
 
   await fillEditor(
     markdown,
@@ -92,7 +93,8 @@ test('Edit drafts a successor that the Inbox reviews as changes, and History kee
 
   await navigate(page, `/ledger?archived=1&id=${ARROW_ID}`);
   await expect(ledgerDetail(page).locator('[data-record-superseded-by]')).toContainText('Superseded by “Use Arrow IPC snapshots”');
-  await expect(ledgerDetail(page).getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
+  await expect(ledgerDetail(page).getByRole('button', { name: 'Supersede' })).toHaveCount(0);
+  await expect(ledgerDetail(page).getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
   await ledgerDetail(page).locator('[data-record-superseded-by]').getByRole('link').click();
 
   await ledgerDetail(page).getByRole('tab', { name: /History/ }).click();
@@ -254,39 +256,138 @@ test('a stale successor is retargeted at the decision now in force', async ({ pa
   await expect(history.locator(`[data-history-version="${POLARS}"]`)).toBeVisible();
 });
 
-test('archived records have no Edit or Revise', async ({ page }) => {
+test('a successor needs no reason', async ({ page }) => {
+  await page.goto(`/ledger?id=${ARROW_ID}`);
+  await ledgerDetail(page).getByRole('button', { name: 'Supersede' }).click();
+  const draft = page.locator('[data-draft-composer]');
+  await expect(draft.getByRole('heading', { name: 'Supersede “Use Arrow IPC snapshots”' })).toBeVisible();
+  const markdown = draft.getByLabel('Successor Markdown');
+  await expect.poll(() => editorValue(markdown)).toContain('## Consequences');
+  await fillEditor(markdown, `${(await editorValue(markdown)).trimEnd()}\nAlso for the panel.\n`);
+  await draft.getByRole('button', { name: 'Create candidate' }).click();
+
+  await expect(page).toHaveURL(/\/inbox\?item=candidate%3A/);
+  const detail = inboxDetail(page);
+  await expect(detail.getByRole('tab', { name: 'Changes' })).toHaveAttribute('aria-selected', 'true');
+  await expect(detail.locator('[data-successor-reason]')).toHaveCount(0);
+  await expect(detail.locator('[data-successor-reason-missing]')).toContainText('No reason given.');
+  await expect(detail.locator('[data-diff-line="add"]')).toHaveText([/Also for the panel\./]);
+});
+
+test('archived records offer Edit, but not Supersede or Revise', async ({ page }) => {
   await useHistoryScenario(page);
   await page.goto(`/ledger?archived=1&id=${PANDAS}`);
   const detail = ledgerDetail(page);
   await expect(detail.getByRole('heading', { name: 'Use pandas for data frames' }).first()).toBeVisible();
   await expect(detail.locator('[data-record-superseded-by]').getByRole('link', { name: '“Use Polars for data frames”' })).toBeVisible();
-  for (const name of ['Edit', 'Revise with agent', 'Supersede']) {
+  await expect(detail.getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
+  for (const name of ['Revise with agent', 'Supersede']) {
     await expect(detail.getByRole('button', { name, exact: true })).toHaveCount(0);
   }
-  await expect(detail.getByRole('button', { name: 'Edit tags' })).toBeVisible();
+  await expect(detail.getByRole('button', { name: 'Edit tags' })).toHaveCount(0);
 
-  await page.goto(`/ledger?archived=1&id=${SAS}`);
+  // A rejected record takes a correction in place and stays in the archive.
+  await navigate(page, `/ledger?archived=1&id=${SAS}`);
   await expect(detail.getByRole('heading', { name: 'Use SAS for estimation' }).first()).toBeVisible();
   await expect(detail.locator('[data-record-rejected-notice]')).toBeVisible();
-  for (const name of ['Edit', 'Revise with agent', 'Supersede']) {
+  for (const name of ['Revise with agent', 'Supersede']) {
     await expect(detail.getByRole('button', { name, exact: true })).toHaveCount(0);
   }
+  await detail.getByRole('button', { name: 'Edit', exact: true }).click();
+  await expect(detail.locator('[data-record-correction-note]')).toContainText('To revisit the decision, draft a new candidate.');
+  const editor = detail.getByLabel('Raw Markdown');
+  await fillEditor(editor, (await editorValue(editor)).replace('Licenses would be needed', 'Paid licenses would be needed'));
+  await detail.getByRole('button', { name: 'Save' }).click();
+  await expect(status(page, `saved ${SAS}`)).toBeVisible();
+  await expect(detail.getByRole('article')).toContainText('Paid licenses would be needed');
+  await expect(detail.getByRole('button', { name: 'Edited since rejection' })).toBeVisible();
+  await expect(page.locator('[data-ledger-list]').getByRole('link', { name: /Use SAS for estimation/ }).getByText('REJ')).toBeVisible();
 });
 
-test('tags of an accepted decision are edited in place', async ({ page }) => {
+test('a decision in force is corrected in place: same id, still in the Ledger, and History lists the edit', async ({ page }) => {
+  await useHistoryScenario(page);
+  await page.goto(`/ledger?id=${POLARS}`);
+  const detail = ledgerDetail(page);
+  await expect(detail.getByRole('heading', { name: 'Use Polars for data frames' }).first()).toBeVisible();
+  await expect(detail.locator('[data-record-edited]')).toHaveCount(0);
+
+  await detail.getByRole('button', { name: 'Edit', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/ledger\\?id=${POLARS}$`));
+  await expect(detail.locator('[data-record-correction-note]')).toContainText('To change the decision, use Supersede.');
+  const editor = detail.getByLabel('Raw Markdown');
+  const original = await editorValue(editor);
+  expect(original).toContain(`id: ${POLARS}`);
+  await fillEditor(
+    editor,
+    original
+      .replace('title: Use Polars for data frames', 'title: Use Polars for all data frames')
+      .replace('The full panel fits in memory.', 'The full panel fits in memory (32 GB).'),
+  );
+  await detail.getByRole('button', { name: 'Save' }).click();
+
+  await expect(status(page, `saved ${POLARS}`)).toBeVisible();
+  await expect(detail.getByLabel('Raw Markdown')).toHaveCount(0);
+  await expect(detail.getByRole('heading', { name: 'Use Polars for all data frames' }).first()).toBeVisible();
+  await expect(detail.getByRole('article')).toContainText('The full panel fits in memory (32 GB).');
+  const row = page.locator('[data-ledger-list]').getByRole('link', { name: /Use Polars for all data frames/ });
+  await expect(row).toBeVisible();
+  await expect(row).toHaveAttribute('aria-current', 'page');
+  await expect(detail.getByRole('button', { name: 'Supersede' })).toBeVisible();
+
+  await detail.getByRole('button', { name: 'Edited since acceptance' }).click();
+  await expect(detail.getByRole('tab', { name: /History/ })).toHaveAttribute('aria-selected', 'true');
+  const history = detail.locator('[data-record-history]');
+  const edits = history.locator(`[data-history-edits="${POLARS}"]`);
+  await expect(edits).toContainText('Edited once since accepted');
+  await edits.locator('summary').first().click();
+  const edit = edits.locator('[data-history-edit="working-tree"]');
+  await expect(edit).toContainText('Not committed yet');
+  await expect(edit).toContainText('title and body');
+  await edit.locator('summary').click();
+  await expect(edit.locator('[data-record-diff-title]')).toContainText('Use Polars for all data frames');
+  await expect(edit.locator('[data-diff-line="add"]')).toHaveText([/The full panel fits in memory \(32 GB\)\./]);
+  await expect(history.locator(`[data-history-edits="${PANDAS}"]`)).toHaveCount(0);
+});
+
+test('History lists text edits from Git, the uncommitted one first, each with its diff', async ({ page }) => {
   await useHistoryScenario(page);
   await page.goto(`/ledger?id=${IMPUTATION}`);
   const detail = ledgerDetail(page);
+  await expect(detail.getByRole('button', { name: 'Edited since acceptance' })).toBeVisible();
 
-  await detail.getByRole('button', { name: 'Edit tags' }).click();
-  const tags = detail.getByLabel('Tags', { exact: true });
-  await expect(tags).toHaveValue('topic/missing-data kind/transformation');
-  await expect(tags).toBeFocused();
-  await tags.fill('topic/missing-data kind/transformation topic/imputation');
-  await detail.getByRole('button', { name: 'Save tags' }).click();
+  await navigate(page, `/ledger?id=${IMPUTATION}&tab=history`);
+  const history = detail.locator('[data-record-history]');
+  const edits = history.locator(`[data-history-edits="${IMPUTATION}"]`);
+  await expect(edits.locator('summary').first()).toHaveText('Edited 2 times since accepted');
+  await expect(edits.locator('[data-history-edit]').first()).toBeHidden();
+  await edits.locator('summary').first().click();
+  await expect(edits.locator('[data-history-edit]')).toHaveCount(2);
 
-  await expect(status(page, 'Tags saved')).toBeVisible();
-  await expect(detail.getByRole('link', { name: 'topic/imputation' })).toBeVisible();
-  await expect(detail.getByLabel('Tags', { exact: true })).toHaveCount(0);
-  await expect(detail.getByRole('article')).toContainText('Impute income with chained equations');
+  const working = edits.locator('[data-history-edit]').first();
+  await expect(working).toHaveAttribute('data-history-edit', 'working-tree');
+  await expect(working).toContainText('Not committed yet');
+  const committed = edits.locator('[data-history-edit="e3b1c9a"]');
+  await expect(committed).toContainText('2026-10-01');
+  await expect(committed).toContainText('Alice Martin');
+  await expect(committed).toContainText('Fix a typo in the imputation decision');
+  await expect(committed.locator('[data-record-diff]')).toBeHidden();
+  await committed.locator('summary').click();
+  await expect(committed.locator('[data-diff-line="remove"]')).toHaveText([/chained equatoins/]);
+  await expect(committed.locator('[data-diff-line="add"]')).toHaveText([/chained equations/]);
+
+  await working.locator('summary').click();
+  await expect(working.locator('[data-diff-line="add"]')).toHaveText([/Rubin’s rules \(Rubin 1987\)/]);
+
+  // The predecessor was never edited.
+  await expect(history.locator('[data-history-edits]')).toHaveCount(1);
+});
+
+test('outside a Git repository, History shows no text edits', async ({ page }) => {
+  await useHistoryScenario(page);
+  await page.addInitScript(() => localStorage.setItem('dadrock:mock-git', 'false'));
+  await page.goto(`/ledger?id=${IMPUTATION}&tab=history`);
+  const detail = ledgerDetail(page);
+  await expect(detail.locator('[data-record-history] [data-history-version]')).toHaveCount(2);
+  await expect(detail.locator('[data-history-edits]')).toHaveCount(0);
+  await expect(detail.locator('[data-record-edited]')).toHaveCount(0);
 });

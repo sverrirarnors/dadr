@@ -112,7 +112,7 @@ describe('resolveDraftIntent', () => {
     const rejected = { ...records[0]!, id: 'rej-1', title: 'Use SAS', status: 'rejected' as const };
     expect(
       resolveDraftIntent({ mode: 'revise', text: 'x', paths: [], recordIds: ['rej-1'] }, [...records, rejected]),
-    ).toEqual({ ok: false, reason: '“Use SAS” is archived and cannot change.' });
+    ).toEqual({ ok: false, reason: '“Use SAS” is archived; correct it with Edit in the Ledger.' });
   });
 
   it('refuses to merge fewer than two candidates', () => {

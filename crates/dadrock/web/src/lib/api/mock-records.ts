@@ -2,22 +2,43 @@
  * The record store behind the mock API: a small in-memory project that
  * follows Dadrock's rules closely enough for unit and browser tests. Records
  * carry their full body, `## Supersedes` sections are parsed like Dadrock
- * parses them, and accepted and rejected records are frozen.
+ * parses them, and accepted and rejected records take corrections in place.
+ * A record's text at HEAD and the commits that edited it stand in for Git, so
+ * the history lists text edits like `dadrock history` does.
  */
 import { lineDiff } from '$lib/inbox/diff';
 import { frontMatterBlocks, readFrontMatter, splitSource, yamlScalar } from '$lib/records/front-matter';
+import { requiredSectionProblems } from '$lib/records/sections';
 import { comparableBody, supersedesLink, supersedesSection, hasSupersedesHeading } from '$lib/records/supersedes';
 import type {
   HistoryLink,
   HistoryRecord,
   RecordDiff,
   RecordDiffResult,
+  RecordEdit,
   RecordHistory,
   RecordLifecycle,
   RecordSummary,
 } from './schemas';
 
 type Status = 'candidate' | 'accepted' | 'rejected';
+
+/** What Git compares to find a text edit: the title and the body. */
+export interface MockText {
+  title: string;
+  body: string;
+}
+
+/** A commit that edited a record's title or body after it was accepted or rejected. */
+export interface MockCommit {
+  commit: string;
+  author: string;
+  /** Author date, ISO 8601. */
+  date: string;
+  subject: string;
+  before: MockText;
+  after: MockText;
+}
 
 export interface MockRecord {
   id: string;
@@ -34,6 +55,10 @@ export interface MockRecord {
   timestamp_ms: number;
   /** The source exactly as last saved, until the lifecycle rewrites the file. */
   raw?: string | undefined;
+  /** The title and body at HEAD once accepted or rejected; a working-tree edit differs from it. */
+  head?: MockText | undefined;
+  /** Commits that edited the title or body since acceptance or rejection, newest first. */
+  log?: MockCommit[] | undefined;
 }
 
 export type MockScenario = 'default' | 'history';
@@ -57,7 +82,15 @@ function seed(
   title: string,
   status: Status,
   body: string,
-  options: { tags?: string[]; successors?: number[]; file?: string; timestamp?: number } = {},
+  options: {
+    tags?: string[];
+    successors?: number[];
+    file?: string;
+    timestamp?: number;
+    /** The body at HEAD when the working tree has an uncommitted edit. */
+    head?: string;
+    log?: MockCommit[];
+  } = {},
 ): MockRecord {
   return {
     id: mockId(suffix),
@@ -69,6 +102,8 @@ function seed(
     extra: [],
     file: options.file ?? `${String(suffix).padStart(4, '0')}-${slugify(title)}.md`,
     timestamp_ms: options.timestamp ?? 1730000000000 + suffix * 1000,
+    head: status === 'candidate' ? undefined : { title, body: `\n${options.head ?? body}` },
+    log: options.log ?? [],
   };
 }
 
@@ -109,6 +144,24 @@ function defaultRecords(): MockRecord[] {
 function historyRecords(): MockRecord[] {
   const missingData = 'Income is missing for a fifth of the respondents.';
   const outliers = 'Income and age have implausible extreme values.';
+  // "Multiple imputation for income" was corrected in place twice since it was
+  // accepted: a committed spelling fix, then a citation not committed yet.
+  const imputation = (decision: string, consequences: string) =>
+    supersedes([[1001, 'Listwise deletion']], 'Complete cases lose a third of the sample.') +
+    sections(missingData, decision, 'Drop the rows with missing income.', consequences);
+  const imputationAccepted = imputation(
+    'Impute income with chained equatoins and pool 20 imputations.',
+    'The full sample is kept; estimates pool across imputations.',
+  );
+  const imputationCommitted = imputation(
+    'Impute income with chained equations and pool 20 imputations.',
+    'The full sample is kept; estimates pool across imputations.',
+  );
+  const imputationWorking = imputation(
+    'Impute income with chained equations and pool 20 imputations.',
+    'The full sample is kept; estimates pool across imputations with Rubin’s rules (Rubin 1987).',
+  );
+  const imputationTitle = 'Multiple imputation for income';
   return [
     seed(1001, 'Listwise deletion', 'accepted', sections(
       missingData,
@@ -116,15 +169,20 @@ function historyRecords(): MockRecord[] {
       'Impute the missing values.',
       'The sample shrinks by a third.',
     ), { tags: ['topic/missing-data'], successors: [1002] }),
-    seed(1002, 'Multiple imputation for income', 'accepted', supersedes(
-      [[1001, 'Listwise deletion']],
-      'Complete cases lose a third of the sample.',
-    ) + sections(
-      missingData,
-      'Impute income with chained equations and pool 20 imputations.',
-      'Drop the rows with missing income.',
-      'The full sample is kept; estimates pool across imputations.',
-    ), { tags: ['topic/missing-data', 'kind/transformation'] }),
+    seed(1002, imputationTitle, 'accepted', imputationWorking, {
+      tags: ['topic/missing-data', 'kind/transformation'],
+      head: imputationCommitted,
+      log: [
+        {
+          commit: 'e3b1c9a4f27d8e6b5a0c1d2e3f4a5b6c7d8e9f01',
+          author: 'Alice Martin',
+          date: '2026-10-01T14:22:05+02:00',
+          subject: 'Fix a typo in the imputation decision',
+          before: { title: imputationTitle, body: `\n${imputationAccepted}` },
+          after: { title: imputationTitle, body: `\n${imputationCommitted}` },
+        },
+      ],
+    }),
     seed(2001, 'Outlier rule for covariates', 'accepted', sections(
       outliers,
       'Winsorize every continuous covariate at the 99th percentile.',
@@ -220,9 +278,12 @@ export function slugify(title: string): string {
 /** An in-memory project with Dadrock's lifecycle rules. */
 export class MockRecordStore {
   readonly records: MockRecord[];
+  /** False stands for a project outside a Git repository: histories have no text edits. */
+  readonly git: boolean;
 
-  constructor(records: MockRecord[]) {
+  constructor(records: MockRecord[], options: { git?: boolean } = {}) {
     this.records = records;
+    this.git = options.git ?? true;
   }
 
   find(query: string): MockRecord | undefined {
@@ -288,7 +349,12 @@ export class MockRecordStore {
     return `${lines.join('\n')}\n${record.body}`;
   }
 
-  /** Save a record's source; accepted and rejected records keep their id, status, title, body, and successors. */
+  /**
+   * Save a record's source. Candidates change freely. Accepted and rejected
+   * records take corrections in place: title, body, tags, and keys outside
+   * DADR may change, `id`, `status`, and `successors` may not, and an
+   * accepted record keeps its four required sections.
+   */
   save(record: MockRecord, content: string): void {
     const fields = readFrontMatter(content);
     const { frontMatter, body } = splitSource(content);
@@ -299,17 +365,21 @@ export class MockRecordStore {
       const changed = [
         fields.id !== record.id ? '`id`' : '',
         fields.status !== record.status ? '`status`' : '',
-        fields.title !== record.title ? 'title' : '',
-        normalize(body) !== normalize(record.body) ? 'body' : '',
-        fields.successors.join(',') !== record.successors.join(',') ? '`successors`' : '',
+        !sameMembers(fields.successors, record.successors) ? '`successors`' : '',
       ].filter(Boolean);
       if (changed.length) {
         const advice =
           record.status === 'accepted'
-            ? 'To change the decision, draft a successor that supersedes it'
+            ? 'To change the decision, supersede it'
             : 'To revisit it, draft a new candidate';
         throw new Error(
-          `\`${record.title}\` is ${record.status}, so its ${changed.join(', ')} cannot change. ${advice}; tags and keys outside DADR can still change.`,
+          `\`${record.title}\` is ${record.status}, so its ${changed.join(', ')} cannot change. ${advice}; the title, body, tags, and keys outside DADR can be corrected in place.`,
+        );
+      }
+      const problems = record.status === 'accepted' ? requiredSectionProblems(body) : [];
+      if (problems.length) {
+        throw new Error(
+          `\`${record.title}\` is accepted and keeps its four required sections, each once and not empty: ${problems.join('; ')}.`,
         );
       }
     } else if (fields.id !== record.id || fields.status !== record.status) {
@@ -408,6 +478,9 @@ export class MockRecordStore {
     for (const candidate of set) {
       candidate.status = 'accepted';
       candidate.raw = undefined;
+      // As if the acceptance were committed: later edits show as text edits.
+      candidate.head = { title: candidate.title, body: candidate.body };
+      candidate.log = [];
     }
     return set;
   }
@@ -417,7 +490,42 @@ export class MockRecordStore {
     if (record.status !== 'candidate') throw new Error(`\`${record.title}\` is not a candidate`);
     record.status = 'rejected';
     record.raw = undefined;
+    record.head = { title: record.title, body: record.body };
+    record.log = [];
     return record;
+  }
+
+  /**
+   * The edits to a record's title or body since it was accepted or rejected,
+   * newest first: the uncommitted working-tree edit, then each commit. Null
+   * outside Git; candidates have none.
+   */
+  edits(record: MockRecord, patch: boolean): RecordEdit[] | null {
+    if (!this.git) return null;
+    if (record.status === 'candidate') return [];
+    const edits: RecordEdit[] = [];
+    const working = { title: record.title, body: record.body };
+    if (record.head && textChanged(record.head, working)) {
+      edits.push(this.edit(null, record.head, working, record.tags, patch));
+    }
+    for (const commit of record.log ?? []) {
+      edits.push(this.edit(commit, commit.before, commit.after, record.tags, patch));
+    }
+    return edits;
+  }
+
+  private edit(commit: MockCommit | null, before: MockText, after: MockText, tags: string[], patch: boolean): RecordEdit {
+    const edit: RecordEdit = {
+      commit: commit?.commit ?? null,
+      short_commit: commit?.commit.slice(0, 7) ?? null,
+      author: commit?.author ?? null,
+      date: commit?.date ?? null,
+      subject: commit?.subject ?? null,
+      title_changed: before.title !== after.title,
+      body_changed: comparableBody(before.body) !== comparableBody(after.body),
+    };
+    if (patch) edit.diff = this.diff({ ...before, tags }, { ...after, tags });
+    return edit;
   }
 
   historyRecord(record: MockRecord): HistoryRecord {
@@ -505,14 +613,18 @@ export class MockRecordStore {
 
     return {
       record: opened.id,
-      versions: order.map((record) => ({ ...this.historyRecord(record), body: comparableBody(record.body) })),
+      versions: order.map((record) => ({
+        ...this.historyRecord(record),
+        body: comparableBody(record.body),
+        edits: this.edits(record, patch),
+      })),
       links,
       neighbors: neighbors.map((record) => this.historyRecord(record)),
     };
   }
 
   /** The difference from `old` to `new`, as `dadrock diff` computes it. */
-  diff(old: MockRecord, next: MockRecord): RecordDiff {
+  diff(old: DiffSide, next: DiffSide): RecordDiff {
     const title = old.title !== next.title ? { old: old.title, new: next.title } : null;
     const key = (tag: string) => tag.trim().replace(/^#+/, '').toLowerCase();
     const missing = (tags: string[], other: string[]) => tags.filter((tag) => !other.map(key).includes(key(tag)));
@@ -538,6 +650,14 @@ export class MockRecordStore {
   }
 }
 
-function normalize(text: string): string {
-  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+type DiffSide = Pick<MockRecord, 'title' | 'tags' | 'body'>;
+
+/** Whether Git would list a text edit: the title, or the body without `## Supersedes`, differs. */
+function textChanged(before: MockText, after: MockText): boolean {
+  return before.title !== after.title || comparableBody(before.body) !== comparableBody(after.body);
+}
+
+function sameMembers(left: string[], right: string[]): boolean {
+  const key = (ids: string[]) => [...new Set(ids.map((id) => id.toLowerCase()))].sort().join(',');
+  return key(left) === key(right);
 }

@@ -3,13 +3,14 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
-  import { Check, Pencil, Replace, Sparkles, X } from 'lucide-svelte';
+  import { Check, History, Pencil, Replace, Sparkles, X } from 'lucide-svelte';
   import { untrack } from 'svelte';
   import { createApi, type MutationResponse, type RecordSource } from '$lib/api';
   import { hasMissingRationale } from '$lib/candidates/review';
   import MarkdownEditor from '$lib/components/editor/MarkdownEditor.svelte';
-  import { Alert, Badge, Button, SegmentedTabs } from '$lib/components/ui';
-  import { ActionBar, DocumentPane } from '$lib/components/workbench';
+  import { Alert, Badge, Button, InlineLinkBadge, SegmentedTabs } from '$lib/components/ui';
+  import { ActionBar, DocumentPane, MetadataStrip } from '$lib/components/workbench';
+  import { versionEdits } from '$lib/history/edits';
   import { currentVersions } from '$lib/history/layout';
   import { candidateItemId } from '$lib/inbox/items';
   import { renderMarkdown, stripFrontMatter } from '$lib/markdown/render';
@@ -27,7 +28,6 @@
   import RecordHistory from './RecordHistory.svelte';
   import StaleSupersedesNotice from './StaleSupersedesNotice.svelte';
   import SuccessorChanges from './SuccessorChanges.svelte';
-  import TagEditor from './TagEditor.svelte';
 
   type StatusVariant = 'candidate' | 'accepted' | 'rejected' | 'superseded';
   type View = 'changes' | 'document' | 'history';
@@ -80,7 +80,6 @@
   const isCandidate = $derived(status === 'candidate');
   const agentAvailable = $derived(snapshot.data?.settings.agent_available ?? false);
   const actions = $derived(detailActions({ surface, status, agentAvailable }));
-  const inPlace = $derived(actions.editMode === 'in-place');
   const pending = $derived(isCandidate ? (lifecycle.data?.pending_supersedes ?? []) : []);
   const stale = $derived(isCandidate ? (lifecycle.data?.stale_supersedes ?? []) : []);
 
@@ -91,6 +90,10 @@
     queryFn: ({ queryKey }) => api.getRecordHistory(String(queryKey[1]), { patch: true }),
     enabled: Boolean(id) && (showHistory || status === 'superseded'),
   }));
+
+  /** The opened version's text edits since it was accepted or rejected, from Git. */
+  const edits = $derived(versionEdits(history.data?.versions.find((version) => version.id === id)));
+  const editedLabel = $derived(status === 'rejected' ? 'Edited since rejection' : 'Edited since acceptance');
 
   /** Where the decision went: the versions now in force in place of this one. */
   const supersededBy = $derived.by(() => {
@@ -176,14 +179,9 @@
       : ledgerRecordUrl(recordId);
   }
 
-  function edit() {
-    if (inPlace) editing = true;
-    else composer.show(successorDraft('edit', id));
-  }
-
   function revise() {
-    if (inPlace) composer.show({ mode: 'revise', recordIds: [id] });
-    else composer.show(successorDraft('revise', id));
+    if (actions.revise === 'edit-record') composer.show({ mode: 'revise', recordIds: [id] });
+    else if (actions.revise === 'supersede-record') composer.show(successorDraft('revise', id));
   }
 
   function leaveEditMode() {
@@ -216,7 +214,7 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (!editing || !inPlace) return;
+    if (!editing) return;
     if ((event.metaKey || event.ctrlKey) && (event.key.toLowerCase() === 's' || event.code === 'KeyS')) {
       event.preventDefault();
       saveEditor();
@@ -235,7 +233,6 @@
     {source.error?.message ?? lifecycle.error?.message ?? 'Unknown record loading error'}
   </Alert>
 {:else if source.data && lifecycle.data && record}
-  {@const editingInPlace = editing && inPlace}
   <div data-record-detail-header class="flex flex-wrap items-start justify-between gap-4">
     <div class="min-w-0">
       <div class="flex flex-wrap items-center gap-2">
@@ -250,8 +247,33 @@
         </svelte:element>
       </div>
       <div class="mt-2">
-        <Badge mono>{fileName(record.path)}</Badge>
-        <TagEditor id={record.id} tags={record.tags} source={source.data.content} editable={actions.editTags} />
+        <div class="flex flex-wrap items-center gap-2">
+          <Badge mono>{fileName(record.path)}</Badge>
+          {#if edits.length}
+            {#if views.some((option) => option.value === 'history')}
+              <button
+                type="button"
+                data-record-edited
+                class="inline-flex h-5 items-center gap-1 rounded-md border border-border px-1.5 text-[11px] text-fg-muted hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-60"
+                title="Show the edits in History"
+                disabled={editing}
+                onclick={() => (chosenView = 'history')}
+              >
+                <History class="h-3 w-3" aria-hidden="true" />
+                <span>{editedLabel}</span>
+              </button>
+            {:else}
+              <Badge data-record-edited>{editedLabel}</Badge>
+            {/if}
+          {/if}
+        </div>
+        {#if record.tags.length}
+          <MetadataStrip class="mt-1">
+            {#each record.tags as tag (tag)}
+              <InlineLinkBadge href={resolve(ledgerUrl({ tag }))}>{tag}</InlineLinkBadge>
+            {/each}
+          </MetadataStrip>
+        {/if}
       </div>
     </div>
 
@@ -281,7 +303,7 @@
     </p>
   {:else if status === 'rejected'}
     <p data-record-rejected-notice class="mt-3 text-sm text-fg-muted">
-      Rejected. It stays in the archive unchanged; to revisit it, draft a new decision.
+      Rejected. It stays in the archive; to revisit it, draft a new decision.
     </p>
   {/if}
 
@@ -296,10 +318,10 @@
     </ul>
   {/if}
 
-  {#if actions.primary.length || actions.lifecycle.length || editingInPlace}
+  {#if actions.primary.length || actions.lifecycle.length || editing}
     <ActionBar data-record-actions class="mt-2 border-0 bg-transparent px-0">
       <div class="flex flex-wrap items-center gap-2">
-        {#if editingInPlace}
+        {#if editing}
           <Button type="button" variant="outline" size="sm" disabled={save.isPending} onclick={resetEditor}>
             Cancel
           </Button>
@@ -314,14 +336,21 @@
                 variant="outline"
                 size="sm"
                 data-record-action="edit"
-                title={inPlace ? undefined : 'Draft a successor, starting from this text'}
-                onclick={edit}
+                title={actions.correction ? 'Correct this record in place' : undefined}
+                onclick={() => (editing = true)}
               >
                 <Pencil class="h-3.5 w-3.5" aria-hidden="true" />
                 <span>Edit</span>
               </Button>
             {:else if action === 'revise'}
-              <Button type="button" variant="outline" size="sm" data-record-action="revise" onclick={revise}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                data-record-action="revise"
+                title={actions.revise === 'supersede-record' ? 'Ask the agent to draft a successor' : undefined}
+                onclick={revise}
+              >
                 <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
                 <span>Revise with agent</span>
               </Button>
@@ -330,7 +359,7 @@
         {/if}
       </div>
 
-      {#if !editingInPlace && actions.lifecycle.length}
+      {#if !editing && actions.lifecycle.length}
         <div class="ml-auto flex flex-wrap items-center gap-2">
           {#each actions.lifecycle as action (action)}
             {#if action === 'reject'}
@@ -365,6 +394,7 @@
                 variant="outline"
                 size="sm"
                 data-record-action="supersede"
+                title="Draft a successor, starting from this text"
                 onclick={() => composer.show(successorDraft('supersede', id))}
               >
                 <Replace class="h-3.5 w-3.5" aria-hidden="true" />
@@ -406,7 +436,7 @@
             {id}
             stale={entry}
             source={source.data.content}
-            disabled={dirty || editingInPlace}
+            disabled={dirty || editing}
             {recordHref}
           />
         </div>
@@ -419,7 +449,20 @@
     {/if}
   {/if}
 
-  {#if editingInPlace}
+  {#if editing}
+    {#if actions.correction}
+      <Alert class="mt-3" variant="neutral" data-record-correction-note>
+        Corrections such as spelling, formatting, links, or citations stay in this record and show in its History
+        from Git.
+        {#if status === 'accepted'}
+          To change the decision, use Supersede.
+        {:else if status === 'superseded'}
+          To change the decision, supersede the decision now in force.
+        {:else}
+          To revisit the decision, draft a new candidate.
+        {/if}
+      </Alert>
+    {/if}
     <div class={embedded ? 'mt-4 flex min-h-0 flex-1 flex-col' : 'mt-4 block'}>
       <span class="mb-2 block text-sm font-medium text-fg">Raw Markdown</span>
       <MarkdownEditor

@@ -37,16 +37,19 @@ test('record editor resets dirty markdown to the loaded source', async ({ page }
   await expect(page.getByText('Unsaved')).not.toBeVisible();
 });
 
-test('accepted and archived records have no raw editor', async ({ page }) => {
+test('accepted and archived records open the raw editor with a note on corrections', async ({ page }) => {
   await page.goto(`/ledger/${acceptedId}?tab=edit`);
   await expect(page.getByRole('heading', { name: 'Use Polars lazy frames' }).first()).toBeVisible();
-  await expect(page.getByLabel('Raw Markdown')).toHaveCount(0);
-  await expect(page.getByRole('article')).toBeVisible();
+  await expect(page.getByLabel('Raw Markdown')).toBeVisible();
+  expect(await editorValue(page.getByLabel('Raw Markdown'))).toContain('status: accepted');
+  const note = page.locator('[data-record-correction-note]');
+  await expect(note).toContainText('stay in this record and show in its History');
+  await expect(note).toContainText('To change the decision, use Supersede.');
 
   await page.goto(`/ledger/${supersededId}?tab=edit`);
   await expect(page.getByRole('heading', { name: 'Use Polars over pandas' }).first()).toBeVisible();
-  await expect(page.getByLabel('Raw Markdown')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('Raw Markdown')).toBeVisible();
+  await expect(note).toContainText('supersede the decision now in force');
 });
 
 test('record editor shows Cancel and a disabled Save before markdown changes', async ({ page }) => {
@@ -162,16 +165,17 @@ test('a tab=edit deep link opens the editor and leaving clears it', async ({ pag
   await expect(detail.getByLabel('Raw Markdown')).not.toBeVisible();
 });
 
-test('typing in the search box keeps the tag editor open', async ({ page }) => {
+test('typing in the search box keeps the raw editor open', async ({ page }) => {
   await page.goto(`/ledger?id=${acceptedId}`);
   const detail = page.locator('[data-record-detail-pane]');
-  await detail.getByRole('button', { name: 'Edit tags' }).click();
-  const tags = detail.getByLabel('Tags', { exact: true });
-  await tags.fill('still editing');
+  await detail.getByRole('button', { name: 'Edit', exact: true }).click();
+  const editor = detail.getByLabel('Raw Markdown');
+  const original = await editorValue(editor);
+  await fillEditor(editor, `${original}\nStill editing.\n`);
 
   await page.getByLabel('Search ledger').fill('lazy');
 
   await expect(page).toHaveURL(new RegExp(`/ledger\\?q=lazy&id=${acceptedId}$`));
-  await expect(tags).toBeVisible();
-  await expect(tags).toHaveValue('still editing');
+  await expect(editor).toBeVisible();
+  expect(await editorValue(editor)).toContain('Still editing.');
 });

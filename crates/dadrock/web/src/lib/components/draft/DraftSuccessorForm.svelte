@@ -23,7 +23,8 @@
    * of the decision it supersedes (or, for a merge, from every predecessor's
    * sections), so the diff in the Inbox shows only what changed. Saving
    * creates a candidate whose `## Supersedes` links the predecessors and
-   * carries the reason; the decisions stay in force until it is accepted.
+   * carries the reason, when one is given; the decisions stay in force until
+   * it is accepted.
    */
   type Props = {
     /** The decisions the successor supersedes, in order. */
@@ -53,15 +54,13 @@
     prefill ? merge || successorChanged(prefill, { title, tags, body: markdown }) : false,
   );
   const missing = $derived(
-    !reason.trim()
-      ? 'Say why the decision changes.'
-      : !title.trim()
-        ? 'Give the successor a title.'
-        : !markdown.trim()
-          ? 'Write the decision.'
-          : !changed
-            ? 'Nothing has changed yet. Edit the text, then save.'
-            : null,
+    !title.trim()
+      ? 'Give the successor a title.'
+      : !markdown.trim()
+        ? 'Write the decision.'
+        : !changed
+          ? 'Nothing has changed yet. Edit the text, then save.'
+          : null,
   );
   const canCreate = $derived(Boolean(prefill) && !missing && !creating);
 
@@ -93,7 +92,7 @@
         tags: parseListInput(tags),
         body_markdown: markdown,
         supersedes: ids.length === 1 ? ids[0] : ids,
-        supersedes_reason: reason.trim(),
+        ...(reason.trim() ? { supersedes_reason: reason.trim() } : {}),
       });
       toasts.push({ severity: 'success', message: response.message, detail: 'Review the successor in the Inbox.' });
       await applyMutationResponse(queryClient, response);
@@ -145,11 +144,10 @@
   {:else if !prefill}
     <p class="text-sm text-fg-subtle">Loading the decision…</p>
   {:else}
-    <Field label="Why does this decision change?" description="Required. It is saved in the successor's ## Supersedes section, like a commit message.">
+    <Field label="Why does this decision change?" description="Optional. It is saved in the successor's ## Supersedes section, like a commit message.">
       <TextareaInput
         data-autofocus
         aria-label="Why does this decision change?"
-        aria-required="true"
         class="min-h-20"
         placeholder="What did you learn, or what changed in the analysis?"
         bind:value={reason}

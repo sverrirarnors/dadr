@@ -110,8 +110,33 @@ export const historyRecordSchema = z.object({
 });
 export type HistoryRecord = z.infer<typeof historyRecordSchema>;
 
-/** A version of a decision with its body, without `## Supersedes`. */
-export const historyVersionSchema = historyRecordSchema.extend({ body: z.string() });
+/**
+ * One edit Git recorded to a version's title or body after it was accepted or
+ * rejected. The uncommitted working-tree edit has no commit, author, date, or
+ * subject. `diff` comes only with `?patch=1`.
+ */
+export const recordEditSchema = z.object({
+  commit: z.string().nullable().default(null),
+  short_commit: z.string().nullable().default(null),
+  author: z.string().nullable().default(null),
+  /** Author date, ISO 8601. */
+  date: z.string().nullable().default(null),
+  subject: z.string().nullable().default(null),
+  title_changed: z.boolean(),
+  body_changed: z.boolean(),
+  diff: recordDiffSchema.optional(),
+});
+export type RecordEdit = z.infer<typeof recordEditSchema>;
+
+/**
+ * A version of a decision with its body, without `## Supersedes`, and its text
+ * edits since it was accepted or rejected, newest first: empty for
+ * candidates, null outside a Git repository.
+ */
+export const historyVersionSchema = historyRecordSchema.extend({
+  body: z.string(),
+  edits: z.array(recordEditSchema).nullable().default(null),
+});
 export type HistoryVersion = z.infer<typeof historyVersionSchema>;
 
 /** One supersession edge, with the reason from the successor's `## Supersedes`. */

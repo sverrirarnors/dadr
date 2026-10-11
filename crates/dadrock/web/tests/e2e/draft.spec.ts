@@ -104,7 +104,7 @@ test('a successor written by hand starts with Supersedes and accepting it archiv
   await expect(draft.getByRole('heading', { name: 'Supersede “Use Arrow IPC snapshots”' })).toBeVisible();
 
   await draft.getByRole('button', { name: 'Write it by hand' }).click();
-  await expect(draft.getByRole('heading', { name: 'Edit “Use Arrow IPC snapshots”' })).toBeVisible();
+  await expect(draft.getByRole('heading', { name: 'Supersede “Use Arrow IPC snapshots”' })).toBeVisible();
   await expect(draft.getByText('Saving drafts a successor candidate in the Inbox.')).toBeVisible();
   await expect(draft.getByLabel('Title')).toHaveValue('Use Arrow IPC snapshots');
   await draft.getByLabel('Title').fill('Use Arrow IPC snapshots everywhere');

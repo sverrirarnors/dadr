@@ -28,19 +28,15 @@ export function attachedRecords(recordIds: string[], records: RecordSummary[]): 
     .filter((record): record is RecordSummary => Boolean(record));
 }
 
-/**
- * The page title. Writing a successor of one decision by hand is editing it;
- * several attached decisions are superseded together, as a merge.
- */
-export function composerTitle(mode: DraftMode, records: RecordSummary[], view: ComposerView = 'agent'): string {
+/** The page title. Several attached decisions are superseded together, as a merge. */
+export function composerTitle(mode: DraftMode, records: RecordSummary[]): string {
   const record = records[0];
   switch (mode) {
     case 'revise':
       return record ? `Revise “${record.title}”` : 'Revise a record';
     case 'supersede':
       if (records.length > 1) return `Supersede ${records.length} decisions`;
-      if (!record) return 'Supersede a decision';
-      return view === 'manual' ? `Edit “${record.title}”` : `Supersede “${record.title}”`;
+      return record ? `Supersede “${record.title}”` : 'Supersede a decision';
     case 'merge':
       return 'Merge candidates';
     case 'new':

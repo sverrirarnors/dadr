@@ -1,7 +1,6 @@
 /**
  * Just enough YAML front matter handling for the web UI: split a record
- * source into front matter and body, read the DADR keys, and rewrite `tags`
- * while leaving every other line exactly as written.
+ * source into front matter and body, and read the DADR keys.
  */
 
 export interface SourceParts {
@@ -62,32 +61,6 @@ export function readFrontMatter(source: string): FrontMatterFields {
     }
   }
   return fields;
-}
-
-/**
- * The source with its `tags` replaced by `tags`, written as a block list (or
- * `tags: []`). Every other line, including the body, is kept as written; a
- * source without `tags` gains the key just before the closing delimiter.
- */
-export function rewriteTags(source: string, tags: string[]): string {
-  const { frontMatter, body } = splitSource(source);
-  if (!frontMatter) throw new Error('the record has no front matter');
-  const eol = frontMatter.includes('\r\n') ? '\r\n' : '\n';
-  const lines = frontMatter.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n');
-  const inner = lines.slice(1, -1);
-  const replacement = tags.length ? ['tags:', ...tags.map((tag) => `  - ${yamlScalar(tag)}`)] : ['tags: []'];
-
-  const start = inner.findIndex((line) => keyOf(line) === 'tags');
-  let next: string[];
-  if (start < 0) {
-    next = [...inner, ...replacement];
-  } else {
-    let end = start + 1;
-    while (end < inner.length && isContinuation(inner[end] ?? '')) end += 1;
-    next = [...inner.slice(0, start), ...replacement, ...inner.slice(end)];
-  }
-  const rewritten = [lines[0], ...next, lines.at(-1)].join(eol);
-  return `${rewritten}${eol}${body}`;
 }
 
 /** A tag as a YAML scalar: plain when that is unambiguous, double-quoted otherwise. */

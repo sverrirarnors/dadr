@@ -1,10 +1,11 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { GitFork, GitMerge } from 'lucide-svelte';
+  import { GitFork, GitMerge, Pencil } from 'lucide-svelte';
   import type { RecordHistory } from '$lib/api';
   import RenderedMarkdown from '$lib/components/inbox/RenderedMarkdown.svelte';
   import { Badge, DisclosureRow } from '$lib/components/ui';
   import { diffStats, fromRecordDiffLines } from '$lib/inbox/diff';
+  import { editCountLabel, editDay, editScope, versionEdits } from '$lib/history/edits';
   import { historyLayout } from '$lib/history/layout';
   import type { LedgerHref } from '$lib/navigation/routes';
   import RecordDiffView from './RecordDiffView.svelte';
@@ -12,8 +13,9 @@
   /**
    * The versions of one decision, newest first, drawn as lanes: a split joins
    * at the shared predecessor, a merge forks from the successor. Each link
-   * shows its reason and, on request, what changed. Records on the other side
-   * of a split or merge are one-line entries.
+   * shows its reason and, on request, what changed. Each version lists the
+   * text edits Git recorded since it was accepted or rejected. Records on the
+   * other side of a split or merge are one-line entries.
    */
   let { history, recordHref }: { history: RecordHistory; recordHref: (id: string) => LedgerHref } = $props();
 
@@ -96,6 +98,50 @@
               <Badge variant="rejected">rejected</Badge>
             {/if}
           </div>
+
+          {#if versionEdits(row.version).length}
+            {@const edits = versionEdits(row.version)}
+            <div class="mt-1 px-1.5">
+              <DisclosureRow data-history-edits={row.version.id} summaryClass="py-1.5 text-xs text-fg-muted">
+                {#snippet summary()}
+                  <Pencil class="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden="true" />{editCountLabel(
+                    edits.length,
+                    row.version.status,
+                  )}
+                {/snippet}
+                <ol class="space-y-1.5">
+                  {#each edits as edit, index (edit.commit ?? `working-tree-${index}`)}
+                    {@const day = editDay(edit)}
+                    {@const stats = edit.diff ? diffStats(fromRecordDiffLines(edit.diff.lines)) : null}
+                    <li data-history-edit={edit.short_commit ?? 'working-tree'}>
+                      {#snippet editSummary()}
+                        {#if edit.commit}
+                          {#if day && edit.date}<time datetime={edit.date} title={edit.date}>{day}</time>{/if}
+                          {#if edit.author}<span class="text-fg">{edit.author}</span>{/if}
+                          {#if edit.subject}<span class="text-fg-muted">{edit.subject}</span>{/if}
+                          <span class="font-mono text-fg-subtle">{edit.short_commit}</span>
+                        {:else}
+                          <span class="font-medium text-warning">Not committed yet</span>
+                        {/if}
+                        <span class="text-fg-subtle">{editScope(edit)}</span>
+                        {#if stats}
+                          <span class="font-mono text-fg-subtle">+{stats.added} −{stats.removed}</span>
+                        {/if}
+                      {/snippet}
+                      {#if edit.diff}
+                        <DisclosureRow summaryClass="py-1.5 text-xs text-fg-muted [&>*]:mr-2">
+                          {#snippet summary()}{@render editSummary()}{/snippet}
+                          <RecordDiffView diff={edit.diff} />
+                        </DisclosureRow>
+                      {:else}
+                        <p class="px-3 py-1.5 text-xs text-fg-muted [&>*]:mr-2">{@render editSummary()}</p>
+                      {/if}
+                    </li>
+                  {/each}
+                </ol>
+              </DisclosureRow>
+            </div>
+          {/if}
 
           {#if row.supersedes.length || row.mergedWith.length}
             <div class="mt-1 space-y-1.5 px-1.5">

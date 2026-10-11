@@ -111,14 +111,30 @@ function readMockScenario(): MockScenario {
   }
 }
 
+/**
+ * Whether the mock project is in a Git repository. Browser tests simulate one
+ * outside Git, where histories have no text edits, with
+ * `localStorage['dadrock:mock-git'] = 'false'`.
+ */
+function readMockGit(): boolean {
+  try {
+    return globalThis.localStorage?.getItem('dadrock:mock-git') !== 'false';
+  } catch {
+    return true;
+  }
+}
+
 function store(): MockRecordStore {
-  recordStore ??= new MockRecordStore(scenarioRecords(readMockScenario()));
+  recordStore ??= new MockRecordStore(scenarioRecords(readMockScenario()), { git: readMockGit() });
   return recordStore;
 }
 
 /** Start over from a seeded project; unit tests use it to isolate cases. */
-export function resetMockProject(scenario: MockScenario = readMockScenario()): void {
-  recordStore = new MockRecordStore(scenarioRecords(scenario));
+export function resetMockProject(
+  scenario: MockScenario = readMockScenario(),
+  options: { git?: boolean } = {},
+): void {
+  recordStore = new MockRecordStore(scenarioRecords(scenario), { git: options.git ?? readMockGit() });
   nextCandidate = 5;
 }
 

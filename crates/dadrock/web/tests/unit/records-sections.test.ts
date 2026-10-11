@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { bodyPreamble, bodySections, compareSections, mergedSuccessorBody } from '../../src/lib/records/sections';
+import {
+  bodyPreamble,
+  bodySections,
+  compareSections,
+  mergedSuccessorBody,
+  requiredSectionProblems,
+} from '../../src/lib/records/sections';
 
 const trim = [
   '## Context',
@@ -106,5 +112,24 @@ describe('bodyPreamble', () => {
     expect(mergedSuccessorBody(['Use lazy frames.\n', '## Decision\n\nUse Arrow.\n'])).toBe(
       'Use lazy frames.\n\n## Context\n\n## Decision\n\nUse Arrow.\n\n## Alternatives\n\n## Consequences\n',
     );
+  });
+});
+
+describe('requiredSectionProblems', () => {
+  const complete = '## Context\n\nc\n\n## Decision\n\nd\n\n## Alternatives\n\na\n\n## Consequences\n\nq\n';
+
+  it('accepts a body with each required section once and not empty', () => {
+    expect(requiredSectionProblems(complete)).toEqual([]);
+    expect(requiredSectionProblems(`## Supersedes\n\n[[x]]\n\n${complete}## Notes\n\nn\n`)).toEqual([]);
+  });
+
+  it('names missing, repeated, and empty sections', () => {
+    expect(requiredSectionProblems(complete.replace('## Decision\n\nd\n\n', ''))).toEqual(['`## Decision` is missing']);
+    expect(requiredSectionProblems(`${complete}\n## Context\n\nmore\n`)).toEqual(['`## Context` appears 2 times']);
+    expect(requiredSectionProblems(complete.replace('\nq\n', '\n'))).toEqual(['`## Consequences` is empty']);
+  });
+
+  it('ignores headings inside code', () => {
+    expect(requiredSectionProblems(`${complete}\n\`\`\`\n## Context\n\`\`\`\n`)).toEqual([]);
   });
 });

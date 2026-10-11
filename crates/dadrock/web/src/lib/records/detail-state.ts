@@ -21,27 +21,33 @@ export type DetailSurface = 'inbox' | 'ledger';
 export type DetailAction = 'edit' | 'revise' | 'supersede' | 'reject' | 'accept';
 
 /**
- * How Edit and Revise with agent change a record: candidates change in place;
- * a decision in force changes by drafting a successor on the Draft page.
+ * What Revise with agent asks for: `edit-record` revises a candidate in place,
+ * `supersede-record` drafts a successor of a decision in force. Agents never
+ * edit accepted text.
  */
-export type EditMode = 'in-place' | 'successor';
+export type ReviseTask = 'edit-record' | 'supersede-record';
 
 export interface DetailActionGroups {
   /** Verbs that change the text: Edit, Revise with agent. */
   primary: DetailAction[];
   /** Verbs that change the lifecycle: Reject, Accept, Supersede. */
   lifecycle: DetailAction[];
-  /** How the primary verbs work, or null when the text cannot change. */
-  editMode: EditMode | null;
-  /** Accepted and rejected records keep their text but their tags can change in place. */
-  editTags: boolean;
+  /** The task Revise with agent runs, or null when it is not offered. */
+  revise: ReviseTask | null;
+  /**
+   * Edit corrects a decided record (accepted, superseded, or rejected) in
+   * place: the editor says that corrections show in History and that changing
+   * the decision means superseding it.
+   */
+  correction: boolean;
 }
 
 /**
- * One visible button per verb. Candidates are reviewed in the Inbox and edited
- * in place. A current decision is edited by drafting a successor, and the
- * Ledger offers to supersede it. Archived records (superseded or rejected)
- * never change; only their tags can.
+ * One visible button per verb. Edit works in place on every record: candidates
+ * freely, decided records for corrections. Candidates are reviewed in the
+ * Inbox and revised by the agent in place. A decision in force is superseded,
+ * by hand or by the agent, in the Ledger. Archived records (superseded or
+ * rejected) are only corrected.
  */
 export function detailActions(input: {
   surface: DetailSurface;
@@ -53,32 +59,31 @@ export function detailActions(input: {
 
   if (status === 'candidate') {
     if (surface === 'inbox') {
-      return { primary: withAgent, lifecycle: ['reject', 'accept'], editMode: 'in-place', editTags: false };
+      return {
+        primary: withAgent,
+        lifecycle: ['reject', 'accept'],
+        revise: agentAvailable ? 'edit-record' : null,
+        correction: false,
+      };
     }
-    return { primary: ['edit'], lifecycle: [], editMode: 'in-place', editTags: false };
+    return { primary: ['edit'], lifecycle: [], revise: null, correction: false };
   }
   if (status === 'accepted') {
     return {
       primary: withAgent,
       lifecycle: surface === 'ledger' ? ['supersede'] : [],
-      editMode: 'successor',
-      editTags: true,
+      revise: agentAvailable ? 'supersede-record' : null,
+      correction: true,
     };
   }
-  return { primary: [], lifecycle: [], editMode: null, editTags: true };
+  return { primary: ['edit'], lifecycle: [], revise: null, correction: true };
 }
 
 /**
- * The Draft page a successor verb opens for a current decision: Edit writes
- * the successor by hand, Revise with agent asks the agent, and Supersede
- * opens the page in its usual view.
+ * The Draft page a successor verb opens for a decision in force: Supersede
+ * writes the successor by hand, starting from the record's exact text, and
+ * Revise with agent asks the agent.
  */
-export function successorDraft(
-  action: 'edit' | 'revise' | 'supersede',
-  recordId: string,
-): ComposerPrefill {
-  const prefill: ComposerPrefill = { mode: 'supersede', recordIds: [recordId] };
-  if (action === 'edit') prefill.view = 'manual';
-  if (action === 'revise') prefill.view = 'agent';
-  return prefill;
+export function successorDraft(action: 'revise' | 'supersede', recordId: string): ComposerPrefill {
+  return { mode: 'supersede', recordIds: [recordId], view: action === 'revise' ? 'agent' : 'manual' };
 }

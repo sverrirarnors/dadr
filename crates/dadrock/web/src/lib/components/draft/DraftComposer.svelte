@@ -58,14 +58,20 @@
   let chosenView = $state<ComposerView | null>(null);
   const view = $derived(chosenView ?? composer.view ?? initialComposerView(composer.mode, agentAvailable));
   const title = $derived(
-    composerTitle(composer.mode, composer.mode === 'supersede' ? predecessors : pinned ? [pinned] : [], view),
+    composerTitle(composer.mode, composer.mode === 'supersede' ? predecessors : pinned ? [pinned] : []),
   );
   const canWriteByHand = $derived(manualFormAvailable(composer.mode));
   const canAttachRecords = $derived(
     composer.mode === 'new' || composer.mode === 'merge' || composer.mode === 'supersede' || !pinned,
   );
-  /** The candidate "Edit it in the Ledger" points at, in revise mode; only candidates change in place. */
-  const editRecord = $derived(composer.mode === 'revise' && pinned?.status === 'candidate' ? pinned : undefined);
+  /**
+   * The record "Edit it in the Ledger" points at, in revise mode: a candidate,
+   * or an archived record, which is corrected by hand. A decision in force is
+   * revised by drafting a successor instead.
+   */
+  const editRecord = $derived(
+    composer.mode === 'revise' && pinned && (pinned.status !== 'accepted' || pinned.superseded) ? pinned : undefined,
+  );
 
   let sending = $state(false);
   let error = $state<{ title: string; detail: string } | null>(null);

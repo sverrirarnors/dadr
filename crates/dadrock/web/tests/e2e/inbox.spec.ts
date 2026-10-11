@@ -85,7 +85,7 @@ test('an error issue opens its record in the ledger and cannot be dismissed', as
     'href',
     new RegExp(`^/ledger\\?.*id=${POLARS_ID}.*tab=edit`),
   );
-  // The record is archived (superseded), so it never changes and the agent cannot fix it.
+  // The record is archived (superseded): it is corrected by hand, never by the agent.
   await expect(pane.getByRole('button', { name: 'Fix with agent' })).toHaveCount(0);
   await expect(pane.getByRole('button', { name: 'Dismiss' })).toHaveCount(0);
   await expect(pane.getByText('cannot be dismissed')).toBeVisible();

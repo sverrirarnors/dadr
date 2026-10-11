@@ -40,38 +40,42 @@ describe('detailActions', () => {
     expect(detailActions({ surface: 'inbox', status: 'candidate', agentAvailable: true })).toEqual({
       primary: ['edit', 'revise'],
       lifecycle: ['reject', 'accept'],
-      editMode: 'in-place',
-      editTags: false,
+      revise: 'edit-record',
+      correction: false,
     });
   });
 
   it('hides the agent verb when no agent is available', () => {
-    expect(detailActions({ surface: 'inbox', status: 'candidate', agentAvailable: false })).toMatchObject({
+    expect(detailActions({ surface: 'inbox', status: 'candidate', agentAvailable: false })).toEqual({
       primary: ['edit'],
       lifecycle: ['reject', 'accept'],
+      revise: null,
+      correction: false,
     });
-    expect(detailActions({ surface: 'ledger', status: 'accepted', agentAvailable: false })).toMatchObject({
+    expect(detailActions({ surface: 'ledger', status: 'accepted', agentAvailable: false })).toEqual({
       primary: ['edit'],
       lifecycle: ['supersede'],
+      revise: null,
+      correction: true,
     });
   });
 
-  it('edits a current decision by drafting a successor and keeps its tags editable', () => {
+  it('corrects a decision in force in place, supersedes it, and revises it with the agent as a successor', () => {
     expect(detailActions({ surface: 'ledger', status: 'accepted', agentAvailable: true })).toEqual({
       primary: ['edit', 'revise'],
       lifecycle: ['supersede'],
-      editMode: 'successor',
-      editTags: true,
+      revise: 'supersede-record',
+      correction: true,
     });
   });
 
-  it('never offers Edit or Revise for archived records, only their tags', () => {
+  it('only corrects archived records: Edit, but no Revise or Supersede', () => {
     for (const status of ['superseded', 'rejected'] as const) {
       expect(detailActions({ surface: 'ledger', status, agentAvailable: true })).toEqual({
-        primary: [],
+        primary: ['edit'],
         lifecycle: [],
-        editMode: null,
-        editTags: true,
+        revise: null,
+        correction: true,
       });
     }
   });
@@ -80,24 +84,24 @@ describe('detailActions', () => {
     expect(detailActions({ surface: 'ledger', status: 'candidate', agentAvailable: true })).toEqual({
       primary: ['edit'],
       lifecycle: [],
-      editMode: 'in-place',
-      editTags: false,
+      revise: null,
+      correction: false,
     });
   });
 
   it('never offers lifecycle verbs for non-candidates in the inbox', () => {
-    expect(detailActions({ surface: 'inbox', status: 'accepted', agentAvailable: true })).toMatchObject({
+    expect(detailActions({ surface: 'inbox', status: 'accepted', agentAvailable: true })).toEqual({
       primary: ['edit', 'revise'],
       lifecycle: [],
-      editMode: 'successor',
+      revise: 'supersede-record',
+      correction: true,
     });
   });
 });
 
 describe('successorDraft', () => {
-  it('opens the Draft page in supersede mode, by hand for Edit and with the agent for Revise', () => {
-    expect(successorDraft('edit', 'acc-1')).toEqual({ mode: 'supersede', recordIds: ['acc-1'], view: 'manual' });
+  it('opens the Draft page in supersede mode, by hand for Supersede and with the agent for Revise', () => {
+    expect(successorDraft('supersede', 'acc-1')).toEqual({ mode: 'supersede', recordIds: ['acc-1'], view: 'manual' });
     expect(successorDraft('revise', 'acc-1')).toEqual({ mode: 'supersede', recordIds: ['acc-1'], view: 'agent' });
-    expect(successorDraft('supersede', 'acc-1')).toEqual({ mode: 'supersede', recordIds: ['acc-1'] });
   });
 });

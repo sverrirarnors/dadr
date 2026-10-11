@@ -761,6 +761,36 @@ describe('RealApi history, diff, and set acceptance', () => {
     expect(history.links[0]?.diff?.title).toEqual({ old: 'Listwise deletion', new: 'Multiple imputation' });
   });
 
+  it('reads each version\'s text edits, null outside Git and when an older binary omits them', async () => {
+    const edit = {
+      commit: 'e3b1c9a4f27d8e6b5a0c1d2e3f4a5b6c7d8e9f01',
+      short_commit: 'e3b1c9a',
+      author: 'Alice Martin',
+      date: '2026-10-01T14:22:05+02:00',
+      subject: 'Fix a typo',
+      title_changed: false,
+      body_changed: true,
+      diff: { ...diff, title: null, tags_added: [] },
+    };
+    const working = { commit: null, short_commit: null, author: null, date: null, subject: null, title_changed: true, body_changed: false };
+    const fakeFetch = vi.fn().mockResolvedValue(
+      envelope('history', {
+        record: OLD,
+        versions: [
+          { ...summary(NEW, 'Multiple imputation', true), body: 'x\n', edits: [working, edit] },
+          { ...summary(OLD, 'Listwise deletion', false), body: 'y\n', edits: null },
+          { ...summary(OLD.replace(/1$/, '3'), 'Pairwise deletion', false), body: 'z\n' },
+        ],
+        links: [],
+        neighbors: [],
+      }),
+    );
+    const history = await new RealApi('', fakeFetch as typeof fetch).getRecordHistory(OLD, { patch: true });
+    expect(history.versions.map((version) => version.edits?.length ?? null)).toEqual([2, null, null]);
+    expect(history.versions[0]?.edits?.[0]).toEqual(working);
+    expect(history.versions[0]?.edits?.[1]?.diff?.lines).toEqual([{ kind: 'added', text: 'Use multiple imputation.' }]);
+  });
+
   it('defaults a missing reason to null', async () => {
     const fakeFetch = vi.fn().mockResolvedValue(
       envelope('history', { record: OLD, versions: [], links: [{ predecessor: OLD, successor: NEW }], neighbors: [] }),

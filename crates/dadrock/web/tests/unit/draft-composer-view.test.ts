@@ -63,9 +63,7 @@ describe('composerTitle', () => {
     expect(composerTitle('supersede', [accepted])).toBe('Supersede “Use Polars”');
   });
 
-  it('calls writing a successor by hand editing, and several decisions a merge', () => {
-    expect(composerTitle('supersede', [accepted], 'manual')).toBe('Edit “Use Polars”');
-    expect(composerTitle('supersede', [accepted, superseded], 'manual')).toBe('Supersede 2 decisions');
+  it('calls several decisions superseded together a merge', () => {
     expect(composerTitle('supersede', [accepted, superseded])).toBe('Supersede 2 decisions');
   });
 
