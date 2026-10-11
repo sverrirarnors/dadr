@@ -62,15 +62,9 @@ Examples that **are not** decisions: "use `dplyr` rather than `data.table`", "re
 
 #### Granularity
 
-One choice → one record. Project size determines candidate count, not a fixed cap.
+One choice → one record. Start with at most five consequential choices unless the user requests another scope. A large project may contain many more choices; defer lower-priority ones to later review batches.
 
-- A 200-line single-script analysis might warrant 3–6 candidates.
-- A typical journal-article replication package warrants ~10–25.
-- A multi-paper longitudinal cohort project can easily warrant 50+ across the analysis tree.
-
-Let the project tell you. **Do not split** a single choice into multiple records to hit a number, and **do not merge** distinct choices to stay under one; defer lower-priority choices instead. Start with at most five consequential choices unless the user requests another scope. When uncertain, prioritize the choice a collaborator most needs explained and leave lower-priority choices for a later review batch.
-
-When the candidate list grows past ~20–30, surface the inventory to the user before drafting. They may want to prioritize the choices closest to the primary estimand first and defer the rest to a second pass.
+Do not split a choice to hit a count or merge distinct choices to fit a batch. Prioritize the choices a collaborator most needs explained, and report useful follow-up areas without drafting them all at once.
 
 ### Step 3 — Draft each candidate
 
@@ -110,15 +104,9 @@ See [../record.md](../record.md) for the full anatomy: per-section length envelo
 
 ### Step 4 — Tags
 
-See [../tags.md](../tags.md) for the full vocabulary and format rules. The mandatory tags every agent-drafted candidate must carry:
+Tags are optional. Follow the project's vocabulary and user preferences; inspect existing tags with `dadrock tags list`. When helpful, suggested defaults are `kind/sample`, `kind/modeling`, `kind/measurement`, `kind/transformation`, `kind/inference`, `kind/communication`, or `kind/robustness`, plus `writer/agent` for drafting provenance.
 
-- `kind/<surface>` — one of `sample`, `model`, `estimand`, `measurement`, `transformation`, `inference`, `report`, `robustness`.
-- `writer/agent` — provenance.
-
-Add `confidence/`, `topic/`, `plan/`, `axis/`, etc.
-when applicable. Do not invent namespaces beyond those in [../tags.md](../tags.md)
-unless the project already uses them — run `dadrock tags list` to see what's in
-play.
+See [../tags.md](../tags.md) for syntax and additional optional namespaces. Do not require a new tag scheme to draft a useful decision.
 
 ### Step 5 — Validate and report
 

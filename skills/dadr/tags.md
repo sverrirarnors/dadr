@@ -36,9 +36,9 @@ df <- df[!is.na(df$treatment), ]
 - Must contain at least one non-numeric character.
 - No whitespace; combine words with `kebab-case`, `snake_case`, `camelCase`, or `PascalCase`.
 
-## Mandatory tags for agent-drafted candidates
+## Suggested tags for agent-drafted candidates
 
-Every candidate this skill creates **must** include:
+Tags are optional. Respect existing project vocabularies and user preferences. When useful, these defaults help classify agent-drafted candidates:
 
 | Tag | Values | Why |
 |---|---|---|

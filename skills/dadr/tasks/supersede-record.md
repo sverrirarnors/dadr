@@ -5,7 +5,7 @@ description: Propose a candidate that supersedes an existing accepted DADR. Use 
 
 # Supersede record
 
-Draft a new candidate that, once accepted, will supersede an existing accepted record. The predecessor's body stays untouched; dadrock links the two via the `successors` graph after acceptance. This skill produces the new candidate and the supersession plan, not the lifecycle transition itself.
+Draft a new candidate that, once accepted, will supersede an existing accepted record. The predecessor's body stays untouched; Dadrock links the two via the `successors` graph when the replacement is accepted. This skill produces the new candidate and the supersession plan, not the lifecycle transition itself.
 
 Use this when the user wants to replace an accepted decision. If both records are still candidates, use [merge-records.md](merge-records.md) instead. If you are detecting conflicts across the ledger, start at [find-conflicts.md](find-conflicts.md) and use this skill on each confirmed pair.
 
@@ -46,7 +46,15 @@ The successor is a full candidate with all four canonical sections. See [../reco
 - **Alternatives** — usually include the predecessor itself as a rejected alternative, with a one-line reason that mirrors the supersession trigger. Add other defensible options not chosen. If genuinely no alternative applies, write "Not applicable".
 - **Consequences** — note downstream effects, including any robustness obligation the supersession introduces, and any prior result that may need to be re-run.
 
-The successor body must link to the predecessor with a wikilink using the full UUID: `[[<predecessor-uuid>]]`. Put this in Context at minimum; if the predecessor appears in Alternatives, use the same wikilink there too.
+Record replacement intent in an additional section, using the predecessor's full UUID and a readable label:
+
+```markdown
+## Replaces
+
+[[<predecessor-uuid>|Previous decision]]
+```
+
+Keep this section when replacement is intended. Dadrock validates the predecessor and links it when the candidate is accepted, including through the CLI. This is an optional Dadrock convention, not a required core-format section. Context and Alternatives may also use labeled links to discuss the predecessor.
 
 Total body 200–400 words.
 
@@ -74,22 +82,21 @@ Capture the printed path. Edit the four sections into the scaffold.
 dadrock validate
 ```
 
-Then surface the supersession plan to the user as a two-step action they will run themselves:
+Then ask the human to review the candidate. With the `## Replaces` section present, acceptance also links the replacement:
 
 ```bash
-dadrock status accept <new-id>
-dadrock supersede --from <old-id> --to <new-id>
+dadrock accept <new-id>
 ```
 
 Include the predecessor id, the new candidate's path and id, the one-sentence rationale, and the suggested CLI steps. **Do not run `accept` or `supersede` yourself.**
 
-If the supersession should cascade (the predecessor itself had successors), name the additional steps explicitly.
+Do not run a second `supersede` command after acceptance has already linked the replacement. If two records were accepted separately without a `## Replaces` section, explicit `dadrock supersede --from <old-id> --to <new-id>` remains available.
 
 ## Constraints
 
-- **Never edit the predecessor's body.** Supersession leaves it intact. The relation is encoded only by `dadrock supersede`, which writes the `successors` graph.
-- **Never modify `successors` by hand.** Always go through `dadrock supersede --from <id> --to <id>`.
-- **One predecessor per proposal.** If two accepted records need replacing by the same successor, draft one candidate that names both in Alternatives and Context; on acceptance the user runs `supersede` twice (once per predecessor).
+- **Never edit the predecessor's body.** Supersession leaves it intact. Dadrock writes the relation during replacement acceptance or an explicit supersede action.
+- **Never modify `successors` by hand.** Let Dadrock update them through replacement acceptance or an explicit supersede action.
+- **One predecessor per proposal.** If consolidation requires several predecessors, state that scope explicitly and use the supported consolidation workflow rather than silently extending a one-predecessor proposal.
 - **No lost evidence.** Do not silently discard sources or alternatives from the old record. Either carry them over or explain in `rationale` why they no longer apply.
 - **Acceptance is a human boundary.** This skill writes only to `dadr/candidates/`. Lifecycle transitions are user actions.
 
@@ -101,6 +108,6 @@ User: "supersede 01938fc1 — the SAP was amended last week to require multiple 
 2. Frame: SAP amendment §4.3 (dated 2026-05-05) changes the missing-treatment rule.
 3. Draft new candidate "Impute missing treatment via multiple imputation (mice)". Context cites 01938fc1, the SAP §4.3 anchor, and `analysis/build_sample.R:12-44`. Decision describes the imputation. Alternatives include 01938fc1 (complete-case dropping, now rejected) and "logistic-model imputation" (still rejected as before). Consequences quantify the sample-size restoration and note new diagnostic obligations.
 4. `dadrock new "Impute missing treatment via multiple imputation (mice)" --tag kind/sample --tag writer/agent --tag plan/sap-2026 --quiet` → writes `dadr/candidates/<new-uuid>-impute-missing-treatment-....md`.
-5. Edit the four sections.
+5. Edit the four sections and add `## Replaces` with the predecessor full UUID.
 6. `dadrock validate` → clean.
-7. Report: path of new candidate, predecessor id, rationale, suggested steps `dadrock status accept <new>` then `dadrock supersede --from 01938fc1 --to <new>`.
+7. Report: path of new candidate, predecessor id, rationale, suggested action `dadrock accept <new>`, which also links the predecessor.
