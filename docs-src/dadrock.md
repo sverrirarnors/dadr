@@ -99,7 +99,7 @@ For a disposable example instead of your own analysis, run `dadrock demo --examp
 
 An accepted decision is never rewritten, not even to fix a typo. Its `id`, `status`, `title`, body, and `successors` are frozen, and so are those of a rejected record; only tags and front-matter keys outside DADR can change. Dadrock refuses any other change to an accepted or rejected record, from the web editor or an agent revision, and suggests drafting a successor instead. Bodies are compared with normalized line endings. The `edit-record` agent task revises candidates only.
 
-To change a decision, however slightly, draft a successor: a new candidate that supersedes the old record, its predecessor. Use **Supersede** on the record in the web interface, run the `supersede-record` task, or write the candidate yourself. The successor names its predecessors in a `## Supersedes` section, followed by the reason for the change:
+To change a decision, however slightly, draft a successor: a new candidate that supersedes the old record, its predecessor. Use **Edit**, **Revise with agent**, or **Supersede** on the record in the web interface's [Ledger](#ledger), run the `supersede-record` task, or write the candidate yourself. The successor names its predecessors in a `## Supersedes` section, followed by the reason for the change:
 
 ```markdown
 ## Supersedes
@@ -131,7 +131,7 @@ Dadrock checks the whole set before writing anything: every candidate must meet 
 
 ### Stale successors
 
-Two candidates that name the same predecessor may be the halves of a split or competing alternatives; you decide by what you accept together. Once one of them is accepted alone, the other is stale: its predecessor was superseded after it was drafted, like a branch whose base has moved. `dadrock validate` warns about a stale candidate (`stale_supersedes`) and names the decisions now in force, and acceptance refuses it. Point its `## Supersedes` link at the current decision, or reject it. Dadrock never retargets a link on its own.
+Two candidates that name the same predecessor may be the halves of a split or competing alternatives; you decide by what you accept together. Once one of them is accepted alone, the other is stale: its predecessor was superseded after it was drafted, like a branch whose base has moved. `dadrock validate` warns about a stale candidate (`stale_supersedes`) and names the decisions now in force, and acceptance refuses it. Point its `## Supersedes` link at the current decision, or reject it. Dadrock never retargets a link on its own; in the web interface, **Retarget** on the candidate does it when you ask.
 
 Validation also warns when an accepted record's `## Supersedes` section names a predecessor that does not list it in `successors` (`unlinked_supersedes`), for example after a record was accepted by hand.
 
@@ -251,11 +251,14 @@ Open the local URL printed in the terminal. The interface has three places, side
 
 The Inbox is the home screen and the work queue. Everything that needs a human lands here, grouped by kind:
 
-- **Candidates** wait for a decision. Read the record, fix its explanation if needed, then **Accept** or **Reject**. **Revise with agent** sends it back to a local agent with your instructions.
+- **Candidates** wait for a decision. Read the record, fix its explanation if needed, then **Accept** or **Reject**. **Edit** opens the Markdown; **Revise with agent** sends it back to a local agent with your instructions.
+- **Successor candidates** open on a **Changes** tab: the reason from their `## Supersedes` section, then the difference from the predecessor, with a changed title, the tags added and removed, and a line diff of the body without `## Supersedes`. The **Document** tab shows the record itself. A successor of several decisions (a merge) opens on a section view, Decision first, with each predecessor's text followed by the new text; **Compare with** switches to a line diff against one predecessor.
+- **Splits** are candidates that supersede the same decision, shown as one item: "Split “X” into 2 decisions". Each candidate shows its reason and its diff. Select the ones that belong together and choose **Accept selected**: all of them to split the decision, or one of them to choose between competing alternatives. Reject the others one by one.
+- **Stale successors** name a decision that was superseded after they were drafted. A warning names the decisions now in force, and **Accept** waits until you choose **Retarget**, which points the link in `## Supersedes` at the current decision (you pick one when there are several), saves the candidate, and shows the diff against it.
 - **Agent proposals** are decisions a local agent drafted from your notes or your code. **Save as candidate** writes the file so you can review it like any other candidate; **Discard** drops it.
-- **Proposed revisions** show an agent's edit to an existing record as a diff. **Apply** writes it; **Discard** drops it.
+- **Proposed revisions** show an agent's edit to a candidate as a diff. **Apply** writes it; **Discard** drops it.
 - **Conflicts** come from **Check for conflicts**, which asks the agent to look for overlapping or contradictory decisions. From a conflict you can **Merge** two candidates, **Supersede** an accepted decision, or **Dismiss** the finding.
-- **Issues** are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. **Open record** jumps to the editor; **Fix with agent** asks for a revision; warnings and notes can be dismissed.
+- **Issues** are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. **Open record** jumps to the record; **Fix with agent** asks the agent to revise a candidate or to draft a successor of a decision in force; warnings and notes can be dismissed. Archived records never change, so their issues offer no fix.
 
 Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply the missing rationale before accepting.
 
@@ -265,13 +268,19 @@ Record text is edited in a CodeMirror editor with Markdown and front-matter high
 
 ### Ledger
 
-The Ledger is what has been decided. It lists the decisions in force, newest first, with one search box and a tag facet. **Show archived** adds the archived records: rejected and superseded ones. Each record shows its supersession chain, an inline editor, and two verbs: **Supersede** drafts a successor, and **Revise with agent** asks a local agent to rewrite the record from your instructions. The result appears in the Inbox as a proposed revision.
+The Ledger is what has been decided. It lists the decisions in force, newest first, with one search box and a tag facet. **Show archived** adds the archived records: rejected and superseded ones.
+
+A decision in force never changes in place. **Edit** opens a full-page successor draft on the Draft page, starting from the record's exact title, tags, and body, with a required "Why does this decision change?" field. Saving creates a successor candidate and opens it in the Inbox on its **Changes** tab; the decision stays in force until you accept the successor. **Revise with agent** asks a local agent to draft the successor (`supersede-record`), and **Supersede** opens the Draft page to draft it with the agent or by hand, or to link decisions that already exist. Tags stay editable in place on accepted and rejected records: the tag button next to them saves only `tags`.
+
+Archived records have no **Edit** or **Revise with agent**. A superseded record says where the decision went ("Superseded by …", linking the decisions now in force).
+
+The **History** tab shows the decision's versions newest first, the opened one highlighted and the current ones labeled. Lanes join where a decision was split and fork where several were merged. Each change shows its reason and, on request, its diff. Records at the other end of a split or merge appear on one line ("Also became …", "Merged with …") and link to their own history.
 
 ### Draft
 
-**Draft** is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a [configured agent](llms.md) look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises that record or drafts its successor. Results land in the Inbox as proposals.
+**Draft** is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a [configured agent](llms.md) look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises a candidate or drafts a successor of a decision in force; attach more decisions in force to supersede them together with one successor (a merge). Results land in the Inbox as proposals.
 
-Without an agent, **Write it by hand** gives you a plain form with the candidate template. **Supersede with existing decisions instead** links an accepted record to successors that already exist.
+**Write it by hand** (the default without an agent) gives you a plain form with the candidate template. For a successor, the form starts from the predecessor's exact text, or from every predecessor's sections for a merge, and asks why the decision changes; Dadrock writes the `## Supersedes` section from it. **Supersede with existing decisions instead** links an accepted record to successors that already exist.
 
 ### Project
 
