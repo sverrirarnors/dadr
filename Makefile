@@ -1,4 +1,4 @@
-.PHONY: help install web-deps build serve clean cli-docs demo kill window version bump release vscode positron editors vscode-sync-version vscode-stage-binary vscode-package-target vscode-package-universal vscode-publish
+.PHONY: help install web-deps build serve clean cli-docs screenshot demo kill window version bump release vscode positron editors vscode-sync-version vscode-stage-binary vscode-package-target vscode-package-universal vscode-publish
 
 .DEFAULT_GOAL := help
 
@@ -56,6 +56,9 @@ DOCS_PORT ?= 8001
 
 serve: web-deps ## Serve the docs site locally with live reload (DOCS_PORT=8001)
 	uv run zensical serve --dev-addr 127.0.0.1:$(DOCS_PORT)
+
+screenshot: ## Regenerate the web UI screenshot on the landing page (docs-src/assets/dadrock-review-*.webp)
+	./scripts/screenshot-web-ui.sh
 
 clean: ## Remove the generated docs/ directory
 	rm -rf docs

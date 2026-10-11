@@ -60,6 +60,7 @@ cd desktop && cargo clippy --all-targets && cargo test
 ```bash
 make serve     # uv run zensical serve  (live reload)
 make build     # uv run zensical build  (writes to docs/)
+make screenshot  # regenerate the landing-page web UI screenshot from the demo (needs Bun + Chromium)
 ```
 
 ## Architecture
