@@ -14,6 +14,7 @@ behavior belongs in `docs-src/` or generated CLI docs, not in this directory.
 |---|---|---|
 | [06-code-tags.md](06-code-tags.md) | Future RFC | Inline `#dadr/...` code-comment extraction, source-range binding, and code-driven tag checks. |
 | [07-agent-and-app-architecture.md](07-agent-and-app-architecture.md) | Future RFC | Future app, agent, team-review, permissions, notification, and API constraints. |
+| [08-decision-history.md](08-decision-history.md) | In progress | Every change to a decision as a new record, version history with diffs, splits and merges, and a Git-diff immutability check. |
 | [09-plan-to-record.md](09-plan-to-record.md) | Future RFC | Draft candidate DADRs from SAPs, PAPs, preregistrations, protocols, and other plan artifacts. |
 | [10-git-hooks.md](10-git-hooks.md) | Future RFC | Advisory Git hook workflow for detecting consequential analysis changes. |
 | [11-manuscript-to-record.md](11-manuscript-to-record.md) | Future RFC | Draft candidate DADRs from manuscript prose, captions, tables, figures, and supplements. |

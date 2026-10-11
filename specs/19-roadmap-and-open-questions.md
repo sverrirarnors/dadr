@@ -21,7 +21,7 @@ in `docs-src/` or generated references, not repeated here.
 | Team features | Future product work | Notifications, RBAC, scheduled checks, metrics, and shared review surfaces. |
 | Evidence/provenance layer | Future product work | Structured evidence objects and provenance graphs should not change the canonical Markdown record format. |
 | Lifecycle event log | Future product work | An append-only log of accept, reject, and supersede events recording at least the record `id`, the action, the event time, and the actor when known. The log is audit metadata and never overrides `status` or `successors` in front matter. |
-| Immutability baselines | Future product work | Record each accepted record's content at acceptance (for example, the Git blob at the commit where `status` became `accepted`) and flag later edits for review. The spec's mechanical rule (`id`, `status`, and existing `successors` never change) can be enforced exactly; meaning-preserving body edits still need human review. |
+| Decision history | In progress (dadr#zfgm) | Every change to an accepted decision becomes a new record; a decision's history and diffs are derived from `successors`, including splits and merges; a Git-diff check enforces that accepted and rejected records keep their title and body. Replaces the earlier "immutability baselines" idea. See [08-decision-history.md](08-decision-history.md). |
 
 ## Supersession Suggestions
 
