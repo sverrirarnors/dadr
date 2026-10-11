@@ -50,7 +50,7 @@ Write the candidate to the [record reference](../record.md): a noun-phrase title
 - **Anchor it.** Context cites a specific source: a file with a line range, a plan section, or a document anchor. Look for it in the supplied context and the files it refers to. Do not invent paths or line numbers; if no anchor can be found, say so in the warnings.
 - **Stay within the evidence.** When the context says what was done but not why, write the exact phrase "Rationale not documented" in Context, repeat it in the warnings, and ask the reviewer to supply the reason. Never infer motivation from code alone.
 - **Real alternatives only.** Use alternatives the context or its sources name. If none is identifiable, write "Not applicable" rather than inventing one.
-- **Tags.** Give the candidate `writer/agent` and one `kind/` tag from the project's vocabulary or the [tag reference](../tags.md). Add `topic/`, `plan/`, or `confidence/` tags when they apply. Suggest `people/decider/` or `people/approver/` tags only when the context names those people.
+- **Tags.** Give the candidate `writer/agent` and one `kind/` tag from the project's vocabulary or the [tag reference](../tags.md). Add `topic/`, `plan/`, `confidence/`, `axis/`, `multiverse/`, or `robustness/` tags when they apply. Suggest `people/decider/` or `people/approver/` tags only when the context names those people.
 
 ## Constraints
 

@@ -25,7 +25,7 @@ Dadrock runs these same guides as its built-in tasks (from the web UI or `dadroc
 ## References
 
 - [record.md](record.md) — anatomy of a single DADR record (front matter, four sections, length envelope, optional tags, lifecycle, common pitfalls).
-- [tags.md](tags.md) — tag format, optional tags, and recommended namespaces.
+- [tags.md](tags.md) — tag format and the recommended vocabulary: `kind/` values and the optional namespaces.
 - [cli.md](cli.md) — `dadrock` command reference (mirrors `dadrock help`).
 - [install.md](install.md) — installing dadrock and an optional ACP provider.
 

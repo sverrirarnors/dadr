@@ -50,14 +50,14 @@ Group requirements by the surface the spec needs. A typical analysis spec has:
 
 | Section | Decisions about |
 |---|---|
-| Sample and data construction | inclusion rules, cohort filters, joins, exclusions (`kind/sample`) |
-| Variables and measurement | outcome and treatment definitions, recodes, scales |
-| Transformations | imputation, winsorization, rescaling |
+| Sample and data construction | data sources, inclusion rules, cohort filters, joins, exclusions (`kind/input`, `kind/sample`) |
+| Variables and measurement | outcome and treatment definitions, recodes, scales (`kind/measurement`) |
+| Transformations | imputation, winsorization, rescaling (`kind/transformation`) |
 | Models and estimands | estimands, formulas, fixed effects, priors (`kind/modeling`) |
 | Inference | standard errors, intervals, multiplicity (`kind/inference`) |
-| Robustness and sensitivity | alternative specifications, `axis/` and `robustness/` choices |
-| Reporting | tables, figures, claims |
-| Deviations from prior plans | plan deviations and amendments (`plan/`) |
+| Robustness and sensitivity | alternative specifications (`kind/robustness`), `axis/`, `multiverse/`, and `robustness/` choices |
+| Reporting | tables, figures, claims, exported results (`kind/communication`, `kind/visualization`, `kind/output`) |
+| Deviations from prior plans | plan deviations and amendments (`kind/governance`, `plan/`) |
 
 Follow the project's own tags where they exist, and adapt the sections to `focus`.
 

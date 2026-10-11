@@ -124,9 +124,9 @@ Tags are optional. When useful and consistent with the project vocabulary, a rec
 
 ```yaml
 tags:
-  - kind/<surface>      # setup | input | sample | measurement |
-                        # transformation | modeling | inference |
-                        # communication | robustness | ...
+  - kind/<value>        # one value from tags.md, e.g. sample |
+                        # measurement | transformation | modeling |
+                        # inference | robustness | communication
 ```
 
 Agent-drafted records may additionally carry:
@@ -135,8 +135,9 @@ Agent-drafted records may additionally carry:
   - writer/agent        # provenance: drafted by an agent, not the analyst
 ```
 
-See [tags.md](tags.md) for optional namespaces (`confidence/`, `topic/`,
-`plan/`, `axis/`, `people/decider/`, `rejected/`, ...).
+See [tags.md](tags.md) for what each `kind/` value covers and for the optional
+namespaces (`confidence/`, `topic/`, `plan/`, `axis/`, `multiverse/`,
+`robustness/`, `people/`, `rejected/`).
 
 ## Length envelope
 

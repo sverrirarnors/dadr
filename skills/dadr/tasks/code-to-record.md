@@ -57,13 +57,13 @@ A DADR records one **consequential analytic choice**: something a thoughtful pee
 
 Look for choices on these surfaces:
 
-- **Sample construction**: inclusion and exclusion rules, dropping missing rows, deduplication, joins and linkage, time windows, geographic or cohort filters.
-- **Variable definitions**: outcome, treatment or exposure, covariates, constructs, derived scores, recoding, scale composition.
-- **Transformations**: log or square-root transforms, winsorizing, standardizing, imputation rules, top-coding, categorization, thresholds and cut points.
-- **Model and estimator**: formula, family and link, fixed or random effects, priors, hyperparameters, resampling design.
-- **Inference**: standard errors (HC*, clustered, bootstrap), tests, intervals, multiple-testing adjustments.
-- **Robustness**: alternative specifications, placebo or falsification checks, multiverse axes.
-- **Reporting**: table selection, rounding, plot encodings, exported artefact formats.
+- **Sample construction** (`kind/sample`): inclusion and exclusion rules, dropping missing rows, deduplication, joins and linkage, time windows, geographic or cohort filters.
+- **Variable definitions** (`kind/measurement`): outcome, treatment or exposure, covariates, constructs, derived scores, recoding, scale composition.
+- **Transformations** (`kind/transformation`): log or square-root transforms, winsorizing, standardizing, imputation rules, top-coding, categorization, thresholds and cut points.
+- **Model and estimator** (`kind/modeling`): formula, family and link, fixed or random effects, priors, hyperparameters, resampling design.
+- **Inference** (`kind/inference`): standard errors (HC*, clustered, bootstrap), tests, intervals, multiple-testing adjustments.
+- **Robustness** (`kind/robustness`): alternative specifications, placebo or falsification checks, multiverse axes.
+- **Reporting** (`kind/communication`, `kind/visualization`, `kind/output`): table selection, rounding, plot encodings, exported artefact formats.
 - **Plan relation**: implementation, clarification, deviation, or amendment relative to a governing plan.
 
 Skip routine code: I/O glue, formatting, test fixtures, dependency management, plotting cosmetics, file moves, lint-only edits, variable naming, and package choices without methodological consequence.
@@ -86,7 +86,7 @@ Write each candidate to the [record reference](../record.md): a noun-phrase titl
 - **Never infer motivation from code alone.** When the source does not explain why a choice was made, write the exact phrase "Rationale not documented" in Context, repeat it in the warnings, and ask the reviewer to supply the reason.
 - **Say when the Decision is read from code** rather than transcribed from a plan ("The code at L12-L18 implies…").
 - **Real alternatives only.** Use alternatives named in plans, comments, or the code itself. If none is identifiable, write "Not applicable" rather than inventing one.
-- **Tags.** Give every candidate `writer/agent` and one `kind/` tag: the closest value in the project's existing vocabulary or in the [tag reference](../tags.md), such as `kind/sample`, `kind/modeling`, or `kind/inference`. Add `topic/`, `plan/`, `confidence/`, `axis/`, or `robustness/` tags when they apply. Suggest `people/decider/` or `people/approver/` tags only when the evidence names those people.
+- **Tags.** Give every candidate `writer/agent` and one `kind/` tag: the closest value in the project's existing vocabulary or in the [tag reference](../tags.md), such as `kind/sample`, `kind/modeling`, or `kind/inference`. Add `topic/`, `plan/`, `confidence/`, `axis/`, `multiverse/`, or `robustness/` tags when they apply. Suggest `people/decider/` or `people/approver/` tags only when the evidence names those people.
 
 ## Constraints
 
