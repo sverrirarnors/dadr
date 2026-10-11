@@ -40,7 +40,8 @@
 
   const source = createQuery(() => ({
     queryKey: ['record-source', item.recordId],
-    queryFn: () => api.getRecordSource(item.recordId),
+    // Read the id from the key: the item can change while a refetch runs.
+    queryFn: ({ queryKey }) => api.getRecordSource(String(queryKey[1])),
   }));
 
   const currentBody = $derived(source.data ? stripFrontMatter(source.data.content) : '');

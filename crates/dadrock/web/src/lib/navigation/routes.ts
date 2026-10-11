@@ -24,7 +24,8 @@ export interface LedgerQuery {
   id?: string | null | undefined;
   q?: string | null | undefined;
   tag?: string | null | undefined;
-  history?: boolean | undefined;
+  /** Also list archived records (superseded and rejected). */
+  archived?: boolean | undefined;
   tab?: 'edit' | null | undefined;
 }
 
@@ -33,7 +34,7 @@ export function ledgerUrl(query: LedgerQuery = {}): LedgerHref {
   const params = new URLSearchParams();
   if (query.q) params.set('q', query.q);
   if (query.tag) params.set('tag', query.tag);
-  if (query.history) params.set('history', '1');
+  if (query.archived) params.set('archived', '1');
   if (query.id) params.set('id', query.id);
   if (query.tab) params.set('tab', query.tab);
   const search = params.toString();

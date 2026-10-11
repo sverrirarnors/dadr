@@ -35,7 +35,7 @@ pub enum Command {
         about = "Print the CLI reference as Markdown (used to regenerate docs-src/dadrock/cli.md)."
     )]
     GenCliDocs,
-    #[command(about = "Print the discovered accepted records directory.")]
+    #[command(about = "Print the discovered Dadrock project directory (dadr/).")]
     Dir,
     #[command(about = "Print the resolved project layout.")]
     Config(JsonArg),
@@ -47,15 +47,23 @@ pub enum Command {
     New(NewArgs),
     #[command(about = "List records, optionally filtered by lifecycle status, tag, or query.")]
     List(ListArgs),
+    #[command(
+        about = "Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git."
+    )]
+    History(HistoryArgs),
+    #[command(about = "Compare two records: title, tags, and body without `## Supersedes`.")]
+    Diff(DiffArgs),
     #[command(about = "Inspect one record's lifecycle status or run lifecycle transitions.")]
     Status(StatusArgs),
-    #[command(about = "Accept a candidate decision.")]
-    Accept(QueryArgs),
+    #[command(about = "Accept a candidate decision, or several together with --with.")]
+    Accept(AcceptArgs),
     #[command(about = "Reject a candidate decision.")]
     Reject(QueryArgs),
-    #[command(about = "Link replacement decisions to the decisions they replace.")]
+    #[command(
+        about = "Link accepted successors to the records they supersede and move those records to the archive."
+    )]
     Supersede(StatusSupersedeArgs),
-    #[command(about = "Run project validation, or target records, links, or tags.")]
+    #[command(about = "Run project validation, or target records, links, tags, or changes.")]
     Validate(ValidateArgs),
     #[command(about = "Inspect DADR tag usage.")]
     Tags(TagsArgs),
@@ -170,6 +178,28 @@ pub struct ListArgs {
     pub unique: bool,
 }
 
+#[derive(Debug, Args)]
+pub struct HistoryArgs {
+    /// Print each change's diff under its link, and each text edit's diff under its version.
+    #[arg(long)]
+    pub patch: bool,
+    #[arg(long)]
+    pub json: bool,
+    /// Any version of the decision: full id, id prefix, filename, or title.
+    #[arg(required = true, num_args = 1..)]
+    pub query: Vec<String>,
+}
+
+#[derive(Debug, Args)]
+pub struct DiffArgs {
+    #[arg(long)]
+    pub json: bool,
+    /// The record to compare from: full id, id prefix, filename, or title.
+    pub old: String,
+    /// The record to compare to.
+    pub new: String,
+}
+
 #[derive(Debug, Clone, Copy, ValueEnum)]
 #[value(rename_all = "snake_case")]
 pub enum RecordStatusArg {
@@ -200,11 +230,15 @@ pub struct StatusArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum StatusCommand {
-    #[command(about = "Accept a candidate by converting it into an accepted decision.")]
-    Accept(QueryArgs),
-    #[command(about = "Reject a candidate and move it into the rejected records directory.")]
+    #[command(
+        about = "Accept a candidate and move it to the ledger, or several together with --with."
+    )]
+    Accept(AcceptArgs),
+    #[command(about = "Reject a candidate and move it to the archive.")]
     Reject(QueryArgs),
-    #[command(about = "Link accepted successors to the records they supersede.")]
+    #[command(
+        about = "Link accepted successors to the records they supersede and move those records to the archive."
+    )]
     Supersede(StatusSupersedeArgs),
 }
 
@@ -217,6 +251,26 @@ pub struct QueryArgs {
 impl QueryArgs {
     pub fn joined(&self) -> String {
         self.query.join(" ")
+    }
+}
+
+#[derive(Debug, Args)]
+pub struct AcceptArgs {
+    /// The candidate to accept; the words join into one query.
+    #[arg(required = true, num_args = 1..)]
+    pub query: Vec<String>,
+    /// Another candidate to accept in the same operation, such as the other
+    /// half of a split. Repeat for more.
+    #[arg(long = "with", value_name = "QUERY")]
+    pub with: Vec<String>,
+}
+
+impl AcceptArgs {
+    /// Every candidate query: the positional query first, then each --with.
+    pub fn queries(&self) -> Vec<String> {
+        let mut queries = vec![self.query.join(" ")];
+        queries.extend(self.with.iter().cloned());
+        queries
     }
 }
 
@@ -244,6 +298,25 @@ pub enum ValidateCommand {
     Links(JsonArg),
     #[command(about = "Report malformed YAML and inline tags.")]
     Tags(JsonArg),
+    #[command(
+        about = "Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff."
+    )]
+    Changes(ValidateChangesArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct ValidateChangesArgs {
+    /// Git revision to compare with.
+    #[arg(long, default_value = "HEAD")]
+    pub base: String,
+    /// Compare the index (staged changes) instead of the working tree.
+    #[arg(long)]
+    pub staged: bool,
+    /// Report title and body edits to accepted and rejected records as errors.
+    #[arg(long)]
+    pub strict: bool,
+    #[arg(long)]
+    pub json: bool,
 }
 
 #[derive(Debug, Args)]
@@ -517,7 +590,43 @@ mod tests {
         else {
             panic!("expected status accept command");
         };
-        assert_eq!(args.joined(), "candidate record");
+        assert_eq!(args.queries(), ["candidate record"]);
+    }
+
+    #[test]
+    fn accept_takes_more_candidates_with_repeated_with() {
+        let cli = Cli::try_parse_from([
+            "dadrock",
+            "accept",
+            "Use",
+            "imputation",
+            "--with",
+            "Complete cases for the outcome",
+            "--with",
+            "0193b2a1d117",
+        ])
+        .unwrap();
+        let Some(Command::Accept(args)) = cli.command else {
+            panic!("expected accept command");
+        };
+        assert_eq!(
+            args.queries(),
+            [
+                "Use imputation",
+                "Complete cases for the outcome",
+                "0193b2a1d117"
+            ]
+        );
+
+        let cli = Cli::try_parse_from(["dadrock", "status", "accept", "B", "--with", "C"]).unwrap();
+        let Some(Command::Status(StatusArgs {
+            command: Some(StatusCommand::Accept(args)),
+            ..
+        })) = cli.command
+        else {
+            panic!("expected status accept command");
+        };
+        assert_eq!(args.queries(), ["B", "C"]);
     }
 
     #[test]
@@ -549,6 +658,45 @@ mod tests {
             };
             assert_eq!(args.example, expected);
         }
+    }
+
+    #[test]
+    fn parses_validate_changes_options() {
+        let cli = Cli::try_parse_from(["dadrock", "validate", "changes"]).unwrap();
+        let Some(Command::Validate(ValidateArgs {
+            command: Some(ValidateCommand::Changes(args)),
+            ..
+        })) = cli.command
+        else {
+            panic!("expected validate changes command");
+        };
+        assert_eq!(args.base, "HEAD");
+        assert!(!args.staged);
+        assert!(!args.strict);
+        assert!(!args.json);
+
+        let cli = Cli::try_parse_from([
+            "dadrock",
+            "validate",
+            "changes",
+            "--base",
+            "origin/main",
+            "--staged",
+            "--strict",
+            "--json",
+        ])
+        .unwrap();
+        let Some(Command::Validate(ValidateArgs {
+            command: Some(ValidateCommand::Changes(args)),
+            ..
+        })) = cli.command
+        else {
+            panic!("expected validate changes command");
+        };
+        assert_eq!(args.base, "origin/main");
+        assert!(args.staged);
+        assert!(args.strict);
+        assert!(args.json);
     }
 
     #[test]
@@ -591,6 +739,41 @@ mod tests {
             panic!("expected preview command");
         };
         assert_eq!(args.host, "0.0.0.0");
+    }
+
+    #[test]
+    fn parses_history_query_with_flags_in_any_position() {
+        let cli =
+            Cli::try_parse_from(["dadrock", "history", "Listwise", "deletion", "--patch"]).unwrap();
+
+        let Some(Command::History(args)) = cli.command else {
+            panic!("expected history command");
+        };
+        assert_eq!(args.query, ["Listwise", "deletion"]);
+        assert!(args.patch);
+        assert!(!args.json);
+
+        let cli = Cli::try_parse_from(["dadrock", "history", "--json", "01938c20a3b4"]).unwrap();
+        let Some(Command::History(args)) = cli.command else {
+            panic!("expected history command");
+        };
+        assert_eq!(args.query, ["01938c20a3b4"]);
+        assert!(args.json);
+        assert!(Cli::try_parse_from(["dadrock", "history"]).is_err());
+    }
+
+    #[test]
+    fn parses_diff_old_and_new_queries() {
+        let cli =
+            Cli::try_parse_from(["dadrock", "diff", "old-record", "new-record", "--json"]).unwrap();
+
+        let Some(Command::Diff(args)) = cli.command else {
+            panic!("expected diff command");
+        };
+        assert_eq!(args.old, "old-record");
+        assert_eq!(args.new, "new-record");
+        assert!(args.json);
+        assert!(Cli::try_parse_from(["dadrock", "diff", "only-one"]).is_err());
     }
 
     #[test]

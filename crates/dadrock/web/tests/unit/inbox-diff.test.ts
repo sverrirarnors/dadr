@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffStats, hasChanges, lineDiff } from '../../src/lib/inbox/diff';
+import { diffSides, diffStats, fromRecordDiffLines, hasChanges, lineDiff, tagChangeSummary } from '../../src/lib/inbox/diff';
 
 describe('lineDiff', () => {
   it('marks identical documents as unchanged', () => {
@@ -46,5 +46,26 @@ describe('lineDiff', () => {
     const lines = lineDiff('a\nb\nc\nd', 'b\nc\nd\na');
     expect(lines.filter((line) => line.kind === 'same').map((line) => line.text)).toEqual(['b', 'c', 'd']);
     expect(diffStats(lines)).toEqual({ added: 1, removed: 1 });
+  });
+});
+
+describe('record diff lines', () => {
+  it('maps Dadrock diff kinds and rebuilds both texts', () => {
+    const lines = fromRecordDiffLines([
+      { kind: 'context', text: '## Decision' },
+      { kind: 'removed', text: 'Drop rows.' },
+      { kind: 'added', text: 'Impute rows.' },
+    ]);
+    expect(lines).toEqual([
+      { kind: 'same', text: '## Decision' },
+      { kind: 'remove', text: 'Drop rows.' },
+      { kind: 'add', text: 'Impute rows.' },
+    ]);
+    expect(diffSides(lines)).toEqual({ before: '## Decision\nDrop rows.\n', after: '## Decision\nImpute rows.\n' });
+  });
+
+  it('summarizes tag changes', () => {
+    expect(tagChangeSummary(['topic/missing-data'], ['topic/attrition'])).toBe('+topic/missing-data −topic/attrition');
+    expect(tagChangeSummary([], [])).toBe('');
   });
 });

@@ -89,6 +89,9 @@ pub enum TaskRecordRequirement {
     #[default]
     None,
     One,
+    /// One record or more.
+    OneOrMore,
+    /// Two records or more.
     Many,
 }
 

@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { RecordSummary } from '../../src/lib/api';
 import {
+  attachedRecords,
   attachRecordsStatus,
   composerTitle,
   errorMessage,
   initialComposerView,
   ledgerEditHref,
   manualFormAvailable,
-  manualPrefill,
   pinnedRecord,
   promptLabel,
+  successorChanged,
+  successorPrefill,
+  successorStartingBody,
 } from '../../src/lib/draft/composer-view';
 
 function record(
@@ -54,15 +57,25 @@ describe('pinnedRecord', () => {
 
 describe('composerTitle', () => {
   it('names the verb and the record', () => {
-    expect(composerTitle('new', undefined)).toBe('Draft a decision');
-    expect(composerTitle('merge', undefined)).toBe('Merge candidates');
-    expect(composerTitle('revise', candidate)).toBe('Revise “First draft”');
-    expect(composerTitle('supersede', accepted)).toBe('Replace “Use Polars”');
+    expect(composerTitle('new', [])).toBe('Draft a decision');
+    expect(composerTitle('merge', [])).toBe('Merge candidates');
+    expect(composerTitle('revise', [candidate])).toBe('Revise “First draft”');
+    expect(composerTitle('supersede', [accepted])).toBe('Supersede “Use Polars”');
+  });
+
+  it('calls several decisions superseded together a merge', () => {
+    expect(composerTitle('supersede', [accepted, superseded])).toBe('Supersede 2 decisions');
   });
 
   it('falls back when the record is unknown', () => {
-    expect(composerTitle('revise', undefined)).toBe('Revise a record');
-    expect(composerTitle('supersede', undefined)).toBe('Replace a decision');
+    expect(composerTitle('revise', [])).toBe('Revise a record');
+    expect(composerTitle('supersede', [])).toBe('Supersede a decision');
+  });
+});
+
+describe('attachedRecords', () => {
+  it('keeps the attachment order and drops unknown ids', () => {
+    expect(attachedRecords(['acc-0', 'nope', 'acc-1'], records)).toEqual([superseded, accepted]);
   });
 });
 
@@ -103,26 +116,80 @@ describe('views', () => {
   });
 });
 
-describe('manualPrefill', () => {
-  it('prefills a replacement from the original decision', () => {
-    expect(manualPrefill('supersede', accepted)).toEqual({
-      title: 'Update: Use Polars',
-      tags: '#dadr/data #kind/tool',
+const polarsSource = [
+  '---',
+  'title: Use Polars',
+  'status: accepted',
+  'id: acc-1',
+  'tags:',
+  '  - "#dadr/data"',
+  '  - kind/tool',
+  '---',
+  '',
+  '## Supersedes',
+  '',
+  '[[0193fb1f-a3a0-7000-8000-000000000009|Use pandas]]',
+  '',
+  'Pandas ran out of memory.',
+  '',
+  '## Context',
+  '',
+  'Data frames.',
+  '',
+  '## Decision',
+  '',
+  'Use Polars.',
+  '',
+].join('\n');
+
+describe('successorPrefill', () => {
+  it('starts a successor from the exact title, tags, and body, without its own Supersedes', () => {
+    expect(successorStartingBody(polarsSource)).toBe('## Context\n\nData frames.\n\n## Decision\n\nUse Polars.\n');
+    expect(successorPrefill([{ record: accepted, source: polarsSource }])).toEqual({
+      title: 'Use Polars',
+      tags: '#dadr/data kind/tool',
+      body: '## Context\n\nData frames.\n\n## Decision\n\nUse Polars.\n',
     });
   });
 
-  it('starts blank otherwise', () => {
-    expect(manualPrefill('new', undefined)).toEqual({ title: '', tags: '' });
-    expect(manualPrefill('new', accepted)).toEqual({ title: '', tags: '' });
-    expect(manualPrefill('supersede', undefined)).toEqual({ title: '', tags: '' });
+  it('falls back to the summary tags when the file has none', () => {
+    const plain = '---\ntitle: Use Polars\nstatus: accepted\nid: acc-1\n---\n\nBody.\n';
+    expect(successorPrefill([{ record: accepted, source: plain }]).tags).toBe('#dadr/data #kind/tool');
+  });
+
+  it('starts a merge untitled, with every tag and each section from every predecessor', () => {
+    const other = '---\ntitle: Use pandas\nstatus: accepted\nid: acc-0\ntags: [kind/tool, topic/memory]\n---\n\n## Context\n\nMemory.\n\n## Decision\n\nUse pandas.\n';
+    const merged = successorPrefill([
+      { record: accepted, source: polarsSource },
+      { record: superseded, source: other },
+    ]);
+    expect(merged.title).toBe('');
+    expect(merged.tags).toBe('#dadr/data kind/tool topic/memory');
+    expect(merged.body).toBe(
+      '## Context\n\nData frames.\n\nMemory.\n\n## Decision\n\nUse Polars.\n\nUse pandas.\n\n## Alternatives\n\n## Consequences\n',
+    );
+  });
+});
+
+describe('successorChanged', () => {
+  const start = { title: 'Use Polars', tags: 'a b', body: '## Decision\n\nUse Polars.\n' };
+
+  it('ignores whitespace that does not change the text', () => {
+    expect(successorChanged(start, { ...start, tags: ' a  b ', body: '\n## Decision\n\nUse Polars.\n\n' })).toBe(false);
+  });
+
+  it('notices a change to the title, the tags, or the body', () => {
+    expect(successorChanged(start, { ...start, title: 'Use DuckDB' })).toBe(true);
+    expect(successorChanged(start, { ...start, tags: 'a' })).toBe(true);
+    expect(successorChanged(start, { ...start, body: '## Decision\n\nUse Polars lazily.\n' })).toBe(true);
   });
 });
 
 describe('ledgerEditHref', () => {
-  it('opens the edit tab, showing history for records that are not current', () => {
+  it('opens the edit tab, showing archived records for records that are not current', () => {
     expect(ledgerEditHref(accepted)).toBe('/ledger?id=acc-1&tab=edit');
-    expect(ledgerEditHref(candidate)).toBe('/ledger?history=1&id=cand-1&tab=edit');
-    expect(ledgerEditHref(superseded)).toBe('/ledger?history=1&id=acc-0&tab=edit');
+    expect(ledgerEditHref(candidate)).toBe('/ledger?archived=1&id=cand-1&tab=edit');
+    expect(ledgerEditHref(superseded)).toBe('/ledger?archived=1&id=acc-0&tab=edit');
   });
 });
 

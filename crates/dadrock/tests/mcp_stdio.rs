@@ -239,8 +239,8 @@ async fn dadrock_mcp_stdio_lists_and_calls_tools() {
         fs::read_to_string(&candidate_path).expect("candidate still in place"),
         candidate_source
     );
-    assert!(is_empty_or_missing(&root.join("dadr/accepted")));
-    assert!(is_empty_or_missing(&root.join("dadr/rejected")));
+    assert!(is_empty_or_missing(&root.join("dadr/ledger")));
+    assert!(is_empty_or_missing(&root.join("dadr/archive")));
 
     let _ = tokio::time::timeout(Duration::from_secs(2), client.close()).await;
     let _ = fs::remove_dir_all(root);
@@ -295,7 +295,7 @@ async fn dadrock_mcp_stdio_task_run_access_only_submits_results() {
         panic!("expected an MCP error, got {error:?}");
     };
     assert_eq!(error.code, ErrorCode::INVALID_PARAMS);
-    assert!(is_empty_or_missing(&root.join("dadr/candidates")));
+    assert!(is_empty_or_missing(&root.join("dadr/inbox")));
 
     let submitted = client
         .peer()

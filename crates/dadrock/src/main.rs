@@ -7,6 +7,7 @@ use dadrock::{
     agent::providers::{
         configured_local_acp_agent, resolve_local_acp_agent_command, LocalAcpAgentCommand,
     },
+    changes::ChangeValidationReport,
     commands as core_commands,
     links::LinkCheckReport,
     mcp as core_mcp,
@@ -48,6 +49,8 @@ fn dispatch_command(command: cli::Command) -> Result<ExitCode> {
         cli::Command::Demo(args) => demo(args),
         cli::Command::New(args) => new_record(args),
         cli::Command::List(args) => list(args),
+        cli::Command::History(args) => history(args),
+        cli::Command::Diff(args) => diff(args),
         cli::Command::Status(args) => status(args),
         cli::Command::Accept(args) => status_accept(args),
         cli::Command::Reject(args) => status_reject(args),
@@ -193,7 +196,7 @@ fn print_envelope<T: Serialize>(
 
 fn show_dir() -> Result<ExitCode> {
     let envelope = core_commands::show_dir(&command_context()?)?;
-    println!("{}", envelope.data.decisions_dir);
+    println!("{}", envelope.data.project_dir);
     Ok(envelope_exit_code(&envelope))
 }
 
@@ -220,7 +223,7 @@ fn demo(args: cli::DemoArgs) -> Result<ExitCode> {
         println!(
             "seeded {} DADR demo at {}",
             result.example.as_str(),
-            result.decisions_dir
+            result.project_dir
         );
         println!("{} record(s)", result.records.len());
         Ok(())
@@ -251,6 +254,37 @@ fn list(args: cli::ListArgs) -> Result<ExitCode> {
     print_json_envelope(&envelope)
 }
 
+fn history(args: cli::HistoryArgs) -> Result<ExitCode> {
+    let query = args.query.join(" ");
+    let envelope = core_commands::history(&command_context()?, &query, args.patch)?;
+    if !args.json {
+        print_command_diagnostics(&envelope.diagnostics);
+    }
+    print_envelope(&envelope, args.json, |history| {
+        print!("{}", dadrock::history::render_history_text(history));
+        Ok(())
+    })
+}
+
+fn diff(args: cli::DiffArgs) -> Result<ExitCode> {
+    let envelope = core_commands::diff(&command_context()?, &args.old, &args.new)?;
+    print_envelope(&envelope, args.json, |result| {
+        print!("{}", dadrock::history::render_diff_text(result));
+        Ok(())
+    })
+}
+
+fn print_command_diagnostics(diagnostics: &[core_commands::CommandDiagnostic]) {
+    for diagnostic in diagnostics {
+        eprintln!(
+            "[{}] {}: {}",
+            severity_label(diagnostic.severity),
+            diagnostic.code,
+            diagnostic.message
+        );
+    }
+}
+
 fn status(args: cli::StatusArgs) -> Result<ExitCode> {
     match args.command {
         Some(cli::StatusCommand::Accept(query)) => return status_accept(query),
@@ -272,9 +306,8 @@ fn status_reject(args: cli::QueryArgs) -> Result<ExitCode> {
     print_json_envelope(&envelope)
 }
 
-fn status_accept(args: cli::QueryArgs) -> Result<ExitCode> {
-    let query = args.joined();
-    let envelope = core_commands::accept_record(&command_context()?, &query)?;
+fn status_accept(args: cli::AcceptArgs) -> Result<ExitCode> {
+    let envelope = core_commands::accept_records(&command_context()?, &args.queries())?;
     print_json_envelope(&envelope)
 }
 
@@ -294,6 +327,7 @@ fn validate(args: cli::ValidateArgs) -> Result<ExitCode> {
         Some(cli::ValidateCommand::Records(args)) => validate_records_cli(args),
         Some(cli::ValidateCommand::Links(args)) => validate_links_cli(args),
         Some(cli::ValidateCommand::Tags(args)) => validate_tags_cli(args),
+        Some(cli::ValidateCommand::Changes(args)) => validate_changes_cli(args),
         None => validate_project(args.json),
     }
 }
@@ -323,6 +357,21 @@ fn validate_tags_cli(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::validate_tags(&command_context()?)?;
     print_envelope(&envelope, args.json, |report| {
         print_tag_validation(report);
+        Ok(())
+    })
+}
+
+fn validate_changes_cli(args: cli::ValidateChangesArgs) -> Result<ExitCode> {
+    let envelope = core_commands::validate_changes(
+        &command_context()?,
+        core_commands::ValidateChangesRequest {
+            base: args.base,
+            staged: args.staged,
+            strict: args.strict,
+        },
+    )?;
+    print_envelope(&envelope, args.json, |report| {
+        print_change_validation_report(report);
         Ok(())
     })
 }
@@ -531,9 +580,9 @@ fn preview(args: cli::PreviewArgs) -> Result<ExitCode> {
 
 fn print_project_layout(layout: &ProjectLayout) {
     println!("project_dir\t{}", layout.project_dir);
-    println!("accepted_dir\t{}", layout.accepted_dir);
-    println!("candidates_dir\t{}", layout.candidates_dir);
-    println!("rejected_dir\t{}", layout.rejected_dir);
+    println!("inbox_dir\t{}", layout.inbox_dir);
+    println!("ledger_dir\t{}", layout.ledger_dir);
+    println!("archive_dir\t{}", layout.archive_dir);
     println!("templates_dir\t{}", layout.templates_dir);
     println!("tasks_dir\t{}", layout.tasks_dir);
     println!("runs_dir\t{}", layout.runs_dir);
@@ -568,6 +617,52 @@ fn print_project_validation_report(report: &ProjectValidationReport) {
         );
         for related_path in &issue.related_paths {
             println!("  - {related_path}");
+        }
+    }
+}
+
+fn print_change_validation_report(report: &ChangeValidationReport) {
+    let Some(commit) = &report.base_commit else {
+        println!("dadrock validate changes: ok (no commits yet, nothing to compare)");
+        return;
+    };
+    let compared = format!(
+        "{} against {} ({}){}",
+        report.target.label(),
+        report.base,
+        commit.get(..12).unwrap_or(commit),
+        if report.strict { ", strict" } else { "" }
+    );
+    if report.issues.is_empty() {
+        println!(
+            "dadrock validate changes: ok ({compared}; {} accepted or rejected record(s) changed)",
+            report.checked.len()
+        );
+        return;
+    }
+
+    println!(
+        "dadrock validate changes: {} error(s), {} warning(s) ({compared})",
+        report.counts.errors, report.counts.warnings
+    );
+    for issue in &report.issues {
+        println!(
+            "[{}] {} {}: {}",
+            severity_label(issue.severity),
+            issue.code,
+            issue.path,
+            issue.message
+        );
+        if let Some(base_path) = &issue.base_path {
+            println!("  - was {base_path}");
+        }
+        if let Some(diff) = &issue.diff {
+            for line in dadrock::history::diff_text_lines(diff) {
+                match line.trim_end() {
+                    "" => println!(),
+                    line => println!("    {line}"),
+                }
+            }
         }
     }
 }

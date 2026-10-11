@@ -14,7 +14,7 @@ pub enum TextDiffKind {
     Removed,
 }
 
-pub(super) fn text_diff_lines(left: &str, right: &str) -> Vec<TextDiffLine> {
+pub(crate) fn text_diff_lines(left: &str, right: &str) -> Vec<TextDiffLine> {
     let left_lines = left.lines().collect::<Vec<_>>();
     let right_lines = right.lines().collect::<Vec<_>>();
     let mut table = vec![vec![0usize; right_lines.len() + 1]; left_lines.len() + 1];

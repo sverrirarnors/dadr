@@ -11,7 +11,9 @@ use crate::{
 
 mod agent;
 mod catalog;
+mod changes;
 mod diff;
+mod history;
 mod project;
 mod records;
 mod task;
@@ -26,14 +28,18 @@ pub use catalog::{
     command_catalog, find_command_info, CommandCatalogResult, CommandInfo, CommandInfoRecord,
     CommandMutation, COMMANDS,
 };
+pub use changes::{validate_changes, ValidateChangesRequest};
+pub(crate) use diff::text_diff_lines;
 pub use diff::{TextDiffKind, TextDiffLine};
+pub use history::{diff, history};
 pub use project::{
     demo_project, demo_project_with_example, initialize_project, show_config, show_dir,
 };
 pub use records::{
-    accept_record, list_records_command, list_tags, new_record, new_record_with_body,
-    reject_record, save_record_source, show_status, supersede, supersede_records, validate_links,
-    validate_project, validate_records, validate_tags, ListRecordsRequest, RecordViewFilter,
+    accept_record, accept_records, list_records_command, list_tags, new_record,
+    new_record_with_body, new_successor_record, reject_record, save_record_source, show_status,
+    supersede, supersede_records, validate_links, validate_project, validate_records,
+    validate_tags, ListRecordsRequest, NewSuccessorRequest, RecordViewFilter,
     SaveRecordSourceRequest, SaveRecordSourceResult, SupersedeRecordsRequest,
     ValidateRecordsResult, ValidatedRecord,
 };
@@ -348,7 +354,7 @@ mod tests {
 
         assert_eq!(
             validate.usage,
-            "dadrock validate [--json] [records|links|tags] [options]"
+            "dadrock validate [--json] [records|links|tags|changes] [options]"
         );
         assert_eq!(validate.mutation, "read-only");
         assert!(!validate.mutates_project);
@@ -427,7 +433,7 @@ mod tests {
         )
         .unwrap();
 
-        assert!(candidate.path.as_str().contains("/dadr/candidates/"));
+        assert!(candidate.path.as_str().contains("/dadr/inbox/"));
         let content = fs::read_to_string(&candidate.path).unwrap();
         assert!(content.contains("status: candidate"));
         assert!(content.contains("Use local ACP agent drafts"));
@@ -515,7 +521,7 @@ mod tests {
     fn validate_records_envelope_collects_diagnostics() {
         let root = temp_project("validate");
         init_project(&root).unwrap();
-        let bad_path = root.join("dadr/accepted/bad.md");
+        let bad_path = root.join("dadr/ledger/bad.md");
         fs::write(&bad_path, "---\ntitle: Bad\nstatus: candidate\n---\n").unwrap();
         let context = CommandContext::from_path(&root).unwrap();
 

@@ -33,8 +33,8 @@ Interactively, these come from the user's request. "Do something useful" is not 
 |---|---|
 | Find decisions in existing code or documents | [code-to-record](code-to-record.md) |
 | Capture one known decision | [context-to-record](context-to-record.md) |
-| Revise an existing record | [edit-record](edit-record.md) |
-| Replace an accepted decision | [supersede-record](supersede-record.md) |
+| Revise an existing candidate | [edit-record](edit-record.md) |
+| Supersede an accepted decision with a successor | [supersede-record](supersede-record.md) |
 | Consolidate overlapping candidates | [merge-records](merge-records.md) |
 | Find contradictions or duplicates | [find-conflicts](find-conflicts.md) |
 | Turn accepted decisions into a spec | [decisions-to-spec](decisions-to-spec.md) |
@@ -51,8 +51,8 @@ Interactively, these come from the user's request. "Do something useful" is not 
 ## Constraints
 
 - Ground every statement in the records, files, and text supplied or found in the project. If a referenced record or file cannot be found, say so rather than guessing.
-- This task reports. If the instruction calls for creating, revising, or replacing records, describe the proposed changes in the report and name the dedicated task that would carry them out.
-- Never accept, reject, or supersede records, and never propose changing the meaning of an accepted record: a changed decision needs a replacement record.
+- This task reports. If the instruction calls for creating, revising, or superseding records, describe the proposed changes in the report and name the dedicated task that would carry them out.
+- Never accept, reject, or supersede records, and never propose changing the meaning of an accepted record: a changed decision needs a successor that supersedes it.
 
 ## Result
 

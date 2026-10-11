@@ -61,14 +61,109 @@ export const diagnosticSchema = z.object({
 });
 export type Diagnostic = z.infer<typeof diagnosticSchema>;
 
+/** A predecessor named in `## Supersedes` that was superseded since. */
+export const staleSupersedesSchema = z.object({
+  predecessor: recordSummarySchema,
+  current_successors: z.array(recordSummarySchema),
+});
+export type StaleSupersedes = z.infer<typeof staleSupersedesSchema>;
+
 export const recordLifecycleSchema = z.object({
-  pending_supersedes: recordSummarySchema.nullish(),
+  /** Every record a candidate's `## Supersedes` section names. */
+  pending_supersedes: z.array(recordSummarySchema).default([]),
+  stale_supersedes: z.array(staleSupersedesSchema).default([]),
   record: recordSummarySchema,
   predecessors: z.array(recordSummarySchema),
   successors: z.array(recordSummarySchema),
   diagnostics: z.array(diagnosticSchema),
 });
 export type RecordLifecycle = z.infer<typeof recordLifecycleSchema>;
+
+/** One line of a body diff: unchanged, added, or removed. */
+export const textDiffLineSchema = z.object({
+  kind: z.enum(['context', 'added', 'removed']),
+  text: z.string(),
+});
+export type TextDiffLine = z.infer<typeof textDiffLineSchema>;
+
+/** The difference between two records: title, tags, and the body without `## Supersedes`. */
+export const recordDiffSchema = z.object({
+  changed: z.boolean(),
+  title: z.object({ old: z.string(), new: z.string() }).nullable().default(null),
+  tags_added: z.array(z.string()).default([]),
+  tags_removed: z.array(z.string()).default([]),
+  lines: z.array(textDiffLineSchema).default([]),
+});
+export type RecordDiff = z.infer<typeof recordDiffSchema>;
+
+/** One record as it appears in a history or a diff. */
+export const historyRecordSchema = z.object({
+  id: uuidv7,
+  short_id: z.string(),
+  title: z.string(),
+  status: z.enum(['candidate', 'accepted', 'rejected']),
+  superseded: z.boolean(),
+  /** No record supersedes this one. */
+  current: z.boolean(),
+  path: z.string(),
+  tags: z.array(z.string()).default([]),
+});
+export type HistoryRecord = z.infer<typeof historyRecordSchema>;
+
+/**
+ * One edit Git recorded to a version's title or body after it was accepted or
+ * rejected. The uncommitted working-tree edit has no commit, author, date, or
+ * subject. `diff` comes only with `?patch=1`.
+ */
+export const recordEditSchema = z.object({
+  commit: z.string().nullable().default(null),
+  short_commit: z.string().nullable().default(null),
+  author: z.string().nullable().default(null),
+  /** Author date, ISO 8601. */
+  date: z.string().nullable().default(null),
+  subject: z.string().nullable().default(null),
+  title_changed: z.boolean(),
+  body_changed: z.boolean(),
+  diff: recordDiffSchema.optional(),
+});
+export type RecordEdit = z.infer<typeof recordEditSchema>;
+
+/**
+ * A version of a decision with its body, without `## Supersedes`, and its text
+ * edits since it was accepted or rejected, newest first: empty for
+ * candidates, null outside a Git repository.
+ */
+export const historyVersionSchema = historyRecordSchema.extend({
+  body: z.string(),
+  edits: z.array(recordEditSchema).nullable().default(null),
+});
+export type HistoryVersion = z.infer<typeof historyVersionSchema>;
+
+/** One supersession edge, with the reason from the successor's `## Supersedes`. */
+export const historyLinkSchema = z.object({
+  predecessor: uuidv7,
+  successor: uuidv7,
+  reason: z.string().nullable().default(null),
+  diff: recordDiffSchema.optional(),
+});
+export type HistoryLink = z.infer<typeof historyLinkSchema>;
+
+/** The versions of one decision, newest first, with links and neighbors. */
+export const recordHistorySchema = z.object({
+  record: uuidv7,
+  versions: z.array(historyVersionSchema),
+  links: z.array(historyLinkSchema),
+  neighbors: z.array(historyRecordSchema),
+});
+export type RecordHistory = z.infer<typeof recordHistorySchema>;
+
+/** Two records and the difference from `old` to `new`. */
+export const recordDiffResultSchema = z.object({
+  old: historyRecordSchema,
+  new: historyRecordSchema,
+  diff: recordDiffSchema,
+});
+export type RecordDiffResult = z.infer<typeof recordDiffResultSchema>;
 
 export const issueCountsSchema = z
   .object({})
@@ -145,7 +240,7 @@ export type TaskInput = z.infer<typeof taskInputSchema>;
 
 export const taskRequirementsSchema = z
   .object({
-    records: z.enum(['none', 'one', 'many']).default('none'),
+    records: z.enum(['none', 'one', 'one_or_more', 'many']).default('none'),
     record_status: z.enum(['all', 'candidate', 'accepted']).default('all'),
     paths: z.enum(['none', 'optional', 'required']).default('none'),
     notes: z.enum(['none', 'optional', 'required']).default('none'),

@@ -11,7 +11,7 @@ function record(status: RecordSummary['status'], superseded = false): RecordSumm
     title: 'Record',
     status,
     superseded,
-    path: 'dadr/accepted/0001.md',
+    path: 'dadr/ledger/0001.md',
     preview: '',
     tags: [],
     timestamp_ms: 0,
@@ -55,10 +55,10 @@ describe('kindBadge', () => {
 });
 
 describe('record links', () => {
-  it('sends current decisions to the ledger and everything else to its history', () => {
+  it('sends current decisions to the ledger and everything else to its archived records', () => {
     expect(recordLedgerHref(record('accepted'))).toBe('/ledger?id=0193fb1f-a3a0-7000-8000-000000000001');
-    expect(recordLedgerHref(record('accepted', true))).toBe('/ledger?history=1&id=0193fb1f-a3a0-7000-8000-000000000001');
-    expect(recordLedgerHref(record('candidate'))).toBe('/ledger?history=1&id=0193fb1f-a3a0-7000-8000-000000000001');
+    expect(recordLedgerHref(record('accepted', true))).toBe('/ledger?archived=1&id=0193fb1f-a3a0-7000-8000-000000000001');
+    expect(recordLedgerHref(record('candidate'))).toBe('/ledger?archived=1&id=0193fb1f-a3a0-7000-8000-000000000001');
   });
 
   it('knows which records are current decisions', () => {

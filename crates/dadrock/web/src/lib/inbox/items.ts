@@ -1,6 +1,7 @@
 import type { Diagnostic, RecordSummary, Snapshot, TaskResult, TaskRun } from '$lib/api';
 import { diagnosticLocation } from '$lib/diagnostics';
 import { recordForDiagnostic } from '$lib/diagnostics/actions';
+import { supersededIds } from '$lib/records/supersedes';
 import { objectArrayField, stringArrayField, stringField } from '$lib/tasks/result-fields';
 
 export type InboxGroupId =
@@ -19,7 +20,10 @@ export interface CandidateProposal {
   title: string;
   tags: string[];
   body_markdown: string;
-  supersedes?: string;
+  /** Records the saved candidate supersedes: one, or several for a merge. */
+  supersedes?: string[];
+  /** Why the decision changed; Dadrock writes it into `## Supersedes`. */
+  supersedes_reason?: string;
   confidence?: string;
   warnings: string[];
 }
@@ -51,13 +55,27 @@ export interface CandidateItem extends InboxItemBase {
   record: RecordSummary;
 }
 
+/**
+ * Several candidates that each supersede the same current decision: the
+ * halves of a split, or competing alternatives. The reviewer decides which to
+ * accept together.
+ */
+export interface SplitItem extends InboxItemBase {
+  kind: 'split';
+  /** The decisions the candidates supersede, in order of first mention. */
+  predecessors: RecordSummary[];
+  /** The candidates, newest first. */
+  records: RecordSummary[];
+}
+
 export interface ProposalItem extends InboxItemBase {
   kind: 'proposal';
   runId: string;
   taskId: string;
   proposal: CandidateProposal;
   summary: string;
-  supersededRecord?: RecordSummary;
+  /** The predecessors found in the project, in the proposal's order. */
+  supersededRecords?: RecordSummary[];
 }
 
 export interface RevisionItem extends InboxItemBase {
@@ -98,6 +116,7 @@ export interface IssueItem extends InboxItemBase {
 export type InboxItem =
   | RunningItem
   | CandidateItem
+  | SplitItem
   | ProposalItem
   | RevisionItem
   | ConflictItem
@@ -153,6 +172,20 @@ export function previewText(preview: string): string {
 
 export function candidateItemId(recordId: string): string {
   return `candidate:${recordId}`;
+}
+
+/** One item per set of candidates superseding the same decisions. */
+export function splitItemId(predecessorIds: string[]): string {
+  return `split:${[...predecessorIds].sort().join(',')}`;
+}
+
+/** The inbox item that shows a candidate: its own, or the split it belongs to. */
+export function itemForCandidate(items: InboxItem[], recordId: string): InboxItem | undefined {
+  const id = candidateItemId(recordId);
+  return (
+    items.find((item) => item.id === id) ??
+    items.find((item) => item.kind === 'split' && item.records.some((record) => record.id === recordId))
+  );
 }
 
 export function runningItemId(runId: string): string {
@@ -231,12 +264,23 @@ export function buildInboxGroups(source: InboxSource): InboxGroup[] {
   const candidates = records
     .filter((record) => record.status === 'candidate')
     .sort((left, right) => right.timestamp_ms - left.timestamp_ms);
+  const splits = groupSuccessorCandidates(candidates, byId);
+  const grouped = new Set(splits.flatMap((split) => split.records.map((record) => record.id)));
+  const emitted = new Set<string>();
   for (const record of candidates) {
+    if (grouped.has(record.id)) {
+      const split = splits.find((candidate) => candidate.records.includes(record));
+      if (split && !emitted.has(split.id)) {
+        emitted.add(split.id);
+        items.candidates.push(split);
+      }
+      continue;
+    }
     items.candidates.push({
       kind: 'candidate',
       id: candidateItemId(record.id),
       title: record.title,
-      subtitle: previewText(record.preview),
+      subtitle: candidateSubtitle(record, byId),
       record,
     });
   }
@@ -288,11 +332,96 @@ export function countActionable(groups: InboxGroup[]): number {
     .reduce((total, group) => total + group.items.length, 0);
 }
 
+/**
+ * Candidates that supersede the same current decision, grouped: each group
+ * is connected through shared predecessors and has at least two candidates.
+ * Stale candidates, which name a decision superseded since, stay on their own
+ * so they can be retargeted.
+ */
+export function groupSuccessorCandidates(
+  candidates: RecordSummary[],
+  byId: Map<string, RecordSummary>,
+): SplitItem[] {
+  const named = new Map<string, RecordSummary[]>();
+  for (const candidate of candidates) {
+    const predecessors = supersededIds(candidate.preview).map((id) => byId.get(id.toLowerCase()));
+    if (!predecessors.length || predecessors.some((record) => !record || !isCurrent(record))) continue;
+    named.set(candidate.id, predecessors as RecordSummary[]);
+  }
+
+  // Union candidates that share a predecessor.
+  const parent = new Map<string, string>();
+  const find = (id: string): string => {
+    const up = parent.get(id) ?? id;
+    if (up === id) return id;
+    const root = find(up);
+    parent.set(id, root);
+    return root;
+  };
+  const owner = new Map<string, string>();
+  for (const [candidateId, predecessors] of named) {
+    for (const predecessor of predecessors) {
+      const first = owner.get(predecessor.id);
+      if (first) parent.set(find(candidateId), find(first));
+      else owner.set(predecessor.id, candidateId);
+    }
+  }
+
+  const components = new Map<string, RecordSummary[]>();
+  for (const candidate of candidates) {
+    if (!named.has(candidate.id)) continue;
+    const root = find(candidate.id);
+    components.set(root, [...(components.get(root) ?? []), candidate]);
+  }
+
+  return [...components.values()]
+    .filter((group) => group.length >= 2)
+    .map((group) => {
+      const predecessors: RecordSummary[] = [];
+      for (const candidate of group) {
+        for (const predecessor of named.get(candidate.id) ?? []) {
+          if (!predecessors.includes(predecessor)) predecessors.push(predecessor);
+        }
+      }
+      return {
+        kind: 'split' as const,
+        id: splitItemId(predecessors.map((predecessor) => predecessor.id)),
+        title: `Split ${quotedList(predecessors.map((predecessor) => predecessor.title))} into ${group.length} decisions`,
+        subtitle: group.map((candidate) => candidate.title).join(' · '),
+        predecessors,
+        records: group,
+      };
+    });
+}
+
+function isCurrent(record: RecordSummary): boolean {
+  return record.status === 'accepted' && !record.superseded;
+}
+
+function quotedList(titles: string[]): string {
+  const quoted = titles.map((title) => `“${title}”`);
+  if (quoted.length <= 1) return quoted.join('');
+  return `${quoted.slice(0, -1).join(', ')} and ${quoted.at(-1)}`;
+}
+
+/** A successor candidate says what it supersedes; any other shows its first words. */
+function candidateSubtitle(record: RecordSummary, byId: Map<string, RecordSummary>): string {
+  const predecessors = supersededIds(record.preview)
+    .map((id) => byId.get(id.toLowerCase()))
+    .filter((predecessor): predecessor is RecordSummary => Boolean(predecessor));
+  if (!predecessors.length) return previewText(record.preview);
+  const stale = predecessors.some((predecessor) => !isCurrent(predecessor));
+  return `Supersedes ${quotedList(predecessors.map((predecessor) => predecessor.title))}${
+    stale ? ' (superseded since)' : ''
+  }`;
+}
+
 function groupForItem(item: InboxItem): InboxGroupId {
   switch (item.kind) {
     case 'running':
       return 'running';
     case 'candidate':
+    case 'split':
       return 'candidates';
     case 'proposal':
       return 'proposals';
@@ -318,7 +447,7 @@ function runningTitle(taskId: string): string {
     'code-to-record': 'Looking for decisions in your code',
     'context-to-record': 'Drafting a decision',
     'edit-record': 'Revising a record',
-    'supersede-record': 'Drafting a replacement',
+    'supersede-record': 'Drafting a successor',
     'merge-records': 'Merging candidates',
     'find-conflicts': 'Checking for conflicting decisions',
     'decisions-to-spec': 'Writing a spec from accepted decisions',
@@ -368,20 +497,31 @@ function itemsForResult(
     case 'supersession_proposal.v1': {
       const body = stringField(result, 'superseding_body_markdown');
       if (!body.trim()) return [];
-      const supersedes = stringField(result, 'superseded_record_id');
-      const supersededRecord = byId.get(supersedes);
+      const supersedes = stringArrayField(result, 'superseded_record_ids');
+      // Results saved before merges were supported name one record.
+      const legacy = stringField(result, 'superseded_record_id');
+      if (!supersedes.length && legacy) supersedes.push(legacy);
+      const supersededRecords = supersedes
+        .map((id) => byId.get(id))
+        .filter((record): record is RecordSummary => Boolean(record));
+      const rationale = stringField(result, 'rationale');
       const proposal: CandidateProposal = {
-        title: stringField(result, 'superseding_title') || 'Replacement decision',
+        title: stringField(result, 'superseding_title') || 'Successor decision',
         tags: stringArrayField(result, 'tags'),
         body_markdown: body,
         warnings: [],
       };
-      if (supersedes) proposal.supersedes = supersedes;
+      if (supersedes.length) proposal.supersedes = supersedes;
+      // Dadrock writes `## Supersedes` with the rationale as the reason, unless
+      // an older result already wrote the section into the body.
+      if (rationale && !/^## Supersedes[ \t]*$/m.test(body)) proposal.supersedes_reason = rationale;
       const item: ProposalItem = {
         kind: 'proposal',
         id: proposalItemId(run.id, 'supersession'),
         title: proposal.title,
-        subtitle: supersededRecord ? `Replaces “${supersededRecord.title}”` : 'Replacement drafted by the agent',
+        subtitle: supersededRecords.length
+          ? `Supersedes ${supersededRecords.map((record) => `“${record.title}”`).join(', ')}`
+          : 'Successor drafted by the agent',
         runId: run.id,
         taskId: run.task_id,
         proposal,
@@ -389,7 +529,7 @@ function itemsForResult(
           .filter(Boolean)
           .join('\n\n'),
       };
-      if (supersededRecord) item.supersededRecord = supersededRecord;
+      if (supersededRecords.length) item.supersededRecords = supersededRecords;
       return [item];
     }
     case 'record_revision.v1': {

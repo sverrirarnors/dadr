@@ -6,7 +6,7 @@ use dadr::{error::DiagnosticCode, parse_record_str, RecordStatus};
 fn parses_valid_candidate_fixture() {
     let content = fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/tests/fixtures/valid-candidate/01938b8e4d70-drop-missing-treatment.md"
+        "/tests/fixtures/valid-candidate/drop-missing-treatment.md"
     ))
     .unwrap();
     let parsed = parse_record_str(&content);

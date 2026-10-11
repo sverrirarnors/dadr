@@ -16,7 +16,8 @@ use crate::{
 pub struct DemoProjectResult {
     pub example: DemoExample,
     pub project_root: Utf8PathBuf,
-    pub decisions_dir: Utf8PathBuf,
+    /// The seeded `dadr/` directory.
+    pub project_dir: Utf8PathBuf,
     pub records: Vec<DemoRecordSummary>,
     pub support_paths: Vec<Utf8PathBuf>,
     pub created_paths: Vec<Utf8PathBuf>,
@@ -55,6 +56,8 @@ pub struct DemoRecordSummary {
 }
 
 struct DemoRecordSeed {
+    /// Path under `dadr/`, starting with the record's folder. The filename is
+    /// a slug of the title, as Dadrock names new records.
     relative_path: &'static str,
     title: &'static str,
     status: RecordStatus,
@@ -81,13 +84,13 @@ const ID_REJECTED_MERGE: &str = "01938b9a-bcd0-7e00-8b00-00000000000c";
 
 const DEMO_RECORDS: &[DemoRecordSeed] = &[
     DemoRecordSeed {
-        relative_path: "01938b8e4d70-complete-case-analysis-sample.md",
+        relative_path: "archive/complete-case-analysis-sample.md",
         title: "Complete-case analysis sample",
         status: RecordStatus::Accepted,
         id: ID_COMPLETE_CASE,
         successors: &[ID_ASSIGNMENT_LOG, ID_COVARIATE_IMPUTATION],
         tags: &["kind/sample", "confidence/high"],
-        extra_front_matter: "bibliography: bibliography.bib\n",
+        extra_front_matter: "bibliography: ../bibliography.bib\n",
         body: concat!(
             "## Context\n\n",
             "The first analysis used a complete-case rule for every required field. ",
@@ -107,7 +110,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "01938b8f9d71-outcome-scale-v1.md",
+        relative_path: "archive/outcome-scale-v1.md",
         title: "Outcome scale v1",
         status: RecordStatus::Accepted,
         id: ID_OUTCOME_SCALE,
@@ -126,7 +129,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "01938b91bcd0-audit-assignment-log.md",
+        relative_path: "ledger/audit-assignment-log.md",
         title: "Audit assignment log",
         status: RecordStatus::Accepted,
         id: ID_ASSIGNMENT_LOG,
@@ -134,6 +137,10 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         tags: &["kind/input", "topic/assignment"],
         extra_front_matter: "",
         body: concat!(
+            "## Supersedes\n\n",
+            "[[01938b8e-4d70-7abc-8def-000000000001|Complete-case analysis sample]]\n\n",
+            "The broad complete-case rule mixed two choices. Assignment and covariates ",
+            "now have separate decisions.\n\n",
             "## Context\n\n",
             "Treatment assignment is defined by the audit log rather than by downstream ",
             "survey status.\n\n",
@@ -148,7 +155,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "01938b92bcd0-impute-missing-covariates.md",
+        relative_path: "archive/impute-missing-covariates.md",
         title: "Impute missing covariates",
         status: RecordStatus::Accepted,
         id: ID_COVARIATE_IMPUTATION,
@@ -160,6 +167,9 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ],
         extra_front_matter: "",
         body: concat!(
+            "## Supersedes\n\n",
+            "[[01938b8e-4d70-7abc-8def-000000000001|Complete-case analysis sample]]\n\n",
+            "Dropping every row with a missing covariate lost too much precision.\n\n",
             "## Context\n\n",
             "Several baseline covariates are missing at low rates.\n\n",
             "## Decision\n\n",
@@ -174,7 +184,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "01938b93bcd0-shared-cleaning-rules.md",
+        relative_path: "ledger/shared-cleaning-rules.md",
         title: "Shared cleaning rules",
         status: RecordStatus::Accepted,
         id: ID_SHARED_CLEANING,
@@ -182,6 +192,10 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         tags: &["kind/transformation", "topic/preprocessing"],
         extra_front_matter: "",
         body: concat!(
+            "## Supersedes\n\n",
+            "[[01938b8f-9d71-7456-8000-000000000002|Outcome scale v1]]\n",
+            "[[01938b92-bcd0-7e00-8b00-000000000004|Impute missing covariates]]\n\n",
+            "Separate cleaning scripts for outcomes and covariates made reporting harder.\n\n",
             "## Context\n\n",
             "The outcome scale and covariate imputation rules converged into a common ",
             "preprocessing contract.\n\n",
@@ -194,7 +208,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "01938b94bcd0-use-cluster-robust-standard-errors.md",
+        relative_path: "ledger/use-cluster-robust-standard-errors.md",
         title: "Use cluster-robust standard errors",
         status: RecordStatus::Accepted,
         id: ID_CLUSTER_SE,
@@ -204,7 +218,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         body: concat!(
             "## Context\n\n",
             "Observations are nested within sites. The demo code tag example is in ",
-            "[examples/code-tags.py](examples/code-tags.py).\n\n",
+            "[examples/code-tags.py](../examples/code-tags.py).\n\n",
             "## Decision\n\n",
             "Use cluster-robust standard errors clustered by site.\n\n",
             "## Alternatives\n\n",
@@ -215,13 +229,13 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "01938b95bcd0-report-specification-curve.md",
+        relative_path: "ledger/report-specification-curve.md",
         title: "Report specification curve",
         status: RecordStatus::Accepted,
         id: ID_SPEC_CURVE,
         successors: &[],
         tags: &["kind/robustness", "confidence/high"],
-        extra_front_matter: "bibliography:\n  - bibliography.bib\n  - robustness.bib\n",
+        extra_front_matter: "bibliography:\n  - ../bibliography.bib\n  - ../robustness.bib\n",
         body: concat!(
             "## Context\n\n",
             "The paper needs to show that the result is not an artifact of one model ",
@@ -238,7 +252,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "01938b96-bcd0-7e00-8b00-000000000008-rename-primary-outcome.md",
+        relative_path: "ledger/rename-primary-outcome.md",
         title: "Rename primary outcome",
         status: RecordStatus::Accepted,
         id: ID_RENAME_OUTCOME,
@@ -259,7 +273,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "candidates/01938b97bcd0-add-negative-control-outcome.md",
+        relative_path: "inbox/add-negative-control-outcome.md",
         title: "Add negative-control outcome",
         status: RecordStatus::Candidate,
         id: ID_NEGATIVE_CONTROL,
@@ -281,7 +295,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "rejected/01938b98bcd0-early-complete-case-candidate.md",
+        relative_path: "archive/early-complete-case-candidate.md",
         title: "Early complete-case candidate",
         status: RecordStatus::Rejected,
         id: ID_ACCEPTED_CANDIDATE,
@@ -308,7 +322,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "rejected/01938b99bcd0-drop-site-seven-candidate.md",
+        relative_path: "archive/drop-site-seven-candidate.md",
         title: "Drop site seven candidate",
         status: RecordStatus::Rejected,
         id: ID_REJECTED_SITE,
@@ -332,7 +346,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         ),
     },
     DemoRecordSeed {
-        relative_path: "rejected/01938b9abcd0-merge-outcome-candidate.md",
+        relative_path: "archive/merge-outcome-candidate.md",
         title: "Merge outcome candidate",
         status: RecordStatus::Rejected,
         id: ID_REJECTED_MERGE,
@@ -356,7 +370,6 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
 struct PreparedDemoProject {
     project_root: Utf8PathBuf,
     dadr_dir: Utf8PathBuf,
-    decisions_dir: Utf8PathBuf,
     support_paths: Vec<Utf8PathBuf>,
     created_paths: Vec<Utf8PathBuf>,
 }
@@ -382,18 +395,12 @@ pub fn seed_demo_project_with_example(
 fn prepare_demo_project(target: &Utf8Path) -> Result<PreparedDemoProject, DadrError> {
     let target = absolutize(target)?;
     let project_root = target.clone();
-    let decisions_dir = decisions_dir_for_target(&project_root);
-    let dadr_dir = decisions_dir
-        .parent()
-        .map(Utf8Path::to_path_buf)
-        .unwrap_or_else(|| decisions_dir.clone());
     ensure_new_or_empty_dir(&project_root)?;
 
     let init = init_project(project_root.as_std_path())?;
     Ok(PreparedDemoProject {
         project_root,
-        dadr_dir,
-        decisions_dir: init.decisions_dir,
+        dadr_dir: init.project_dir,
         support_paths: Vec::new(),
         created_paths: init.created,
     })
@@ -403,13 +410,14 @@ fn seed_lifecycle_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
     let PreparedDemoProject {
         project_root,
         dadr_dir,
-        decisions_dir,
         mut support_paths,
         mut created_paths,
     } = prepare_demo_project(target)?;
 
+    // Support files sit outside the record folders, so the relative links to
+    // them keep working when a record moves between folders.
     write_support_file(
-        &decisions_dir,
+        &dadr_dir,
         "bibliography.bib",
         concat!(
             "@book{rubin1987,\n",
@@ -422,7 +430,7 @@ fn seed_lifecycle_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
         &mut created_paths,
     )?;
     write_support_file(
-        &decisions_dir,
+        &dadr_dir,
         "robustness.bib",
         concat!(
             "@article{simonsohn2020,\n",
@@ -452,7 +460,7 @@ fn seed_lifecycle_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
         &mut created_paths,
     )?;
     write_support_file(
-        &decisions_dir,
+        &dadr_dir,
         "examples/code-tags.py",
         concat!(
             "# DADR code-tag examples for the demo project.\n",
@@ -469,13 +477,7 @@ fn seed_lifecycle_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
 
     let mut records = Vec::new();
     for seed in DEMO_RECORDS {
-        let path = if seed.relative_path.starts_with("candidates/")
-            || seed.relative_path.starts_with("rejected/")
-        {
-            dadr_dir.join(seed.relative_path)
-        } else {
-            decisions_dir.join(seed.relative_path)
-        };
+        let path = dadr_dir.join(seed.relative_path);
         let content = render_record(seed)?;
         file_store::write_new(&path, &content)?;
         push_unique(&mut created_paths, path.clone());
@@ -490,7 +492,7 @@ fn seed_lifecycle_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
     Ok(DemoProjectResult {
         example: DemoExample::Lifecycle,
         project_root,
-        decisions_dir,
+        project_dir: dadr_dir,
         records,
         support_paths,
         created_paths,
@@ -501,7 +503,6 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
     let PreparedDemoProject {
         project_root,
         dadr_dir,
-        decisions_dir,
         mut support_paths,
         mut created_paths,
     } = prepare_demo_project(target)?;
@@ -522,7 +523,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
 
     let candidate_records = [
         DemoRecordSeed {
-            relative_path: "candidates/01938ba0bcd0-use-adelie-and-gentoo-only.md",
+            relative_path: "inbox/use-adelie-and-gentoo-only.md",
             title: "Use Adelie and Gentoo only",
             status: RecordStatus::Candidate,
             id: "01938ba0-bcd0-7e00-8b00-000000000011",
@@ -541,7 +542,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             ),
         },
         DemoRecordSeed {
-            relative_path: "candidates/01938ba1bcd0-drop-rows-with-missing-model-variables.md",
+            relative_path: "inbox/drop-rows-with-missing-model-variables.md",
             title: "Drop rows with missing model variables",
             status: RecordStatus::Candidate,
             id: "01938ba1-bcd0-7e00-8b00-000000000012",
@@ -560,7 +561,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             ),
         },
         DemoRecordSeed {
-            relative_path: "candidates/01938ba2bcd0-use-body-mass-as-the-outcome.md",
+            relative_path: "inbox/use-body-mass-as-the-outcome.md",
             title: "Use body mass as the outcome",
             status: RecordStatus::Candidate,
             id: "01938ba2-bcd0-7e00-8b00-000000000013",
@@ -579,7 +580,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             ),
         },
         DemoRecordSeed {
-            relative_path: "candidates/01938ba3bcd0-reviewer-edit-clarify-species-dummy.md",
+            relative_path: "inbox/clarify-species-dummy-coding.md",
             title: "Clarify species dummy coding",
             status: RecordStatus::Candidate,
             id: "01938ba3-bcd0-7e00-8b00-000000000014",
@@ -598,7 +599,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             ),
         },
         DemoRecordSeed {
-            relative_path: "candidates/01938ba4bcd0-add-island-fixed-effects.md",
+            relative_path: "inbox/add-island-fixed-effects.md",
             title: "Add island fixed effects",
             status: RecordStatus::Candidate,
             id: "01938ba4-bcd0-7e00-8b00-000000000015",
@@ -637,7 +638,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
     Ok(DemoProjectResult {
         example: DemoExample::CandidateReview,
         project_root,
-        decisions_dir,
+        project_dir: dadr_dir,
         records,
         support_paths,
         created_paths,
@@ -647,8 +648,7 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
 fn seed_penguins_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, DadrError> {
     let PreparedDemoProject {
         project_root,
-        dadr_dir: _,
-        decisions_dir,
+        dadr_dir,
         mut support_paths,
         mut created_paths,
     } = prepare_demo_project(target)?;
@@ -699,7 +699,7 @@ fn seed_penguins_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, Da
     Ok(DemoProjectResult {
         example: DemoExample::Penguins,
         project_root,
-        decisions_dir,
+        project_dir: dadr_dir,
         records: Vec::new(),
         support_paths,
         created_paths,
@@ -730,8 +730,8 @@ fn seed_broken_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, Dadr
     result.example = DemoExample::Broken;
 
     write_support_file(
-        &result.decisions_dir,
-        "01938b9bbcd0-broken-missing-consequences.md",
+        &result.project_dir,
+        "ledger/broken-missing-consequences.md",
         concat!(
             "---\n",
             "title: Broken missing consequences\n",
@@ -760,7 +760,7 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
 
     let conflict_records = [
         DemoRecordSeed {
-            relative_path: "candidates/01938b9cbcd0-drop-missing-body-mass-rows.md",
+            relative_path: "inbox/drop-missing-body-mass-rows.md",
             title: "Drop missing body-mass rows",
             status: RecordStatus::Candidate,
             id: "01938b9c-bcd0-7e00-8b00-00000000000e",
@@ -779,7 +779,7 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
             ),
         },
         DemoRecordSeed {
-            relative_path: "candidates/01938b9dbcd0-use-complete-cases-for-body-mass-model.md",
+            relative_path: "inbox/use-complete-cases-for-body-mass-model.md",
             title: "Use complete cases for body-mass model",
             status: RecordStatus::Candidate,
             id: "01938b9d-bcd0-7e00-8b00-00000000000f",
@@ -798,7 +798,7 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
             ),
         },
         DemoRecordSeed {
-            relative_path: "candidates/01938b9ebcd0-reintroduce-complete-case-analysis.md",
+            relative_path: "inbox/reintroduce-complete-case-analysis.md",
             title: "Reintroduce complete-case analysis",
             status: RecordStatus::Candidate,
             id: "01938b9e-bcd0-7e00-8b00-000000000010",
@@ -819,12 +819,7 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
     ];
 
     for seed in conflict_records {
-        let dadr_dir = result
-            .decisions_dir
-            .parent()
-            .map(Utf8Path::to_path_buf)
-            .unwrap_or_else(|| result.decisions_dir.clone());
-        let path = dadr_dir.join(seed.relative_path);
+        let path = result.project_dir.join(seed.relative_path);
         let content = render_record(&seed)?;
         file_store::write_new(&path, &content)?;
         push_unique(&mut result.created_paths, path.clone());
@@ -958,15 +953,15 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
         (
             "supersede-record",
             "01938bb2-bcd0-7e00-8b00-000000000018",
-            json!({"record_id": ID_COMPLETE_CASE, "reason": "Replace the broad complete-case rule with model-specific missingness handling."}),
+            json!({"record_ids": ID_CLUSTER_SE, "requested_changes": "Cluster by site and survey wave."}),
             json!({
                 "kind": "supersession_proposal.v1",
-                "summary": "Draft a narrower successor for the broad complete-case rule.",
-                "superseded_record_id": ID_COMPLETE_CASE,
-                "superseding_title": "Use model-specific complete cases",
-                "superseding_body_markdown": "## Context\n\nThe original complete-case decision was broader than the current model requires.\n\n## Decision\n\nDrop missing rows only for variables required by each model.\n\n## Alternatives\n\nKeep the broad complete-case rule for all fields.\n\n## Consequences\n\nEach model reports its own analysis sample and the old broad rule is superseded.\n",
-                "rationale": "The replacement narrows the rule and better matches the current analysis code.",
-                "suggested_actions": ["Write superseding candidate", "Review old record"]
+                "summary": "Cluster standard errors by site and survey wave.",
+                "superseded_record_ids": [ID_CLUSTER_SE],
+                "superseding_title": "Use cluster-robust standard errors",
+                "tags": ["kind/inference", "multiverse/se-type/cluster-robust"],
+                "superseding_body_markdown": "## Context\n\nObservations are nested within sites. The demo code tag example is in [examples/code-tags.py](../examples/code-tags.py).\n\n## Decision\n\nUse cluster-robust standard errors clustered by site and survey wave.\n\n## Alternatives\n\nUse heteroskedasticity-robust standard errors. This ignores site clustering.\n\n## Consequences\n\nInference is slightly more conservative. Code comments may carry tags like #dadr/kind/inference and #dadr/01938b94bcd0.\n",
+                "rationale": "Respondents interviewed in the same wave share timing shocks, so clustering by site alone understates the standard errors."
             }),
         ),
         (
@@ -1070,14 +1065,6 @@ const PENGUINS_OLS_SCRIPT: &str = concat!(
     "print(model.summary())\n",
 );
 
-fn decisions_dir_for_target(target: &Utf8Path) -> Utf8PathBuf {
-    if target.file_name() == Some("dadr") {
-        target.join("accepted")
-    } else {
-        target.join("dadr/accepted")
-    }
-}
-
 fn ensure_new_or_empty_dir(path: &Utf8Path) -> Result<(), DadrError> {
     if !path.exists() {
         return Ok(());
@@ -1100,13 +1087,13 @@ fn ensure_new_or_empty_dir(path: &Utf8Path) -> Result<(), DadrError> {
 }
 
 fn write_support_file(
-    decisions_dir: &Utf8Path,
+    base: &Utf8Path,
     relative_path: &str,
     content: &str,
     support_paths: &mut Vec<Utf8PathBuf>,
     created_paths: &mut Vec<Utf8PathBuf>,
 ) -> Result<(), DadrError> {
-    let path = decisions_dir.join(relative_path);
+    let path = base.join(relative_path);
     file_store::write_new(&path, content)?;
     support_paths.push(path.clone());
     push_unique(created_paths, path);

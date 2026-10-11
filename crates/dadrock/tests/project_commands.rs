@@ -39,19 +39,41 @@ fn dadr_dir(root: &std::path::Path) -> PathBuf {
 }
 
 fn records_dir(root: &std::path::Path) -> PathBuf {
-    dadr_dir(root).join("accepted")
+    dadr_dir(root).join("ledger")
+}
+
+fn inbox_dir(root: &std::path::Path) -> PathBuf {
+    dadr_dir(root).join("inbox")
+}
+
+fn archive_dir(root: &std::path::Path) -> PathBuf {
+    dadr_dir(root).join("archive")
+}
+
+fn md_files(dir: &std::path::Path) -> Vec<String> {
+    let mut names: Vec<_> = fs::read_dir(dir)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .filter(|name| name.ends_with(".md"))
+        .collect();
+    names.sort();
+    names
 }
 
 const FILLED_SECTIONS: &str = "## Context\n\nWhy.\n\n## Decision\n\nWhat.\n\n\
                                ## Alternatives\n\nNone considered.\n\n## Consequences\n\nEffects.\n";
 
-fn write_record(root: &std::path::Path, prefix: &str, title: &str, status: &str, id: &str) {
-    write_record_with_successors(root, prefix, title, status, id, &[]);
+fn write_record(root: &std::path::Path, title: &str, status: &str, id: &str) {
+    write_record_with_successors(root, title, status, id, &[]);
+}
+
+/// A hand-written record's filename: a slug of its title.
+fn slug_filename(title: &str) -> String {
+    format!("{}.md", title.to_lowercase().replace(' ', "-"))
 }
 
 fn write_record_with_successors(
     root: &std::path::Path,
-    prefix: &str,
     title: &str,
     status: &str,
     id: &str,
@@ -68,29 +90,12 @@ fn write_record_with_successors(
     }
     front_matter.push_str("---\n\n");
     front_matter.push_str(FILLED_SECTIONS);
-    fs::write(
-        records_dir(root).join(format!(
-            "{prefix}-{}.md",
-            title.to_lowercase().replace(' ', "-")
-        )),
-        front_matter,
-    )
-    .unwrap();
+    fs::write(records_dir(root).join(slug_filename(title)), front_matter).unwrap();
 }
 
-fn write_record_with_body(
-    root: &std::path::Path,
-    prefix: &str,
-    title: &str,
-    status: &str,
-    id: &str,
-    body: &str,
-) {
+fn write_record_with_body(root: &std::path::Path, title: &str, status: &str, id: &str, body: &str) {
     fs::write(
-        records_dir(root).join(format!(
-            "{prefix}-{}.md",
-            title.to_lowercase().replace(' ', "-")
-        )),
+        records_dir(root).join(slug_filename(title)),
         format!("---\ntitle: {title}\nstatus: {status}\nid: {id}\n---\n\n{body}"),
     )
     .unwrap();
@@ -115,10 +120,13 @@ fn init_is_idempotent_and_creates_layout() {
     let root = temp_project("init");
 
     let first = init_project(&root).unwrap();
-    assert_eq!(first.decisions_dir, records_dir(&root));
+    assert_eq!(first.project_dir, dadr_dir(&root));
+    assert!(inbox_dir(&root).is_dir());
     assert!(records_dir(&root).is_dir());
-    assert!(dadr_dir(&root).join("candidates").is_dir());
-    assert!(dadr_dir(&root).join("rejected").is_dir());
+    assert!(archive_dir(&root).is_dir());
+    for old_folder in ["accepted", "candidates", "rejected"] {
+        assert!(!dadr_dir(&root).join(old_folder).exists());
+    }
     assert!(dadr_dir(&root).join("templates").is_dir());
     assert!(dadr_dir(&root).join("tasks").is_dir());
     assert!(dadr_dir(&root).join("runs/.gitignore").is_file());
@@ -132,7 +140,7 @@ fn init_is_idempotent_and_creates_layout() {
     assert!(second
         .existing
         .iter()
-        .any(|path| path.as_str().ends_with("dadr/accepted")));
+        .any(|path| path.as_str().ends_with("dadr/ledger")));
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -207,7 +215,10 @@ fn discovery_works_from_nested_directory() {
     fs::create_dir_all(&nested).unwrap();
 
     let project = discover_from(&nested).unwrap();
-    assert_eq!(project.decisions_dir, records_dir(&root));
+    assert_eq!(project.project_dir, dadr_dir(&root));
+    assert_eq!(project.inbox_dir(), inbox_dir(&root));
+    assert_eq!(project.ledger_dir(), records_dir(&root));
+    assert_eq!(project.archive_dir(), archive_dir(&root));
     assert!(project.initialized);
 
     fs::remove_dir_all(root).unwrap();
@@ -224,7 +235,7 @@ fn discovery_does_not_cross_git_root_to_sibling_dadr_directory() {
 
     let project = discover_from(&project_root).unwrap();
     assert!(!project.initialized);
-    assert_eq!(project.decisions_dir, project_root.join("dadr/accepted"));
+    assert_eq!(project.project_dir, project_root.join("dadr"));
 
     fs::remove_dir_all(workspace).unwrap();
 }
@@ -300,8 +311,24 @@ fn demo_seeds_clean_spec_showcase() {
     assert!(!merged_candidate.record.superseded);
     assert!(merged_candidate.successors.is_empty());
 
+    for summary in summaries {
+        let folder = match summary.status {
+            RecordStatus::Candidate => project.inbox_dir(),
+            RecordStatus::Accepted if !summary.superseded => project.ledger_dir(),
+            RecordStatus::Accepted | RecordStatus::Rejected => project.archive_dir(),
+        };
+        assert!(summary.path.starts_with(&folder), "{}", summary.path);
+    }
+    let merge_body = fs::read_to_string(&consolidation.record.path).unwrap();
+    let merge = dadrock::records::supersedes_section(&merge_body)
+        .unwrap()
+        .unwrap();
+    assert_eq!(merge.ids.len(), 2);
+    assert!(merge.reason.is_some());
+
     let report = validate_project_index(&project_index(&project));
     assert!(report.ok, "demo validation issues: {:?}", report.issues);
+    assert!(location_warnings(&report).is_empty());
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -483,11 +510,11 @@ fn new_candidate_writes_canonical_candidate_without_lifecycle_dates() {
     .unwrap();
 
     assert!(created.path.is_file());
-    assert!(created
-        .path
-        .file_name()
-        .unwrap()
-        .ends_with("-drop-records-with-missing-treatment.md"));
+    assert_eq!(created.path.parent(), Some(project.inbox_dir().as_path()));
+    assert_eq!(
+        created.path.file_name(),
+        Some("drop-records-with-missing-treatment.md")
+    );
     let content = fs::read_to_string(&created.path).unwrap();
     assert!(content.contains("status: candidate"));
     assert!(content.contains("kind/sample"));
@@ -588,7 +615,7 @@ fn tags_list_merges_yaml_and_inline_tags_case_insensitively() {
     let root = temp_project("tags-list");
     init_project(&root).unwrap();
     fs::write(
-        records_dir(&root).join("01938b8e4d70-tagged.md"),
+        records_dir(&root).join("tagged.md"),
         "---\n\
          title: Tagged decision\n\
          status: accepted\n\
@@ -630,7 +657,7 @@ fn tags_validate_reports_malformed_yaml_and_inline_tags() {
     let root = temp_project("tags-validate");
     init_project(&root).unwrap();
     fs::write(
-        records_dir(&root).join("01938b8e4d70-bad-tags.md"),
+        records_dir(&root).join("bad-tags.md"),
         "---\n\
          title: Bad tags\n\
          status: accepted\n\
@@ -675,7 +702,7 @@ fn tags_validate_ignores_numeric_hash_references_in_prose() {
     let root = temp_project("tags-numeric-reference");
     init_project(&root).unwrap();
     fs::write(
-        records_dir(&root).join("01938b8e4d70-numeric-reference.md"),
+        records_dir(&root).join("numeric-reference.md"),
         "---\n\
          title: Numeric reference\n\
          status: accepted\n\
@@ -706,7 +733,7 @@ fn tags_validate_reports_legacy_yaml_tag_object() {
     let root = temp_project("tags-object");
     init_project(&root).unwrap();
     fs::write(
-        records_dir(&root).join("01938b8e4d70-tag-object.md"),
+        records_dir(&root).join("tag-object.md"),
         "---\n\
          title: Tag object\n\
          status: accepted\n\
@@ -769,7 +796,7 @@ fn scanner_skips_tool_managed_directories() {
 fn scanner_reports_unreadable_records_without_aborting() {
     let root = temp_project("scan-unreadable");
     init_project(&root).unwrap();
-    let bad_path = records_dir(&root).join("01938b8e4d70-bad.md");
+    let bad_path = records_dir(&root).join("bad.md");
     fs::write(&bad_path, [0xff, 0xfe, 0xfd]).unwrap();
 
     let records = scan_records(camino::Utf8Path::from_path(&records_dir(&root)).unwrap())
@@ -848,7 +875,7 @@ fn status_reports_successors_and_predecessors() {
     let decisions = records_dir(&root);
 
     fs::write(
-        decisions.join("01938b8e4d70-original.md"),
+        decisions.join("original.md"),
         "---\n\
          title: Original decision\n\
          status: accepted\n\
@@ -863,9 +890,9 @@ fn status_reports_successors_and_predecessors() {
     )
     .unwrap();
     fs::write(
-        decisions.join("01938b8f9d71-replacement.md"),
+        decisions.join("successor.md"),
         "---\n\
-         title: Replacement decision\n\
+         title: Successor decision\n\
          status: accepted\n\
          id: 01938b8f-9d71-7456-8000-fedcba987654\n\
          ---\n\n\
@@ -879,19 +906,19 @@ fn status_reports_successors_and_predecessors() {
     let project = discover_from(&root).unwrap();
     let original = status_record(&project_index(&project), "Original").unwrap();
     assert_eq!(original.successors.len(), 1);
-    assert_eq!(original.successors[0].title, "Replacement decision");
+    assert_eq!(original.successors[0].title, "Successor decision");
     assert!(original.predecessors.is_empty());
 
-    let replacement = status_record(&project_index(&project), "Replacement").unwrap();
-    assert!(replacement.successors.is_empty());
-    assert_eq!(replacement.predecessors.len(), 1);
-    assert_eq!(replacement.predecessors[0].title, "Original decision");
+    let successor = status_record(&project_index(&project), "Successor").unwrap();
+    assert!(successor.successors.is_empty());
+    assert_eq!(successor.predecessors.len(), 1);
+    assert_eq!(successor.predecessors[0].title, "Original decision");
 
     fs::remove_dir_all(root).unwrap();
 }
 
 #[test]
-fn reject_moves_candidate_to_rejected_dir_and_rewrites_status() {
+fn reject_moves_candidate_to_archive_and_rewrites_status() {
     let root = temp_project("reject");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
@@ -902,7 +929,7 @@ fn reject_moves_candidate_to_rejected_dir_and_rewrites_status() {
     assert_eq!(rejected.status, RecordStatus::Rejected);
     assert!(!created.path.exists());
     assert!(rejected.to.is_file());
-    assert!(rejected.to.to_string().contains("dadr/rejected"));
+    assert_eq!(rejected.to.parent(), Some(project.archive_dir().as_path()));
 
     let content = fs::read_to_string(&rejected.to).unwrap();
     assert!(content.contains("status: rejected"));
@@ -926,16 +953,14 @@ fn reject_rolls_back_created_target_when_source_remove_fails() {
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
     let created = create_candidate(&project, "Rollback candidate", &[]).unwrap();
-    let target = dadr_dir(&root)
-        .join("rejected")
-        .join(created.path.file_name().unwrap());
-    let candidates_dir = dadr_dir(&root).join("candidates");
-    let original_permissions = fs::metadata(&candidates_dir).unwrap().permissions();
+    let target = archive_dir(&root).join(created.path.file_name().unwrap());
+    let inbox = inbox_dir(&root);
+    let original_permissions = fs::metadata(&inbox).unwrap().permissions();
 
-    fs::set_permissions(&candidates_dir, fs::Permissions::from_mode(0o500)).unwrap();
+    fs::set_permissions(&inbox, fs::Permissions::from_mode(0o500)).unwrap();
     let error = reject_candidate(&project_index(&project), &created.id.short_id())
         .expect_err("reject should fail when the source cannot be removed");
-    fs::set_permissions(&candidates_dir, original_permissions).unwrap();
+    fs::set_permissions(&inbox, original_permissions).unwrap();
 
     assert!(error.to_string().contains("I/O error"));
     assert!(created.path.exists());
@@ -950,7 +975,7 @@ fn reject_refuses_non_candidate() {
     init_project(&root).unwrap();
     let decisions = records_dir(&root);
     fs::write(
-        decisions.join("01938b8e4d70-accepted.md"),
+        decisions.join("accepted.md"),
         "---\n\
          title: Accepted decision\n\
          status: accepted\n\
@@ -979,7 +1004,7 @@ fn save_record_source_rewrites_source_through_command() {
     let project = discover_from(&root).unwrap();
     let created = create_candidate(&project, "Original title", &[]).unwrap();
     let context = CommandContext::from_path(&root).unwrap();
-    let replacement = format!(
+    let edited = format!(
         "---\n\
          title: Updated title\n\
          status: candidate\n\
@@ -997,14 +1022,14 @@ fn save_record_source_rewrites_source_through_command() {
         &context,
         SaveRecordSourceRequest {
             query: created.id.short_id(),
-            content: replacement.clone(),
+            content: edited.clone(),
         },
     )
     .unwrap();
 
     assert_eq!(envelope.data.id, created.id);
     assert_eq!(envelope.changed_paths, vec![created.path.clone()]);
-    assert_eq!(fs::read_to_string(&created.path).unwrap(), replacement);
+    assert_eq!(fs::read_to_string(&created.path).unwrap(), edited);
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -1017,7 +1042,7 @@ fn save_record_source_rejects_id_changes_without_overwriting_file() {
     let created = create_candidate(&project, "Stable id", &[]).unwrap();
     let original = fs::read_to_string(&created.path).unwrap();
     let context = CommandContext::from_path(&root).unwrap();
-    let replacement = "\
+    let edited = "\
         ---\n\
         title: Stable id\n\
         status: candidate\n\
@@ -1033,7 +1058,7 @@ fn save_record_source_rejects_id_changes_without_overwriting_file() {
         &context,
         SaveRecordSourceRequest {
             query: created.id.short_id(),
-            content: replacement,
+            content: edited,
         },
     )
     .unwrap_err();
@@ -1052,7 +1077,7 @@ fn save_record_source_rejects_status_changes_without_overwriting_file() {
     let created = create_candidate(&project, "Stable status", &[]).unwrap();
     let original = fs::read_to_string(&created.path).unwrap();
     let context = CommandContext::from_path(&root).unwrap();
-    let replacement = format!(
+    let edited = format!(
         "---\n\
          title: Stable status\n\
          status: accepted\n\
@@ -1069,7 +1094,7 @@ fn save_record_source_rejects_status_changes_without_overwriting_file() {
         &context,
         SaveRecordSourceRequest {
             query: created.id.short_id(),
-            content: replacement,
+            content: edited,
         },
     )
     .unwrap_err();
@@ -1083,16 +1108,19 @@ fn save_record_source_rejects_status_changes_without_overwriting_file() {
 }
 
 #[test]
-fn save_record_source_rejects_invalid_accepted_record_without_overwriting_file() {
+fn save_record_source_refuses_to_drop_required_sections_of_accepted_record() {
     let root = temp_project("save-source-accepted-sections");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
     let candidate =
         create_candidate_with_body(&project, "Complete accepted", &[], FILLED_SECTIONS).unwrap();
-    let accepted = accept_candidate(&project_index(&project), &candidate.id.to_string()).unwrap();
+    let accepted = accept_candidate(&project_index(&project), &candidate.id.to_string())
+        .unwrap()
+        .accepted
+        .remove(0);
     let original = fs::read_to_string(&accepted.to).unwrap();
     let context = CommandContext::from_path(&root).unwrap();
-    let replacement = format!(
+    let edited = format!(
         "---\n\
          title: Complete accepted\n\
          status: accepted\n\
@@ -1107,14 +1135,18 @@ fn save_record_source_rejects_invalid_accepted_record_without_overwriting_file()
         &context,
         SaveRecordSourceRequest {
             query: accepted.id.short_id(),
-            content: replacement,
+            content: edited,
         },
     )
     .unwrap_err();
 
-    assert!(error
-        .to_string()
-        .contains("missing Decision, Alternatives, Consequences"));
+    assert!(
+        error
+            .to_string()
+            .contains("keeps each standard section exactly once and with text: missing Decision, Alternatives, Consequences"),
+        "{error}"
+    );
+    assert!(error.to_string().contains("draft a successor"), "{error}");
     assert_eq!(fs::read_to_string(&accepted.to).unwrap(), original);
 
     fs::remove_dir_all(root).unwrap();
@@ -1151,14 +1183,16 @@ fn accept_converts_candidate_into_accepted_decision() {
     )
     .unwrap();
 
-    let accepted = accept_candidate(&project_index(&project), &candidate.id.short_id()).unwrap();
+    let result = accept_candidate(&project_index(&project), &candidate.id.short_id()).unwrap();
+    assert!(result.superseded.is_empty());
+    let [accepted] = result.accepted.as_slice() else {
+        panic!("expected one accepted record: {result:?}");
+    };
     assert_eq!(accepted.id, candidate.id);
-    assert_eq!(accepted.status, RecordStatus::Accepted);
     assert!(!candidate.path.exists());
     assert_eq!(accepted.from, candidate.path);
     assert!(accepted.to.is_file());
-    assert_eq!(accepted.to.parent(), Some(project.decisions_dir.as_path()));
-    assert!(!accepted.to.to_string().contains("dadr/rejected"));
+    assert_eq!(accepted.to.parent(), Some(project.ledger_dir().as_path()));
 
     let accepted_content = fs::read_to_string(&accepted.to).unwrap();
     assert!(accepted_content.contains("status: accepted"));
@@ -1186,7 +1220,7 @@ fn accept_refuses_non_candidate() {
     init_project(&root).unwrap();
     let decisions = records_dir(&root);
     fs::write(
-        decisions.join("01938b8e4d70-accepted.md"),
+        decisions.join("accepted.md"),
         "---\n\
          title: Accepted decision\n\
          status: accepted\n\
@@ -1212,7 +1246,7 @@ fn accept_refuses_non_candidate() {
 fn accept_requires_required_sections() {
     let root = temp_project("accept-sections");
     init_project(&root).unwrap();
-    let candidate_path = dadr_dir(&root).join("candidates/01938b8e4d70-incomplete.md");
+    let candidate_path = inbox_dir(&root).join("incomplete.md");
     fs::write(
         &candidate_path,
         "---\n\
@@ -1256,14 +1290,12 @@ fn supersede_links_accepted_records() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old decision",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "New decision",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
@@ -1301,21 +1333,18 @@ fn supersede_supports_many_to_one_successors() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "Old B",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record(
         &root,
-        "01938b91bcd0",
         "New X",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
@@ -1344,21 +1373,18 @@ fn supersede_supports_one_to_many_successors() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "New X",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record(
         &root,
-        "01938b91bcd0",
         "New Y",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
@@ -1389,28 +1415,24 @@ fn supersede_supports_many_to_many_successors() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "Old B",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record(
         &root,
-        "01938b91bcd0",
         "New X",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
     );
     write_record(
         &root,
-        "01938b92bcd0",
         "New Y",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
@@ -1460,28 +1482,24 @@ fn supersede_records_supports_many_to_many_in_one_operation() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "Old B",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record(
         &root,
-        "01938b91bcd0",
         "New X",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
     );
     write_record(
         &root,
-        "01938b92bcd0",
         "New Y",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
@@ -1518,21 +1536,20 @@ fn supersede_records_supports_many_to_many_in_one_operation() {
 
 #[cfg(unix)]
 #[test]
-fn supersede_records_stages_all_rewrites_before_replacing_any_file() {
+fn supersede_records_restores_every_record_when_a_move_fails() {
     use std::os::unix::fs::PermissionsExt;
 
     let root = temp_project("supersede-staged-failure");
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     let nested_dir = records_dir(&root).join("nested");
     fs::create_dir_all(&nested_dir).unwrap();
-    let old_b_path = nested_dir.join("01938b8f9d71-old-b.md");
+    let old_b_path = nested_dir.join("old-b.md");
     fs::write(
         &old_b_path,
         "---\n\
@@ -1548,12 +1565,11 @@ fn supersede_records_stages_all_rewrites_before_replacing_any_file() {
     .unwrap();
     write_record(
         &root,
-        "01938b91bcd0",
         "New X",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
     );
-    let old_a_path = records_dir(&root).join("01938b8e4d70-old-a.md");
+    let old_a_path = records_dir(&root).join("old-a.md");
     let old_a_original = fs::read_to_string(&old_a_path).unwrap();
     let old_b_original = fs::read_to_string(&old_b_path).unwrap();
     let original_permissions = fs::metadata(&nested_dir).unwrap().permissions();
@@ -1571,6 +1587,7 @@ fn supersede_records_stages_all_rewrites_before_replacing_any_file() {
     assert!(error.to_string().contains("I/O error"));
     assert_eq!(fs::read_to_string(&old_a_path).unwrap(), old_a_original);
     assert_eq!(fs::read_to_string(&old_b_path).unwrap(), old_b_original);
+    assert!(md_files(&archive_dir(&root)).is_empty());
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -1581,14 +1598,12 @@ fn supersede_refuses_invalid_statuses_duplicate_and_cycle() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Old accepted",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "New accepted",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
@@ -1627,7 +1642,6 @@ fn supersede_refuses_invalid_statuses_duplicate_and_cycle() {
     init_project(&root).unwrap();
     write_record_with_successors(
         &root,
-        "01938b8e4d70",
         "Cycle A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
@@ -1635,7 +1649,6 @@ fn supersede_refuses_invalid_statuses_duplicate_and_cycle() {
     );
     write_record_with_successors(
         &root,
-        "01938b8f9d71",
         "Cycle B",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
@@ -1672,28 +1685,24 @@ fn project_validation_reports_project_wide_graph_and_filename_errors() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Duplicate A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8e4d70",
         "Duplicate B",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8e4d70",
         "Same short id",
         "accepted",
         "01938b8e-4d70-7abc-8def-0000000000ff",
     );
     write_record_with_successors(
         &root,
-        "01938b8f9d71",
         "Dangling successor",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
@@ -1701,7 +1710,6 @@ fn project_validation_reports_project_wide_graph_and_filename_errors() {
     );
     write_record_with_successors(
         &root,
-        "01938b91bcd0",
         "Cycle A",
         "accepted",
         "01938b91-bcd0-7e00-8b00-cafebabe0002",
@@ -1709,14 +1717,13 @@ fn project_validation_reports_project_wide_graph_and_filename_errors() {
     );
     write_record_with_successors(
         &root,
-        "01938b92bcd0",
         "Cycle B",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
         &["01938b91-bcd0-7e00-8b00-cafebabe0002"],
     );
     fs::write(
-        dadr_dir(&root).join("candidates/01938b93bcd0-candidate-with-successor.md"),
+        inbox_dir(&root).join("candidate-with-successor.md"),
         "---\n\
          title: Candidate with successor\n\
          status: candidate\n\
@@ -1750,21 +1757,19 @@ fn project_validation_reports_structural_and_location_issues() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70",
         "Root candidate",
         "candidate",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8f9d71",
         "Root rejected",
         "rejected",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
 
     fs::write(
-        dadr_dir(&root).join("candidates/01938b91bcd0-active-accepted.md"),
+        inbox_dir(&root).join("active-accepted.md"),
         "---\n\
          title: Active accepted\n\
          status: accepted\n\
@@ -1777,7 +1782,7 @@ fn project_validation_reports_structural_and_location_issues() {
     )
     .unwrap();
     fs::write(
-        records_dir(&root).join("01938b92bcd0-incomplete-accepted.md"),
+        records_dir(&root).join("incomplete-accepted.md"),
         "---\n\
          title: Incomplete accepted\n\
          status: accepted\n\
@@ -1814,14 +1819,12 @@ fn validate_links_passes_resolved_wikilinks_and_local_markdown_links() {
     fs::write(root.join("data/input.csv"), "x\n1\n").unwrap();
     write_record(
         &root,
-        "01938b8f9d71",
         "Target decision",
         "accepted",
         "01938b8f-9d71-7456-8000-fedcba987654",
     );
     write_record_with_body(
         &root,
-        "01938b8e4d70",
         "Source decision",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
@@ -1852,12 +1855,58 @@ fn new_candidates_get_unique_short_ids() {
     for index in 0..5 {
         let created = create_candidate(&project, &format!("Candidate {index}"), &[]).unwrap();
         assert!(short_ids.insert(created.id.short_id()));
-        assert!(created
-            .path
-            .file_name()
-            .unwrap()
-            .starts_with(&format!("{}-", created.id.short_id())));
+        assert_eq!(
+            created.path.file_name().unwrap(),
+            format!("candidate-{index}.md")
+        );
     }
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn new_candidates_append_the_short_id_only_when_the_slug_is_taken() {
+    let root = temp_project("slug-collision");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+
+    let first = create_candidate(&project, "Drop missing rows", &[]).unwrap();
+    let second = create_candidate(&project, "Drop missing rows!", &[]).unwrap();
+    assert_eq!(first.path, project.inbox_dir().join("drop-missing-rows.md"));
+    assert_eq!(
+        second.path,
+        project
+            .inbox_dir()
+            .join(format!("drop-missing-rows-{}.md", second.id.short_id()))
+    );
+
+    // Another folder's name does not count.
+    fs::write(project.ledger_dir().join("keep-outliers.md"), "notes").unwrap();
+    let third = create_candidate(&project, "Keep outliers", &[]).unwrap();
+    assert_eq!(third.path, project.inbox_dir().join("keep-outliers.md"));
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_filename_never_reserves_a_short_id() {
+    let root = temp_project("filename-identity");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+    // A file whose name starts with a short id that no record uses.
+    fs::write(
+        records_dir(&root).join("01938b8e4d70-notes.md"),
+        "---\ntitle: Notes\nstatus: accepted\nid: 01938b8f-9d71-7456-8000-fedcba987654\n---\n\n",
+    )
+    .unwrap();
+
+    let index = project_index(&project);
+    assert!(!index.short_id_taken("01938b8e4d70"));
+    assert!(index.short_id_taken("01938b8f9d71"));
+    // A query can still find a record by its filename.
+    let found = index.resolve_one("01938b8e4d70-notes").unwrap();
+    assert_eq!(found.match_kind, MatchKind::Filename);
+    assert_eq!(found.record.title, "Notes");
 
     fs::remove_dir_all(root).unwrap();
 }
@@ -1868,14 +1917,12 @@ fn validate_links_reports_wikilink_and_markdown_link_issues() {
     init_project(&root).unwrap();
     write_record(
         &root,
-        "01938b8e4d70-a",
         "Ambiguous A",
         "accepted",
         "01938b8e-4d70-7abc-8def-0123456789ab",
     );
     write_record(
         &root,
-        "01938b8e4d70-b",
         "Ambiguous B",
         "accepted",
         "01938b8e-4d70-7def-8000-0123456789ac",
@@ -1886,7 +1933,6 @@ fn validate_links_reports_wikilink_and_markdown_link_issues() {
 
     write_record_with_body(
         &root,
-        "01938b92bcd0",
         "Source with bad links",
         "accepted",
         "01938b92-bcd0-7e00-8b00-cafebabe0003",
@@ -1925,56 +1971,141 @@ fn validate_links_reports_wikilink_and_markdown_link_issues() {
     fs::remove_dir_all(root).unwrap();
 }
 
+const SUPERSEDES_A: &str = "0193fb1f-a3a0-7000-8000-000000000001";
+const SUPERSEDES_B: &str = "0193fb1f-a3a0-7000-8000-000000000002";
+
+fn accepted_record(project: &ProjectContext, title: &str) -> dadrock::records::RecordMove {
+    let candidate = create_candidate_with_body(project, title, &[], FILLED_SECTIONS).unwrap();
+    accept_candidate(&project_index(project), &candidate.id.to_string())
+        .unwrap()
+        .accepted
+        .remove(0)
+}
+
+fn successor_body(predecessors: &[RecordId]) -> String {
+    let links: String = predecessors
+        .iter()
+        .map(|id| format!("[[{id}|Previous decision]]\n"))
+        .collect();
+    format!("## Supersedes\n\n{links}\nThe old rule no longer fits.\n\n{FILLED_SECTIONS}")
+}
+
+fn location_warnings(report: &dadrock::validation::ProjectValidationReport) -> Vec<String> {
+    report
+        .issues
+        .iter()
+        .filter(|issue| issue.code == ProjectValidationIssueCode::StatusLocationMismatch)
+        .map(|issue| issue.message.clone())
+        .collect()
+}
+
 #[test]
-fn replacement_acceptance_links_history_and_preserves_original_body() {
-    let root = temp_project("replacement-acceptance");
+fn supersedes_acceptance_links_moves_and_preserves_predecessor_body() {
+    let root = temp_project("supersedes-acceptance");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
-    let first = dadrock::records::create_candidate_with_body(
-        &project,
-        "Previous choice",
-        &[],
-        "## Context\nPrevious needs.\n## Decision\nUse the selected method.\n## Alternatives\nRetain the old method.\n## Consequences\nRecompute results.\n",
-    ).unwrap();
-    let old = accept_candidate(&project_index(&project), &first.id.to_string()).unwrap();
+    let old = accepted_record(&project, "Previous choice");
+    assert_eq!(old.to.parent(), Some(project.ledger_dir().as_path()));
     let original = fs::read_to_string(&old.to).unwrap();
-    let body = format!("## Context\nChanged needs.\n\n## Decision\nUse a new method.\n\n## Alternatives\nKeep old method.\n\n## Consequences\nRecompute results.\n\n## Replaces\n\n[[{}|Previous decision]]\n", old.id);
+
     let candidate =
-        dadrock::records::create_candidate_with_body(&project, "New choice", &[], &body).unwrap();
+        create_candidate_with_body(&project, "New choice", &[], &successor_body(&[old.id]))
+            .unwrap();
     let index = project_index(&project);
+    let pending = dadrock::records::pending_supersedes(&index, &candidate.id.to_string()).unwrap();
     assert_eq!(
-        dadrock::records::pending_replacement(&index, &candidate.id.to_string())
-            .unwrap()
-            .unwrap()
-            .id,
-        old.id
+        pending
+            .predecessors
+            .iter()
+            .map(|record| record.id)
+            .collect::<Vec<_>>(),
+        vec![old.id]
     );
-    accept_candidate(&index, &candidate.id.to_string()).unwrap();
+    assert!(pending.stale.is_empty());
+
+    let accepted = accept_candidate(&index, &candidate.id.to_string()).unwrap();
+    let archived = project.archive_dir().join(old.to.file_name().unwrap());
+    assert_eq!(
+        accepted.accepted[0].to.parent(),
+        Some(project.ledger_dir().as_path())
+    );
+    assert!(!candidate.path.exists());
+    assert!(!old.to.exists());
+    assert_eq!(
+        accepted.superseded,
+        vec![dadrock::records::SupersededRecordMove {
+            id: old.id,
+            from: old.to.clone(),
+            to: archived.clone(),
+            successors: vec![candidate.id],
+        }]
+    );
+
     let index = project_index(&project);
     let previous = status_record(&index, &old.id.to_string()).unwrap();
+    assert_eq!(previous.record.path, archived);
+    assert!(previous.record.superseded);
     assert_eq!(previous.successors[0].id, candidate.id);
-    let updated = fs::read_to_string(&old.to).unwrap();
+    let updated = fs::read_to_string(&archived).unwrap();
     assert_eq!(
         original.splitn(3, "---").nth(2),
         updated.splitn(3, "---").nth(2)
     );
     assert!(
-        dadrock::records::pending_replacement(&index, &candidate.id.to_string())
+        dadrock::records::pending_supersedes(&index, &candidate.id.to_string())
             .unwrap()
-            .is_none()
+            .predecessors
+            .is_empty()
     );
+    let report = validate_project_index(&index);
+    assert!(report.ok, "{:?}", report.issues);
+    assert!(location_warnings(&report).is_empty());
+
+    // A later candidate that names the archived predecessor is refused.
+    let stale =
+        create_candidate_with_body(&project, "Stale choice", &[], &successor_body(&[old.id]))
+            .unwrap();
+    let error = accept_candidate(&project_index(&project), &stale.id.to_string()).unwrap_err();
+    assert!(error.to_string().contains("already superseded"), "{error}");
+    assert!(stale.path.exists());
+
     fs::remove_dir_all(root).unwrap();
 }
 
 #[test]
-fn invalid_replacement_does_not_accept_or_modify_either_record() {
-    let root = temp_project("replacement-invalid");
+fn accept_record_command_reports_both_moves() {
+    let root = temp_project("supersedes-command");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+    let old = accepted_record(&project, "Previous choice");
+    let candidate =
+        create_candidate_with_body(&project, "New choice", &[], &successor_body(&[old.id]))
+            .unwrap();
+
+    let context = CommandContext::from_path(&root).unwrap();
+    let envelope = dadrock::commands::accept_record(&context, &candidate.id.to_string()).unwrap();
+    let archived = project.archive_dir().join(old.to.file_name().unwrap());
+    assert_eq!(
+        envelope.changed_paths,
+        vec![
+            candidate.path.clone(),
+            envelope.data.accepted[0].to.clone(),
+            old.to,
+            archived
+        ]
+    );
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn invalid_supersedes_does_not_accept_or_modify_either_record() {
+    let root = temp_project("supersedes-invalid");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
     let old = create_candidate(&project, "Still a candidate", &[]).unwrap();
-    let body = format!("## Context\nContext.\n\n## Decision\nDecision.\n\n## Alternatives\nAlternatives.\n\n## Consequences\nConsequences.\n\n## Replaces\n\n[[{}|Previous decision]]\n", old.id);
     let candidate =
-        dadrock::records::create_candidate_with_body(&project, "Replacement", &[], &body).unwrap();
+        create_candidate_with_body(&project, "Successor", &[], &successor_body(&[old.id])).unwrap();
     let original = fs::read_to_string(&old.path).unwrap();
     let proposed = fs::read_to_string(&candidate.path).unwrap();
     assert!(accept_candidate(&project_index(&project), &candidate.id.to_string()).is_err());
@@ -1984,57 +2115,313 @@ fn invalid_replacement_does_not_accept_or_modify_either_record() {
 }
 
 #[test]
-fn replacement_section_requires_one_explicit_full_id_link() {
-    use dadrock::records::replacement_id;
-    assert!(
-        replacement_id("## Context\nSee [[0193fb1f-a3a0-7000-8000-000000000001]]")
-            .unwrap()
-            .is_none()
+fn supersedes_section_reads_one_link_without_a_reason() {
+    use dadrock::records::{supersedes_section, Supersedes};
+    let body = format!("## Supersedes\n\n[[{SUPERSEDES_A}|Old rule]]\n\n## Context\nWhy.\n");
+    assert_eq!(
+        supersedes_section(&body).unwrap(),
+        Some(Supersedes {
+            ids: vec![RecordId::parse(SUPERSEDES_A).unwrap()],
+            reason: None,
+        })
     );
-    assert!(replacement_id(
-        "```markdown\n## Replaces\n[[0193fb1f-a3a0-7000-8000-000000000001]]\n```"
-    )
-    .unwrap()
-    .is_none());
-    assert!(replacement_id("## Replaces\n[[short]]").is_err());
-    assert!(replacement_id("## Replaces\n").is_err());
-    assert!(replacement_id("## Replaces\n[[0193fb1f-a3a0-7000-8000-000000000001]]\n## Replaces\n[[0193fb1f-a3a0-7000-8000-000000000002]]").is_err());
 }
 
 #[test]
-fn replacement_examples_in_nested_fences_and_indented_code_are_not_instructions() {
-    use dadrock::records::replacement_id;
-    let nested =
-        "````markdown\n```\n## Replaces\n[[0193fb1f-a3a0-7000-8000-000000000001]]\n```\n````";
-    assert!(replacement_id(nested).unwrap().is_none());
+fn supersedes_section_reads_several_links_with_optional_labels() {
+    use dadrock::records::supersedes_section;
+    let body = format!("## Supersedes\n[[{SUPERSEDES_A}]]\n  [[{SUPERSEDES_B}|Second rule]]\n");
+    let section = supersedes_section(&body).unwrap().unwrap();
+    assert_eq!(
+        section.ids,
+        vec![
+            RecordId::parse(SUPERSEDES_A).unwrap(),
+            RecordId::parse(SUPERSEDES_B).unwrap()
+        ]
+    );
+    assert_eq!(section.reason, None);
+}
+
+#[test]
+fn supersedes_section_keeps_the_reason_markdown() {
+    use dadrock::records::supersedes_section;
+    let body = format!(
+        "Intro.\n\n## Supersedes\r\n\r\n[[{SUPERSEDES_A}|Old rule]]\r\n\r\n\
+         The two rules **disagreed**:\r\n\r\n- at p99\r\n\r\n```text\r\n## Not a heading\r\n```\r\n\r\n\r\n\
+         ## Context\r\nWhy.\r\n"
+    );
+    let section = supersedes_section(&body).unwrap().unwrap();
+    assert_eq!(section.ids, vec![RecordId::parse(SUPERSEDES_A).unwrap()]);
+    assert_eq!(
+        section.reason.as_deref(),
+        Some("The two rules **disagreed**:\n\n- at p99\n\n```text\n## Not a heading\n```")
+    );
+
+    // A link after the reason starts is part of the reason.
+    let body = format!("## Supersedes\n[[{SUPERSEDES_A}]]\nBecause.\n[[{SUPERSEDES_B}]]\n");
+    let section = supersedes_section(&body).unwrap().unwrap();
+    assert_eq!(section.ids.len(), 1);
+    assert_eq!(
+        section.reason.as_deref(),
+        Some(format!("Because.\n[[{SUPERSEDES_B}]]").as_str())
+    );
+}
+
+#[test]
+fn supersedes_section_requires_a_full_id_link_first() {
+    use dadrock::records::supersedes_section;
+    assert!(supersedes_section("## Supersedes\n").is_err());
+    assert!(supersedes_section("## Supersedes\n\nOnly a reason.\n").is_err());
+    assert!(supersedes_section(&format!("## Supersedes\n- [[{SUPERSEDES_A}]]\n")).is_err());
+    let short = supersedes_section("## Supersedes\n[[0193fb1fa3a0]]\n").unwrap_err();
+    assert!(short.to_string().contains("full id"), "{short}");
+    assert!(supersedes_section(&format!(
+        "## Supersedes\n[[{SUPERSEDES_A}]]\n[[{SUPERSEDES_A}|Again]]\n"
+    ))
+    .is_err());
+}
+
+#[test]
+fn supersedes_section_allows_at_most_one_section() {
+    use dadrock::records::supersedes_section;
+    let error = supersedes_section(&format!(
+        "## Supersedes\n[[{SUPERSEDES_A}]]\n## Context\nWhy.\n## Supersedes\n[[{SUPERSEDES_B}]]\n"
+    ))
+    .unwrap_err();
+    assert!(error.to_string().contains("only one"), "{error}");
+}
+
+#[test]
+fn supersedes_examples_in_code_are_not_instructions() {
+    use dadrock::records::supersedes_section;
     assert!(
-        replacement_id("    ## Replaces\n    [[0193fb1f-a3a0-7000-8000-000000000001]]")
+        supersedes_section(&format!("## Context\nSee [[{SUPERSEDES_A}]]"))
             .unwrap()
             .is_none()
     );
+    assert!(supersedes_section(&format!(
+        "```markdown\n## Supersedes\n[[{SUPERSEDES_A}]]\n```"
+    ))
+    .unwrap()
+    .is_none());
+    let nested = format!("````markdown\n```\n## Supersedes\n[[{SUPERSEDES_A}]]\n```\n````");
+    assert!(supersedes_section(&nested).unwrap().is_none());
+    assert!(
+        supersedes_section(&format!("    ## Supersedes\n    [[{SUPERSEDES_A}]]"))
+            .unwrap()
+            .is_none()
+    );
+    // A fenced link inside the section is not a link line.
+    assert!(supersedes_section(&format!("## Supersedes\n```\n[[{SUPERSEDES_A}]]\n```\n")).is_err());
+}
+
+#[test]
+fn body_without_supersedes_removes_only_the_section() {
+    use dadrock::records::body_without_supersedes;
+    let rest = "## Context\nWhy.\n\n## Decision\nWhat.\n";
+    let first = format!("## Supersedes\n\n[[{SUPERSEDES_A}|Old]]\n\nBecause.\n\n{rest}");
+    assert_eq!(body_without_supersedes(&first), rest);
+
+    let last = format!("{rest}\n## Supersedes\n\n[[{SUPERSEDES_A}]]\n\n");
+    assert_eq!(body_without_supersedes(&last), rest);
+
+    assert_eq!(body_without_supersedes(rest), rest);
+    let fenced = format!("{rest}```\n## Supersedes\n[[{SUPERSEDES_A}]]\n```\n");
+    assert_eq!(body_without_supersedes(&fenced), fenced);
+}
+
+#[test]
+fn with_supersedes_section_puts_the_section_first() {
+    use dadrock::records::{body_without_supersedes, supersedes_section, with_supersedes_section};
+    let id = RecordId::parse(SUPERSEDES_A).unwrap();
+    let body = with_supersedes_section("\n## Context\nWhy.\n", &[(id, "Odd [[title]]")], None);
+    assert_eq!(
+        body,
+        format!("## Supersedes\n\n[[{SUPERSEDES_A}|Odd [title]]]\n\n## Context\nWhy.\n")
+    );
+    assert_eq!(supersedes_section(&body).unwrap().unwrap().ids, vec![id]);
+    assert_eq!(body_without_supersedes(&body), "## Context\nWhy.\n");
+}
+
+#[test]
+fn supersede_command_moves_predecessors_to_archive() {
+    let root = temp_project("supersede-moves");
+    init_project(&root).unwrap();
+    let project = discover_from(&root).unwrap();
+    let old = accepted_record(&project, "Old rule");
+    let new = accepted_record(&project, "New rule");
+    let newer = accepted_record(&project, "Newer rule");
+
+    let context = CommandContext::from_path(&root).unwrap();
+    let envelope = dadrock::commands::supersede_records(
+        &context,
+        dadrock::commands::SupersedeRecordsRequest {
+            from: vec![old.id.to_string()],
+            to: vec![new.id.to_string()],
+        },
+    )
+    .unwrap();
+    let archived = project.archive_dir().join(old.to.file_name().unwrap());
+    assert!(!old.to.exists());
+    assert!(archived.is_file());
+    assert!(new.to.is_file());
+    assert_eq!(
+        envelope.changed_paths,
+        vec![old.to.clone(), archived.clone()]
+    );
+    assert_eq!(envelope.data.from[0].path, archived);
+    assert!(envelope.data.from[0].superseded);
+    assert_eq!(envelope.data.edges[0].old_path, archived);
+    assert_eq!(envelope.data.superseded[0].from, old.to);
+
+    // A record already in the archive gains another successor in place.
+    let envelope = dadrock::commands::supersede_records(
+        &context,
+        dadrock::commands::SupersedeRecordsRequest {
+            from: vec![old.id.to_string()],
+            to: vec![newer.id.to_string()],
+        },
+    )
+    .unwrap();
+    assert_eq!(envelope.changed_paths, vec![archived.clone()]);
+    let index = project_index(&project);
+    assert_eq!(
+        status_record(&index, &old.id.to_string())
+            .unwrap()
+            .successors
+            .len(),
+        2
+    );
+    let report = validate_project_index(&index);
+    assert!(location_warnings(&report).is_empty(), "{:?}", report.issues);
+
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn location_check_follows_status_and_successors() {
+    let root = temp_project("location-check");
+    init_project(&root).unwrap();
+    let write = |dir: PathBuf, title: &str, status: &str, id: &str, extra: &str| {
+        fs::write(
+            dir.join(slug_filename(title)),
+            format!(
+                "---\ntitle: {title}\nstatus: {status}\nid: {id}\n{extra}---\n\n{FILLED_SECTIONS}"
+            ),
+        )
+        .unwrap();
+    };
+    let successors = "successors:\n  - 01938b91-bcd0-7e00-8b00-cafebabe0002\n";
+    write(
+        inbox_dir(&root),
+        "Placed candidate",
+        "candidate",
+        "01938b8e-4d70-7abc-8def-0123456789ab",
+        "",
+    );
+    write(
+        records_dir(&root),
+        "Placed decision",
+        "accepted",
+        "01938b91-bcd0-7e00-8b00-cafebabe0002",
+        "",
+    );
+    write(
+        archive_dir(&root),
+        "Placed superseded",
+        "accepted",
+        "01938b92-bcd0-7e00-8b00-cafebabe0003",
+        successors,
+    );
+    write(
+        archive_dir(&root),
+        "Placed rejected",
+        "rejected",
+        "01938b93-bcd0-7e00-8b00-cafebabe0004",
+        "",
+    );
+    let project = discover_from(&root).unwrap();
+    let report = validate_project_index(&project_index(&project));
+    assert!(location_warnings(&report).is_empty(), "{:?}", report.issues);
+
+    write(
+        records_dir(&root),
+        "Superseded in ledger",
+        "accepted",
+        "01938b94-bcd0-7e00-8b00-cafebabe0005",
+        successors,
+    );
+    write(
+        archive_dir(&root),
+        "Current in archive",
+        "accepted",
+        "01938b95-bcd0-7e00-8b00-cafebabe0006",
+        "",
+    );
+    write(
+        archive_dir(&root),
+        "Candidate in archive",
+        "candidate",
+        "01938b96-bcd0-7e00-8b00-cafebabe0007",
+        "",
+    );
+    write(
+        inbox_dir(&root),
+        "Rejected in inbox",
+        "rejected",
+        "01938b97-bcd0-7e00-8b00-cafebabe0008",
+        "",
+    );
+    let report = validate_project_index(&project_index(&project));
+    assert!(
+        report.ok,
+        "location mismatches are warnings: {:?}",
+        report.issues
+    );
+    let mut warnings: Vec<_> = report
+        .issues
+        .iter()
+        .filter(|issue| issue.code == ProjectValidationIssueCode::StatusLocationMismatch)
+        .map(|issue| {
+            (
+                issue.path.as_ref().unwrap().file_name().unwrap().to_owned(),
+                issue.message.clone(),
+            )
+        })
+        .collect();
+    warnings.sort();
+    assert_eq!(warnings.len(), 4, "{warnings:?}");
+    assert!(
+        warnings[0].0.contains("candidate-in-archive") && warnings[0].1.contains("`dadr/inbox/`")
+    );
+    assert!(
+        warnings[1].0.contains("current-in-archive") && warnings[1].1.contains("`dadr/ledger/`")
+    );
+    assert!(
+        warnings[2].0.contains("rejected-in-inbox") && warnings[2].1.contains("`dadr/archive/`")
+    );
+    assert!(
+        warnings[3].0.contains("superseded-in-ledger") && warnings[3].1.contains("`dadr/archive/`")
+    );
+
+    fs::remove_dir_all(root).unwrap();
 }
 
 #[cfg(unix)]
 #[test]
-fn replacement_staging_failure_leaves_candidate_and_original_unchanged() {
+fn supersedes_move_failure_leaves_candidate_and_predecessor_unchanged() {
     use std::os::unix::fs::PermissionsExt;
-    let root = temp_project("replacement-staging-failure");
+    let root = temp_project("supersedes-move-failure");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
-    let first = dadrock::records::create_candidate_with_body(
-        &project,
-        "Previous choice",
-        &[],
-        "## Context\nPrevious needs.\n## Decision\nUse the selected method.\n## Alternatives\nRetain the old method.\n## Consequences\nRecompute results.\n",
-    ).unwrap();
-    let old = accept_candidate(&project_index(&project), &first.id.to_string()).unwrap();
-    let nested = project.decisions_dir.join("nested");
+    let old = accepted_record(&project, "Previous choice");
+    let nested = project.ledger_dir().join("nested");
     fs::create_dir_all(&nested).unwrap();
     let old_path = nested.join(old.to.file_name().unwrap());
     fs::rename(&old.to, &old_path).unwrap();
-    let body = format!("## Context\nChanged needs.\n## Decision\nNew choice.\n## Alternatives\nOld choice.\n## Consequences\nNew results.\n## Replaces\n[[{}|Previous decision]]\n", old.id);
     let candidate =
-        dadrock::records::create_candidate_with_body(&project, "New choice", &[], &body).unwrap();
+        create_candidate_with_body(&project, "New choice", &[], &successor_body(&[old.id]))
+            .unwrap();
     let original = fs::read_to_string(&old_path).unwrap();
     let proposed = fs::read_to_string(&candidate.path).unwrap();
     let permissions = fs::metadata(&nested).unwrap().permissions();
@@ -2044,6 +2431,8 @@ fn replacement_staging_failure_leaves_candidate_and_original_unchanged() {
     assert!(result.is_err());
     assert_eq!(fs::read_to_string(&old_path).unwrap(), original);
     assert_eq!(fs::read_to_string(&candidate.path).unwrap(), proposed);
+    assert!(md_files(&archive_dir(&root)).is_empty());
+    assert_eq!(md_files(&records_dir(&root)), Vec::<String>::new());
     assert_eq!(project_index(&project).list_records(None).len(), 2);
     fs::remove_dir_all(root).unwrap();
 }

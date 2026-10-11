@@ -67,8 +67,8 @@ Reading bodies is the expensive part. Narrow the corpus with metadata before rea
 | Relationship | What happened | Typical resolution |
 |---|---|---|
 | candidate ↔ candidate | Two drafts of the same choice, neither accepted | Keep one and reject the other (`rejected/duplicate`), or merge them into a new candidate ([merge-records](merge-records.md)). |
-| candidate ↔ accepted | A newer candidate revises an accepted decision | Turn the candidate into a replacement of the accepted record ([supersede-record](supersede-record.md)) and accept it, or reject the candidate if the accepted decision stands. |
-| accepted ↔ accepted | Two decisions in force contradict each other | Draft one consolidated replacement that supersedes both once accepted. |
+| candidate ↔ accepted | A newer candidate revises an accepted decision | Turn the candidate into a successor that supersedes the accepted record ([supersede-record](supersede-record.md)) and accept it, or reject the candidate if the accepted decision stands. |
+| accepted ↔ accepted | Two decisions in force contradict each other | Draft one successor that supersedes both once accepted ([supersede-record](supersede-record.md)). |
 | candidate ↔ rejected | A rejected idea has been drafted again | Possibly intentional (new evidence), possibly an oversight; the reviewer decides. |
 
 A cycle in `successors` (A lists B and B lists A) is a ledger error; report it as a finding.
