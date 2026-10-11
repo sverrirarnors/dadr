@@ -1713,7 +1713,7 @@
 </tr>
 <tr>
 <td><a href="#dadrock-dir"><code>dir</code></a></td>
-<td>Print the discovered Dadrock project directory (dadr/).</td>
+<td>Print the project's dadr/ directory, even before it exists.</td>
 </tr>
 </tbody>
 </table>
@@ -1830,19 +1830,19 @@
 <p><strong>Usage:</strong> <code>dadrock init [DIRECTORY]</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;DIRECTORY&gt;</code></li>
+<li><code>&lt;DIRECTORY&gt;</code> — Where to create <code>dadr/</code>: its parent directory, or a path ending in <code>dadr</code> (defaults to the current directory)</li>
 </ul>
 <h2 id="dadrock-demo"><code>dadrock demo</code><a class="headerlink" href="#dadrock-demo" title="Permanent link">&para;</a></h2>
 <p>Seed a new project with a named DADR example.</p>
 <p><strong>Usage:</strong> <code>dadrock demo [OPTIONS] [DIRECTORY]</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;DIRECTORY&gt;</code></li>
+<li><code>&lt;DIRECTORY&gt;</code> — The directory to seed, which must be new or empty (defaults to the current directory)</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
-<li><code>--example &lt;EXAMPLE&gt;</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
+<li><code>--example &lt;EXAMPLE&gt;</code> — The example project to seed</li>
 </ul>
 <p>Default value: <code>lifecycle</code></p>
 <p>Possible values: <code>lifecycle</code>, <code>candidate-review</code>, <code>penguins</code>, <code>broken</code>, <code>conflicts</code>, <code>task-history</code></p>
@@ -1851,49 +1851,49 @@
 <p><strong>Usage:</strong> <code>dadrock preview [OPTIONS] [DIRECTORY]</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;DIRECTORY&gt;</code></li>
+<li><code>&lt;DIRECTORY&gt;</code> — The directory to find the project from (defaults to the current directory)</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--port &lt;PORT&gt;</code></li>
+<li><code>--port &lt;PORT&gt;</code> — The port to listen on; 0 picks a free one</li>
 </ul>
 <p>Default value: <code>4004</code>
-* <code>--host &lt;HOST&gt;</code></p>
+* <code>--host &lt;HOST&gt;</code> — The address to listen on: only <code>localhost</code>, <code>127.0.0.1</code>, and <code>::1</code> are accepted</p>
 <p>Default value: <code>127.0.0.1</code></p>
 <h2 id="dadrock-config"><code>dadrock config</code><a class="headerlink" href="#dadrock-config" title="Permanent link">&para;</a></h2>
 <p>Print the resolved project layout.</p>
 <p><strong>Usage:</strong> <code>dadrock config [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h2 id="dadrock-dir"><code>dadrock dir</code><a class="headerlink" href="#dadrock-dir" title="Permanent link">&para;</a></h2>
-<p>Print the discovered Dadrock project directory (dadr/).</p>
+<p>Print the project's dadr/ directory, even before it exists.</p>
 <p><strong>Usage:</strong> <code>dadrock dir</code></p>
 <h2 id="dadrock-new"><code>dadrock new</code><a class="headerlink" href="#dadrock-new" title="Permanent link">&para;</a></h2>
 <p>Create a candidate decision record from the active candidate template.</p>
 <p><strong>Usage:</strong> <code>dadrock new [OPTIONS] &lt;TITLE&gt;...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;TITLE&gt;</code></li>
+<li><code>&lt;TITLE&gt;</code> — The record's title; the words join into one title. Options can come before or after it; put <code>--</code> before a title that starts with <code>-</code></li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--tag &lt;TAGS&gt;</code></li>
-<li><code>--quiet</code></li>
+<li><code>--tag &lt;TAG&gt;</code> — A tag for the record, without <code>#</code>; repeat for more</li>
+<li><code>--quiet</code> — Print only the new record's id instead of the JSON envelope</li>
 </ul>
 <h2 id="dadrock-list"><code>dadrock list</code><a class="headerlink" href="#dadrock-list" title="Permanent link">&para;</a></h2>
 <p>List records, optionally filtered by lifecycle status, tag, or query.</p>
 <p><strong>Usage:</strong> <code>dadrock list [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--status &lt;STATUS&gt;</code></li>
+<li><code>--status &lt;STATUS&gt;</code> — Only records with this status; <code>accepted</code> leaves out superseded records, and <code>superseded</code> lists only them</li>
 </ul>
 <p>Possible values: <code>candidate</code>, <code>accepted</code>, <code>rejected</code>, <code>superseded</code></p>
 <ul>
-<li><code>--tag &lt;TAG&gt;</code></li>
-<li><code>--query &lt;QUERY&gt;</code></li>
-<li><code>--unique</code></li>
+<li><code>--tag &lt;TAG&gt;</code> — Only records with this tag, in front matter or inline (the <code>#</code> is optional)</li>
+<li><code>--query &lt;QUERY&gt;</code> — Only records matching a full id, an id prefix, or part of a filename or title</li>
+<li><code>--unique</code> — Exit non-zero unless exactly one record matches</li>
 </ul>
 <h2 id="dadrock-history"><code>dadrock history</code><a class="headerlink" href="#dadrock-history" title="Permanent link">&para;</a></h2>
 <p>Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.</p>
@@ -1905,7 +1905,7 @@
 <p><strong>Options</strong></p>
 <ul>
 <li><code>--patch</code> — Print each change's diff under its link, and each text edit's diff under its version</li>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h2 id="dadrock-diff"><code>dadrock diff</code><a class="headerlink" href="#dadrock-diff" title="Permanent link">&para;</a></h2>
 <p>Compare two records: title, tags, and body without <code>## Supersedes</code>.</p>
@@ -1917,7 +1917,7 @@
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h2 id="dadrock-accept"><code>dadrock accept</code><a class="headerlink" href="#dadrock-accept" title="Permanent link">&para;</a></h2>
 <p>Accept a candidate decision, or several together with --with.</p>
@@ -1935,15 +1935,15 @@
 <p><strong>Usage:</strong> <code>dadrock reject &lt;QUERY&gt;...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;QUERY&gt;</code></li>
+<li><code>&lt;QUERY&gt;</code> — The candidate: full id, id prefix, filename, or title; the words join into one query</li>
 </ul>
 <h2 id="dadrock-supersede"><code>dadrock supersede</code><a class="headerlink" href="#dadrock-supersede" title="Permanent link">&para;</a></h2>
 <p>Link accepted successors to the records they supersede and move those records to the archive.</p>
 <p><strong>Usage:</strong> <code>dadrock supersede [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--from &lt;FROM&gt;</code></li>
-<li><code>--to &lt;TO&gt;</code></li>
+<li><code>--from &lt;FROM&gt;</code> — An accepted record to supersede: full id, id prefix, filename, or title. Repeat for more</li>
+<li><code>--to &lt;TO&gt;</code> — An accepted record that replaces it. Repeat for more; every <code>--from</code> record gets every <code>--to</code> record as a successor</li>
 </ul>
 <h2 id="dadrock-status"><code>dadrock status</code><a class="headerlink" href="#dadrock-status" title="Permanent link">&para;</a></h2>
 <p>Inspect one record's lifecycle status or run lifecycle transitions.</p>
@@ -1956,7 +1956,7 @@
 </ul>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;QUERY&gt;</code></li>
+<li><code>&lt;QUERY&gt;</code> — The record to inspect: full id, id prefix, filename, or title; the words join into one query</li>
 </ul>
 <h3 id="dadrock-status-accept"><code>dadrock status accept</code><a class="headerlink" href="#dadrock-status-accept" title="Permanent link">&para;</a></h3>
 <p>Accept a candidate and move it to the ledger, or several together with --with.</p>
@@ -1974,15 +1974,15 @@
 <p><strong>Usage:</strong> <code>dadrock status reject &lt;QUERY&gt;...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;QUERY&gt;</code></li>
+<li><code>&lt;QUERY&gt;</code> — The candidate: full id, id prefix, filename, or title; the words join into one query</li>
 </ul>
 <h3 id="dadrock-status-supersede"><code>dadrock status supersede</code><a class="headerlink" href="#dadrock-status-supersede" title="Permanent link">&para;</a></h3>
 <p>Link accepted successors to the records they supersede and move those records to the archive.</p>
 <p><strong>Usage:</strong> <code>dadrock status supersede [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--from &lt;FROM&gt;</code></li>
-<li><code>--to &lt;TO&gt;</code></li>
+<li><code>--from &lt;FROM&gt;</code> — An accepted record to supersede: full id, id prefix, filename, or title. Repeat for more</li>
+<li><code>--to &lt;TO&gt;</code> — An accepted record that replaces it. Repeat for more; every <code>--from</code> record gets every <code>--to</code> record as a successor</li>
 </ul>
 <h2 id="dadrock-validate"><code>dadrock validate</code><a class="headerlink" href="#dadrock-validate" title="Permanent link">&para;</a></h2>
 <p>Run project validation, or target records, links, tags, or changes.</p>
@@ -1996,32 +1996,32 @@
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the project validation's JSON envelope instead of text</li>
 </ul>
 <h3 id="dadrock-validate-records"><code>dadrock validate records</code><a class="headerlink" href="#dadrock-validate-records" title="Permanent link">&para;</a></h3>
 <p>Validate record front matter and structure.</p>
 <p><strong>Usage:</strong> <code>dadrock validate records [OPTIONS] [PATHS]...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;PATHS&gt;</code></li>
+<li><code>&lt;PATHS&gt;</code> — Record files or directories to validate (defaults to every record in the project)</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — No effect: this command always prints the JSON envelope</li>
 </ul>
 <h3 id="dadrock-validate-links"><code>dadrock validate links</code><a class="headerlink" href="#dadrock-validate-links" title="Permanent link">&para;</a></h3>
 <p>Report broken or ambiguous wikilinks and local Markdown links.</p>
 <p><strong>Usage:</strong> <code>dadrock validate links [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h3 id="dadrock-validate-tags"><code>dadrock validate tags</code><a class="headerlink" href="#dadrock-validate-tags" title="Permanent link">&para;</a></h3>
 <p>Report malformed YAML and inline tags.</p>
 <p><strong>Usage:</strong> <code>dadrock validate tags [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h3 id="dadrock-validate-changes"><code>dadrock validate changes</code><a class="headerlink" href="#dadrock-validate-changes" title="Permanent link">&para;</a></h3>
 <p>Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.</p>
@@ -2033,7 +2033,7 @@
 <p>Default value: <code>HEAD</code>
 * <code>--staged</code> — Compare the index (staged changes) instead of the working tree
 * <code>--strict</code> — Report title and body edits to accepted and rejected records as errors
-* <code>--json</code></p>
+* <code>--json</code> — Print the JSON envelope instead of text</p>
 <h2 id="dadrock-tags"><code>dadrock tags</code><a class="headerlink" href="#dadrock-tags" title="Permanent link">&para;</a></h2>
 <p>Inspect DADR tag usage.</p>
 <p><strong>Usage:</strong> <code>dadrock tags &lt;COMMAND&gt;</code></p>
@@ -2046,7 +2046,7 @@
 <p><strong>Usage:</strong> <code>dadrock tags list [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h2 id="dadrock-agent"><code>dadrock agent</code><a class="headerlink" href="#dadrock-agent" title="Permanent link">&para;</a></h2>
 <p>Call a configured local ACP agent for candidate drafting.</p>
@@ -2062,37 +2062,45 @@
 <p><strong>Usage:</strong> <code>dadrock agent check [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--agent &lt;AGENT&gt;</code></li>
-<li><code>--agent-arg &lt;AGENT_ARGS&gt;</code></li>
-<li><code>--no-mcp</code></li>
+<li><code>--agent &lt;AGENT&gt;</code> — The ACP agent program to start (defaults to <code>DADROCK_ACP_AGENT</code>, then an installed provider)</li>
+<li><code>--agent-arg &lt;AGENT_ARGS&gt;</code> — An extra argument for the agent program; repeat for more</li>
+<li><code>--no-mcp</code> — Start the agent without Dadrock's MCP tools</li>
 </ul>
 <h3 id="dadrock-agent-draft"><code>dadrock agent draft</code><a class="headerlink" href="#dadrock-agent-draft" title="Permanent link">&para;</a></h3>
 <p>Ask a local ACP agent to draft a candidate decision.</p>
 <p><strong>Usage:</strong> <code>dadrock agent draft [OPTIONS] &lt;PROMPT&gt;...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;PROMPT&gt;</code></li>
+<li><code>&lt;PROMPT&gt;</code> — The decision to draft; the words join into one prompt</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--write</code></li>
-<li><code>--json</code></li>
-<li><code>--permission &lt;PERMISSION&gt;</code></li>
+<li><code>--write</code> — Save the draft as a new candidate record; without it, the draft is only printed</li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
+<li><code>--permission &lt;PERMISSION&gt;</code> — How to answer the agent's tool permission requests</li>
 </ul>
 <p>Default value: <code>deny</code></p>
-<p>Possible values: <code>deny</code>, <code>allow-once</code>, <code>allow-always</code></p>
+<p>Possible values:
+  - <code>deny</code>:
+    Deny every tool permission request
+  - <code>allow-reads</code>:
+    Approve read, search, and think tool requests once; deny the rest
+  - <code>allow-once</code>:
+    Approve every tool permission request once
+  - <code>allow-always</code>:
+    Approve every tool permission request for the session</p>
 <ul>
-<li><code>--agent &lt;AGENT&gt;</code></li>
-<li><code>--agent-arg &lt;AGENT_ARGS&gt;</code></li>
-<li><code>--skill &lt;SKILLS&gt;</code> [alias: <code>prompt-pack</code>]</li>
-<li><code>--no-mcp</code></li>
+<li><code>--agent &lt;AGENT&gt;</code> — The ACP agent program to start (defaults to <code>DADROCK_ACP_AGENT</code>, then an installed provider)</li>
+<li><code>--agent-arg &lt;AGENT_ARGS&gt;</code> — An extra argument for the agent program; repeat for more</li>
+<li><code>--skill &lt;SKILLS&gt;</code> [alias: <code>prompt-pack</code>] — An agent skill or prompt pack to include, by name or path; repeat for more</li>
+<li><code>--no-mcp</code> — Start the agent without Dadrock's MCP tools</li>
 </ul>
 <h3 id="dadrock-agent-skills"><code>dadrock agent skills</code><a class="headerlink" href="#dadrock-agent-skills" title="Permanent link">&para;</a></h3>
 <p>List available Dadrock agent skills and prompt packs.</p>
 <p><strong>Usage:</strong> <code>dadrock agent skills [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h2 id="dadrock-task"><code>dadrock task</code><a class="headerlink" href="#dadrock-task" title="Permanent link">&para;</a></h2>
 <p>Discover, inspect, and run Dadrock task packages.</p>
@@ -2110,18 +2118,18 @@
 <p><strong>Usage:</strong> <code>dadrock task list [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h3 id="dadrock-task-show"><code>dadrock task show</code><a class="headerlink" href="#dadrock-task-show" title="Permanent link">&para;</a></h3>
 <p>Show one resolved task package.</p>
 <p><strong>Usage:</strong> <code>dadrock task show [OPTIONS] &lt;TASK_ID&gt;</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;TASK_ID&gt;</code></li>
+<li><code>&lt;TASK_ID&gt;</code> — The task id, as <code>dadrock task list</code> prints it</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 <li><code>--raw</code> — Print the task file exactly as written, front matter included</li>
 </ul>
 <h3 id="dadrock-task-run"><code>dadrock task run</code><a class="headerlink" href="#dadrock-task-run" title="Permanent link">&para;</a></h3>
@@ -2129,42 +2137,53 @@
 <p><strong>Usage:</strong> <code>dadrock task run [OPTIONS] &lt;TASK_ID&gt;</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;TASK_ID&gt;</code></li>
+<li><code>&lt;TASK_ID&gt;</code> — Task to run, by id (see <code>dadrock task list</code>)</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--input-json &lt;INPUT_JSON&gt;</code></li>
-<li><code>--path &lt;PATH&gt;</code> — File or directory to inspect</li>
-<li><code>--context &lt;CONTEXT&gt;</code> — Describe the decision to capture</li>
+<li><code>--input-json &lt;JSON&gt;</code> — Task inputs as a JSON object, for tasks without friendly input flags</li>
+<li><code>--path &lt;PATH&gt;</code> — File or directory to inspect (code-to-record)</li>
+<li><code>--context &lt;CONTEXT&gt;</code> — Describe the decision to capture (context-to-record)</li>
 <li><code>--focus &lt;FOCUS&gt;</code> — Topic to concentrate on (code-to-record, decisions-to-spec)</li>
 <li><code>--limit &lt;LIMIT&gt;</code> — Maximum initial candidates (code-to-record defaults to 5)</li>
-<li><code>--json</code></li>
-<li><code>--permission &lt;PERMISSION&gt;</code></li>
+<li><code>--instructions &lt;INSTRUCTIONS&gt;</code> — What the agent should do, as task context (required by custom)</li>
+<li><code>--record &lt;QUERY&gt;</code> — Record for the agent to work on, by id, short id, or title; repeatable</li>
+<li><code>--attach &lt;PATH&gt;</code> — File or folder for the agent to read, as task context; repeatable</li>
+<li><code>--json</code> — Print the run as a JSON command envelope</li>
+<li><code>--permission &lt;PERMISSION&gt;</code> — How to answer the agent's tool permission requests</li>
 </ul>
 <p>Default value: <code>deny</code></p>
-<p>Possible values: <code>deny</code>, <code>allow-once</code>, <code>allow-always</code></p>
+<p>Possible values:
+  - <code>deny</code>:
+    Deny every tool permission request
+  - <code>allow-reads</code>:
+    Approve read, search, and think tool requests once; deny the rest
+  - <code>allow-once</code>:
+    Approve every tool permission request once
+  - <code>allow-always</code>:
+    Approve every tool permission request for the session</p>
 <ul>
-<li><code>--agent &lt;AGENT&gt;</code></li>
-<li><code>--agent-arg &lt;AGENT_ARGS&gt;</code></li>
-<li><code>--no-mcp</code></li>
+<li><code>--agent &lt;PROGRAM&gt;</code> — ACP agent executable to run instead of the configured or detected one</li>
+<li><code>--agent-arg &lt;ARG&gt;</code> — Extra argument for the ACP agent; repeatable</li>
+<li><code>--no-mcp</code> — Do not attach Dadrock's MCP server to the agent session</li>
 </ul>
 <h3 id="dadrock-task-runs"><code>dadrock task runs</code><a class="headerlink" href="#dadrock-task-runs" title="Permanent link">&para;</a></h3>
 <p>List persisted local task runs.</p>
 <p><strong>Usage:</strong> <code>dadrock task runs [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h3 id="dadrock-task-result"><code>dadrock task result</code><a class="headerlink" href="#dadrock-task-result" title="Permanent link">&para;</a></h3>
 <p>Read a persisted task run result.</p>
 <p><strong>Usage:</strong> <code>dadrock task result [OPTIONS] &lt;RUN_ID&gt;</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;RUN_ID&gt;</code></li>
+<li><code>&lt;RUN_ID&gt;</code> — The run id, as <code>dadrock task runs</code> prints it</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the whole JSON envelope instead of the result alone</li>
 </ul>
 <h2 id="dadrock-mcp"><code>dadrock mcp</code><a class="headerlink" href="#dadrock-mcp" title="Permanent link">&para;</a></h2>
 <p>Serve Dadrock MCP tools over stdio.</p>
@@ -2178,32 +2197,32 @@
 <p><strong>Usage:</strong> <code>dadrock mcp serve [OPTIONS] [DIRECTORY]</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;DIRECTORY&gt;</code></li>
+<li><code>&lt;DIRECTORY&gt;</code> — The directory to find the project from (defaults to the current directory)</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--read-only</code></li>
+<li><code>--read-only</code> — Serve only the read tools, so no tool can create or change a record</li>
 </ul>
 <h2 id="dadrock-help"><code>dadrock help</code><a class="headerlink" href="#dadrock-help" title="Permanent link">&para;</a></h2>
 <p>Show top-level help or detailed metadata for one command.</p>
 <p><strong>Usage:</strong> <code>dadrock help [TOPIC]...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;TOPIC&gt;</code></li>
+<li><code>&lt;TOPIC&gt;</code> — The command to describe, such as <code>validate changes</code></li>
 </ul>
 <h2 id="dadrock-commands"><code>dadrock commands</code><a class="headerlink" href="#dadrock-commands" title="Permanent link">&para;</a></h2>
 <p>List command metadata for automation and command discovery.</p>
 <p><strong>Usage:</strong> <code>dadrock commands [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
-<li><code>--json</code></li>
+<li><code>--json</code> — Print the JSON envelope instead of text</li>
 </ul>
 <h2 id="dadrock-completions"><code>dadrock completions</code><a class="headerlink" href="#dadrock-completions" title="Permanent link">&para;</a></h2>
 <p>Generate a shell completion script.</p>
 <p><strong>Usage:</strong> <code>dadrock completions &lt;SHELL&gt;</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;SHELL&gt;</code></li>
+<li><code>&lt;SHELL&gt;</code> — The shell to generate the script for</li>
 </ul>
 <p>Possible values: <code>bash</code>, <code>zsh</code>, <code>fish</code></p>
 <!-- cli-docs:end -->
