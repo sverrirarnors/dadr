@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use serde::{Deserialize, Serialize};
 
 use super::{
-    apply_record_writes, check_required_sections, relocate, require_record_status,
+    apply_record_writes, check_required_sections, error_messages, relocate, require_record_status,
     resolve_unique_summaries, rewrite_for_converted_decision, rewrite_for_superseded_record,
     scanned_record_for_summary, supersedable_record, supersedes_section, with_supersedes_section,
     AcceptRecordResult, RecordMove, RecordWrite, Relocation, ScannedRecordSummary,
@@ -45,8 +45,10 @@ pub struct PendingSupersedes {
 /// other references to records have no effect. Records other than candidates
 /// have nothing pending.
 ///
-/// A malformed section, or one that names a missing record, a record that is
-/// not accepted, or the candidate itself, is an error. A predecessor that has
+/// A section that names a missing record, a record that is not accepted, or
+/// the candidate itself is an error. A malformed section names nothing here:
+/// [`status_record`](super::status_record) reports it with the record's
+/// diagnostics, so it is not reported twice. A predecessor that has
 /// been superseded since is reported in [`PendingSupersedes::stale`] with the
 /// decisions now in force in its place; accepting the candidate is refused
 /// until the link is retargeted.
@@ -66,6 +68,9 @@ pub fn pending_supersedes(
         "a `## Supersedes` section requires a candidate",
     )?;
 
+    if supersedes_section(&record.body.raw_markdown).is_err() {
+        return Ok(PendingSupersedes::default());
+    }
     let mut pending = PendingSupersedes::default();
     for predecessor in named_predecessors(index, &found.record, record)? {
         supersedable_record(index, &predecessor)?;
@@ -349,8 +354,9 @@ fn acceptable_candidate<'a>(
     let scanned = scanned_record_for_summary(index, candidate)?;
     if !scanned.is_valid() {
         return Err(DadrError::InvalidLifecycleTransition(format!(
-            "`{}` has validation errors and cannot be accepted",
-            candidate.path
+            "`{}` has validation errors and cannot be accepted: {}",
+            candidate.path,
+            error_messages(scanned)
         )));
     }
     let record = scanned.record.as_ref().ok_or_else(|| {
