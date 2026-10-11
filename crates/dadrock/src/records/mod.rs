@@ -13,11 +13,11 @@ pub use dadr::{
 };
 
 use crate::{
-    error::{DadrError, Diagnostic, DiagnosticCode},
+    error::{DadrError, Diagnostic, DiagnosticCode, DomainErrorKind},
     file_store,
-    ids::RecordId,
+    ids::{RecordId, RecordRef},
     index::ProjectIndex,
-    markdown::frontmatter::split_front_matter,
+    markdown::frontmatter::split_record_front_matter,
     model::{Record, RecordStatus},
     project::{utf8_to_path, ProjectContext},
     templates::candidate_template_body,
@@ -262,11 +262,19 @@ pub fn status_record(index: &ProjectIndex, query: &str) -> Result<RecordStatusRe
         })
         .collect();
 
+    let mut diagnostics = scanned.diagnostics.clone();
+    if let Some(record) = &scanned.record {
+        diagnostics.extend(
+            supersedes_diagnostic(&record.body.raw_markdown)
+                .map(|diagnostic| diagnostic.with_path(scanned.path.clone())),
+        );
+    }
+
     Ok(RecordStatusResult {
         record: found.record,
         successors,
         predecessors,
-        diagnostics: scanned.diagnostics.clone(),
+        diagnostics,
     })
 }
 
@@ -484,6 +492,19 @@ pub fn supersedes_section(body: &str) -> Result<Option<Supersedes>, DadrError> {
     Ok(Some(Supersedes { ids, reason }))
 }
 
+/// The error in a body's `## Supersedes` section, as a diagnostic, when the
+/// section cannot be read: repeated, not starting with a link, or with a link
+/// that is not a full id. These are what [`supersedes_section`] refuses, and so
+/// what acceptance refuses; `dadrock status` and `dadrock validate` report
+/// them with this message.
+pub fn supersedes_diagnostic(body: &str) -> Option<Diagnostic> {
+    let error = supersedes_section(body).err()?;
+    let message = error
+        .domain_message(DomainErrorKind::InvalidInput)
+        .map_or_else(|| error.to_string(), str::to_owned);
+    Some(Diagnostic::error(DiagnosticCode::InvalidSupersedes, message).with_field("body"))
+}
+
 /// The body with every `## Supersedes` section removed, for comparing versions.
 /// The rest of the body is unchanged, except that blank lines left at the end
 /// by removing a final section are dropped.
@@ -633,9 +654,17 @@ fn single_wikilink(text: &str) -> Option<&str> {
     (!inner.contains("[[") && !inner.contains("]]")).then_some(inner)
 }
 
+/// The id a `## Supersedes` link names. The link is a record link by full id
+/// (spec §8.1): the 36-character hyphenated form, with hex digits in either
+/// case. Short ids and other spellings of a UUID, which [`RecordId::parse`]
+/// reads in queries, are refused.
 fn supersedes_link_id(link: &str) -> Result<RecordId, DadrError> {
     let target = link.split('|').next().unwrap_or_default().trim();
-    RecordId::parse(target).map_err(|_| {
+    let full_id = match RecordRef::parse(target) {
+        Some(RecordRef::Full(_)) => RecordId::parse(target).ok(),
+        _ => None,
+    };
+    full_id.ok_or_else(|| {
         DadrError::InvalidInput(format!(
             "`## Supersedes` link `[[{link}]]` must name a record by its full id, such as [[<uuid>|<title>]]"
         ))
@@ -823,8 +852,9 @@ fn require_record_status<'a>(
     let scanned = scanned_record_for_summary(index, summary)?;
     if !scanned.is_valid() {
         return Err(DadrError::InvalidLifecycleTransition(format!(
-            "`{}` has validation errors and cannot be {invalid_verb}",
-            summary.path
+            "`{}` has validation errors and cannot be {invalid_verb}: {}",
+            summary.path,
+            error_messages(scanned)
         )));
     }
     let record = scanned.record.as_ref().ok_or_else(|| {
@@ -837,6 +867,21 @@ fn require_record_status<'a>(
         )));
     }
     Ok(record)
+}
+
+/// A scanned record's error messages, joined for a refusal.
+fn error_messages(scanned: &ScannedRecord) -> String {
+    let messages: Vec<_> = scanned
+        .diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.is_error())
+        .map(|diagnostic| diagnostic.message.as_str())
+        .collect();
+    if messages.is_empty() {
+        "the record could not be parsed".to_owned()
+    } else {
+        messages.join("; ")
+    }
 }
 
 fn resolve_unique_summaries(
@@ -959,16 +1004,19 @@ struct FrontMatterRewrite {
 }
 
 fn rewrite_front_matter(content: &str, rewrite: FrontMatterRewrite) -> Result<String, DadrError> {
-    let split = split_front_matter(content);
+    // The record split reports a byte-order mark and a `...` closing line, so
+    // a rewrite refuses them instead of silently writing `---` without a BOM.
+    let split = split_record_front_matter(content);
     let Some(raw_yaml) = split.raw_yaml else {
         return Err(DadrError::InvalidLifecycleTransition(
             "cannot rewrite front matter without YAML front matter".to_owned(),
         ));
     };
-    if split.diagnostics.iter().any(Diagnostic::is_error) {
-        return Err(DadrError::InvalidLifecycleTransition(
-            "cannot rewrite malformed YAML front matter".to_owned(),
-        ));
+    if let Some(diagnostic) = split.diagnostics.iter().find(|diag| diag.is_error()) {
+        return Err(DadrError::InvalidLifecycleTransition(format!(
+            "cannot rewrite malformed YAML front matter: {}",
+            diagnostic.message
+        )));
     }
 
     let mut mapping = match serde_yaml::from_str::<Value>(&raw_yaml)? {

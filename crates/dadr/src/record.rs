@@ -2,7 +2,7 @@ use serde_yaml::{Mapping, Value};
 
 use crate::{
     error::{Diagnostic, DiagnosticCode},
-    frontmatter::split_front_matter,
+    frontmatter::split_record_front_matter,
     model::{Record, RecordBody, RecordFrontMatter, RecordStatus, RecordSummary, Tag},
     RecordId,
 };
@@ -26,7 +26,7 @@ impl ParsedRecord {
 }
 
 pub fn parse_record_str(input: &str) -> ParsedRecord {
-    let split = split_front_matter(input);
+    let split = split_record_front_matter(input);
     let mut diagnostics = split.diagnostics;
 
     let Some(raw_yaml) = split.raw_yaml else {
@@ -83,6 +83,7 @@ pub fn parse_record_str(input: &str) -> ParsedRecord {
             },
             body: RecordBody {
                 raw_markdown: split.body,
+                line_offset: split.body_line_offset,
             },
         }),
         _ => None,
@@ -365,7 +366,10 @@ fn required_status(mapping: &Mapping, diagnostics: &mut Vec<Diagnostic>) -> Opti
 fn required_record_id(mapping: &Mapping, diagnostics: &mut Vec<Diagnostic>) -> Option<RecordId> {
     let value = required_string(mapping, "id", diagnostics)?;
     match RecordId::parse(&value) {
-        Ok(id) => Some(id),
+        Ok(id) => {
+            check_canonical_id(&value, id, "id", diagnostics);
+            Some(id)
+        }
         Err(_) => {
             diagnostics.push(
                 Diagnostic::error(
@@ -402,7 +406,10 @@ fn optional_record_id_array(
         .iter()
         .filter_map(|value| match value {
             Value::String(raw) => match RecordId::parse(raw) {
-                Ok(id) => Some(id),
+                Ok(id) => {
+                    check_canonical_id(raw, id, field, diagnostics);
+                    Some(id)
+                }
                 Err(_) => {
                     diagnostics.push(
                         Diagnostic::error(
@@ -426,6 +433,34 @@ fn optional_record_id_array(
             }
         })
         .collect()
+}
+
+/// Spec §3 and §5: a record writes an id, in `id` and in `successors`, as a
+/// lowercase hyphenated UUIDv7. [`RecordId::parse`] also reads uppercase,
+/// unhyphenated, braced, and `urn:uuid:` forms, which suits queries typed by
+/// people; in a record those forms are reported, and the record still parses
+/// so the rest of it can be checked.
+fn check_canonical_id(
+    raw: &str,
+    id: RecordId,
+    field: &'static str,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
+    let canonical = id.to_string();
+    if raw == canonical {
+        return;
+    }
+    let what = match field {
+        "id" => "`id`".to_owned(),
+        field => format!("`{field}` entry"),
+    };
+    diagnostics.push(
+        Diagnostic::error(
+            DiagnosticCode::NonCanonicalRecordId,
+            format!("{what} `{raw}` must be written in lowercase hyphenated form: `{canonical}`"),
+        )
+        .with_field(field),
+    );
 }
 
 fn optional_string_array(
@@ -548,6 +583,84 @@ mod tests {
         assert!(!is_iso_date("2026-05"));
         assert!(!is_iso_date("2026-05-07-draft"));
         assert!(!is_iso_date("01938b8e-4d70-7abc-8def-0123456789ab"));
+    }
+
+    // Spec §3 and §5: `id` and `successors` hold lowercase hyphenated
+    // UUIDv7s. Other spellings of the same UUID are reported, and the record
+    // still parses with the normalized id.
+    #[test]
+    fn reports_non_canonical_ids_and_successors() {
+        for written in [
+            "01938B8E-4D70-7ABC-8DEF-0123456789AB",
+            "01938b8e4d707abc8def0123456789ab",
+            "{01938b8e-4d70-7abc-8def-0123456789ab}",
+            "urn:uuid:01938b8e-4d70-7abc-8def-0123456789ab",
+        ] {
+            let parsed = parse_record_str(&format!(
+                "---\n\
+                 title: Spelled differently\n\
+                 status: accepted\n\
+                 id: \"{written}\"\n\
+                 successors:\n  - \"{written}\"\n\
+                 ---\n"
+            ));
+            let fields: Vec<_> = parsed
+                .diagnostics
+                .iter()
+                .filter(|diag| diag.code == DiagnosticCode::NonCanonicalRecordId)
+                .map(|diag| {
+                    assert!(diag.is_error());
+                    assert!(
+                        diag.message
+                            .contains("01938b8e-4d70-7abc-8def-0123456789ab"),
+                        "{}",
+                        diag.message
+                    );
+                    diag.field.as_deref().unwrap()
+                })
+                .collect();
+            assert_eq!(fields, ["id", "successors"], "{written}");
+            let record = parsed.record.expect(written);
+            assert_eq!(
+                record.front_matter.id.to_string(),
+                "01938b8e-4d70-7abc-8def-0123456789ab"
+            );
+        }
+    }
+
+    #[test]
+    fn canonical_ids_pass() {
+        let parsed = parse_record_str(
+            "---\n\
+             title: Canonical\n\
+             status: accepted\n\
+             id: 01938b8e-4d70-7abc-8def-0123456789ab\n\
+             successors:\n  - 01938c20-a3b4-7000-8000-111122223333\n\
+             ---\n",
+        );
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+    }
+
+    // Spec §3: the front matter closes with `---`; `...` is reported, and the
+    // record still parses so other problems are reported too.
+    #[test]
+    fn reports_document_end_fence() {
+        let parsed = parse_record_str(
+            "---\n\
+             title: Dots\n\
+             status: candidate\n\
+             id: 01938b8e-4d70-7abc-8def-0123456789ab\n\
+             ...\n\
+             ## Context\n",
+        );
+        assert!(parsed.has_errors());
+        assert_eq!(
+            parsed.diagnostics[0].code,
+            DiagnosticCode::MalformedFrontMatter
+        );
+        let record = parsed.record.unwrap();
+        assert_eq!(record.body.raw_markdown, "## Context\n");
+        assert_eq!(record.body.line_offset, 5);
     }
 
     #[test]

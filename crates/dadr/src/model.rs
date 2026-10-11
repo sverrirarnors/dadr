@@ -73,6 +73,11 @@ impl RecordFrontMatter {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecordBody {
     pub raw_markdown: String,
+    /// How many lines of the record file precede the body: the front matter
+    /// and its fences. Line `n` of the body (1-based) is line
+    /// `line_offset + n` of the file, the line diagnostics report.
+    #[serde(default)]
+    pub line_offset: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

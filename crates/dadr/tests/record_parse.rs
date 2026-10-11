@@ -21,8 +21,10 @@ fn parses_valid_candidate_fixture() {
     assert!(record.body.raw_markdown.contains("## Context"));
 }
 
+// Spec §2: a record is UTF-8 without a byte-order mark. The mark is reported;
+// the record still parses so the rest of it can be checked.
 #[test]
-fn parses_utf8_bom_before_frontmatter() {
+fn reports_utf8_bom_before_frontmatter() {
     let content = "\u{feff}---\n\
         title: BOM candidate\n\
         status: candidate\n\
@@ -34,7 +36,9 @@ fn parses_utf8_bom_before_frontmatter() {
         ## Consequences\n";
     let parsed = parse_record_str(content);
 
-    assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+    assert!(parsed.has_errors());
+    let codes: Vec<_> = parsed.diagnostics.iter().map(|diag| diag.code).collect();
+    assert_eq!(codes, [DiagnosticCode::ByteOrderMark]);
     assert_eq!(parsed.record.unwrap().front_matter.title, "BOM candidate");
 }
 

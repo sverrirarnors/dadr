@@ -30,7 +30,7 @@ The successor names its predecessors in a `## Supersedes` section, optionally fo
 Winsorizing at p99 still left implausible incomes in two waves.
 ```
 
-The section starts with one or more lines, each exactly one record link by full UUID, `[[uuid]]` or `[[uuid|label]]`. The text after the links, if any, is the reason, in ordinary Markdown. A record has at most one `## Supersedes` section, and the section must start with a link; acceptance refuses a candidate that breaks either rule, although `dadrock validate` does not report it. When DADRock writes the section, from the web interface, a `supersede-record` result, or [MCP](llms.md#mcp), it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links.
+The section starts with one or more lines, each exactly one record link by full UUID in its hyphenated form, `[[uuid]]` or `[[uuid|label]]`. The text after the links, if any, is the reason, in ordinary Markdown. A record has at most one `## Supersedes` section, and the section must start with a link. `dadrock validate` and `dadrock status` report a section that breaks either rule as an `invalid_supersedes` error, and so does `dadrock validate` for a candidate that names itself or a record that is not accepted; acceptance refuses such a candidate. When DADRock writes the section, from the web interface, a `supersede-record` result, or [MCP](llms.md#mcp), it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links.
 
 ## Accepting a successor
 

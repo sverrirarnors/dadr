@@ -14,7 +14,8 @@ use crate::{
     model::{Record, RecordStatus},
     project::{utf8_to_path, ProjectContext},
     records::{
-        check_required_sections, current_successors, record_list, supersedes_section, ScannedRecord,
+        check_required_sections, current_successors, record_list, supersedes_diagnostic,
+        supersedes_section, ScannedRecord,
     },
     tags::{build_tag_report, TagIssue},
     text::write_serde_label,
@@ -46,6 +47,11 @@ pub enum ProjectValidationIssueCode {
     UnresolvedSuccessor,
     InvalidSuccessor,
     SuccessorCycle,
+    /// A `## Supersedes` section that acceptance refuses: repeated, not
+    /// starting with a link, or with a link that is not a full id; or, in a
+    /// candidate, naming the candidate itself or a record that is not
+    /// accepted.
+    InvalidSupersedes,
     /// A candidate's `## Supersedes` names a record superseded since.
     StaleSupersedes,
     /// An accepted record's `## Supersedes` names a record that does not list
@@ -530,24 +536,68 @@ fn add_successor_graph_issues(scanned: &[ScannedRecord], issues: &mut Vec<Projec
     }
 }
 
-/// Check `## Supersedes` sections against the successor graph. A malformed
-/// section or a missing predecessor is reported elsewhere: by the record's
-/// lifecycle data and by the link check.
+/// Check `## Supersedes` sections against the successor graph. A section
+/// that cannot be read is an error, with the message acceptance refuses it
+/// with. A candidate's section must name accepted records other than itself;
+/// a predecessor that is not a record is reported by the link check, as a
+/// broken wikilink.
 fn add_supersedes_issues(index: &ProjectIndex, issues: &mut Vec<ProjectValidationIssue>) {
     for scanned_record in index.scanned_records() {
         let Some(record) = &scanned_record.record else {
             continue;
         };
-        let Ok(Some(section)) = supersedes_section(&record.body.raw_markdown) else {
-            continue;
-        };
         let id = record.front_matter.id;
         let title = &record.front_matter.title;
+        let body = &record.body.raw_markdown;
+        let section = match supersedes_section(body) {
+            Ok(Some(section)) => section,
+            Ok(None) => continue,
+            Err(_) => {
+                if let Some(diagnostic) = supersedes_diagnostic(body) {
+                    issues.push(
+                        ProjectValidationIssue::error(
+                            ProjectValidationIssueCode::InvalidSupersedes,
+                            format!("`{title}`: {}", diagnostic.message),
+                        )
+                        .with_path(scanned_record.path.clone())
+                        .with_record_id(id)
+                        .with_record_code(diagnostic.code)
+                        .with_field(Some("body".to_owned())),
+                    );
+                }
+                continue;
+            }
+        };
         for predecessor_id in section.ids {
+            let candidate = record.front_matter.status == RecordStatus::Candidate;
+            if candidate && predecessor_id == id {
+                issues.push(
+                    ProjectValidationIssue::error(
+                        ProjectValidationIssueCode::InvalidSupersedes,
+                        format!(
+                            "`{title}` names itself in `## Supersedes`; a record cannot supersede itself"
+                        ),
+                    )
+                    .with_path(scanned_record.path.clone())
+                    .with_record_id(id)
+                    .with_field(Some("body".to_owned())),
+                );
+                continue;
+            }
             let Some(predecessor) = index.summary_by_id(predecessor_id) else {
                 continue;
             };
             let issue = match record.front_matter.status {
+                RecordStatus::Candidate if predecessor.status != RecordStatus::Accepted => {
+                    ProjectValidationIssue::error(
+                        ProjectValidationIssueCode::InvalidSupersedes,
+                        format!(
+                            "`{title}` names `{}` in `## Supersedes`, but `{}` is {}; only an accepted decision can be superseded",
+                            predecessor.title, predecessor.title, predecessor.status
+                        ),
+                    )
+                    .with_related_paths(vec![predecessor.path.clone()])
+                }
                 RecordStatus::Candidate if predecessor.superseded => {
                     let current = current_successors(index, predecessor_id);
                     let mut related = vec![predecessor.path.clone()];
