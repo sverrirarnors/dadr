@@ -49,6 +49,9 @@ fn dispatch_command(command: cli::Command) -> Result<ExitCode> {
         cli::Command::New(args) => new_record(args),
         cli::Command::List(args) => list(args),
         cli::Command::Status(args) => status(args),
+        cli::Command::Accept(args) => status_accept(args),
+        cli::Command::Reject(args) => status_reject(args),
+        cli::Command::Supersede(args) => status_supersede(args),
         cli::Command::Validate(args) => validate(args),
         cli::Command::Tags(args) => tags(args),
         cli::Command::Mcp(args) => mcp(args),
@@ -435,8 +438,11 @@ fn task_show(args: cli::TaskShowArgs) -> Result<ExitCode> {
 }
 
 fn task_run(args: cli::TaskRunArgs) -> Result<ExitCode> {
-    let input = serde_json::from_str(&args.input_json)
-        .context("task run --input-json must be valid JSON")?;
+    let input = args.task_input()?;
+    let mut context = TaskContext::default();
+    if let Some(path) = input.get("path").and_then(serde_json::Value::as_str) {
+        context.paths.push(path.to_owned());
+    }
     let local_agent = if args.agent.is_some() || !args.agent_args.is_empty() {
         Some(local_acp_agent_command(
             "task run",
@@ -451,7 +457,7 @@ fn task_run(args: cli::TaskRunArgs) -> Result<ExitCode> {
         TaskRunCommandRequest {
             task_id: args.task_id,
             input,
-            context: TaskContext::default(),
+            context,
             local_agent,
             permission_policy: args.permission.into(),
             enable_dadrock_mcp: !args.no_mcp,

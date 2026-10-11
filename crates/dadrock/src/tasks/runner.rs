@@ -104,6 +104,17 @@ pub fn validate_task_context_requirements(
     context: &TaskContext,
 ) -> Result<(), DadrError> {
     validate_required_inputs(task, input)?;
+    if task.manifest.id == "code-to-record"
+        && task.source.kind == crate::tasks::TaskSourceKind::Builtin
+    {
+        if let Some(limit) = input.get("limit") {
+            if limit.as_u64().is_none_or(|n| n == 0) {
+                return Err(DadrError::InvalidInput(
+                    "limit must be a positive integer".to_owned(),
+                ));
+            }
+        }
+    }
     if matches!(requirements.paths, TaskPathRequirement::Required)
         && context.paths.iter().all(|p| p.trim().is_empty())
     {
@@ -548,16 +559,19 @@ fn execute_created_task_run(
     let _cancellation_registration =
         TaskCancellationRegistration::register(run.id, cancellation.clone())
             .map_err(TaskRunFailure::from)?;
-    preflight_dadr_skill_access(
-        project,
-        task,
-        local_agent,
-        permission_policy,
-        enable_dadrock_mcp,
-        run,
-        events.clone(),
-    )
-    .map_err(TaskRunFailure::from)?;
+    // Built-in tasks ship their complete instructions; external skills are optional.
+    if task.source.kind != crate::tasks::TaskSourceKind::Builtin {
+        preflight_dadr_skill_access(
+            project,
+            task,
+            local_agent,
+            permission_policy,
+            enable_dadrock_mcp,
+            run,
+            events.clone(),
+        )
+        .map_err(TaskRunFailure::from)?;
+    }
     let current_run = read_task_run(&run.run_dir).map_err(TaskRunFailure::from)?;
     if current_run.status == TaskRunStatus::Cancelled {
         return Ok(current_run);
@@ -581,6 +595,7 @@ fn execute_created_task_run(
         AcpPromptOptions {
             permission_policy,
             enable_dadrock_mcp,
+            dadrock_mcp_access: task_mcp_access(task),
             ..AcpPromptOptions::default()
         },
         events.clone(),
@@ -617,6 +632,7 @@ fn execute_created_task_run(
                 AcpPromptOptions {
                     permission_policy,
                     enable_dadrock_mcp,
+                    dadrock_mcp_access: task_mcp_access(task),
                     ..AcpPromptOptions::default()
                 },
                 events,
@@ -661,6 +677,7 @@ fn preflight_dadr_skill_access(
         AcpPromptOptions {
             permission_policy,
             enable_dadrock_mcp,
+            dadrock_mcp_access: task_mcp_access(task),
             ..AcpPromptOptions::default()
         },
         events,
@@ -803,4 +820,12 @@ fn task_run_log_sink(run_dir: camino::Utf8PathBuf) -> AcpPromptEventSink {
             }
         }
     })
+}
+
+fn task_mcp_access(task: &TaskPackage) -> crate::mcp::DadrockMcpAccess {
+    if task.manifest.id == "context-to-record" {
+        crate::mcp::DadrockMcpAccess::ReadOnly
+    } else {
+        AcpPromptOptions::default().dadrock_mcp_access
+    }
 }

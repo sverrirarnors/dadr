@@ -431,9 +431,9 @@ mod tests {
         let content = fs::read_to_string(&candidate.path).unwrap();
         assert!(content.contains("status: candidate"));
         assert!(content.contains("Use local ACP agent drafts"));
-        assert!(content.contains("origin/agent"));
+        assert!(content.contains("writer/agent"));
         assert!(content.contains("confidence/medium"));
-        assert!(content.contains("origin/agent/local-test"));
+        assert!(content.contains("writer/agent/local-test"));
         assert!(content.contains("Use ACP to prompt"));
         assert!(!content.contains("accepted_at:"));
         assert!(!content.contains("created:"));
@@ -502,7 +502,7 @@ mod tests {
         assert!(content.contains(&format!("id: {original_id}")));
         assert!(content.contains("Use Markdown with TOML frontmatter"));
         assert!(content.contains("kind/format"));
-        assert!(content.contains("origin/agent"));
+        assert!(content.contains("writer/agent"));
         assert!(content.contains("confidence/high"));
         assert!(content.contains("Use Markdown files with TOML frontmatter."));
         assert!(!content.contains("accepted_at:"));

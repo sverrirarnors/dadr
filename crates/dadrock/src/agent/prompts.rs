@@ -110,11 +110,11 @@ Use the task prompt, task input, and project snapshot below.
 
 {prompt_packs}
 
-Before doing the task, load and use your installed `dadr` skill. Use the matching task guide for task id `{task_id}`. If you cannot access the installed `dadr` skill, return a JSON object for the declared output kind explaining that the skill is unavailable.
+The supplied instructions for task id `{task_id}` are sufficient. If an installed `dadr` skill is available, you may consult its matching task guide for additional context, but an external skill is not required for built-in tasks.
 
 {dadr_guidance}
 
-The matching `dadr` task guide is authoritative for tool use. If the matching `dadr` task guide instructs you to write files or call Dadrock MCP tools, do that before reporting completion. The `dadrock.submit_task_result` tool may be used with the task `run_id` only after completing those skill-required writes. After a successful submission, your final message may be brief plain text. If you do not submit through the tool, your final message must be the result JSON object.
+The supplied task prompt is authoritative for tool use. Follow its instructions about whether to propose changes or write files; a general skill guide must not turn a proposal-only task into a file-writing task. The `dadrock.submit_task_result` tool may be used with the task `run_id` when available. After a successful submission, your final message may be brief plain text. If you do not submit through the tool, your final message must be the result JSON object.
 
 Any result JSON object must include `"kind": "{output_kind}"`. Do not return a JSON array, string, null, markdown fence, or explanatory text outside the JSON object.
 

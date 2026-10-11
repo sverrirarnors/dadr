@@ -323,11 +323,11 @@ Final answer:
         let mut response = valid_agent_response();
         response.frontmatter = serde_json::json!({
             "tags": [
-                "origin/agent",
-                "#origin/agent",
+                "writer/agent",
+                "#writer/agent",
                 "kind/format",
                 "Kind/Format",
-                "origin/agent/local-test"
+                "writer/agent/local-test"
             ]
         });
         response.provenance.model = Some("local test".to_owned());
@@ -336,7 +336,7 @@ Final answer:
             .expect("candidate metadata")
             .tags;
 
-        assert_eq!(tags.iter().filter(|tag| *tag == "origin/agent").count(), 1);
+        assert_eq!(tags.iter().filter(|tag| *tag == "writer/agent").count(), 1);
         assert_eq!(
             tags.iter()
                 .filter(|tag| tag.eq_ignore_ascii_case("kind/format"))
@@ -345,7 +345,7 @@ Final answer:
         );
         assert_eq!(
             tags.iter()
-                .filter(|tag| *tag == "origin/agent/local-test")
+                .filter(|tag| *tag == "writer/agent/local-test")
                 .count(),
             1
         );

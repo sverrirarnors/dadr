@@ -1283,8 +1283,8 @@ fn run_task_prompt_demands_declared_output_kind() {
     assert!(prompt.contains("01960000000000000000000000"));
     assert!(prompt.contains("Pay attention to lifecycle drift."));
     assert!(prompt.contains("crates/dadrock/src/mcp.rs"));
-    assert!(prompt.contains("If the matching `dadr` task guide instructs you to write files"));
-    assert!(prompt.contains("only after completing those skill-required writes"));
+    assert!(prompt.contains("supplied task prompt is authoritative for tool use"));
+    assert!(prompt.contains("must not turn a proposal-only task into a file-writing task"));
     assert!(!prompt.contains("prefer calling it with the task `run_id`"));
     assert!(prompt.contains("\"kind\": \"markdown_report.v1\""));
     assert!(prompt.contains("Dadrock task request:"));
@@ -1393,7 +1393,7 @@ fn supersede_task_prompt_requires_predecessor_wikilink() {
 }
 
 #[test]
-fn run_task_prompt_requests_installed_dadr_skill() {
+fn run_task_prompt_does_not_require_external_skill_for_builtins() {
     let root = unique_temp_dir("dadrock-task-agent-installed-skill");
     fs::create_dir_all(&root).expect("create temp dir");
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
@@ -1416,7 +1416,7 @@ fn run_task_prompt_requests_installed_dadr_skill() {
 
     let prompt = run_task_prompt(&request).expect("render task prompt");
 
-    assert!(prompt.contains("load and use your installed `dadr` skill"));
+    assert!(prompt.contains("external skill is not required for built-in tasks"));
     assert!(prompt.contains("task id `code-to-record`"));
     assert!(!prompt.contains("--- Prompt pack: dadr"));
 
@@ -1988,4 +1988,31 @@ fn unique_temp_dir(label: &str) -> PathBuf {
 fn read_json(path: Utf8PathBuf) -> serde_json::Value {
     let content = fs::read_to_string(path).expect("read json file");
     serde_json::from_str(&content).expect("parse json file")
+}
+
+#[test]
+fn code_drafting_rejects_invalid_json_limits_before_starting_agent() {
+    let _env_lock = TASK_ENV_LOCK.lock().unwrap();
+    let root = unique_temp_dir("dadrock-invalid-limit");
+    init_project(&root).unwrap();
+    let context = CommandContext::from_path(&root).unwrap();
+    for limit in [json!(0), json!(-1), json!(1.5), json!("5")] {
+        let error = run_task_command(
+            &context,
+            TaskRunCommandRequest {
+                task_id: "code-to-record".to_owned(),
+                input: json!({"path":".", "limit":limit}),
+                context: TaskContext {
+                    paths: vec![".".to_owned()],
+                    ..Default::default()
+                },
+                local_agent: None,
+                permission_policy: dadrock::agent::acp::AcpPermissionPolicy::Deny,
+                enable_dadrock_mcp: false,
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("positive integer"));
+    }
+    fs::remove_dir_all(root).unwrap();
 }

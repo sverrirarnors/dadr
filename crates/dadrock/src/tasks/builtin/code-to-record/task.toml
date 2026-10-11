@@ -18,6 +18,13 @@ label = "Focus"
 type = "textarea"
 required = false
 
+[[inputs]]
+name = "limit"
+label = "Maximum decisions"
+type = "number"
+default = "5"
+required = false
+
 [requirements]
 records = "none"
 record_status = "all"

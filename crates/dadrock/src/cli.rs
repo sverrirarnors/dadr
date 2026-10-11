@@ -49,6 +49,12 @@ pub enum Command {
     List(ListArgs),
     #[command(about = "Inspect one record's lifecycle status or run lifecycle transitions.")]
     Status(StatusArgs),
+    #[command(about = "Accept a candidate decision.")]
+    Accept(QueryArgs),
+    #[command(about = "Reject a candidate decision.")]
+    Reject(QueryArgs),
+    #[command(about = "Link replacement decisions to the decisions they replace.")]
+    Supersede(StatusSupersedeArgs),
     #[command(about = "Run project validation, or target records, links, or tags.")]
     Validate(ValidateArgs),
     #[command(about = "Inspect DADR tag usage.")]
@@ -354,8 +360,20 @@ pub struct TaskShowArgs {
 #[derive(Debug, Args)]
 pub struct TaskRunArgs {
     pub task_id: String,
-    #[arg(long = "input-json")]
-    pub input_json: String,
+    #[arg(long = "input-json", conflicts_with_all = ["path", "context", "focus", "limit"])]
+    pub input_json: Option<String>,
+    /// File or directory to inspect.
+    #[arg(long)]
+    pub path: Option<String>,
+    /// Describe the decision to capture.
+    #[arg(long)]
+    pub context: Option<String>,
+    /// Focus the code review on a topic.
+    #[arg(long)]
+    pub focus: Option<String>,
+    /// Maximum initial candidates (code-to-record defaults to 5).
+    #[arg(long, value_parser = clap::value_parser!(u32).range(1..))]
+    pub limit: Option<u32>,
     #[arg(long)]
     pub json: bool,
     #[arg(long, value_enum, default_value_t = PermissionPolicyArg::Deny)]
@@ -366,6 +384,42 @@ pub struct TaskRunArgs {
     pub agent_args: Vec<String>,
     #[arg(long = "no-mcp")]
     pub no_mcp: bool,
+}
+
+impl TaskRunArgs {
+    pub fn task_input(&self) -> anyhow::Result<serde_json::Value> {
+        if let Some(json) = &self.input_json {
+            return Ok(serde_json::from_str(json)?);
+        }
+        let mut input = serde_json::Map::new();
+        for (name, value) in [
+            ("path", &self.path),
+            ("context", &self.context),
+            ("focus", &self.focus),
+        ] {
+            if let Some(value) = value {
+                input.insert(name.to_owned(), serde_json::json!(value));
+            }
+        }
+        if let Some(limit) = self.limit {
+            input.insert("limit".to_owned(), serde_json::json!(limit));
+        }
+        match self.task_id.as_str() {
+            "code-to-record" => {
+                anyhow::ensure!(self.context.is_none(), "code-to-record accepts --path, --focus and --limit; use context-to-record for --context");
+                input.entry("path").or_insert(serde_json::json!("."));
+                input.entry("limit").or_insert(serde_json::json!(5));
+            }
+            "context-to-record" => {
+                anyhow::ensure!(
+                    self.path.is_none() && self.focus.is_none() && self.limit.is_none(),
+                    "context-to-record accepts --context"
+                );
+            }
+            _ => anyhow::ensure!(input.is_empty(), "use --input-json for custom task inputs"),
+        }
+        Ok(serde_json::Value::Object(input))
+    }
 }
 
 #[derive(Debug, Args)]
@@ -664,7 +718,10 @@ mod tests {
             panic!("expected task run command");
         };
         assert_eq!(args.task_id, "find-conflicts");
-        assert_eq!(args.input_json, r#"{"status_scope":"live"}"#);
+        assert_eq!(
+            args.input_json.as_deref(),
+            Some(r#"{"status_scope":"live"}"#)
+        );
         assert!(args.json);
         assert!(matches!(args.permission, PermissionPolicyArg::AllowOnce));
         assert_eq!(args.agent.as_deref(), Some("codex"));
@@ -704,5 +761,91 @@ mod tests {
         };
         assert_eq!(args.run_id, "019abf91-8b0d-7000-8000-000000000001");
         assert!(args.json);
+    }
+}
+
+#[cfg(test)]
+mod simple_workflow_tests {
+    use super::*;
+    fn input(args: &[&str]) -> serde_json::Value {
+        let cli = Cli::try_parse_from(args).unwrap();
+        let Some(Command::Task(TaskArgs {
+            command: TaskCommand::Run(args),
+        })) = cli.command
+        else {
+            panic!("task run")
+        };
+        args.task_input().unwrap()
+    }
+    #[test]
+    fn friendly_task_inputs_and_defaults() {
+        assert_eq!(
+            input(&["dadrock", "task", "run", "code-to-record"]),
+            serde_json::json!({"path":".","limit":5})
+        );
+        assert_eq!(
+            input(&[
+                "dadrock",
+                "task",
+                "run",
+                "code-to-record",
+                "--path",
+                "analysis/",
+                "--limit",
+                "12"
+            ]),
+            serde_json::json!({"path":"analysis/","limit":12})
+        );
+        assert_eq!(
+            input(&[
+                "dadrock",
+                "task",
+                "run",
+                "context-to-record",
+                "--context",
+                "Exclude missing income"
+            ]),
+            serde_json::json!({"context":"Exclude missing income"})
+        );
+    }
+    #[test]
+    fn rejects_ambiguous_and_zero_limit() {
+        assert!(Cli::try_parse_from([
+            "dadrock",
+            "task",
+            "run",
+            "code-to-record",
+            "--input-json",
+            "{}",
+            "--path",
+            "."
+        ])
+        .is_err());
+        assert!(
+            Cli::try_parse_from(["dadrock", "task", "run", "code-to-record", "--limit", "0"])
+                .is_err()
+        );
+    }
+    #[test]
+    fn direct_lifecycle_commands_preserve_legacy_commands() {
+        assert!(matches!(
+            Cli::try_parse_from(["dadrock", "accept", "abc"])
+                .unwrap()
+                .command,
+            Some(Command::Accept(_))
+        ));
+        assert!(matches!(
+            Cli::try_parse_from(["dadrock", "reject", "abc"])
+                .unwrap()
+                .command,
+            Some(Command::Reject(_))
+        ));
+        assert!(matches!(
+            Cli::try_parse_from(["dadrock", "supersede", "--from", "abc", "--to", "def"])
+                .unwrap()
+                .command,
+            Some(Command::Supersede(_))
+        ));
+        assert!(Cli::try_parse_from(["dadrock", "status", "accept", "abc"]).is_ok());
     }
 }
