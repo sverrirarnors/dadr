@@ -1,0 +1,977 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+      
+      
+      
+        <link rel="canonical" href="https://vincentarelbundock.github.io/dadr/dadrock/llms/">
+      
+      
+        <link rel="prev" href="../editors/">
+      
+      
+        <link rel="next" href="../cli/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/dadr_logo.svg">
+      <meta name="generator" content="zensical-0.0.40">
+    
+    
+      
+        <title>LLM agents - DADR</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.fba56155.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+  
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Serif+4:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Source Serif 4";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+    
+      <link rel="stylesheet" href="../../stylesheets/home.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  
+    
+  
+  
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DADR">
+  <meta property="og:title" content="LLM agents - DADR">
+  <meta property="og:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  
+    <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/dadrock/llms/">
+  
+  <meta property="og:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DADR — Data Analysis Decision Records">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LLM agents - DADR">
+  <meta name="twitter:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  <meta name="twitter:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="red">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#llm-agents" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      <header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="DADR" class="md-header__button md-logo" aria-label="DADR" data-md-component="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+     stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+     viewBox="0 0 24 24" role="img" aria-label="Home"
+     style="height:1.2rem;width:1.2rem">
+  <title>Home</title>
+  <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+  <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+</svg>
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    
+    
+    <nav class="dadr-header-nav" aria-label="Primary">
+      
+        <a href="../../core/" class="dadr-header-nav__link">Documentation</a>
+      
+        <a href="../" class="dadr-header-nav__link dadr-header-nav__link--active" aria-current="page">Software</a>
+      
+    </nav>
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/vincentarelbundock/dadr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vincentarelbundock/dadr
+  </div>
+</a>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="DADR" class="md-nav__button md-logo" aria-label="DADR" data-md-component="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+     stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+     viewBox="0 0 24 24" role="img" aria-label="Home"
+     style="height:1.2rem;width:1.2rem">
+  <title>Home</title>
+  <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+  <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+</svg>
+    </a>
+    DADR
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/vincentarelbundock/dadr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vincentarelbundock/dadr
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  DADR
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../specification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Specification
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tags
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../uuidv7/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  UUID v7
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  DADRock
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  DADRock
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web interface
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../editors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Editors
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  LLM agents
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  LLM agents
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        MCP
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ACP
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ACP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-one-local-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configure one local agent
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#draft-for-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Draft for review
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-workflows-and-run-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Custom workflows and run history
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CLI
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Roadmap
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        MCP
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ACP
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ACP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-one-local-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Configure one local agent
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#draft-for-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Draft for review
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-workflows-and-run-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Custom workflows and run history
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CLI
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="llm-agents">LLM agents<a class="headerlink" href="#llm-agents" title="Permanent link">&para;</a></h1>
+<p>Agent assistance is optional. The <a href="../web/#first-decision">first decision</a> needs only DADRock. Agents can work with DADRock in three ways:</p>
+<ul>
+<li><strong><a href="#mcp">MCP</a>:</strong> an agent client calls DADRock's tools through its Model Context Protocol server.</li>
+<li><strong><a href="#acp">ACP</a>:</strong> DADRock directs a local agent through the Agent Client Protocol to draft and revise candidates.</li>
+<li><strong><a href="#cli">CLI</a>:</strong> an agent that runs shell commands uses <code>dadrock</code> directly.</li>
+</ul>
+<p>Whichever route you use, agent outputs are proposals for review. Code can show what happened without establishing why; correct unsupported claims and supply missing rationale before accepting. Acceptance and rejection remain human decisions.</p>
+<h2 id="mcp">MCP<a class="headerlink" href="#mcp" title="Permanent link">&para;</a></h2>
+<p>DADRock exposes a Model Context Protocol server over stdio:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dadrock<span class="w"> </span>mcp<span class="w"> </span>serve
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>dadrock<span class="w"> </span>mcp<span class="w"> </span>serve<span class="w"> </span>--read-only
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>dadrock<span class="w"> </span>mcp<span class="w"> </span>serve<span class="w"> </span>path/to/project
+</span></code></pre></div>
+<p>The normal server exposes inspection and mutation tools through the same command layer as the CLI: listing, searching, and reading records, lifecycle status, tags, tasks and task runs, validation, and a project snapshot; plus creating candidates, accepting, rejecting, superseding, and submitting task results. Use read-only mode for clients that should only inspect records. Human approval is still required for acceptance or rejection.</p>
+<p>Register the server with your client as a stdio command. The configuration file and its location depend on the client; many accept an entry like this:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&quot;dadrock&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dadrock&quot;</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;serve&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--read-only&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;/path/to/project&quot;</span><span class="p">]</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<h2 id="acp">ACP<a class="headerlink" href="#acp" title="Permanent link">&para;</a></h2>
+<p>DADRock connects to a locally installed agent through the Agent Client Protocol (ACP). The agent may use a remote model. You need an ACP-compatible provider or bridge and its authentication. An ordinary <code>claude</code> or <code>codex</code> executable alone is not necessarily an ACP provider.</p>
+<p>Use your provider's own installation and authentication instructions. Choose a bridge explicitly supported by your agent provider. DADRock does not install providers or manage their credentials.</p>
+<h3 id="configure-one-local-agent">Configure one local agent<a class="headerlink" href="#configure-one-local-agent" title="Permanent link">&para;</a></h3>
+<p>DADRock looks for known provider commands on <code>PATH</code>, such as <code>claude-agent-acp</code>, <code>codex-acp</code>, or <code>gemini --acp</code>. To choose one, set <code>DADROCK_ACP_AGENT</code> to the executable and put any arguments in <code>DADROCK_ACP_AGENT_ARGS</code>, or pass <code>--agent</code> and <code>--agent-arg</code> to a single command. Check the connection:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>check
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>dadrock<span class="w"> </span>agent<span class="w"> </span>skills
+</span></code></pre></div>
+<p>Built-in tasks include their own instructions; no separately installed skill is required. <code>agent skills</code> lists optional local instructions.</p>
+<p>DADRock attaches its own <a href="#mcp">MCP server</a> to its agent sessions by default. <code>--no-mcp</code> disables that attachment for providers where it is unsuitable.</p>
+<h3 id="draft-for-review">Draft for review<a class="headerlink" href="#draft-for-review" title="Permanent link">&para;</a></h3>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dadrock<span class="w"> </span>task<span class="w"> </span>run<span class="w"> </span>code-to-record<span class="w"> </span>--path<span class="w"> </span>analysis/<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>dadrock<span class="w"> </span>task<span class="w"> </span>run<span class="w"> </span>context-to-record<span class="w"> </span>--context<span class="w"> </span><span class="s2">&quot;Explain our choice of sample restrictions&quot;</span>
+</span></code></pre></div>
+<p>The limit asks the agent to prioritize a small batch, rather than treating every operation as a decision. It is a drafting request, not a hard guarantee on model output. The <a href="../web/#draft">web interface</a> offers the same drafting actions, and results land in its Inbox.</p>
+<p>Tool permission requests default to <code>deny</code>. When your selected workflow needs tools, explicitly choose the appropriate permission mode with <code>--permission allow-once</code> or <code>--permission allow-always</code>. This does not authorize an agent to accept decisions on your behalf.</p>
+<p><code>dadrock agent draft</code> remains available for compatibility. New workflows should use <code>task run context-to-record</code>.</p>
+<h3 id="custom-workflows-and-run-history">Custom workflows and run history<a class="headerlink" href="#custom-workflows-and-run-history" title="Permanent link">&para;</a></h3>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dadrock<span class="w"> </span>task<span class="w"> </span>list
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>dadrock<span class="w"> </span>task<span class="w"> </span>show<span class="w"> </span>code-to-record
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>dadrock<span class="w"> </span>task<span class="w"> </span>runs
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>dadrock<span class="w"> </span>task<span class="w"> </span>result<span class="w"> </span>RUN_ID
+</span></code></pre></div>
+<p>Built-in workflows include drafting, editing candidates, proposing replacements, merging drafts, finding conflicts, and synthesizing accepted decisions. Project overrides live in <code>dadr/tasks/&lt;task-id&gt;/</code>, with a <code>task.toml</code> manifest and a prompt file. Inspect an existing task before customizing it. Advanced and third-party inputs can use <code>--input-json</code>; do not combine it with friendly input flags such as <code>--path</code> or <code>--context</code>.</p>
+<p>Runs are persisted under <code>dadr/runs/</code>, which is ignored by default and may contain source excerpts or model transcripts. Output kinds determine how results are rendered. Protocol and run metadata stay outside record front matter.</p>
+<h2 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h2>
+<p>Coding agents that run shell commands can drive <code>dadrock</code> like any other tool. Its machine-readable output is a JSON command envelope with <code>command</code>, <code>ok</code>, and <code>data</code>, plus <code>diagnostics</code> and <code>changed_paths</code> when there are any. Commands such as <code>list</code> and <code>new</code> always print it; commands with a human-readable summary, such as <code>validate</code>, print it with <code>--json</code>:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dadrock<span class="w"> </span>commands<span class="w"> </span>--json
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>dadrock<span class="w"> </span>list<span class="w"> </span>--status<span class="w"> </span>candidate
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>dadrock<span class="w"> </span>new<span class="w"> </span><span class="s2">&quot;Decision title&quot;</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>--json
+</span></code></pre></div>
+<p><code>dadrock commands --json</code> describes every command: its usage, whether it changes the project, whether it supports JSON, and when it exits non-zero. <code>dadrock help COMMAND</code> prints the same detail for one command. The full list is in the <a href="../cli/#reference">command-line reference</a>.</p>
+<p>For guidance beyond the built-in tasks, copy <code>skills/dadr/</code> from this checkout to your agent's supported skill directory, such as <code>.agents/skills/dadr</code> or <code>~/.codex/skills/dadr</code>. The agent's own discovery rules determine which location works. The skill routes requests such as bootstrapping candidates from existing code, finding conflicting decisions, or synthesizing a spec to the matching <code>dadrock</code> commands.</p>
+<p>Future automated faithfulness and coverage checks are described on the <a href="../../roadmap/">roadmap</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../editors/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Editors">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Editors
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../cli/" class="md-footer__link md-footer__link--next" aria-label="Next: Command line">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Command line
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","navigation.footer","toc.follow"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.dbc0afdc.min.js"></script>
+      
+    
+  </body>
+</html>

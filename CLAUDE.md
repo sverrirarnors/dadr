@@ -117,7 +117,7 @@ The spec (`docs-src/specification.md`) is authoritative. In short:
 
 ## Onboarding and agent boundaries
 
-Agent tasks return proposals for human review. Do not invent an analyst's rationale from code alone or automatically accept a candidate. Advanced ACP/MCP integration details belong in `docs-src/llms.md`, not onboarding.
+Agent tasks return proposals for human review. Do not invent an analyst's rationale from code alone or automatically accept a candidate. Advanced ACP/MCP integration details belong in `docs-src/dadrock/llms.md`, not onboarding.
 
 Use `dadrock accept`, `dadrock reject`, and `dadrock supersede` for everyday lifecycle actions; the `status` subcommands remain compatible. A replacement candidate can include an optional `## Replaces` section with a labeled full-UUID link. Acceptance validates and links that replacement while preserving the predecessor's body.
 

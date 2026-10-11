@@ -255,32 +255,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../install/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Install
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../core/" class="md-nav__link">
         
   
@@ -288,7 +262,7 @@
   <span class="md-ellipsis">
     
   
-  Data Analysis Decision Records
+  DADR
 
     
   </span>
@@ -633,32 +607,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../llms/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  LLM agents
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../uuidv7/" class="md-nav__link">
         
   
@@ -684,28 +632,47 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../roadmap/" class="md-nav__link">
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Roadmap
+  DADRock
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
   
+  DADRock
 
-    
-      
-      
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
   
   
   
@@ -718,7 +685,149 @@
   <span class="md-ellipsis">
     
   
-  Dadrock
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web interface
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/editors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Editors
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/llms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  LLM agents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Roadmap
 
     
   </span>
@@ -1018,7 +1127,7 @@
 <h1 id="dadr-specification">DADR specification<a class="headerlink" href="#dadr-specification" title="Permanent link">&para;</a></h1>
 <p>For a short introduction, see <a href="../core/">Data Analysis Decision Records</a>. Suggested tag vocabularies are <a href="../tags/">documented separately</a>.</p>
 <p><strong>DADR</strong> (Data-Analysis Decision Records) is a file-first format for recording consequential decisions in empirical and data-analysis projects. A DADR record is a Markdown file that captures one analytic decision: the context that motivated it, the decision that was made, the alternatives considered, and the consequences for the analysis. Records live alongside the analysis code, manuscript, data references, and project documentation.</p>
-<p>This page is the canonical specification of the record format. Directory layouts, inference, version-control hooks, previews, and agent workflows are tooling concerns; the reference implementation documents its own choices in the <a href="../dadrock/"><strong>dadrock</strong></a> section.</p>
+<p>This page is the canonical specification of the record format. Directory layouts, inference, version-control hooks, previews, and agent workflows are tooling concerns; the reference implementation documents its own choices in the <a href="../dadrock/"><strong>DADRock</strong></a> section.</p>
 <hr />
 <h2 id="version">Version<a class="headerlink" href="#version" title="Permanent link">&para;</a></h2>
 <p>This document defines DADR specification version <strong>0.1.0-alpha.2</strong>.</p>
@@ -1283,7 +1392,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="reference-implementation">Reference implementation<a class="headerlink" href="#reference-implementation" title="Permanent link">&para;</a></h2>
-<p>The reference implementation is <strong>dadrock</strong>, a Rust tool with a CLI, a web UI, and IDE integrations. See the <a href="../dadrock/"><strong>dadrock</strong></a> section for its project layout, commands, and validation, and the <a href="../tags/">Tags</a> page for the recommended tag vocabulary.</p>
+<p>The reference implementation is <strong>DADRock</strong>, a Rust tool with a CLI, a web UI, and IDE integrations. See the <a href="../dadrock/cli/"><strong>DADRock</strong></a> command-line page for its project layout, commands, and validation, and the <a href="../tags/">Tags</a> page for the recommended tag vocabulary.</p>
 
 
 
@@ -1318,7 +1427,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../core/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Data Analysis Decision Records">
+          <a href="../core/" class="md-footer__link md-footer__link--prev" aria-label="Previous: DADR">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -1328,7 +1437,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Data Analysis Decision Records
+                DADR
               </div>
             </div>
           </a>

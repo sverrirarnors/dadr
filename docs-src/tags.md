@@ -46,11 +46,11 @@ dadrock tags list
 dadrock validate tags
 ```
 
-The specification also describes `#dadr/` annotations in code comments. Dadrock does not currently scan or validate those source annotations; that is [roadmap work](roadmap.md).
+The specification also describes `#dadr/` annotations in code comments. DADRock does not currently scan or validate those source annotations; that is [roadmap work](roadmap.md).
 
 ## Optional code annotations
 
-These conventions describe future tooling; Dadrock does not yet scan source comments.
+These conventions describe future tooling; DADRock does not yet scan source comments.
 
 
 In source-code comments, prefix tags with `#dadr/`. The same namespaces apply:

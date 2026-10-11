@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Splice `dadrock gen-cli-docs` output into the Software page.
+"""Splice `dadrock gen-cli-docs` output into the command-line page.
 
 Reads the generated Markdown on stdin, demotes its headings so the commands
 sit under the page's "Command-line reference" section, and replaces whatever

@@ -5,7 +5,7 @@ are not yet fully covered by the implementation or public documentation. The
 normative record format, lifecycle rules, links, tags, and conformance language
 live in [`docs-src/specification.md`](../docs-src/specification.md). Dadrock's
 project layout is documented in
-[`docs-src/dadrock/dadrock.md`](../docs-src/dadrock/dadrock.md). Existing Dadrock
+[`docs-src/dadrock/cli.md`](../docs-src/dadrock/cli.md). Existing Dadrock
 behavior belongs in `docs-src/` or generated CLI docs, not in this directory.
 
 ## Spec Index

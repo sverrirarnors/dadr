@@ -9,14 +9,18 @@ repo_name = "vincentarelbundock/dadr"
 extra_css = ["stylesheets/home.css"]
 nav = [
   {"Home" = "index.md"},
-  {"Install" = "install.md"},
-  {"Data Analysis Decision Records" = "core.md"},
+  {"DADR" = "core.md"},
   {"Specification" = "specification.md"},
   {"Tags" = "tags.md"},
-  {"LLM agents" = "llms.md"},
   {"UUID v7" = "uuidv7.md"},
+  {"DADRock" = [
+    {"Installation" = "dadrock/index.md"},
+    {"Web interface" = "dadrock/web.md"},
+    {"Editors" = "dadrock/editors.md"},
+    {"LLM agents" = "dadrock/llms.md"},
+    {"Command line" = "dadrock/cli.md"},
+  ]},
   {"Roadmap" = "roadmap.md"},
-  {"Dadrock" = "dadrock.md"},
 ]
 
 [project.theme]

@@ -1,6 +1,6 @@
 # Roadmap
 
-These are proposed directions, not currently available guarantees or delivery commitments. See [Dadrock](dadrock.md) for current capabilities.
+These are proposed directions, not currently available guarantees or delivery commitments. See [DADRock](dadrock/index.md) for current capabilities.
 
 - **Change detection:** inspect Git diffs and suggest consequential choices worth documenting.
 - **Code-comment scanning:** resolve `#dadr/` annotations in analysis source files.
