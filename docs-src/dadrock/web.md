@@ -9,7 +9,17 @@ Open the local URL printed in the terminal. Use **Decisions** to find existing r
 
 Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply missing rationale before endorsing the decision.
 
-When an accepted choice changes, use **Change this decision** to prepare a replacement and link it to the original. The original stays available as history.
+When an accepted choice changes, use **Change this decision** to prepare a replacement and link it to the original. The original stays available as history. The replacement starts as a candidate; accepting it also links the original to its replacement.
+
+Dadrock records this intention in an optional Markdown section:
+
+```markdown
+## Replaces
+
+[[01938c20-a3b4-7000-8000-111122223333|Previous decision]]
+```
+
+The link uses the original record's full UUID. Keep this section if the candidate should replace that decision: it preserves the intended relationship after reloading or accepting through the CLI. On acceptance, Dadrock validates the predecessor and updates its successors together with accepting the replacement, preserving the old body. This is a Dadrock convention, not an additional required section of the DADR format.
 
 ## Optional drafting
 

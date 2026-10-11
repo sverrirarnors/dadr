@@ -4,11 +4,11 @@ Agent assistance is optional. The [manual walkthrough](getting-started.md) needs
 
 ## Configure one local agent
 
-Dadrock connects to a locally installed agent through the Agent Client Protocol (ACP). The agent may use a remote model. You need an ACP-compatible provider or bridge, its authentication, and this repository's `skills/dadr/` skill installed where that provider can discover it. An ordinary `claude` or `codex` executable alone is not necessarily an ACP provider.
+Dadrock connects to a locally installed agent through the Agent Client Protocol (ACP). The agent may use a remote model. You need an ACP-compatible provider or bridge and its authentication. Built-in tasks include their own instructions; no separately installed skill is required. An ordinary `claude` or `codex` executable alone is not necessarily an ACP provider.
 
-Use your provider's own installation and authentication instructions. For example, the [Claude Agent ACP](https://github.com/agentclientprotocol/claude-agent-acp) and [Codex ACP](https://github.com/zed-industries/codex) projects document their bridges. Dadrock does not install providers or manage their credentials.
+Use your provider's own installation and authentication instructions. Choose a bridge explicitly supported by your agent provider. Dadrock does not install providers or manage their credentials.
 
-Copy `skills/dadr/` from this checkout to your agent's supported skill directory, such as `.agents/skills/dadr` or `~/.codex/skills/dadr`. The agent's own discovery rules determine which location works. Task runs check that the agent can load the skill before proceeding.
+For optional guidance outside built-in tasks, copy `skills/dadr/` from this checkout to your agent's supported skill directory, such as `.agents/skills/dadr` or `~/.codex/skills/dadr`. The agent's own discovery rules determine which location works.
 
 Check the connection:
 
@@ -17,7 +17,7 @@ dadrock agent check
 dadrock agent skills
 ```
 
-When more than one provider is available, choose one explicitly with `--agent`. Provider-specific arguments can be passed with `--agent-arg`. `agent skills` lists local instructions; successful skill loading is checked separately when a task runs.
+When more than one provider is available, choose one explicitly with `--agent`. Provider-specific arguments can be passed with `--agent-arg`. `agent skills` lists optional local instructions. Built-in task runs do not require a skill-loading preflight.
 
 ## Draft for review
 

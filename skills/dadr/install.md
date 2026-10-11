@@ -19,14 +19,14 @@ Initialize the user's analysis project with `dadrock init`. Manual writing and r
 
 For agent workflows, install one ACP-compatible provider or bridge using its official instructions and the user's chosen account. A regular Claude Code or Codex executable is not necessarily an ACP bridge. Authentication belongs to the provider; never print credentials or assume existing authentication carries over.
 
-Install this repository's `skills/dadr/` in the agent's supported skill directory. Candidate locations include `.agents/skills/dadr`, `~/.agents/skills/dadr`, `~/.codex/skills/dadr`, and `~/.claude/skills/dadr`. The agent's own discovery rules are authoritative.
+Built-in tasks include their own instructions and do not require a separately installed skill. For optional agent guidance outside those tasks, install this repository's `skills/dadr/` in the agent's supported skill directory. Candidate locations include `.agents/skills/dadr`, `~/.agents/skills/dadr`, `~/.codex/skills/dadr`, and `~/.claude/skills/dadr`. The agent's own discovery rules are authoritative.
 
 ```sh
 dadrock agent check
 dadrock agent skills
 ```
 
-Task execution separately checks that the agent can load the installed `dadr` skill. If setup fails, inspect the provider executable, its authentication, and explicit `--agent` selection before changing configuration.
+There is no mandatory skill-loading preflight for built-in tasks. If setup fails, inspect the provider executable, its authentication, and explicit `--agent` selection before changing configuration.
 
 ## First draft
 

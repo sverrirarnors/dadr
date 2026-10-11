@@ -25,6 +25,12 @@ Running `dadrock` without a subcommand prints help. `preview` starts the local w
 
 Use `dadrock config` to inspect the resolved layout. Keep the record directories in version control. Run state may include pasted context and source excerpts and is ignored by default.
 
+## Changing a decision
+
+Use **Change this decision** in the web interface to create a replacement candidate. Its optional `## Replaces` section contains a labeled link to the original full UUID. Keep that section to preserve replacement intent. Acceptance validates the predecessor and links the accepted replacement while preserving the original body, including when accepting through the CLI. See [the web workflow](web.md) for an example.
+
+For two records that are already accepted, `dadrock supersede --from OLD --to NEW` links the replacement explicitly.
+
 ## Validation
 
 ```sh

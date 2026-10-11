@@ -9,7 +9,6 @@ hide:
 
 <div class="hero" markdown>
 <img src="assets/dadr_logo.svg" alt="DADR — Data Analysis Decision Records" class="hero-logo">
-<br>
 <p class="hero-tagline">Keep a record of the <b>important choices behind your analysis</b>, so you and your collaborators can remember why you made them.</p>
 </div>
 
@@ -45,8 +44,6 @@ The sample falls to 8,166. Report the exclusions and investigate whether
 missing assignment is associated with observed respondent characteristics.
 ```
 
-This is an illustrative record, not a recommendation for every missing-data problem.
-
 ## Write, review, remember
 
 **DADR** is the file format: four sections, a title, a status, and an ID. **Dadrock** is the tool that helps you write, review, and find these records.
@@ -59,6 +56,10 @@ Start with a few consequential choices. Tags, agents, and integrations are optio
 ![Reviewing a candidate decision in the dadrock web UI, with Accept and Reject buttons](assets/dadrock-review-light.webp){ loading=lazy }
 <figcaption>Reviewing a candidate in the <a href="dadrock/web/">dadrock web UI</a>.</figcaption>
 </figure>
+
+## Why keep decisions?
+
+Analysis choices can materially affect results. In Many Analysts studies, independent teams working with the same data and questions reached different conclusions; see [Silberzahn et al. (2018)](https://doi.org/10.1177/2515245917747646) and [Breznau et al. (2022)](https://doi.org/10.1073/pnas.2203150119). Recording consequential choices helps collaborators understand those differences and helps you notice when an analysis departs from its original intent.
 
 ## What Dadrock does today
 

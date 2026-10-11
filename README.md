@@ -23,7 +23,7 @@ Bun builds the embedded web interface. The first build downloads dependencies an
 
 ```sh
 dadrock init
-dadrock new "How should we handle missing income?"
+dadrock new "Handling missing income"
 dadrock preview
 ```
 
