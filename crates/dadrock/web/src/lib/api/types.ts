@@ -1,6 +1,8 @@
 import type {
   CandidateTemplate,
   MutationResponse,
+  RecordDiffResult,
+  RecordHistory,
   RecordLifecycle,
   RecordSource,
   Snapshot,
@@ -13,7 +15,10 @@ import type {
 } from './schemas';
 
 export interface CreateCandidateRequest {
-  supersedes?: string | undefined;
+  /** One record, or several for a merge, that the new candidate supersedes. */
+  supersedes?: string | string[] | undefined;
+  /** Why the decision changed; written into `## Supersedes` after the links. */
+  supersedes_reason?: string | undefined;
   title: string;
   tags: string[];
   body_markdown: string;
@@ -58,6 +63,10 @@ export interface DadrApi {
   initializeProject(): Promise<MutationResponse>;
   getRecordSource(id: string): Promise<RecordSource>;
   getRecordLifecycle(id: string): Promise<RecordLifecycle>;
+  /** The versions of the decision containing `id`; with `patch`, each link carries its diff. */
+  getRecordHistory(id: string, options?: { patch?: boolean }): Promise<RecordHistory>;
+  /** The difference from `against` (old) to `id` (new). */
+  getRecordDiff(id: string, against: string): Promise<RecordDiffResult>;
   saveRecordSource(id: string, content: string): Promise<MutationResponse>;
   runValidation(target: ValidationTarget): Promise<MutationResponse>;
   getCandidateTemplate(): Promise<CandidateTemplate>;
@@ -65,7 +74,8 @@ export interface DadrApi {
   applyRecordRevision(request: ApplyRecordRevisionRequest): Promise<MutationResponse>;
   supersedeRecords(request: SupersedeRecordsRequest): Promise<MutationResponse>;
   draftCandidate(request: DraftCandidateRequest): Promise<MutationResponse>;
-  acceptCandidate(id: string): Promise<MutationResponse>;
+  /** Accept a candidate, and with `withIds` more candidates in the same operation (a split). */
+  acceptCandidate(id: string, withIds?: string[]): Promise<MutationResponse>;
   rejectCandidate(id: string): Promise<MutationResponse>;
   listTasks(): Promise<TaskListing>;
   getTask(id: string): Promise<TaskPackage>;
@@ -74,5 +84,5 @@ export interface DadrApi {
   getTaskLog(id: string): Promise<TaskRunLogEntry[]>;
   runTask(request: RunTaskRequest): Promise<TaskRun>;
   cancelTaskRun(id: string): Promise<TaskRun>;
-  clearTaskHistory(): Promise<MutationResponse>;
+  clearTaskRuns(): Promise<MutationResponse>;
 }

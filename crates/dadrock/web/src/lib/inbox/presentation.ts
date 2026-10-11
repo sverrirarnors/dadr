@@ -23,6 +23,8 @@ export function kindBadge(item: InboxItem): KindBadge {
   switch (item.kind) {
     case 'candidate':
       return { label: 'CAN', variant: 'candidate' };
+    case 'split':
+      return { label: 'SPLIT', variant: 'candidate' };
     case 'proposal':
       return { label: 'AGENT', variant: 'accent' };
     case 'revision':
@@ -44,9 +46,9 @@ export function severityVariant(severity: Diagnostic['severity']): BadgeVariant 
   return 'neutral';
 }
 
-/** Where a record lives in the Ledger: current decisions up front, everything else under history. */
+/** Where a record lives in the Ledger: current decisions up front, everything else under Show archived. */
 export function recordLedgerHref(record: RecordSummary): LedgerHref {
-  return ledgerUrl({ id: record.id, history: record.status !== 'accepted' || record.superseded });
+  return ledgerUrl({ id: record.id, archived: record.status !== 'accepted' || record.superseded });
 }
 
 export function isCurrentDecision(record: RecordSummary): boolean {

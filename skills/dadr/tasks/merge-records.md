@@ -28,7 +28,7 @@ tools:
 
 # Merge records
 
-Consolidate two or more overlapping candidate DADRs into one new candidate that states the shared choice once, clearly. Merging produces a new candidate; the source candidates stay as they are until the reviewer decides what to do with them. If one of the overlapping records is already accepted, this is the wrong task: draft a replacement with [supersede-record](supersede-record.md).
+Consolidate two or more overlapping candidate DADRs into one new candidate that states the shared choice once, clearly. Merging produces a new candidate; the source candidates stay as they are until the reviewer decides what to do with them. If one of the overlapping records is already accepted, this is the wrong task: draft a successor with [supersede-record](supersede-record.md), which can supersede several accepted records at once.
 
 ## Inputs
 

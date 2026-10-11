@@ -220,6 +220,10 @@ async fn dadrock_mcp_stdio_lists_and_calls_tools() {
     let reject = reject.structured_content.expect("reject envelope");
     assert_eq!(reject["command"], "status reject");
     assert_eq!(reject["data"]["status"], "rejected");
+    assert!(reject["data"]["to"]
+        .as_str()
+        .expect("rejected path")
+        .contains("/dadr/archive/"));
     assert_eq!(
         reject["changed_paths"]
             .as_array()

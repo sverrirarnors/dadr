@@ -21,7 +21,6 @@ in `docs-src/` or generated references, not repeated here.
 | Team features | Future product work | Notifications, RBAC, scheduled checks, metrics, and shared review surfaces. |
 | Evidence/provenance layer | Future product work | Structured evidence objects and provenance graphs should not change the canonical Markdown record format. |
 | Lifecycle event log | Future product work | An append-only log of accept, reject, and supersede events recording at least the record `id`, the action, the event time, and the actor when known. The log is audit metadata and never overrides `status` or `successors` in front matter. |
-| Immutability baselines | Future product work | Record each accepted record's content at acceptance (for example, the Git blob at the commit where `status` became `accepted`) and flag later edits for review. The spec's mechanical rule (`id`, `status`, and existing `successors` never change) can be enforced exactly; meaning-preserving body edits still need human review. |
 
 ## Supersession Suggestions
 
@@ -34,8 +33,8 @@ overlapping normalized tags, especially `#kind/...`, `#topic/...`,
 
 The classifier should label close matches as:
 
-- `possible-supersession`: the new candidate appears to replace, amend, narrow,
-  broaden, or reverse an accepted decision;
+- `possible-supersession`: the new candidate appears to supersede an accepted
+  decision by amending, narrowing, broadening, or reversing it;
 - `possible-duplicate`: the new candidate appears already covered by an
   existing decision or candidate;
 - `conflict`: both decisions could apply but prescribe incompatible actions;
@@ -99,6 +98,13 @@ The goal is navigation between the decision record and the execution graph.
   inference, path allowlists/denylists, and remote-model policy?
 - How much persistent evidence/provenance should Dadrock keep without weakening
   the invariant that Markdown records are the canonical durable artifact?
+- Should the `## Supersedes` section become part of the DADR format, so that
+  the reason a decision changed is defined independently of Dadrock? It is a
+  Dadrock convention today.
+- Should agents be able to draft a split? The `supersede-record` task returns
+  one successor; a split would need several candidates from one run.
+- Should DADRock show a record's text edits when the project is not in a Git
+  repository? Text history comes from Git only.
 
 The remaining choices do not change the core design: Markdown files on disk are
 canonical, durable reasoning is captured in those files, and tooling resolves

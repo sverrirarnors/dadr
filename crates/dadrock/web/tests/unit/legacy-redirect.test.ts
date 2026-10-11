@@ -16,7 +16,7 @@ describe('legacyRedirectTarget', () => {
   it('sends record browsing to the ledger', () => {
     expect(target('/records')).toBe('/ledger');
     expect(target('/records?id=abc&tab=edit')).toBe('/ledger?id=abc&tab=edit');
-    expect(target('/records?status=superseded&id=abc')).toBe('/ledger?history=1&id=abc');
+    expect(target('/records?status=superseded&id=abc')).toBe('/ledger?archived=1&id=abc');
     expect(target('/records?scope=tag&q=%23dadr%2Fdata')).toBe('/ledger?tag=%23dadr%2Fdata');
     expect(target('/records/abc')).toBe('/ledger/abc');
     expect(target('/tags')).toBe('/ledger');

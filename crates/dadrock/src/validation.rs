@@ -13,14 +13,16 @@ use crate::{
     links::{check_project_links, LinkIssue, LinkIssueCode},
     model::{Record, RecordStatus},
     project::{utf8_to_path, ProjectContext},
-    records::{check_required_sections, ScannedRecord},
+    records::{
+        check_required_sections, current_successors, record_list, supersedes_section, ScannedRecord,
+    },
     tags::{build_tag_report, TagIssue},
     text::write_serde_label,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectValidationReport {
-    pub decisions_dir: Utf8PathBuf,
+    pub project_dir: Utf8PathBuf,
     pub ok: bool,
     pub counts: IssueCounts,
     pub issues: Vec<ProjectValidationIssue>,
@@ -40,11 +42,15 @@ pub enum ProjectValidationIssueCode {
     DuplicateRequiredSection,
     EmptyRequiredSection,
     DuplicateRecordId,
-    DuplicateFilename,
     ShortIdCollision,
     UnresolvedSuccessor,
     InvalidSuccessor,
     SuccessorCycle,
+    /// A candidate's `## Supersedes` names a record superseded since.
+    StaleSupersedes,
+    /// An accepted record's `## Supersedes` names a record that does not list
+    /// it in `successors`.
+    UnlinkedSupersedes,
     StatusLocationMismatch,
     BrokenWikilink,
     AmbiguousWikilink,
@@ -154,10 +160,10 @@ pub fn validate_project_index(index: &ProjectIndex) -> ProjectValidationReport {
     add_record_diagnostics(scanned, &mut issues);
     add_tag_issues(index, &mut issues);
     add_record_structure_issues(scanned, project, &mut issues);
-    add_duplicate_filename_issues(scanned, &mut issues);
     add_duplicate_id_issues(scanned, &mut issues);
     add_short_id_collision_issues(scanned, &mut issues);
     add_successor_graph_issues(scanned, &mut issues);
+    add_supersedes_issues(index, &mut issues);
     add_link_issues(index, &mut issues);
 
     sort_issues(&mut issues);
@@ -165,7 +171,7 @@ pub fn validate_project_index(index: &ProjectIndex) -> ProjectValidationReport {
     let ok = counts.errors == 0;
 
     ProjectValidationReport {
-        decisions_dir: project.decisions_dir.clone(),
+        project_dir: project.project_dir.clone(),
         ok,
         counts,
         issues,
@@ -344,22 +350,27 @@ fn status_location_issue(
     record: &Record,
     id: RecordId,
 ) -> Option<ProjectValidationIssue> {
-    let in_candidates = scanned.path.starts_with(project.candidates_dir());
-    let in_rejected = scanned.path.starts_with(project.rejected_dir());
-    let status = record.front_matter.status;
-
-    let message = match status {
-        RecordStatus::Candidate if !in_candidates => {
-            Some("active candidate records should live under the active candidates directory")
-        }
-        RecordStatus::Rejected if !in_rejected => {
-            Some("rejected records should live under the rejected directory")
-        }
-        RecordStatus::Accepted if in_candidates || in_rejected => {
-            Some("accepted records should live under the accepted directory")
-        }
-        _ => None,
-    }?;
+    let (expected_dir, message) = match record.front_matter.status {
+        RecordStatus::Candidate => (
+            project.inbox_dir(),
+            "candidate records belong in the inbox, `dadr/inbox/`",
+        ),
+        RecordStatus::Accepted if record.front_matter.is_superseded() => (
+            project.archive_dir(),
+            "superseded records (accepted, with successors) belong in the archive, `dadr/archive/`",
+        ),
+        RecordStatus::Accepted => (
+            project.ledger_dir(),
+            "accepted records without successors belong in the ledger, `dadr/ledger/`",
+        ),
+        RecordStatus::Rejected => (
+            project.archive_dir(),
+            "rejected records belong in the archive, `dadr/archive/`",
+        ),
+    };
+    if scanned.path.starts_with(&expected_dir) {
+        return None;
+    }
 
     Some(
         ProjectValidationIssue::warning(
@@ -369,33 +380,6 @@ fn status_location_issue(
         .with_path(scanned.path.clone())
         .with_record_id(id),
     )
-}
-
-fn add_duplicate_filename_issues(
-    scanned: &[ScannedRecord],
-    issues: &mut Vec<ProjectValidationIssue>,
-) {
-    let mut by_name = BTreeMap::<String, Vec<Utf8PathBuf>>::new();
-    for record in scanned {
-        if let Some(file_name) = record.path.file_name() {
-            by_name
-                .entry(file_name.to_owned())
-                .or_default()
-                .push(record.path.clone());
-        }
-    }
-
-    for (file_name, paths) in by_name {
-        if paths.len() > 1 {
-            issues.push(
-                ProjectValidationIssue::error(
-                    ProjectValidationIssueCode::DuplicateFilename,
-                    format!("filename `{file_name}` is used by multiple records"),
-                )
-                .with_related_paths(paths),
-            );
-        }
-    }
 }
 
 fn add_duplicate_id_issues(scanned: &[ScannedRecord], issues: &mut Vec<ProjectValidationIssue>) {
@@ -544,6 +528,67 @@ fn add_successor_graph_issues(scanned: &[ScannedRecord], issues: &mut Vec<Projec
         }
         issues.push(issue);
     }
+}
+
+/// Check `## Supersedes` sections against the successor graph. A malformed
+/// section or a missing predecessor is reported elsewhere: by the record's
+/// lifecycle data and by the link check.
+fn add_supersedes_issues(index: &ProjectIndex, issues: &mut Vec<ProjectValidationIssue>) {
+    for scanned_record in index.scanned_records() {
+        let Some(record) = &scanned_record.record else {
+            continue;
+        };
+        let Ok(Some(section)) = supersedes_section(&record.body.raw_markdown) else {
+            continue;
+        };
+        let id = record.front_matter.id;
+        let title = &record.front_matter.title;
+        for predecessor_id in section.ids {
+            let Some(predecessor) = index.summary_by_id(predecessor_id) else {
+                continue;
+            };
+            let issue = match record.front_matter.status {
+                RecordStatus::Candidate if predecessor.superseded => {
+                    let current = current_successors(index, predecessor_id);
+                    let mut related = vec![predecessor.path.clone()];
+                    related.extend(current.iter().map(|record| record.path.clone()));
+                    ProjectValidationIssue::warning(
+                        ProjectValidationIssueCode::StaleSupersedes,
+                        format!(
+                            "`{title}` supersedes `{}`, which is already superseded by {}; retarget `## Supersedes` at the current decision, or reject the candidate",
+                            predecessor.title,
+                            record_list(&current)
+                        ),
+                    )
+                    .with_related_paths(related)
+                }
+                RecordStatus::Accepted if !lists_successor(index, predecessor_id, id) => {
+                    ProjectValidationIssue::warning(
+                        ProjectValidationIssueCode::UnlinkedSupersedes,
+                        format!(
+                            "`{title}` names `{}` in `## Supersedes`, but `{}` does not list it in `successors`",
+                            predecessor.title, predecessor.title
+                        ),
+                    )
+                    .with_related_paths(vec![predecessor.path.clone()])
+                }
+                _ => continue,
+            };
+            issues.push(
+                issue
+                    .with_path(scanned_record.path.clone())
+                    .with_record_id(id)
+                    .with_field(Some("body".to_owned())),
+            );
+        }
+    }
+}
+
+fn lists_successor(index: &ProjectIndex, predecessor: RecordId, successor: RecordId) -> bool {
+    index
+        .scanned_by_id(predecessor)
+        .and_then(|scanned| scanned.record.as_ref())
+        .is_some_and(|record| record.front_matter.successors.contains(&successor))
 }
 
 fn records_by_id(scanned: &[ScannedRecord]) -> BTreeMap<RecordId, Vec<Utf8PathBuf>> {

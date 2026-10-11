@@ -31,6 +31,6 @@ These targets need the editor CLI, Rust, Bun, and Node. The extension they build
 | Setting | Default | Description |
 |---|---|---|
 | `dadrock.binaryPath` | `""` | Absolute path to the `dadrock` binary. Empty means the bundled binary, then `dadrock` on `PATH`. |
-| `dadrock.autoStart` | `false` | Start DADRock automatically when a workspace containing `dadr/accepted`, `dadr/candidates`, or `dadr/rejected` opens. |
+| `dadrock.autoStart` | `false` | Start DADRock automatically when a workspace containing `dadr/inbox`, `dadr/ledger`, or `dadr/archive` opens. |
 
 This does not imply published marketplace packages or separate official extensions for Cursor, RStudio, or Neovim.

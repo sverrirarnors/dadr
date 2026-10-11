@@ -687,6 +687,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dadrock-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock history</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock diff</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dadrock-accept" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -808,6 +830,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         <code>dadrock validate tags</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dadrock-validate-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock validate changes</code>
       </span>
     </span>
   </a>
@@ -1253,6 +1286,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dadrock-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock history</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dadrock-diff" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock diff</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dadrock-accept" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1374,6 +1429,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         <code>dadrock validate tags</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dadrock-validate-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>dadrock validate changes</code>
       </span>
     </span>
   </a>
@@ -1647,7 +1713,7 @@
 </tr>
 <tr>
 <td><a href="#dadrock-dir"><code>dir</code></a></td>
-<td>Print the discovered accepted records directory.</td>
+<td>Print the discovered Dadrock project directory (dadr/).</td>
 </tr>
 </tbody>
 </table>
@@ -1669,8 +1735,16 @@
 <td>List records, optionally filtered by lifecycle status, tag, or query.</td>
 </tr>
 <tr>
+<td><a href="#dadrock-history"><code>history</code></a></td>
+<td>Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.</td>
+</tr>
+<tr>
+<td><a href="#dadrock-diff"><code>diff</code></a></td>
+<td>Compare two records: title, tags, and body without <code>## Supersedes</code>.</td>
+</tr>
+<tr>
 <td><a href="#dadrock-accept"><code>accept</code></a></td>
-<td>Accept a candidate decision.</td>
+<td>Accept a candidate decision, or several together with --with.</td>
 </tr>
 <tr>
 <td><a href="#dadrock-reject"><code>reject</code></a></td>
@@ -1678,7 +1752,7 @@
 </tr>
 <tr>
 <td><a href="#dadrock-supersede"><code>supersede</code></a></td>
-<td>Link replacement decisions to the decisions they replace.</td>
+<td>Link accepted successors to the records they supersede and move those records to the archive.</td>
 </tr>
 <tr>
 <td><a href="#dadrock-status"><code>status</code></a></td>
@@ -1697,7 +1771,7 @@
 <tbody>
 <tr>
 <td><a href="#dadrock-validate"><code>validate</code></a></td>
-<td>Run project validation, or target records, links, or tags.</td>
+<td>Run project validation, or target records, links, tags, or changes.</td>
 </tr>
 <tr>
 <td><a href="#dadrock-tags"><code>tags</code></a></td>
@@ -1794,7 +1868,7 @@
 <li><code>--json</code></li>
 </ul>
 <h2 id="dadrock-dir"><code>dadrock dir</code><a class="headerlink" href="#dadrock-dir" title="Permanent link">&para;</a></h2>
-<p>Print the discovered accepted records directory.</p>
+<p>Print the discovered Dadrock project directory (dadr/).</p>
 <p><strong>Usage:</strong> <code>dadrock dir</code></p>
 <h2 id="dadrock-new"><code>dadrock new</code><a class="headerlink" href="#dadrock-new" title="Permanent link">&para;</a></h2>
 <p>Create a candidate decision record from the active candidate template.</p>
@@ -1821,12 +1895,40 @@
 <li><code>--query &lt;QUERY&gt;</code></li>
 <li><code>--unique</code></li>
 </ul>
-<h2 id="dadrock-accept"><code>dadrock accept</code><a class="headerlink" href="#dadrock-accept" title="Permanent link">&para;</a></h2>
-<p>Accept a candidate decision.</p>
-<p><strong>Usage:</strong> <code>dadrock accept &lt;QUERY&gt;...</code></p>
+<h2 id="dadrock-history"><code>dadrock history</code><a class="headerlink" href="#dadrock-history" title="Permanent link">&para;</a></h2>
+<p>Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.</p>
+<p><strong>Usage:</strong> <code>dadrock history [OPTIONS] &lt;QUERY&gt;...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;QUERY&gt;</code></li>
+<li><code>&lt;QUERY&gt;</code> — Any version of the decision: full id, id prefix, filename, or title</li>
+</ul>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--patch</code> — Print each change's diff under its link, and each text edit's diff under its version</li>
+<li><code>--json</code></li>
+</ul>
+<h2 id="dadrock-diff"><code>dadrock diff</code><a class="headerlink" href="#dadrock-diff" title="Permanent link">&para;</a></h2>
+<p>Compare two records: title, tags, and body without <code>## Supersedes</code>.</p>
+<p><strong>Usage:</strong> <code>dadrock diff [OPTIONS] &lt;OLD&gt; &lt;NEW&gt;</code></p>
+<p><strong>Arguments</strong></p>
+<ul>
+<li><code>&lt;OLD&gt;</code> — The record to compare from: full id, id prefix, filename, or title</li>
+<li><code>&lt;NEW&gt;</code> — The record to compare to</li>
+</ul>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--json</code></li>
+</ul>
+<h2 id="dadrock-accept"><code>dadrock accept</code><a class="headerlink" href="#dadrock-accept" title="Permanent link">&para;</a></h2>
+<p>Accept a candidate decision, or several together with --with.</p>
+<p><strong>Usage:</strong> <code>dadrock accept [OPTIONS] &lt;QUERY&gt;...</code></p>
+<p><strong>Arguments</strong></p>
+<ul>
+<li><code>&lt;QUERY&gt;</code> — The candidate to accept; the words join into one query</li>
+</ul>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--with &lt;QUERY&gt;</code> — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more</li>
 </ul>
 <h2 id="dadrock-reject"><code>dadrock reject</code><a class="headerlink" href="#dadrock-reject" title="Permanent link">&para;</a></h2>
 <p>Reject a candidate decision.</p>
@@ -1836,7 +1938,7 @@
 <li><code>&lt;QUERY&gt;</code></li>
 </ul>
 <h2 id="dadrock-supersede"><code>dadrock supersede</code><a class="headerlink" href="#dadrock-supersede" title="Permanent link">&para;</a></h2>
-<p>Link replacement decisions to the decisions they replace.</p>
+<p>Link accepted successors to the records they supersede and move those records to the archive.</p>
 <p><strong>Usage:</strong> <code>dadrock supersede [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
@@ -1848,30 +1950,34 @@
 <p><strong>Usage:</strong> <code>dadrock status [QUERY]... [COMMAND]</code></p>
 <p><strong>Subcommands</strong></p>
 <ul>
-<li><a href="#dadrock-status-accept"><code>accept</code></a> — Accept a candidate by converting it into an accepted decision.</li>
-<li><a href="#dadrock-status-reject"><code>reject</code></a> — Reject a candidate and move it into the rejected records directory.</li>
-<li><a href="#dadrock-status-supersede"><code>supersede</code></a> — Link accepted successors to the records they supersede.</li>
+<li><a href="#dadrock-status-accept"><code>accept</code></a> — Accept a candidate and move it to the ledger, or several together with --with.</li>
+<li><a href="#dadrock-status-reject"><code>reject</code></a> — Reject a candidate and move it to the archive.</li>
+<li><a href="#dadrock-status-supersede"><code>supersede</code></a> — Link accepted successors to the records they supersede and move those records to the archive.</li>
 </ul>
 <p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;QUERY&gt;</code></li>
 </ul>
 <h3 id="dadrock-status-accept"><code>dadrock status accept</code><a class="headerlink" href="#dadrock-status-accept" title="Permanent link">&para;</a></h3>
-<p>Accept a candidate by converting it into an accepted decision.</p>
-<p><strong>Usage:</strong> <code>dadrock status accept &lt;QUERY&gt;...</code></p>
+<p>Accept a candidate and move it to the ledger, or several together with --with.</p>
+<p><strong>Usage:</strong> <code>dadrock status accept [OPTIONS] &lt;QUERY&gt;...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
-<li><code>&lt;QUERY&gt;</code></li>
+<li><code>&lt;QUERY&gt;</code> — The candidate to accept; the words join into one query</li>
+</ul>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--with &lt;QUERY&gt;</code> — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more</li>
 </ul>
 <h3 id="dadrock-status-reject"><code>dadrock status reject</code><a class="headerlink" href="#dadrock-status-reject" title="Permanent link">&para;</a></h3>
-<p>Reject a candidate and move it into the rejected records directory.</p>
+<p>Reject a candidate and move it to the archive.</p>
 <p><strong>Usage:</strong> <code>dadrock status reject &lt;QUERY&gt;...</code></p>
 <p><strong>Arguments</strong></p>
 <ul>
 <li><code>&lt;QUERY&gt;</code></li>
 </ul>
 <h3 id="dadrock-status-supersede"><code>dadrock status supersede</code><a class="headerlink" href="#dadrock-status-supersede" title="Permanent link">&para;</a></h3>
-<p>Link accepted successors to the records they supersede.</p>
+<p>Link accepted successors to the records they supersede and move those records to the archive.</p>
 <p><strong>Usage:</strong> <code>dadrock status supersede [OPTIONS]</code></p>
 <p><strong>Options</strong></p>
 <ul>
@@ -1879,13 +1985,14 @@
 <li><code>--to &lt;TO&gt;</code></li>
 </ul>
 <h2 id="dadrock-validate"><code>dadrock validate</code><a class="headerlink" href="#dadrock-validate" title="Permanent link">&para;</a></h2>
-<p>Run project validation, or target records, links, or tags.</p>
+<p>Run project validation, or target records, links, tags, or changes.</p>
 <p><strong>Usage:</strong> <code>dadrock validate [OPTIONS] [COMMAND]</code></p>
 <p><strong>Subcommands</strong></p>
 <ul>
 <li><a href="#dadrock-validate-records"><code>records</code></a> — Validate record front matter and structure.</li>
 <li><a href="#dadrock-validate-links"><code>links</code></a> — Report broken or ambiguous wikilinks and local Markdown links.</li>
 <li><a href="#dadrock-validate-tags"><code>tags</code></a> — Report malformed YAML and inline tags.</li>
+<li><a href="#dadrock-validate-changes"><code>changes</code></a> — Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.</li>
 </ul>
 <p><strong>Options</strong></p>
 <ul>
@@ -1916,6 +2023,17 @@
 <ul>
 <li><code>--json</code></li>
 </ul>
+<h3 id="dadrock-validate-changes"><code>dadrock validate changes</code><a class="headerlink" href="#dadrock-validate-changes" title="Permanent link">&para;</a></h3>
+<p>Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.</p>
+<p><strong>Usage:</strong> <code>dadrock validate changes [OPTIONS]</code></p>
+<p><strong>Options</strong></p>
+<ul>
+<li><code>--base &lt;BASE&gt;</code> — Git revision to compare with</li>
+</ul>
+<p>Default value: <code>HEAD</code>
+* <code>--staged</code> — Compare the index (staged changes) instead of the working tree
+* <code>--strict</code> — Report title and body edits to accepted and rejected records as errors
+* <code>--json</code></p>
 <h2 id="dadrock-tags"><code>dadrock tags</code><a class="headerlink" href="#dadrock-tags" title="Permanent link">&para;</a></h2>
 <p>Inspect DADR tag usage.</p>
 <p><strong>Usage:</strong> <code>dadrock tags &lt;COMMAND&gt;</code></p>
@@ -2017,7 +2135,7 @@
 <li><code>--input-json &lt;INPUT_JSON&gt;</code></li>
 <li><code>--path &lt;PATH&gt;</code> — File or directory to inspect</li>
 <li><code>--context &lt;CONTEXT&gt;</code> — Describe the decision to capture</li>
-<li><code>--focus &lt;FOCUS&gt;</code> — Focus the code review on a topic</li>
+<li><code>--focus &lt;FOCUS&gt;</code> — Topic to concentrate on (code-to-record, decisions-to-spec)</li>
 <li><code>--limit &lt;LIMIT&gt;</code> — Maximum initial candidates (code-to-record defaults to 5)</li>
 <li><code>--json</code></li>
 <li><code>--permission &lt;PERMISSION&gt;</code></li>

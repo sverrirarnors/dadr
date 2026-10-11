@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RecordSummary } from '../../src/lib/api';
 import {
   isCurrentDecision,
-  isHistoricalDecision,
+  isArchivedDecision,
   ledgerCounts,
   ledgerRecords,
   ledgerSubtitle,
@@ -13,12 +13,13 @@ import {
 
 function record(overrides: Partial<RecordSummary> & Pick<RecordSummary, 'id' | 'title'>): RecordSummary {
   const suffix = overrides.id.slice(-4);
+  const archived = overrides.superseded || (overrides.status && overrides.status !== 'accepted');
   return {
     id_prefix: '0193fb1fa3a0',
     simple_record_id: overrides.id.replaceAll('-', ''),
     status: 'accepted',
     superseded: false,
-    path: `dadr/accepted/${suffix}-${overrides.title.toLowerCase().replaceAll(' ', '-')}.md`,
+    path: `dadr/${archived ? 'archive' : 'ledger'}/${suffix}-${overrides.title.toLowerCase().replaceAll(' ', '-')}.md`,
     preview: '',
     tags: [],
     timestamp_ms: 0,
@@ -49,7 +50,7 @@ const rejected = record({
   id: '0193fb1f-a3a0-7000-8000-000000000005',
   title: 'Keep manual spreadsheet merge',
   status: 'rejected',
-  path: 'dadr/rejected/0005-spreadsheet.md',
+  path: 'dadr/archive/spreadsheet.md',
   tags: ['#dadr/data'],
   timestamp_ms: 1730000400000,
 });
@@ -57,7 +58,7 @@ const candidate = record({
   id: '0193fb1f-a3a0-7000-8000-000000000002',
   title: 'Adopt pre-registration for studies',
   status: 'candidate',
-  path: 'dadr/candidates/0002-preregister.md',
+  path: 'dadr/inbox/preregister.md',
   tags: ['#dadr/methodology'],
   timestamp_ms: 1730000100000,
 });
@@ -76,14 +77,14 @@ function titles(result: RecordSummary[]): string[] {
 
 describe('ledgerRecords', () => {
   it('shows only current accepted decisions by default, newest first', () => {
-    expect(titles(ledgerRecords(records, { history: false, q: '', tag: null }))).toEqual([
+    expect(titles(ledgerRecords(records, { archived: false, q: '', tag: null }))).toEqual([
       'Use Arrow IPC snapshots',
       'Use Polars lazy frames',
     ]);
   });
 
-  it('adds superseded and rejected decisions with history, but never candidates', () => {
-    const shown = titles(ledgerRecords(records, { history: true, q: '', tag: null }));
+  it('adds archived decisions (superseded and rejected), but never candidates', () => {
+    const shown = titles(ledgerRecords(records, { archived: true, q: '', tag: null }));
     expect(shown).toEqual([
       'Old status enum value',
       'Keep manual spreadsheet merge',
@@ -95,9 +96,9 @@ describe('ledgerRecords', () => {
   });
 
   it('matches the query against title, path, tag, and id', () => {
-    const all = { history: true, tag: null };
+    const all = { archived: true, tag: null };
     expect(titles(ledgerRecords(records, { ...all, q: 'arrow' }))).toEqual(['Use Arrow IPC snapshots']);
-    expect(titles(ledgerRecords(records, { ...all, q: '0005-spreadsheet' }))).toEqual([
+    expect(titles(ledgerRecords(records, { ...all, q: 'archive/spreadsheet' }))).toEqual([
       'Keep manual spreadsheet merge',
     ]);
     expect(titles(ledgerRecords(records, { ...all, q: '#kind/sample' }))).toEqual(['Use Arrow IPC snapshots']);
@@ -106,11 +107,11 @@ describe('ledgerRecords', () => {
   });
 
   it('keeps the query from surfacing candidates', () => {
-    expect(ledgerRecords(records, { history: true, q: 'pre-registration', tag: null })).toHaveLength(0);
+    expect(ledgerRecords(records, { archived: true, q: 'pre-registration', tag: null })).toHaveLength(0);
   });
 
   it('filters by exact tag or tag prefix, case-insensitively, with or without a hash', () => {
-    const base = { history: true, q: '' };
+    const base = { archived: true, q: '' };
     expect(titles(ledgerRecords(records, { ...base, tag: '#dadr/data/processing' }))).toEqual([
       'Use Arrow IPC snapshots',
       'Use Polars lazy frames',
@@ -127,11 +128,11 @@ describe('ledgerRecords', () => {
     expect(ledgerRecords(records, { ...base, tag: '#kind' })).toHaveLength(1);
   });
 
-  it('combines history, query, and tag', () => {
-    expect(titles(ledgerRecords(records, { history: false, q: 'polars', tag: '#dadr/data' }))).toEqual([
+  it('combines archived, query, and tag', () => {
+    expect(titles(ledgerRecords(records, { archived: false, q: 'polars', tag: '#dadr/data' }))).toEqual([
       'Use Polars lazy frames',
     ]);
-    expect(titles(ledgerRecords(records, { history: true, q: 'polars', tag: '#dadr/data' }))).toEqual([
+    expect(titles(ledgerRecords(records, { archived: true, q: 'polars', tag: '#dadr/data' }))).toEqual([
       'Use Polars lazy frames',
       'Use Polars over pandas',
     ]);
@@ -139,7 +140,7 @@ describe('ledgerRecords', () => {
 
   it('does not mutate the input order', () => {
     const copy = [...records];
-    ledgerRecords(records, { history: true, q: '', tag: null });
+    ledgerRecords(records, { archived: true, q: '', tag: null });
     expect(records).toEqual(copy);
   });
 });
@@ -164,37 +165,37 @@ describe('normalizeLedgerTag', () => {
 });
 
 describe('decision status helpers', () => {
-  it('separates current decisions from history', () => {
+  it('separates current decisions from archived ones', () => {
     expect(isCurrentDecision(current)).toBe(true);
     expect(isCurrentDecision(superseded)).toBe(false);
-    expect(isHistoricalDecision(superseded)).toBe(true);
-    expect(isHistoricalDecision(rejected)).toBe(true);
-    expect(isHistoricalDecision(explicitlySuperseded)).toBe(true);
-    expect(isHistoricalDecision(candidate)).toBe(false);
-    expect(isHistoricalDecision(current)).toBe(false);
+    expect(isArchivedDecision(superseded)).toBe(true);
+    expect(isArchivedDecision(rejected)).toBe(true);
+    expect(isArchivedDecision(explicitlySuperseded)).toBe(true);
+    expect(isArchivedDecision(candidate)).toBe(false);
+    expect(isArchivedDecision(current)).toBe(false);
   });
 
-  it('counts current decisions and history separately', () => {
-    expect(ledgerCounts(records)).toEqual({ current: 2, history: 3 });
-    expect(ledgerCounts([])).toEqual({ current: 0, history: 0 });
+  it('counts current and archived decisions separately', () => {
+    expect(ledgerCounts(records)).toEqual({ current: 2, archived: 3 });
+    expect(ledgerCounts([])).toEqual({ current: 0, archived: 0 });
   });
 
   it('formats the pane subtitle', () => {
-    expect(ledgerSubtitle({ current: 2, history: 3 }, false)).toBe('2 decisions');
-    expect(ledgerSubtitle({ current: 2, history: 3 }, true)).toBe('2 decisions, 3 in history');
-    expect(ledgerSubtitle({ current: 1, history: 0 }, true)).toBe('1 decision, 0 in history');
+    expect(ledgerSubtitle({ current: 2, archived: 3 }, false)).toBe('2 decisions');
+    expect(ledgerSubtitle({ current: 2, archived: 3 }, true)).toBe('2 decisions, 3 archived');
+    expect(ledgerSubtitle({ current: 1, archived: 0 }, true)).toBe('1 decision, 0 archived');
   });
 });
 
 describe('readLedgerFilters', () => {
   it('reads the url parameters with canonical defaults', () => {
-    expect(readLedgerFilters(new URLSearchParams(''))).toEqual({ history: false, q: '', tag: null });
-    expect(readLedgerFilters(new URLSearchParams('history=1&q=polars&tag=%23dadr%2Fdata'))).toEqual({
-      history: true,
+    expect(readLedgerFilters(new URLSearchParams(''))).toEqual({ archived: false, q: '', tag: null });
+    expect(readLedgerFilters(new URLSearchParams('archived=1&q=polars&tag=%23dadr%2Fdata'))).toEqual({
+      archived: true,
       q: 'polars',
       tag: '#dadr/data',
     });
-    expect(readLedgerFilters(new URLSearchParams('history=0&tag=')).history).toBe(false);
+    expect(readLedgerFilters(new URLSearchParams('archived=0&tag=')).archived).toBe(false);
     expect(readLedgerFilters(new URLSearchParams('tag=')).tag).toBeNull();
   });
 });

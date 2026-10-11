@@ -1,6 +1,8 @@
 import type {
   CandidateTemplate,
   MutationResponse,
+  RecordDiffResult,
+  RecordHistory,
   RecordLifecycle,
   RecordSource,
   RecordSummary,
@@ -20,65 +22,18 @@ import type {
   RunTaskRequest,
   SupersedeRecordsRequest,
 } from './types';
+import { MockRecordStore, mockId, scenarioRecords, type MockRecord, type MockScenario } from './mock-records';
+import { hasSupersedesHeading, supersedesLink } from '$lib/records/supersedes';
 
 const fixture: Snapshot = {
   project: {
     cwd: '/tmp/dadr-mock',
-    decisions_dir: '/tmp/dadr-mock/dadr/accepted',
+    decisions_dir: '/tmp/dadr-mock/dadr/ledger',
     initialized: true,
     discovery_source: 'directory',
     status: 'Project discovered. Commands operate on the local decision records.',
   },
-  records: [
-    {
-      id: '0193fb1f-a3a0-7000-8000-000000000001',
-      id_prefix: '0193fb1fa3a0',
-      simple_record_id: '0193fb1fa3a070008000000000000001',
-      title: 'Use Polars over pandas',
-      status: 'accepted',
-      superseded: true,
-      path: 'dadr/accepted/0001-use-polars.md',
-      preview: 'Use Polars for tabular transformations.',
-      tags: ['#dadr/data/processing'],
-      timestamp_ms: 1730000000000,
-    },
-    {
-      id: '0193fb1f-a3a0-7000-8000-000000000002',
-      id_prefix: '0193fb1fa3a0',
-      simple_record_id: '0193fb1fa3a070008000000000000002',
-      title: 'Adopt pre-registration for studies',
-      status: 'candidate',
-      superseded: false,
-      path: 'dadr/candidates/0002-preregister.md',
-      preview: 'Candidate decision for pre-registration practice.',
-      tags: ['#dadr/methodology'],
-      timestamp_ms: 1730000100000,
-    },
-    {
-      id: '0193fb1f-a3a0-7000-8000-000000000003',
-      id_prefix: '0193fb1fa3a0',
-      simple_record_id: '0193fb1fa3a070008000000000000003',
-      title: 'Use Polars lazy frames',
-      status: 'accepted',
-      superseded: false,
-      path: 'dadr/accepted/0003-use-polars-lazy.md',
-      preview: 'Use lazy frames for transformations that can benefit from deferred execution.',
-      tags: ['#dadr/data/processing'],
-      timestamp_ms: 1730000200000,
-    },
-    {
-      id: '0193fb1f-a3a0-7000-8000-000000000004',
-      id_prefix: '0193fb1fa3a0',
-      simple_record_id: '0193fb1fa3a070008000000000000004',
-      title: 'Use Arrow IPC snapshots',
-      status: 'accepted',
-      superseded: false,
-      path: 'dadr/accepted/0004-use-arrow-ipc.md',
-      preview: 'Use Arrow IPC snapshots for portable intermediate data.',
-      tags: ['#dadr/data/processing'],
-      timestamp_ms: 1730000300000,
-    },
-  ],
+  records: [],
   counts: { total: 4, candidates: 1, accepted: 2, rejected: 0, superseded: 1 },
   tags: [
     { tag: '#dadr/data/processing', display: 'dadr/data/processing', record_count: 3, occurrence_count: 3 },
@@ -91,7 +46,7 @@ const fixture: Snapshot = {
         severity: 'warning',
         code: 'candidate_backlog',
         message: 'One candidate is waiting for review.',
-        path: 'dadr/candidates/0002-preregister.md',
+        path: 'dadr/inbox/preregister.md',
         record_id: '0193fb1f-a3a0-7000-8000-000000000002',
         field: 'status',
         line: null,
@@ -107,7 +62,7 @@ const fixture: Snapshot = {
         severity: 'error',
         code: 'broken_markdown_link',
         message: 'A local Markdown link points at a missing note.',
-        path: 'dadr/accepted/0001-use-polars.md',
+        path: 'dadr/archive/use-polars.md',
         record_id: '0193fb1f-a3a0-7000-8000-000000000001',
         field: './missing-note.md',
         line: 12,
@@ -138,8 +93,6 @@ const fixture: Snapshot = {
   command_catalog: {},
 };
 
-const sources = new Map<string, string>();
-const mockRecords = fixture.records;
 let nextCandidate = 5;
 let initialized = fixture.project.initialized;
 let nextTaskRun = 1;
@@ -147,13 +100,43 @@ const taskRuns: TaskRun[] = [];
 const taskResults = new Map<string, TaskResult>();
 const taskLogs = new Map<string, TaskRunLogEntry[]>();
 const taskRunPollsUntilSuccess = new Map<string, number>();
-const pendingReplacements = new Map<string, string>();
-const supersessionEdges = new Map<string, Set<string>>([
-  [
-    '0193fb1f-a3a0-7000-8000-000000000001',
-    new Set(['0193fb1f-a3a0-7000-8000-000000000003']),
-  ],
-]);
+let recordStore: MockRecordStore | undefined;
+
+/** Which seeded project the mock serves: `localStorage['dadrock:mock-scenario']`. */
+function readMockScenario(): MockScenario {
+  try {
+    return globalThis.localStorage?.getItem('dadrock:mock-scenario') === 'history' ? 'history' : 'default';
+  } catch {
+    return 'default';
+  }
+}
+
+/**
+ * Whether the mock project is in a Git repository. Browser tests simulate one
+ * outside Git, where histories have no text edits, with
+ * `localStorage['dadrock:mock-git'] = 'false'`.
+ */
+function readMockGit(): boolean {
+  try {
+    return globalThis.localStorage?.getItem('dadrock:mock-git') !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+function store(): MockRecordStore {
+  recordStore ??= new MockRecordStore(scenarioRecords(readMockScenario()), { git: readMockGit() });
+  return recordStore;
+}
+
+/** Start over from a seeded project; unit tests use it to isolate cases. */
+export function resetMockProject(
+  scenario: MockScenario = readMockScenario(),
+  options: { git?: boolean } = {},
+): void {
+  recordStore = new MockRecordStore(scenarioRecords(scenario), { git: options.git ?? readMockGit() });
+  nextCandidate = 5;
+}
 
 function readMockInitialized(): boolean {
   try {
@@ -176,7 +159,7 @@ function setMockInitialized(value: boolean) {
 }
 
 const uninitializedStatus =
-  'No Dadrock project found here. Initialize to create dadr/ with records, candidates, templates, tasks, and runs.';
+  'No Dadrock project found here. Initialize to create dadr/ with inbox, ledger, archive, templates, tasks, and runs.';
 
 const taskPackages: TaskPackage[] = [
   taskPackage('custom', 'Custom', 'Use a freeform prompt with selected records, files, folders, or notes when no dedicated DADR workflow fits.', 'markdown_report.v1', []),
@@ -201,13 +184,13 @@ const taskPackages: TaskPackage[] = [
     { name: 'record_ids', label: 'Candidate records', type: 'textarea', options: [], required: true },
     { name: 'merge_goal', label: 'Merge goal', type: 'textarea', options: [], required: false },
   ]),
-  taskPackage('edit-record', 'Edit record', 'Revise any existing DADR while preserving its lifecycle status until you choose what to do next.', 'record_revision.v1', [
-    { name: 'record_id', label: 'Record', type: 'text', options: [], required: true },
+  taskPackage('edit-record', 'Edit record', 'Revise a candidate DADR before it is accepted or rejected.', 'record_revision.v1', [
+    { name: 'record_id', label: 'Candidate', type: 'text', options: [], required: true },
     { name: 'requested_changes', label: 'Requested changes', type: 'textarea', options: [], required: true },
   ]),
-  taskPackage('supersede-record', 'Supersede record', 'Draft a replacement candidate for an accepted DADR when the project decision has changed.', 'supersession_proposal.v1', [
-    { name: 'record_id', label: 'Record to supersede', type: 'text', options: [], required: true },
-    { name: 'reason', label: 'Reason', type: 'textarea', options: [], required: true },
+  taskPackage('supersede-record', 'Supersede record', 'Draft a successor candidate that supersedes one or more accepted DADRs when the decision has changed.', 'supersession_proposal.v1', [
+    { name: 'record_ids', label: 'Records to supersede', type: 'textarea', options: [], required: true },
+    { name: 'requested_changes', label: 'Requested changes', type: 'textarea', options: [], required: true },
   ]),
   taskPackage('decisions-to-spec', 'Decisions to spec', 'Synthesize accepted DADRs into an implementation, analysis, or reporting spec for downstream work.', 'markdown_report.v1', [
     { name: 'focus', label: 'Spec focus', type: 'textarea', options: [], required: false },
@@ -228,40 +211,22 @@ function snapshotCounts(records: RecordSummary[]): Snapshot['counts'] {
   );
 }
 
-function slugify(title: string): string {
-  return (
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 48) || 'candidate'
-  );
-}
-
-function newCandidateRecord(title: string, tags: string[], body: string): RecordSummary {
-  const suffix = String(nextCandidate).padStart(12, '0');
-  const id = `0193fb1f-a3a0-7000-8000-${suffix}`;
-  nextCandidate += 1;
-  const path = `dadr/candidates/${suffix.slice(-4)}-${slugify(title)}.md`;
-  const record: RecordSummary = {
-    id,
-    id_prefix: '0193fb1fa3a0',
-    simple_record_id: id.replaceAll('-', ''),
+function newCandidateRecord(title: string, tags: string[], body: string): MockRecord {
+  let suffix = nextCandidate;
+  while (store().find(mockId(suffix))) suffix += 1;
+  nextCandidate = suffix + 1;
+  const record: MockRecord = {
+    id: mockId(suffix),
     title,
     status: 'candidate',
-    superseded: false,
-    path,
-    preview: body.trim() || 'Candidate decision.',
     tags,
-    timestamp_ms: 1730000200000 + nextCandidate,
+    successors: [],
+    body: `\n${body.trim() ? `${body.trimEnd()}\n` : ''}`,
+    extra: [],
+    file: store().newFile(mockId(suffix), title),
+    timestamp_ms: Date.now(),
   };
-  mockRecords.push(record);
-  sources.set(
-    id,
-    `---\nid: ${id}\ntitle: ${title}\nstatus: candidate\ntags: [${tags
-      .map((tag) => `"${tag}"`)
-      .join(', ')}]\n---\n\n# ${title}\n\n${body}\n`,
-  );
+  store().records.push(record);
   return record;
 }
 
@@ -324,11 +289,20 @@ function taskRequirementsFor(id: string, inputs: TaskPackage['manifest']['inputs
   );
 
   return {
-    records: id === 'custom' ? 'many' : hasInput('record_ids') ? 'many' : hasInput('record_id') ? 'one' : 'none',
+    records:
+      id === 'supersede-record'
+        ? 'one_or_more'
+        : id === 'custom'
+          ? 'many'
+          : hasInput('record_ids')
+            ? 'many'
+            : hasInput('record_id')
+              ? 'one'
+              : 'none',
     record_status:
       id === 'supersede-record' || id === 'decisions-to-spec'
         ? 'accepted'
-        : id === 'merge-records'
+        : id === 'merge-records' || id === 'edit-record'
           ? 'candidate'
           : 'all',
     paths:
@@ -374,7 +348,7 @@ function taskResultFor(request: RunTaskRequest): TaskResult {
             relationship: 'overlap',
             conflict_explanation:
               'Both records describe how intermediate data flows between steps without saying which one wins.',
-            suggested_actions: ['Replace one record with a combined decision.'],
+            suggested_actions: ['Supersede one record with a combined decision.'],
           },
         ],
       };
@@ -403,17 +377,20 @@ function taskResultFor(request: RunTaskRequest): TaskResult {
         body_markdown: `## Context\n${String(request.input.context ?? 'Task context.')}\n\n## Decision\nCreate a candidate from the supplied context.\n\n## Alternatives\nDo not record this decision.\n\n## Consequences\nThe candidate remains reviewable before acceptance.`,
         warnings: [],
       };
-    case 'supersede-record':
+    case 'supersede-record': {
+      const predecessorIds = String(request.input.record_ids ?? '')
+        .split(/\r?\n/)
+        .map((id) => id.trim())
+        .filter(Boolean);
       return {
         kind: 'supersession_proposal.v1',
         summary: 'Mock supersession proposal.',
-        superseded_record_id: String(request.input.record_id ?? ''),
+        superseded_record_ids: predecessorIds,
         superseding_title: 'Superseding candidate',
-        superseding_body_markdown:
-          '## Context\nA previous decision needs replacement.\n\n## Decision\nSupersede the older record.\n\n## Alternatives\nKeep both records active.\n\n## Consequences\nThe ledger has one current decision for this issue.',
-        rationale: String(request.input.reason ?? 'No rationale supplied.'),
-        suggested_actions: ['Write a candidate and review it.'],
+        superseding_body_markdown: `## Context\nA previous decision needs a successor.\n\n## Decision\nSupersede the older record.\n\n## Alternatives\nKeep both records active.\n\n## Consequences\nThe ledger has one current decision for this issue.`,
+        rationale: String(request.input.requested_changes ?? 'No rationale supplied.'),
       };
+    }
     case 'edit-record':
       return {
         kind: 'record_revision.v1',
@@ -499,23 +476,39 @@ function advanceMockTaskRuns() {
   }
 }
 
+function clone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+/** A record by id, falling back to the first one like the other mock lookups. */
+function recordOrFirst(id: string): MockRecord {
+  const record = store().find(id) ?? store().records[0];
+  if (!record) throw new Error(`mock record ${id} not found`);
+  return record;
+}
+
 export class MockApi implements DadrApi {
   async getSnapshot(): Promise<Snapshot> {
     const currentInitialized = readMockInitialized();
-    return JSON.parse(
-      JSON.stringify({
-        ...fixture,
-        project: {
-          ...fixture.project,
-          initialized: currentInitialized,
-          status: currentInitialized
-            ? 'Project discovered. Commands operate on the local decision records.'
-            : uninitializedStatus,
-        },
-        records: mockRecords,
-        counts: snapshotCounts(mockRecords),
-      }),
-    ) as Snapshot;
+    const records = store().summaries();
+    const history = readMockScenario() === 'history';
+    const quiet = { counts: { errors: 0, warnings: 0, infos: 0 }, diagnostics: [] };
+    return clone({
+      ...fixture,
+      project: {
+        ...fixture.project,
+        initialized: currentInitialized,
+        status: currentInitialized
+          ? 'Project discovered. Commands operate on the local decision records.'
+          : uninitializedStatus,
+      },
+      records,
+      counts: snapshotCounts(records),
+      tags: history ? tagCounts(records) : fixture.tags,
+      project_validation: history ? quiet : fixture.project_validation,
+      link_health: history ? quiet : fixture.link_health,
+      settings: history ? { ...fixture.settings, diagnostics: [] } : fixture.settings,
+    });
   }
 
   async initializeProject(): Promise<MutationResponse> {
@@ -524,9 +517,9 @@ export class MockApi implements DadrApi {
       message: 'created 8 paths, reused 0 paths',
       changed_paths: [
         'dadr',
-        'dadr/accepted',
-        'dadr/candidates',
-        'dadr/rejected',
+        'dadr/inbox',
+        'dadr/ledger',
+        'dadr/archive',
         'dadr/templates',
         'dadr/tasks',
         'dadr/runs',
@@ -537,50 +530,28 @@ export class MockApi implements DadrApi {
   }
 
   async getRecordSource(id: string): Promise<RecordSource> {
-    const record = mockRecords.find((item) => item.id === id) ?? mockRecords[0];
-    if (!record) {
-      throw new Error(`mock record ${id} not found`);
-    }
-    return {
-      id: record.id,
-      path: record.path,
-      content:
-        sources.get(record.id) ??
-        `---\nid: ${record.id}\ntitle: ${record.title}\nstatus: ${record.status}\n---\n\n# ${record.title}\n\n${record.preview}\n`,
-    };
+    const record = recordOrFirst(id);
+    return { id: record.id, path: store().path(record), content: store().source(record) };
   }
 
   async getRecordLifecycle(id: string): Promise<RecordLifecycle> {
-    const record = mockRecords.find((item) => item.id === id) ?? mockRecords[0];
-    if (!record) {
-      throw new Error(`mock record ${id} not found`);
-    }
-    const predecessors = mockRecords.filter((candidate) =>
-      supersessionEdges.get(candidate.id)?.has(record.id),
-    );
-    const successors = mockRecords.filter((candidate) =>
-      supersessionEdges.get(record.id)?.has(candidate.id),
-    );
-    return JSON.parse(
-      JSON.stringify({
-        record,
-        predecessors,
-        successors,
-        pending_supersedes: mockRecords.find((item) => item.id === pendingReplacements.get(record.id)) ?? null,
-        diagnostics: [],
-      }),
-    ) as RecordLifecycle;
+    return clone(store().lifecycle(recordOrFirst(id)));
+  }
+
+  async getRecordHistory(id: string, options: { patch?: boolean } = {}): Promise<RecordHistory> {
+    return clone(store().history(id, options.patch ?? false));
+  }
+
+  async getRecordDiff(id: string, against: string): Promise<RecordDiffResult> {
+    return clone(store().diffResult(against, id));
   }
 
   async saveRecordSource(id: string, content: string): Promise<MutationResponse> {
-    const record = mockRecords.find((item) => item.id === id) ?? mockRecords[0];
-    if (!record) {
-      throw new Error(`mock record ${id} not found`);
-    }
-    sources.set(record.id, content);
+    const record = recordOrFirst(id);
+    store().save(record, content);
     return {
       message: `saved ${record.id}`,
-      changed_paths: [record.path],
+      changed_paths: [store().path(record)],
       focus: {
         selected_id: record.id,
         status_filter: record.status,
@@ -607,11 +578,30 @@ export class MockApi implements DadrApi {
   }
 
   async createCandidate(request: CreateCandidateRequest): Promise<MutationResponse> {
-    const record = newCandidateRecord(request.title, request.tags, request.body_markdown);
-    if (request.supersedes) pendingReplacements.set(record.id, request.supersedes);
+    const supersedes =
+      typeof request.supersedes === 'string' ? [request.supersedes] : (request.supersedes ?? []);
+    const predecessors = supersedes.map((id) => store().get(id));
+    for (const predecessor of predecessors) {
+      if (predecessor.status !== 'accepted') {
+        throw new Error(`\`${predecessor.title}\` is ${predecessor.status}; a successor can supersede only an accepted decision`);
+      }
+      if (store().isSuperseded(predecessor)) {
+        throw new Error(`\`${predecessor.title}\` is already superseded; draft a successor of the current decision instead`);
+      }
+    }
+    // Like Dadrock, write `## Supersedes` as the first section of the body: one
+    // link per predecessor, labeled with its title, then the reason, unless the
+    // draft already has the section.
+    const links = predecessors.map((predecessor) => `${supersedesLink(predecessor)}\n`).join('');
+    const reason = request.supersedes_reason?.trim() ? `\n${request.supersedes_reason.trim()}\n` : '';
+    const body =
+      predecessors.length && !hasSupersedesHeading(request.body_markdown)
+        ? `## Supersedes\n\n${links}${reason}\n${request.body_markdown.trimStart()}`
+        : request.body_markdown;
+    const record = newCandidateRecord(request.title, request.tags, body);
     return {
       message: `created candidate ${record.id}`,
-      changed_paths: [record.path],
+      changed_paths: [store().path(record)],
       focus: {
         selected_id: record.id,
         status_filter: 'candidate',
@@ -621,22 +611,17 @@ export class MockApi implements DadrApi {
   }
 
   async applyRecordRevision(request: ApplyRecordRevisionRequest): Promise<MutationResponse> {
-    const record = mockRecords.find((item) => item.id === request.record_id);
-    if (!record) {
-      throw new Error(`mock record ${request.record_id} not found`);
+    const record = store().get(request.record_id);
+    if (record.status !== 'candidate') {
+      throw new Error(`\`${record.title}\` is ${record.status}; only candidates take revisions`);
     }
     record.title = request.title;
     record.tags = request.tags;
-    record.preview = request.body_markdown.trim() || record.preview;
-    sources.set(
-      record.id,
-      `---\nid: ${record.id}\ntitle: ${request.title}\nstatus: ${record.status}\ntags: [${request.tags
-        .map((tag) => `"${tag}"`)
-        .join(', ')}]\n---\n\n# ${request.title}\n\n${request.body_markdown}\n`,
-    );
+    record.body = `\n${request.body_markdown.trimEnd()}\n`;
+    record.raw = undefined;
     return {
       message: `applied revision ${record.id}`,
-      changed_paths: [record.path],
+      changed_paths: [store().path(record)],
       focus: {
         selected_id: record.id,
         status_filter: record.status,
@@ -646,26 +631,12 @@ export class MockApi implements DadrApi {
   }
 
   async supersedeRecords(request: SupersedeRecordsRequest): Promise<MutationResponse> {
-    const oldRecord = mockRecords.find((record) => record.id === request.from);
-    if (!oldRecord) {
-      throw new Error(`mock record ${request.from} not found`);
-    }
-    const successors = request.to.map((recordId) => {
-      const successor = mockRecords.find((record) => record.id === recordId);
-      if (!successor) {
-        throw new Error(`mock record ${recordId} not found`);
-      }
-      return successor;
-    });
-    oldRecord.superseded = true;
-    const edges = supersessionEdges.get(oldRecord.id) ?? new Set<string>();
-    for (const successor of successors) {
-      edges.add(successor.id);
-    }
-    supersessionEdges.set(oldRecord.id, edges);
+    const oldRecord = store().get(request.from);
+    const successors = request.to.map((recordId) => store().get(recordId));
+    store().supersede(oldRecord, successors);
     return {
       message: 'record superseded',
-      changed_paths: [oldRecord.path, ...successors.map((record) => record.path)],
+      changed_paths: [store().path(oldRecord), ...successors.map((record) => store().path(record))],
       focus: {
         selected_id: oldRecord.id,
         status_filter: 'superseded',
@@ -682,7 +653,7 @@ export class MockApi implements DadrApi {
     );
     return {
       message: `drafted candidate ${record.id}`,
-      changed_paths: [record.path],
+      changed_paths: [store().path(record)],
       focus: {
         selected_id: record.id,
         status_filter: 'candidate',
@@ -691,17 +662,36 @@ export class MockApi implements DadrApi {
     };
   }
 
-  async acceptCandidate(id: string): Promise<MutationResponse> {
-    return this.candidateAction(id, 'accepted');
+  async acceptCandidate(id: string, withIds: string[] = []): Promise<MutationResponse> {
+    const accepted = store().accept([id, ...withIds]);
+    const first = accepted[0] as MockRecord;
+    return {
+      message: accepted.length === 1 ? `accepted candidate ${first.id}` : `accepted ${accepted.length} candidates`,
+      changed_paths: accepted.map((record) => store().path(record)),
+      focus: {
+        selected_id: first.id,
+        status_filter: 'accepted',
+      },
+      snapshot: await this.getSnapshot(),
+    };
   }
 
   async rejectCandidate(id: string): Promise<MutationResponse> {
-    return this.candidateAction(id, 'rejected');
+    const record = store().reject(id);
+    return {
+      message: `rejected candidate ${record.id}`,
+      changed_paths: [store().path(record)],
+      focus: {
+        selected_id: record.id,
+        status_filter: 'rejected',
+      },
+      snapshot: await this.getSnapshot(),
+    };
   }
 
   async listTasks(): Promise<TaskListing> {
     return {
-      tasks: JSON.parse(JSON.stringify(taskPackages)) as TaskPackage[],
+      tasks: clone(taskPackages),
       diagnostics: [],
     };
   }
@@ -711,12 +701,12 @@ export class MockApi implements DadrApi {
     if (!task) {
       throw new Error(`mock task ${id} not found`);
     }
-    return JSON.parse(JSON.stringify(task)) as TaskPackage;
+    return clone(task);
   }
 
   async listTaskRuns(): Promise<TaskRun[]> {
     advanceMockTaskRuns();
-    return JSON.parse(JSON.stringify(taskRuns)) as TaskRun[];
+    return clone(taskRuns);
   }
 
   async getTaskResult(id: string): Promise<TaskResult> {
@@ -724,15 +714,15 @@ export class MockApi implements DadrApi {
     if (!result) {
       throw new Error(`mock task run ${id} has no result`);
     }
-    return JSON.parse(JSON.stringify(result)) as TaskResult;
+    return clone(result);
   }
 
   async getTaskLog(id: string): Promise<TaskRunLogEntry[]> {
-    return JSON.parse(JSON.stringify(taskLogs.get(id) ?? [])) as TaskRunLogEntry[];
+    return clone(taskLogs.get(id) ?? []);
   }
 
   async runTask(request: RunTaskRequest): Promise<TaskRun> {
-    return JSON.parse(JSON.stringify(createMockTaskRun(request))) as TaskRun;
+    return clone(createMockTaskRun(request));
   }
 
   async cancelTaskRun(id: string): Promise<TaskRun> {
@@ -751,49 +741,28 @@ export class MockApi implements DadrApi {
         { timestamp: now, message: 'Task cancelled.' },
       ]);
     }
-    return JSON.parse(JSON.stringify(run)) as TaskRun;
+    return clone(run);
   }
 
-  async clearTaskHistory(): Promise<MutationResponse> {
+  async clearTaskRuns(): Promise<MutationResponse> {
     taskRuns.splice(0, taskRuns.length);
     taskResults.clear();
     taskLogs.clear();
     taskRunPollsUntilSuccess.clear();
     return {
-      message: 'Task history cleared.',
+      message: 'Agent runs cleared.',
       changed_paths: ['/tmp/dadr-mock/dadr/runs'],
       snapshot: await this.getSnapshot(),
     };
   }
+}
 
-  private async candidateAction(
-    id: string,
-    status: 'accepted' | 'rejected',
-  ): Promise<MutationResponse> {
-    const record = mockRecords.find((item) => item.id === id);
-    if (!record) {
-      throw new Error(`mock record ${id} not found`);
-    }
-    if (status === 'accepted' && pendingReplacements.has(id)) {
-      const old = mockRecords.find((item) => item.id === pendingReplacements.get(id));
-      if (!old || old.status !== 'accepted' || old.superseded) throw new Error('Previous decision is no longer current');
-      old.superseded = true;
-      supersessionEdges.set(old.id, new Set([id]));
-      pendingReplacements.delete(id);
-    }
-    record.status = status;
-    record.path =
-      status === 'accepted'
-        ? record.path.replace('dadr/candidates/', 'dadr/accepted/')
-        : record.path.replace('dadr/candidates/', 'dadr/rejected/');
-    return {
-      message: `${status === 'accepted' ? 'accepted' : 'rejected'} candidate ${record.id}`,
-      changed_paths: [record.path],
-      focus: {
-        selected_id: record.id,
-        status_filter: status,
-      },
-      snapshot: await this.getSnapshot(),
-    };
+function tagCounts(records: RecordSummary[]): Snapshot['tags'] {
+  const counts = new Map<string, number>();
+  for (const record of records) {
+    for (const tag of record.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
+  return [...counts]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([tag, count]) => ({ tag, display: tag.replace(/^#/, ''), record_count: count, occurrence_count: count }));
 }

@@ -40,7 +40,8 @@
 
   const source = createQuery(() => ({
     queryKey: ['record-source', item.recordId],
-    queryFn: () => api.getRecordSource(item.recordId),
+    // Read the id from the key: the item can change while a refetch runs.
+    queryFn: ({ queryKey }) => api.getRecordSource(String(queryKey[1])),
   }));
 
   const currentBody = $derived(source.data ? stripFrontMatter(source.data.content) : '');
@@ -136,7 +137,7 @@
         </label>
         <label class="block space-y-1.5">
           <span class="block text-xs font-medium uppercase tracking-wide text-fg-subtle">Revision tags</span>
-          <TextInput bind:value={tagsInput} placeholder="#dadr/data/processing #dadr/methodology" />
+          <TextInput bind:value={tagsInput} placeholder="#kind/sample #topic/missingness" />
         </label>
         <div class="block space-y-1.5">
           <span class="block text-xs font-medium uppercase tracking-wide text-fg-subtle">Revised record markdown</span>

@@ -71,12 +71,48 @@ describe('resolveDraftIntent', () => {
     expect(resolveDraftIntent({ mode: 'revise', text: '', paths: [], recordIds: ['cand-1'] }, records)).toMatchObject({ ok: false });
   });
 
-  it('drafts a replacement for the attached decision', () => {
+  it('drafts a successor for the attached decision', () => {
     const result = resolveDraftIntent({ mode: 'supersede', text: 'Moved to DuckDB', paths: [], recordIds: ['acc-1'] }, records);
     expect(result).toMatchObject({
       ok: true,
-      intent: { taskId: 'supersede-record', request: { input: { record_id: 'acc-1', reason: 'Moved to DuckDB' } } },
+      intent: {
+        taskId: 'supersede-record',
+        label: 'Draft a successor for “Use Polars”',
+        request: { input: { record_ids: 'acc-1', requested_changes: 'Moved to DuckDB' } },
+      },
     });
+  });
+
+  it('drafts one successor for several decisions, a merge', () => {
+    const result = resolveDraftIntent(
+      { mode: 'supersede', text: 'One rule', paths: [], recordIds: ['acc-1', 'acc-2'] },
+      [...records, { ...records[0]!, id: 'acc-2', title: 'Use Arrow', status: 'accepted' }],
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      intent: {
+        taskId: 'supersede-record',
+        label: 'Draft one successor for 2 decisions',
+        request: { input: { record_ids: 'acc-1\nacc-2' }, context: { records: ['acc-1', 'acc-2'] } },
+      },
+    });
+  });
+
+  it('refuses to supersede an archived record', () => {
+    const archived = { ...records[0]!, id: 'acc-9', title: 'Old rule', status: 'accepted' as const, superseded: true };
+    expect(
+      resolveDraftIntent({ mode: 'supersede', text: 'x', paths: [], recordIds: ['acc-9'] }, [...records, archived]),
+    ).toEqual({ ok: false, reason: '“Old rule” is not a decision in force; supersede the current decision instead.' });
+  });
+
+  it('revises a decision in force by drafting a successor, and never an archived one', () => {
+    expect(
+      resolveDraftIntent({ mode: 'revise', text: 'Use DuckDB', paths: [], recordIds: ['acc-1'] }, records),
+    ).toMatchObject({ ok: true, intent: { taskId: 'supersede-record', request: { input: { record_ids: 'acc-1' } } } });
+    const rejected = { ...records[0]!, id: 'rej-1', title: 'Use SAS', status: 'rejected' as const };
+    expect(
+      resolveDraftIntent({ mode: 'revise', text: 'x', paths: [], recordIds: ['rej-1'] }, [...records, rejected]),
+    ).toEqual({ ok: false, reason: '“Use SAS” is archived; correct it with Edit in the Ledger.' });
   });
 
   it('refuses to merge fewer than two candidates', () => {

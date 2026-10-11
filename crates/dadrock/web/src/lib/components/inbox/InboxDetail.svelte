@@ -7,14 +7,26 @@
   import ReportDetail from './ReportDetail.svelte';
   import RevisionDetail from './RevisionDetail.svelte';
   import RunningDetail from './RunningDetail.svelte';
+  import SplitDetail from './SplitDetail.svelte';
 
-  let { item, agentAvailable }: { item: InboxItem; agentAvailable: boolean } = $props();
+  let {
+    item,
+    agentAvailable,
+    focusId = null,
+  }: {
+    item: InboxItem;
+    agentAvailable: boolean;
+    /** The candidate a link asked for, when it is shown inside a split. */
+    focusId?: string | null;
+  } = $props();
 </script>
 
 {#if item.kind === 'candidate'}
   <div data-inbox-candidate class="flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-5">
     <RecordDetailPanel id={item.record.id} surface="inbox" embedded />
   </div>
+{:else if item.kind === 'split'}
+  <SplitDetail {item} {focusId} />
 {:else if item.kind === 'proposal'}
   <ProposalDetail {item} />
 {:else if item.kind === 'revision'}

@@ -187,7 +187,7 @@ The default should create or report only `high` confidence candidates.
 When the hook creates a candidate, it should:
 
 - allocate a collision-resistant candidate ID, preferably `<uuid7>`;
-- write the candidate under `dadr/candidates/`;
+- write the candidate under `dadr/inbox/`;
 - set `status: candidate`;
 - add tags such as `#origin/hook`, `#origin/hook/pre-commit`, and `#confidence/<level>` so the candidate's provenance is visible without a separate sidecar;
 - include the Git diff range and staged blob IDs in the candidate body or in a tool-managed cache (not in the canonical front matter);
@@ -279,7 +279,7 @@ The hook should print a concise report:
 
 ```text
 DADR hook: 2 consequential changes detected
-  created dadr/candidates/01938b8e4d70-drop-missing-treatment.md
+  created dadr/inbox/drop-missing-treatment.md
   covered by 01938b89-1234-7000-8000-aaaaaaaaaaaa: analysis/models.py:88
 Routine changes ignored: 5
 Bypass: git commit --no-verify or DADR_SKIP_HOOK=1 git commit ...

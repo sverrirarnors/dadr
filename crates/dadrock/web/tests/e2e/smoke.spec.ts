@@ -50,13 +50,13 @@ test('command palette opens with the keyboard and navigates', async ({ page }) =
   await expect(page).toHaveURL(/\/ledger$/);
 });
 
-test('command palette opens records in the ledger, including history', async ({ page }) => {
+test('command palette opens records in the ledger, including archived ones', async ({ page }) => {
   await page.goto('/inbox');
   await page.locator('body').click();
   await page.keyboard.press('Control+K');
   await page.getByPlaceholder('Search commands...').fill('polars over');
   await page.getByRole('button', { name: /Use Polars over pandas/ }).click();
-  await expect(page).toHaveURL(/\/ledger\?history=1&id=0193fb1f-a3a0-7000-8000-000000000001$/);
+  await expect(page).toHaveURL(/\/ledger\?archived=1&id=0193fb1f-a3a0-7000-8000-000000000001$/);
 });
 
 test('command palette opens the Draft page', async ({ page }) => {

@@ -2,34 +2,28 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { useQueryClient } from '@tanstack/svelte-query';
-  import { untrack } from 'svelte';
-  import { createApi, type RecordSummary } from '$lib/api';
+  import { createApi } from '$lib/api';
   import { candidateDestination, parseListInput } from '$lib/candidates/form';
   import MarkdownEditor from '$lib/components/editor/MarkdownEditor.svelte';
   import { Alert, Button, Field, TextInput } from '$lib/components/ui';
-  import { errorMessage, manualPrefill } from '$lib/draft/composer-view';
+  import { errorMessage } from '$lib/draft/composer-view';
   import { applyMutationResponse } from '$lib/query/mutation-cache';
-  import { composer, type DraftMode } from '$lib/stores/composer.svelte';
+  import { composer } from '$lib/stores/composer.svelte';
   import { toasts } from '$lib/stores/toast.svelte';
 
+  /** A new decision written by hand. Successors have their own form, DraftSuccessorForm. */
   type Props = {
-    mode: DraftMode;
-    /** The decision being replaced in supersede mode. */
-    record?: RecordSummary | undefined;
     agentAvailable: boolean;
     onuseagent: () => void;
   };
 
-  let { mode, record, agentAvailable, onuseagent }: Props = $props();
+  let { agentAvailable, onuseagent }: Props = $props();
 
   const api = createApi();
   const queryClient = useQueryClient();
 
-  // The form is recreated whenever the composer opens, so the prefill is
-  // deliberately read once.
-  const prefill = untrack(() => manualPrefill(mode, record));
-  let title = $state(prefill.title);
-  let tags = $state(prefill.tags);
+  let title = $state('');
+  let tags = $state('');
   let markdown = $state('');
   let templateLoaded = $state(false);
   let creating = $state(false);
@@ -59,7 +53,6 @@
         title: title.trim(),
         tags: parseListInput(tags),
         body_markdown: markdown,
-        supersedes: mode === 'supersede' ? record?.id : undefined,
       });
       toasts.push({ severity: 'success', message: response.message });
       await applyMutationResponse(queryClient, response);
@@ -81,12 +74,6 @@
     void createCandidate();
   }}
 >
-  {#if mode === 'supersede'}
-    <Alert variant="info">
-      Accepting this replacement will link it to the previous decision and keep the previous explanation as history.
-    </Alert>
-  {/if}
-
   <Field label="Title">
     <TextInput
       data-autofocus

@@ -3,11 +3,16 @@ import { resolve } from '$app/paths';
 
 export type DraftMode = 'new' | 'revise' | 'supersede' | 'merge';
 
+/** Which half of the Draft page is showing: the agent prompt or the form written by hand. */
+export type ComposerView = 'agent' | 'manual';
+
 export interface ComposerPrefill {
   mode?: DraftMode;
   recordIds?: string[];
   paths?: string[];
   text?: string;
+  /** Open on this view instead of the default for the mode. */
+  view?: ComposerView;
 }
 
 export interface ComposerShowOptions {
@@ -26,6 +31,7 @@ class ComposerStore {
   recordIds = $state<string[]>([]);
   paths = $state<string[]>([]);
   text = $state('');
+  view = $state<ComposerView | null>(null);
 
   show(prefill: ComposerPrefill = {}, options: ComposerShowOptions = {}) {
     this.prefill(prefill);
@@ -54,6 +60,7 @@ class ComposerStore {
     this.recordIds = [...(prefill.recordIds ?? [])];
     this.paths = [...(prefill.paths ?? [])];
     this.text = prefill.text ?? '';
+    this.view = prefill.view ?? null;
   }
 }
 

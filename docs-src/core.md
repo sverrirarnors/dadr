@@ -54,7 +54,7 @@ to be re-run; see [[01938c30b1e2]].
 
 A new record is a **candidate**. A human reviews it and marks it **accepted** or **rejected**. Acceptance keeps the same ID. An agent may help draft a candidate, but cannot decide whether you endorse it.
 
-Once approved, a decision's substantive content is preserved. Minor corrections remain possible; changing the decision means accepting a successor that supersedes it. See [Changing decisions](changing.md).
+Once approved, a decision's substantive content is preserved. Corrections that leave the meaning intact are made in place; changing the decision means accepting a successor that supersedes it. See [Changing decisions](changing.md).
 
 ## What deserves a record?
 

@@ -12,6 +12,9 @@ export async function applyMutationResponse(
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['snapshot'] }),
     queryClient.invalidateQueries({ queryKey: ['record-lifecycle'] }),
+    // Histories and diffs span several records, so any write can change them.
+    queryClient.invalidateQueries({ queryKey: ['record-history'] }),
+    queryClient.invalidateQueries({ queryKey: ['record-diff'] }),
     ...affectedRecordIds.map((recordId) =>
       queryClient.invalidateQueries({ queryKey: ['record-source', recordId] }),
     ),

@@ -31,20 +31,20 @@ test('ledger lists current decisions newest first and counts them', async ({ pag
   await expect(list(page).getByText('ACC')).toHaveCount(0);
 });
 
-test('show history reveals superseded decisions with a status badge', async ({ page }) => {
+test('show archived reveals superseded decisions with a status badge', async ({ page }) => {
   await page.goto('/ledger');
 
-  await page.getByLabel('Show history').check();
+  await page.getByLabel('Show archived').check();
 
-  await expect(page).toHaveURL(/\/ledger\?history=1$/);
+  await expect(page).toHaveURL(/\/ledger\?archived=1$/);
   const row = list(page).getByRole('link', { name: /Use Polars over pandas/ });
   await expect(row).toBeVisible();
   await expect(row.getByText('SUP')).toBeVisible();
   await expect(list(page).getByRole('link')).toHaveCount(3);
-  await expect(page.getByText('2 decisions, 1 in history', { exact: true })).toBeVisible();
+  await expect(page.getByText('2 decisions, 1 archived', { exact: true })).toBeVisible();
   await expect(list(page).getByText('Adopt pre-registration for studies')).toHaveCount(0);
 
-  await page.getByLabel('Show history').uncheck();
+  await page.getByLabel('Show archived').uncheck();
   await expect(page).toHaveURL(/\/ledger$/);
   await expect(list(page).getByRole('link')).toHaveCount(2);
 });
@@ -92,38 +92,47 @@ test('tag facet filters by prefix and offers a clear control', async ({ page }) 
   await expect(facet(page).getByRole('button', { name: 'Clear' })).toHaveCount(0);
 });
 
-test('selecting a row shows the record and its supersession chain', async ({ page }) => {
-  await page.goto('/ledger?history=1');
+test('selecting a row shows the record and its history', async ({ page }) => {
+  await page.goto('/ledger?archived=1');
 
   await list(page).getByRole('link', { name: /Use Polars lazy frames/ }).click();
 
-  await expect(page).toHaveURL(new RegExp(`/ledger\\?history=1&id=${lazyFramesId}$`));
+  await expect(page).toHaveURL(new RegExp(`/ledger\\?archived=1&id=${lazyFramesId}$`));
   await expect(detail(page).getByRole('heading', { name: 'Use Polars lazy frames' }).first()).toBeVisible();
-  await expect(detail(page).getByText('0003-use-polars-lazy.md')).toBeVisible();
+  await expect(detail(page).getByText('use-polars-lazy.md')).toBeVisible();
   await expect(detail(page).getByRole('link', { name: '#dadr/data/processing' })).toHaveAttribute(
     'href',
     '/ledger?tag=%23dadr%2Fdata%2Fprocessing',
   );
-  await expect(detail(page).getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(detail(page).getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
   await expect(detail(page).getByRole('button', { name: 'Revise with agent' })).toBeVisible();
   await expect(detail(page).getByRole('button', { name: 'Supersede' })).toBeVisible();
   await expect(detail(page).locator('[data-action-menu]')).toHaveCount(0);
+  await expect(detail(page).locator('[data-record-supersession]')).toHaveCount(0);
 
-  const chain = detail(page).locator('[data-record-supersession]');
-  await expect(chain).toContainText('Supersedes');
-  const predecessor = chain.getByRole('link', { name: 'Use Polars over pandas' });
-  await expect(predecessor).toHaveAttribute('href', `/ledger?history=1&id=${supersededId}`);
+  await detail(page).getByRole('tab', { name: /History/ }).click();
+  const history = detail(page).locator('[data-record-history]');
+  await expect(history.locator('[data-history-version]')).toHaveCount(2);
+  await expect(history.locator('[data-history-opened]')).toContainText('Use Polars lazy frames');
+  await expect(history.locator('[data-history-opened]')).toContainText('current');
+  await expect(history.getByText('No reason recorded.')).toBeVisible();
+  const predecessor = history.getByRole('link', { name: 'Use Polars over pandas' });
+  await expect(predecessor).toHaveAttribute('href', `/ledger?archived=1&id=${supersededId}`);
   await predecessor.click();
 
-  await expect(page).toHaveURL(new RegExp(`/ledger\\?history=1&id=${supersededId}$`));
+  await expect(page).toHaveURL(new RegExp(`/ledger\\?archived=1&id=${supersededId}$`));
   await expect(detail(page).getByRole('heading', { name: 'Use Polars over pandas' }).first()).toBeVisible();
-  await expect(detail(page).getByText('0001-use-polars.md')).toBeVisible();
-  await expect(detail(page).locator('[data-record-supersession]')).toContainText('Superseded by');
-  await expect(
-    detail(page).locator('[data-record-supersession]').getByRole('link', { name: 'Use Polars lazy frames' }),
-  ).toHaveAttribute('href', `/ledger?history=1&id=${lazyFramesId}`);
+  await expect(detail(page).getByText('use-polars.md')).toBeVisible();
+  const supersededBy = detail(page).locator('[data-record-superseded-by]');
+  await expect(supersededBy).toContainText('Superseded by');
+  await expect(supersededBy.getByRole('link', { name: '“Use Polars lazy frames”' })).toHaveAttribute(
+    'href',
+    `/ledger?archived=1&id=${lazyFramesId}`,
+  );
+  // An archived record is corrected in place, never superseded or revised.
   await expect(detail(page).getByRole('button', { name: 'Supersede' })).toHaveCount(0);
-  await expect(detail(page).getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(detail(page).getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
+  await expect(detail(page).getByRole('button', { name: 'Revise with agent' })).toHaveCount(0);
   await expect(list(page).getByRole('link', { name: /Use Polars over pandas/ })).toHaveAttribute('aria-current', 'page');
 });
 
@@ -133,7 +142,7 @@ test('supersede opens the Draft page for that decision', async ({ page }) => {
   await detail(page).getByRole('button', { name: 'Supersede' }).click();
 
   await expect(page).toHaveURL(/\/draft$/);
-  await expect(page.locator('[data-draft-composer]').getByRole('heading', { name: 'Replace “Use Arrow IPC snapshots”' })).toBeVisible();
+  await expect(page.locator('[data-draft-composer]').getByRole('heading', { name: 'Supersede “Use Arrow IPC snapshots”' })).toBeVisible();
 });
 
 test('narrow screens open records on their own page', async ({ page }) => {

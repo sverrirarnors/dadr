@@ -35,9 +35,9 @@ describe('primary navigation', () => {
 describe('url builders', () => {
   it('keeps ledger urls canonical', () => {
     expect(ledgerUrl()).toBe('/ledger');
-    expect(ledgerUrl({ q: '', tag: null, history: false })).toBe('/ledger');
-    expect(ledgerUrl({ q: 'polars', tag: '#dadr/data', history: true, id: 'abc', tab: 'edit' })).toBe(
-      '/ledger?q=polars&tag=%23dadr%2Fdata&history=1&id=abc&tab=edit',
+    expect(ledgerUrl({ q: '', tag: null, archived: false })).toBe('/ledger');
+    expect(ledgerUrl({ q: 'polars', tag: '#dadr/data', archived: true, id: 'abc', tab: 'edit' })).toBe(
+      '/ledger?q=polars&tag=%23dadr%2Fdata&archived=1&id=abc&tab=edit',
     );
     expect(ledgerRecordUrl('a b')).toBe('/ledger/a%20b');
   });
