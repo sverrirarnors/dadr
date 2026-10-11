@@ -126,8 +126,8 @@ Authors can annotate analysis code directly with `#dadr/...` tags in source
 comments. The convention is documented in the [format spec](specification.md#code-tags),
 but Dadrock does not yet scan source comments or validate code-tag references.
 
-`#dadr/<uuid7-prefix>` tags are intended to link surrounding code to a specific
-record. `#dadr/kind/...`, `#dadr/topic/...`, `#dadr/axis/...`, etc. classify the
+`#dadr/<short-id>` tags link surrounding code to a specific record.
+`#dadr/kind/...`, `#dadr/topic/...`, `#dadr/multiverse/...`, etc. classify the
 surrounding code without naming a specific record. Future inference,
 faithfulness, and tag-hygiene tools may use these annotations as signals.
 

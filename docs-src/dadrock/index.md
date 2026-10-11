@@ -66,8 +66,8 @@ Validation is concerned with the **internal coherence** of the records: front ma
 | Layer | What it checks | Command |
 |---|---|---|
 | Schema | Per-record front matter, required fields, well-typed values, unique UUIDv7. | `dadrock validate` |
-| Structural | Per-record body sections, citation resolution, plan-deviation requirements. | `dadrock validate` |
-| Project-wide | DAG integrity, filename collisions, accepted-record immutability, link resolution across the project. | `dadrock validate` |
+| Structural | Per-record body sections, plan-deviation requirements. | `dadrock validate` |
+| Project-wide | DAG integrity, short-id collisions, accepted-record immutability, link resolution across the project. | `dadrock validate` |
 
 `dadrock validate` runs the full project suite. Use `dadrock validate records` to target record front matter and structure, `dadrock validate links` to target links, and `dadrock validate tags` to target tag syntax.
 
@@ -75,8 +75,9 @@ Validation is concerned with the **internal coherence** of the records: front ma
 
 - front matter exists and parses as YAML;
 - required fields (`title`, `status`, `id`) are present and well-typed;
-- `id` is a well-formed UUIDv7 and unique within the project;
+- `id` is a well-formed UUIDv7, and both the `id` and its 12-character short id are unique within the project;
 - `status` is one of `candidate`, `accepted`, or `rejected`;
+- front matter contains no `date` key and no ISO 8601 date or date-time value: a record's time comes only from its UUIDv7 `id`;
 - an accepted record with a non-empty `successors` array is **superseded** — derived from the graph rather than expressed as a status value;
 - `successors` entries, when supplied, are well-formed UUIDv7s on accepted records;
 - `tags` entries follow the format rules in the [DADR specification](../specification.md#tags);
@@ -84,10 +85,8 @@ Validation is concerned with the **internal coherence** of the records: front ma
 
 ### Structural
 
-- accepted records contain `Context`, `Decision`, `Alternatives`, and `Consequences` sections;
-- the `Alternatives` section is non-empty (or contains an explicit `Not applicable` / `Unknown` statement);
+- accepted records contain `Context`, `Decision`, `Alternatives`, and `Consequences` sections, each exactly once and each with text;
 - accepted records contain no placeholders such as `{...}` or `TBD`;
-- citation keys resolve against the per-record `bibliography` field;
 - records that document plan deviations include a `## Plan deviation` section
   with reason, impact assessment, and reviewer;
 - records that amend a plan link to the approved amendment or review event.
@@ -106,21 +105,21 @@ Checks include:
 
 - **Preambles.** Schema and structural validation for every record.
 - **DAG integrity.** `successors` entries resolve to accepted records; no cycles; candidates and rejected records do not carry supersession edges.
-- **Filename collisions.** No two records share the same filename; no two records share the same 12-character timestamp prefix without one of them using the full-UUIDv7 fallback.
+- **Short-id collisions.** No two records share the same filename or the same 12-character short id.
 - **Accepted-record immutability.** Validation finds the commit at which each record's `status` first became `accepted` and treats the file's blob hash from that commit as the immutability baseline. Subsequent edits that change the hash are flagged.
-- **Link resolution.** Re-resolves every Markdown link and wikilink: referenced local paths exist; wikilink prefixes resolve to exactly one record (no ambiguity, no orphan).
+- **Link resolution.** Re-resolves every Markdown link and wikilink: referenced local paths exist; record links (`[[<short-id>]]` or `[[<full-id>]]`) resolve to a record.
 
 `--json` emits a machine-readable version for CI consumption. Validation never edits accepted-record body content or changes a record's UUIDv7.
 
 ## Link checking
 
-The format spec defines two link syntaxes: standard Markdown links for files, code, and external URLs, and wikilinks `[[<uuid7-prefix>]]` for inter-DADR record references. Wikilinks are supported by most PKM tools but not by base Markdown renderers (Pandoc, Quarto, GitHub, GitLab), which display them as literal `[[...]]`.
+The format spec defines two link syntaxes: standard Markdown links for files, code, and external URLs, and wikilinks `[[<short-id>]]` for references between records. Wikilinks are supported by most PKM tools but not by base Markdown renderers (Pandoc, Quarto, GitHub, GitLab), which display them as literal `[[...]]`.
 
 ```bash
 dadrock validate links
 ```
 
-`dadrock validate links` verifies that every `[[<uuid7-prefix>]]` resolves to exactly one record and that Markdown links to local files exist.
+`dadrock validate links` verifies that every record link (`[[<short-id>]]` or `[[<full-id>]]`) resolves to a record and that Markdown links to local files exist. Wikilinks with other targets are left alone.
 
 The preview UI (`dadrock preview`) runs a wikilink → Markdown pass before rendering. Wikilinks remain the source of truth on disk; resolving them at render time means a record file moving (e.g., on lifecycle transition) does not silently break links.
 

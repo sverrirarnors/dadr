@@ -54,11 +54,6 @@ pub struct DemoRecordSummary {
     pub path: Utf8PathBuf,
 }
 
-enum DemoBibliography {
-    One(&'static str),
-    Many(&'static [&'static str]),
-}
-
 struct DemoRecordSeed {
     relative_path: &'static str,
     title: &'static str,
@@ -66,7 +61,8 @@ struct DemoRecordSeed {
     id: &'static str,
     successors: &'static [&'static str],
     tags: &'static [&'static str],
-    bibliography: Option<DemoBibliography>,
+    /// Raw YAML lines for front-matter keys outside DADR.
+    extra_front_matter: &'static str,
     body: &'static str,
 }
 
@@ -91,7 +87,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         id: ID_COMPLETE_CASE,
         successors: &[ID_ASSIGNMENT_LOG, ID_COVARIATE_IMPUTATION],
         tags: &["kind/sample", "confidence/high"],
-        bibliography: Some(DemoBibliography::One("bibliography.bib")),
+        extra_front_matter: "bibliography: bibliography.bib\n",
         body: concat!(
             "## Context\n\n",
             "The first analysis used a complete-case rule for every required field. ",
@@ -117,7 +113,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         id: ID_OUTCOME_SCALE,
         successors: &[ID_SHARED_CLEANING],
         tags: &["kind/measurement", "confidence/medium"],
-        bibliography: None,
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "The outcome was initially scored as a simple row mean.\n\n",
@@ -136,7 +132,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         id: ID_ASSIGNMENT_LOG,
         successors: &[],
         tags: &["kind/input", "topic/assignment"],
-        bibliography: None,
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "Treatment assignment is defined by the audit log rather than by downstream ",
@@ -162,7 +158,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
             "topic/covariates",
             "confidence/medium",
         ],
-        bibliography: None,
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "Several baseline covariates are missing at low rates.\n\n",
@@ -184,7 +180,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         id: ID_SHARED_CLEANING,
         successors: &[],
         tags: &["kind/transformation", "topic/preprocessing"],
-        bibliography: None,
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "The outcome scale and covariate imputation rules converged into a common ",
@@ -203,8 +199,8 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         status: RecordStatus::Accepted,
         id: ID_CLUSTER_SE,
         successors: &[],
-        tags: &["kind/inference", "axis/se-type/cluster-robust"],
-        bibliography: None,
+        tags: &["kind/inference", "multiverse/se-type/cluster-robust"],
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "Observations are nested within sites. The demo code tag example is in ",
@@ -225,10 +221,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         id: ID_SPEC_CURVE,
         successors: &[],
         tags: &["kind/robustness", "confidence/high"],
-        bibliography: Some(DemoBibliography::Many(&[
-            "bibliography.bib",
-            "robustness.bib",
-        ])),
+        extra_front_matter: "bibliography:\n  - bibliography.bib\n  - robustness.bib\n",
         body: concat!(
             "## Context\n\n",
             "The paper needs to show that the result is not an artifact of one model ",
@@ -240,7 +233,8 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
             "## Consequences\n\n",
             "The manuscript includes a figure and a table keyed to the DADR records.\n\n",
             "## Notes\n\n",
-            "This record demonstrates a per-record bibliography array.\n",
+            "This record demonstrates a front-matter key outside DADR: Pandoc's ",
+            "`bibliography` array passes through unchanged.\n",
         ),
     },
     DemoRecordSeed {
@@ -250,7 +244,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         id: ID_RENAME_OUTCOME,
         successors: &[],
         tags: &["kind/communication", "confidence/high"],
-        bibliography: None,
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "The manuscript label for the primary outcome was too close to a secondary ",
@@ -270,8 +264,8 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         status: RecordStatus::Candidate,
         id: ID_NEGATIVE_CONTROL,
         successors: &[],
-        tags: &["kind/robustness", "origin/agent", "workflow/needs-review"],
-        bibliography: None,
+        tags: &["kind/robustness", "writer/agent", "workflow/needs-review"],
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "A reviewer asked whether the treatment predicts an outcome it should not ",
@@ -294,11 +288,11 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         successors: &[],
         tags: &[
             "kind/sample",
-            "origin/human",
+            "writer/analyst",
             "rejected/merged",
             "workflow/closed",
         ],
-        bibliography: None,
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "This rejected candidate proposed the same complete-case sample rule ",
@@ -324,7 +318,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
             "rejected/no-longer-relevant",
             "workflow/closed",
         ],
-        bibliography: None,
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "A draft suggested dropping one site after a preliminary balance check.\n\n",
@@ -344,7 +338,7 @@ const DEMO_RECORDS: &[DemoRecordSeed] = &[
         id: ID_REJECTED_MERGE,
         successors: &[],
         tags: &["kind/measurement", "rejected/merged", "workflow/closed"],
-        bibliography: None,
+        extra_front_matter: "",
         body: concat!(
             "## Context\n\n",
             "Two outcome-record drafts described the same measurement choice.\n\n",
@@ -464,7 +458,7 @@ fn seed_lifecycle_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
             "# DADR code-tag examples for the demo project.\n",
             "# #dadr/01938b94bcd0 #dadr/kind/inference #dadr/topic/standard-errors\n",
             "model = \"cluster-robust standard errors\"\n\n",
-            "# #dadr/axis/se-type/cluster-robust #dadr/confidence/high\n",
+            "# #dadr/multiverse/se-type/cluster-robust #dadr/confidence/high\n",
             "standard_errors = \"clustered by site\"\n\n",
             "# #dadr/ignore\n",
             "scratch_note = \"ignored by candidate generation\"\n",
@@ -533,8 +527,8 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             status: RecordStatus::Candidate,
             id: "01938ba0-bcd0-7e00-8b00-000000000011",
             successors: &[],
-            tags: &["kind/sample", "origin/agent", "confidence/high"],
-            bibliography: None,
+            tags: &["kind/sample", "writer/agent", "confidence/high"],
+            extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
                 "The first modeling pass compares the two most common penguin species in the dataset.\n\n",
@@ -552,8 +546,8 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             status: RecordStatus::Candidate,
             id: "01938ba1-bcd0-7e00-8b00-000000000012",
             successors: &[],
-            tags: &["kind/sample", "origin/agent", "confidence/high"],
-            bibliography: None,
+            tags: &["kind/sample", "writer/agent", "confidence/high"],
+            extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
                 "The OLS formula needs body mass, bill length, flipper length, and species indicators.\n\n",
@@ -571,8 +565,8 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             status: RecordStatus::Candidate,
             id: "01938ba2-bcd0-7e00-8b00-000000000013",
             successors: &[],
-            tags: &["kind/measurement", "origin/human", "confidence/high"],
-            bibliography: None,
+            tags: &["kind/measurement", "writer/analyst", "confidence/high"],
+            extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
                 "Body mass is complete enough for a compact demonstration and has clear biological meaning.\n\n",
@@ -590,8 +584,8 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             status: RecordStatus::Candidate,
             id: "01938ba3-bcd0-7e00-8b00-000000000014",
             successors: &[],
-            tags: &["kind/transformation", "origin/human", "workflow/needs-edit"],
-            bibliography: None,
+            tags: &["kind/transformation", "writer/analyst", "workflow/needs-edit"],
+            extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
                 "A reviewer asked whether the species coefficient compares Adelie to Gentoo or Gentoo to Adelie.\n\n",
@@ -609,8 +603,8 @@ fn seed_candidate_review_demo_project(target: &Utf8Path) -> Result<DemoProjectRe
             status: RecordStatus::Candidate,
             id: "01938ba4-bcd0-7e00-8b00-000000000015",
             successors: &[],
-            tags: &["kind/model", "origin/agent", "confidence/low", "workflow/question"],
-            bibliography: None,
+            tags: &["kind/model", "writer/agent", "confidence/low", "workflow/question"],
+            extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
                 "Island may confound species differences because species are not evenly distributed.\n\n",
@@ -771,8 +765,8 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
             status: RecordStatus::Candidate,
             id: "01938b9c-bcd0-7e00-8b00-00000000000e",
             successors: &[],
-            tags: &["kind/sample", "origin/agent", "confidence/high"],
-            bibliography: None,
+            tags: &["kind/sample", "writer/agent", "confidence/high"],
+            extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
                 "The Penguins OLS model cannot use rows with missing body mass or predictor values.\n\n",
@@ -790,8 +784,8 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
             status: RecordStatus::Candidate,
             id: "01938b9d-bcd0-7e00-8b00-00000000000f",
             successors: &[],
-            tags: &["kind/sample", "origin/human", "confidence/medium"],
-            bibliography: None,
+            tags: &["kind/sample", "writer/analyst", "confidence/medium"],
+            extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
                 "The body-mass model has missing values in bill length, flipper length, and body mass.\n\n",
@@ -809,8 +803,8 @@ fn seed_conflicts_demo_project(target: &Utf8Path) -> Result<DemoProjectResult, D
             status: RecordStatus::Candidate,
             id: "01938b9e-bcd0-7e00-8b00-000000000010",
             successors: &[],
-            tags: &["kind/sample", "origin/agent", "confidence/low"],
-            bibliography: None,
+            tags: &["kind/sample", "writer/agent", "confidence/low"],
+            extra_front_matter: "",
             body: concat!(
                 "## Context\n\n",
                 "An agent suggested returning to the broad complete-case rule.\n\n",
@@ -926,7 +920,7 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
             json!({
                 "kind": "candidate_draft.v1",
                 "title": "Use body mass as primary outcome",
-                "tags": ["kind/measurement", "origin/agent", "confidence/high"],
+                "tags": ["kind/measurement", "writer/agent", "confidence/high"],
                 "body_markdown": "## Context\n\nA reviewer asked the team to make the outcome choice explicit.\n\n## Decision\n\nUse `body_mass_g` as the primary outcome for the Penguins OLS demo.\n\n## Alternatives\n\nUse bill depth or flipper length as the outcome. Those are better predictors in this compact model.\n\n## Consequences\n\nThe interpretation is direct and the candidate can be reviewed before acceptance.\n",
                 "source_references": [],
                 "warnings": []
@@ -943,7 +937,7 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
                     {
                         "id": "species-subset",
                         "title": "Compare Adelie and Gentoo penguins",
-                        "tags": ["kind/sample", "origin/agent", "confidence/high"],
+                        "tags": ["kind/sample", "writer/agent", "confidence/high"],
                         "body_markdown": "## Context\n\nThe Python script excludes Chinstrap penguins before fitting the OLS model.\n\n## Decision\n\nRestrict the analysis to Adelie and Gentoo penguins.\n\n## Alternatives\n\nInclude all species and estimate a multi-level species contrast.\n\n## Consequences\n\nThe model is easier to explain but excludes one species from the estimand.\n",
                         "source_references": [{"path": "analysis/penguins_ols.py"}],
                         "confidence": "high",
@@ -952,7 +946,7 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
                     {
                         "id": "formula-choice",
                         "title": "Fit body mass OLS formula",
-                        "tags": ["kind/model", "origin/agent", "confidence/medium"],
+                        "tags": ["kind/model", "writer/agent", "confidence/medium"],
                         "body_markdown": "## Context\n\nThe script models body mass with bill length, flipper length, and an Adelie dummy.\n\n## Decision\n\nFit `body_mass_g ~ bill_length_mm + flipper_length_mm + is_adelie` with statsmodels OLS.\n\n## Alternatives\n\nAdd island fixed effects or interaction terms.\n\n## Consequences\n\nThe compact formula is suitable for a demo but not a complete biological analysis.\n",
                         "source_references": [{"path": "analysis/penguins_ols.py"}],
                         "confidence": "medium",
@@ -1001,7 +995,7 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
             json!({
                 "kind": "candidate_draft.v1",
                 "title": "Use complete cases for model variables",
-                "tags": ["kind/sample", "origin/agent", "confidence/high"],
+                "tags": ["kind/sample", "writer/agent", "confidence/high"],
                 "body_markdown": "## Context\n\nTwo candidate records described the same missingness rule for the body-mass model.\n\n## Decision\n\nUse complete cases for the variables required by the fitted model.\n\n## Alternatives\n\nLet statsmodels silently omit missing rows.\n\n## Consequences\n\nThe merged candidate is clearer and the duplicate drafts can be rejected after review.\n",
                 "source_references": [],
                 "warnings": []
@@ -1016,7 +1010,7 @@ fn task_history_runs() -> Vec<(&'static str, &'static str, Value, Value)> {
                 "summary": "Clarifies the open question in the negative-control candidate.",
                 "record_id": ID_NEGATIVE_CONTROL,
                 "title": "Add negative-control outcome",
-                "tags": ["kind/robustness", "origin/agent", "workflow/needs-review"],
+                "tags": ["kind/robustness", "writer/agent", "workflow/needs-review"],
                 "body_markdown": "## Context\n\nA reviewer asked whether the treatment predicts an outcome it should not affect.\n\n## Decision\n\nAdd one negative-control outcome to the supplement after choosing the exact variable.\n\n## Alternatives\n\nLeave the request unanswered until revision.\n\n## Consequences\n\nIf accepted, this candidate will add a supplemental model and record the chosen negative-control variable.\n",
                 "change_explanation": "The revision makes the unresolved variable choice explicit.",
                 "warnings": ["The exact negative-control variable still needs human selection."]
@@ -1152,23 +1146,7 @@ fn render_record(seed: &DemoRecordSeed) -> Result<String, DadrError> {
         }
     }
 
-    if let Some(bibliography) = &seed.bibliography {
-        match bibliography {
-            DemoBibliography::One(path) => {
-                output.push_str("bibliography: ");
-                output.push_str(path);
-                output.push('\n');
-            }
-            DemoBibliography::Many(paths) => {
-                output.push_str("bibliography:\n");
-                for path in *paths {
-                    output.push_str("  - ");
-                    output.push_str(path);
-                    output.push('\n');
-                }
-            }
-        }
-    }
+    output.push_str(seed.extra_front_matter);
 
     output.push_str("---\n\n");
     output.push_str(seed.body.trim());

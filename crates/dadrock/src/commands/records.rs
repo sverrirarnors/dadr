@@ -8,7 +8,7 @@ use crate::{
     file_store,
     links::{check_project_links, LinkCheckReport},
     records::{
-        accept_candidate, create_candidate, create_candidate_with_body, missing_required_sections,
+        accept_candidate, check_required_sections, create_candidate, create_candidate_with_body,
         parse_record_str, reject_candidate, scan_input, status_record, supersede_record,
         supersede_records as supersede_records_impl, AcceptRecordResult, NewRecordResult,
         RecordStatusResult, RejectRecordResult, ScannedRecordSummary, SupersedeRecordResult,
@@ -167,11 +167,11 @@ pub fn save_record_source(
         ));
     }
     if record.front_matter.status == RecordStatus::Accepted {
-        let missing = missing_required_sections(&record.body.raw_markdown);
-        if !missing.is_empty() {
+        let sections = check_required_sections(&record.body.raw_markdown);
+        if !sections.is_complete() {
             return Err(DadrError::InvalidInput(format!(
-                "accepted record is missing required section(s): {}",
-                missing.join(", ")
+                "accepted record needs each standard section exactly once and with text: {}",
+                sections.problems().join("; ")
             )));
         }
     }

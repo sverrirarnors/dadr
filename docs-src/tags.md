@@ -9,9 +9,9 @@ Different projects need different categories, naming habits, and review
 workflows. Start with a small shared vocabulary that fits your team, then
 extend it only when it helps.
 
-For the full syntax and format rules, see [Tags in the
-specification](specification.md#tags). For code comments and source-file
-annotations, see [Code tags](specification.md#code-tags).
+For the syntax rules, see [Tags in the
+specification](specification.md#tags). For source-code comments, see [Code
+tags](specification.md#code-tags).
 
 ## Where tags live
 
@@ -37,6 +37,7 @@ tags:
 ### Inline
 
 ```markdown
+> #confidence/medium
 > Drop the 47 respondents without recorded treatment
 > assignment from the analysis sample.
 ```
@@ -81,12 +82,12 @@ needed, and ignore the rest.
     <tr>
       <td><code>#people/</code></td>
       <td>People and review roles</td>
-      <td><code>#people/vincent</code><br/><code>#people/decider/alice</code><br/><code>#people/approver/bob</code></td>
+      <td><code>#people/vincent</code><br/><code>#people/decider/alice</code><br/><code>#people/reviewer/bob</code></td>
     </tr>
     <tr>
       <td><code>#topic/</code></td>
       <td>Free-form subjects</td>
-      <td><code>#topic/missingness</code><br/><code>#winsorization</code></td>
+      <td><code>#topic/missingness</code><br/><code>#topic/winsorization</code></td>
     </tr>
     <tr>
       <td><code>#writer/</code></td>
@@ -97,6 +98,11 @@ needed, and ignore the rest.
       <td><code>#multiverse/</code><br /> <code>#robustness/</code></td>
       <td>Alternative specifications or robustness work</td>
       <td><code>#multiverse/model/ols</code><br/><code>#robustness/placebo</code></td>
+    </tr>
+    <tr>
+      <td><code>#rejected/</code></td>
+      <td>Why a candidate was closed, on rejected records</td>
+      <td><code>#rejected/duplicate</code><br/><code>#rejected/merged</code><br/><code>#rejected/withdrawn</code><br/><code>#rejected/no-longer-relevant</code></td>
     </tr>
   </tbody>
 </table>
@@ -152,6 +158,26 @@ Common subactivities can help pick the closest `kind/...` value:
 | `kind/governance` | `plan_reference`, `data_cleaning_plan`, `sop_reference`, `plan_deviation`, `amendment`, `approval` |
 | `kind/quality` | `assertion`, `schema_check`, `row_count_check`, `snapshot_check`, `test_expectation` |
 | `kind/orchestration` | `target`, `rule`, `dependency`, `parameter`, `resource`, `schedule` |
+
+## Code tags
+
+In source-code comments, prefix tags with `#dadr/`. The same namespaces apply:
+
+| Pattern | Meaning |
+|---|---|
+| `#dadr/<short-id>` | Link the surrounding code to a record, e.g. `#dadr/01938c20a3b4`. A full UUID also works. |
+| `#dadr/kind/<value>` | The kind of decision the code implements. |
+| `#dadr/topic/<value>` | Free-form topic. |
+| `#dadr/plan/<id>` | The plan item the code implements. |
+| `#dadr/multiverse/<axis>/<value>` | The value of a robustness or specification axis implemented here. |
+| `#dadr/confidence/<low\|medium\|high>` | Author confidence in the annotation. |
+
+Several tags can share one comment:
+
+```sql
+-- #dadr/kind/sample #dadr/topic/missingness
+where treatment is not null
+```
 
 ## Tidy tags
 

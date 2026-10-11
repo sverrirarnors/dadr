@@ -5,8 +5,9 @@ pub mod model;
 pub mod record;
 
 pub use error::{DadrError, Diagnostic, DiagnosticCode, IssueCounts, Severity};
-pub use ids::{RecordId, RecordIdPrefix};
-pub use model::{
-    BibliographyRef, Record, RecordBody, RecordFrontMatter, RecordStatus, RecordSummary, Tag,
+pub use ids::{RecordId, RecordIdPrefix, RecordRef};
+pub use model::{Record, RecordBody, RecordFrontMatter, RecordStatus, RecordSummary, Tag};
+pub use record::{
+    check_required_sections, missing_required_sections, parse_record_str, ParsedRecord,
+    SectionCheck,
 };
-pub use record::{missing_required_sections, parse_record_str, ParsedRecord};

@@ -96,12 +96,12 @@ fn tags_from_response(response: &AgentResponseEnvelope) -> Vec<String> {
             }
         }
     }
-    tags.push("origin/agent".to_owned());
+    tags.push("writer/agent".to_owned());
     tags.push(response.confidence.as_tag().to_owned());
     if let Some(model) = &response.provenance.model {
         let model_tag = ascii_slug(model, 80, "");
         if !model_tag.is_empty() {
-            tags.push(format!("origin/agent/{model_tag}"));
+            tags.push(format!("writer/agent/{model_tag}"));
         }
     }
     dedup_tags(&mut tags);

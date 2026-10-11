@@ -13,7 +13,7 @@ use crate::{
     links::{check_project_links, LinkIssue, LinkIssueCode},
     model::{Record, RecordStatus},
     project::{utf8_to_path, ProjectContext},
-    records::{missing_required_sections, ScannedRecord},
+    records::{check_required_sections, ScannedRecord},
     tags::{build_tag_report, TagIssue},
     text::write_serde_label,
 };
@@ -37,9 +37,11 @@ impl ProjectValidationReport {
 pub enum ProjectValidationIssueCode {
     RecordDiagnostic,
     MissingRequiredSection,
+    DuplicateRequiredSection,
+    EmptyRequiredSection,
     DuplicateRecordId,
     DuplicateFilename,
-    FilenamePrefixCollision,
+    ShortIdCollision,
     UnresolvedSuccessor,
     InvalidSuccessor,
     SuccessorCycle,
@@ -154,7 +156,7 @@ pub fn validate_project_index(index: &ProjectIndex) -> ProjectValidationReport {
     add_record_structure_issues(scanned, project, &mut issues);
     add_duplicate_filename_issues(scanned, &mut issues);
     add_duplicate_id_issues(scanned, &mut issues);
-    add_filename_prefix_collision_issues(scanned, &mut issues);
+    add_short_id_collision_issues(scanned, &mut issues);
     add_successor_graph_issues(scanned, &mut issues);
     add_link_issues(index, &mut issues);
 
@@ -293,15 +295,35 @@ fn add_record_structure_issues(
         let id = record.front_matter.id;
 
         if record.front_matter.status == RecordStatus::Accepted {
-            let missing = missing_required_sections(&record.body.raw_markdown);
-            if !missing.is_empty() {
+            let sections = check_required_sections(&record.body.raw_markdown);
+            let problems = [
+                (
+                    ProjectValidationIssueCode::MissingRequiredSection,
+                    "is missing required section(s)",
+                    sections.missing,
+                ),
+                (
+                    ProjectValidationIssueCode::DuplicateRequiredSection,
+                    "repeats required section(s)",
+                    sections.duplicated,
+                ),
+                (
+                    ProjectValidationIssueCode::EmptyRequiredSection,
+                    "has empty required section(s)",
+                    sections.empty,
+                ),
+            ];
+            for (code, description, names) in problems {
+                if names.is_empty() {
+                    continue;
+                }
                 issues.push(
                     ProjectValidationIssue::error(
-                        ProjectValidationIssueCode::MissingRequiredSection,
+                        code,
                         format!(
-                            "`{}` is missing required section(s): {}",
+                            "`{}` {description}: {}",
                             record.front_matter.title,
-                            missing.join(", ")
+                            names.join(", ")
                         ),
                     )
                     .with_path(scanned_record.path.clone())
@@ -392,47 +414,36 @@ fn add_duplicate_id_issues(scanned: &[ScannedRecord], issues: &mut Vec<ProjectVa
     }
 }
 
-fn add_filename_prefix_collision_issues(
+fn add_short_id_collision_issues(
     scanned: &[ScannedRecord],
     issues: &mut Vec<ProjectValidationIssue>,
 ) {
-    let mut by_prefix = BTreeMap::<String, Vec<Utf8PathBuf>>::new();
+    let mut by_short_id = BTreeMap::<String, BTreeMap<RecordId, Vec<Utf8PathBuf>>>::new();
     for scanned_record in scanned {
         let Some(record) = &scanned_record.record else {
             continue;
         };
-        by_prefix
-            .entry(record.front_matter.id.timestamp_prefix12())
+        let id = record.front_matter.id;
+        by_short_id
+            .entry(id.short_id())
+            .or_default()
+            .entry(id)
             .or_default()
             .push(scanned_record.path.clone());
     }
 
-    for (prefix, paths) in by_prefix {
-        if paths.len() < 2 {
+    // Records sharing a full id are reported as duplicate ids instead.
+    for (short_id, ids) in by_short_id {
+        if ids.len() < 2 {
             continue;
         }
-
-        let short_prefix = format!("{prefix}-");
-        let short_prefix_paths: Vec<_> = paths
-            .iter()
-            .filter(|path| {
-                path.file_name()
-                    .is_some_and(|name| name.starts_with(&short_prefix))
-            })
-            .cloned()
-            .collect();
-
-        if short_prefix_paths.len() > 1 {
-            issues.push(
-                ProjectValidationIssue::error(
-                    ProjectValidationIssueCode::FilenamePrefixCollision,
-                    format!(
-                        "multiple records share UUIDv7 timestamp prefix `{prefix}` without full-UUID filename fallback"
-                    ),
-                )
-                .with_related_paths(short_prefix_paths),
-            );
-        }
+        issues.push(
+            ProjectValidationIssue::error(
+                ProjectValidationIssueCode::ShortIdCollision,
+                format!("multiple records share the short id `{short_id}`"),
+            )
+            .with_related_paths(ids.into_values().flatten().collect()),
+        );
     }
 }
 

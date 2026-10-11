@@ -66,7 +66,7 @@ pub enum DiagnosticCode {
     InvalidFieldType,
     InvalidStatus,
     InvalidRecordId,
-    UnsupportedLifecycleDateField,
+    DateInFrontMatter,
     UnreadableRecord,
 }
 
@@ -81,7 +81,7 @@ impl DiagnosticCode {
             Self::InvalidFieldType => "invalid_field_type",
             Self::InvalidStatus => "invalid_status",
             Self::InvalidRecordId => "invalid_record_id",
-            Self::UnsupportedLifecycleDateField => "unsupported_lifecycle_date_field",
+            Self::DateInFrontMatter => "date_in_front_matter",
             Self::UnreadableRecord => "unreadable_record",
         }
     }

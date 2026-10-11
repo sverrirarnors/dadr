@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::{
     error::DadrError,
-    ids::{RecordId, RecordIdPrefix},
+    ids::{RecordId, RecordIdPrefix, RecordRef},
     model::RecordStatus,
     project::ProjectContext,
     records::{
@@ -187,12 +187,38 @@ impl ProjectIndex {
         }
     }
 
-    pub fn filename_prefix_exists(&self, prefix: &str) -> bool {
-        self.scanned.iter().any(|record| {
-            record
-                .path
-                .file_name()
-                .is_some_and(|name| name.starts_with(prefix))
+    /// Records matching a record link target (a short id or a full id).
+    pub fn find_record_ref(&self, target: &RecordRef) -> FindRecordsResult {
+        let match_kind = match target {
+            RecordRef::ShortId(_) => MatchKind::IdPrefix,
+            RecordRef::Full(_) => MatchKind::ExactId,
+        };
+        let matches = self
+            .summaries
+            .iter()
+            .filter(|summary| target.matches(summary.id))
+            .cloned()
+            .map(|record| FoundRecord {
+                match_kind: match_kind.clone(),
+                record,
+            })
+            .collect();
+        find_result(&target.to_string(), matches)
+    }
+
+    /// Whether a short id is used by a record, or by a file that names it but
+    /// could not be parsed.
+    pub fn short_id_taken(&self, short_id: &str) -> bool {
+        let filename_prefix = format!("{short_id}-");
+        self.scanned.iter().any(|scanned| {
+            scanned
+                .record
+                .as_ref()
+                .is_some_and(|record| record.front_matter.id.short_id() == short_id)
+                || scanned
+                    .path
+                    .file_name()
+                    .is_some_and(|name| name.starts_with(&filename_prefix))
         })
     }
 }

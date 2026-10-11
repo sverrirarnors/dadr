@@ -2,17 +2,17 @@
 
 What a single DADR record should look like, end-to-end. Use this whenever you draft, revise, supersede, or audit a record. For the tag vocabulary, see [tags.md](tags.md).
 
-A **record** is a Markdown file with YAML front matter and four prose sections. Every file in `dadr/` (whether a candidate, accepted, rejected, or superseded) follows the same anatomy; only the `status` field and a few status-specific rules differ.
+A **record** is a Markdown file with YAML front matter and four prose sections. Every record in `dadr/` (whether a candidate, accepted, superseded, or rejected) follows the same anatomy; only the `status` field and a few status-specific rules differ.
 
 ## Lifecycle
 
-The `status` field takes one of four values. Most anatomy rules apply to all of them; the differences are summarized here.
+The `status` field takes one of three values: `candidate`, `accepted`, or `rejected`. "Superseded" is not a status: it is an accepted record whose `successors` array is non-empty.
 
-| Status | Editable? | Notes |
+| Record | Editable? | Notes |
 |---|---|---|
-| `candidate` | Yes — freely revisable | A proposed decision under review. Lives in `dadr/candidates/`. All four sections SHOULD be filled before acceptance; thin candidates create work for the reviewer. |
-| `accepted` | No body edits | The decision is in force. Lives under `dadr/accepted/`. The `successors` array is the only field that changes — and only via `dadrock status supersede`, never by hand. |
-| `superseded` | No edits | A formerly accepted record whose `successors` array points at a replacement. Stays in place; the supersession graph is the source of truth. |
+| `candidate` | Yes — freely revisable | A proposed decision under review. Lives in `dadr/candidates/`. Each of the four sections must have text before acceptance; thin candidates create work for the reviewer. |
+| `accepted` | No changes in meaning | The decision is in force. Lives under `dadr/accepted/`. Typo and link fixes are fine; anything else goes through a new candidate plus supersession. `successors` only grows, and only via `dadrock status supersede`, never by hand. |
+| `accepted`, superseded | No changes in meaning | An accepted record whose `successors` array points at its replacement. Stays in `dadr/accepted/` with `status: accepted`. |
 | `rejected` | No edits | A closed candidate. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
 
 Acceptance, rejection, and supersession are all **human approval boundaries**. No skill auto-transitions.
@@ -32,8 +32,8 @@ tags:
 ## Context
 
 The treatment variable is required for the primary estimand defined in
-[docs/sap.md §3.2](docs/sap.md#3-2-primary-estimand). The cleaned panel at
-[analysis/build_sample.R:12-18](analysis/build_sample.R#L12-L18) currently
+[docs/sap.md §3.2](../../docs/sap.md#3-2-primary-estimand). The cleaned panel at
+[analysis/build_sample.R:12-18](../../analysis/build_sample.R#L12-L18) currently
 keeps the 47 respondents whose `treatment` is `NA`, which would force an
 imputation model upstream of the main analysis.
 
@@ -66,15 +66,16 @@ report the exclusion count and the missingness pattern.
 | Field | Notes |
 |---|---|
 | `title` | Noun phrase describing the choice. **Not a question.** |
-| `status` | One of `candidate \| accepted \| rejected \| superseded`. Set on creation; changed only via `dadrock status` lifecycle commands. |
-| `id` | UUIDv7 allocated by `dadrock new`. **Never write by hand.** |
+| `status` | One of `candidate \| accepted \| rejected`. Set on creation; changed only via `dadrock status` lifecycle commands. |
+| `id` | UUIDv7 allocated by `dadrock new`. **Never write by hand.** Its first 12 hex digits are the record's short id. |
 | `tags` | Must include the mandatory tags (see [tags.md](tags.md)). |
-| `successors` | Optional list of UUIDv7 ids. Present on `accepted` records that have been superseded, and on `superseded` records. Written only by `dadrock status supersede`. |
-| `bibliography` | Optional list of bibliographic references. |
+| `successors` | Optional list of UUIDv7 ids, only on `accepted` records that have been superseded. Written only by `dadrock status supersede`. |
+
+Other keys (for example Pandoc's `bibliography`) are allowed and passed through unchanged; DADR gives them no meaning. **Never add dates**: no `date` key and no `2026-05-07`-style value under any key. A record's time comes only from its `id`.
 
 ### Body — four sections
 
-Every record has all four level-2 headings, each appearing exactly once. They MAY appear in any order; the conventional order is:
+Every accepted record has all four `##` headings, each appearing exactly once and each followed by text. They MAY appear in any order; the conventional order is:
 
 1. `## Context`
 2. `## Decision`
@@ -85,7 +86,8 @@ Every record has all four level-2 headings, each appearing exactly once. They MA
 
 What problem, dataset, or constraint motivates this choice?
 
-- **Always** include a Markdown link to the source surface using a repository-relative path: `[analysis/build_sample.py:42-58](analysis/build_sample.py#L42-L58)`.
+- **Always** include a Markdown link to the source surface. Relative paths resolve from the record's own directory; records live in `dadr/<status>/`, so a repository file is `../../path`: `[analysis/build_sample.py:42-58](../../analysis/build_sample.py#L42-L58)`.
+- Link other records with a short-id wikilink: `[[01938b8e4d70]]`.
 - Mention the dataset, prior decision, or plan section that frames the choice.
 - For records produced by supersession, also name the predecessor and the supersession trigger.
 
@@ -97,7 +99,7 @@ What was actually done?
 - Present tense for `accepted` records ("Drops the 47 respondents…"); present-tense or imperative for `candidate` records.
 - If you are inferring from code rather than transcribing from a plan, say so: "The code at L12-L18 implies…".
 - An inline tag MAY appear on the first line of a blockquote here for
-  `#axis/...`, `#confidence/...`, or similar paragraph-level metadata.
+  `#multiverse/...`, `#confidence/...`, or similar paragraph-level metadata.
 
 #### Alternatives — 1–3 alternatives, each a sentence or two
 
@@ -171,7 +173,7 @@ tags:
 
 ## Context
 
-Tables 1 and 3 of [paper.qmd](paper.qmd#tables) report percentages. The
+Tables 1 and 3 of [paper.qmd](../../paper.qmd#tables) report percentages. The
 current draft mixes one- and two-decimal-place rounding.
 
 ## Decision

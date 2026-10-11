@@ -21,3 +21,41 @@ Confirm the binary is on `PATH`:
 dadrock --version
 ```
 
+## Project layout
+
+The DADR format does not mandate a directory structure. **dadrock** uses this
+one, created by `dadrock init`:
+
+```text
+dadr/
+  accepted/
+    01938b8e4d70-income-preprocessing.md
+    01938b8f9d71-drop-missing-treatment.md
+  candidates/
+    01938ba1c4f3-country-exclusions.md
+  rejected/
+    01938b8d9c10-deprecated-cohort-filter.md
+  templates/
+    candidate.md                                    # optional
+  tasks/
+  runs/
+    .gitignore
+```
+
+- `dadr/accepted/` holds accepted decisions, current or superseded.
+- `dadr/candidates/` holds active candidates.
+- `dadr/rejected/` holds rejected records.
+- `dadr/templates/` holds optional template overrides for new candidates.
+- `dadr/tasks/` holds project-local task packages, such as
+  `dadr/tasks/<task-id>/task.toml` plus the prompt file it names.
+- `dadr/runs/` holds task run state and is ignored by version control.
+
+`dadrock status accept` changes a candidate's `status` to `accepted` and moves
+the file to `dadr/accepted/`. `dadrock status reject` changes it to `rejected`
+and moves it to `dadr/rejected/`. The `id` never changes. `dadrock status
+supersede` appends the new record's `id` to the old record's `successors` and
+leaves both files in `dadr/accepted/`.
+
+The directory is a convenience: `status` in the front matter is authoritative.
+`dadrock validate` warns when a record sits in a directory that does not match
+its status.
