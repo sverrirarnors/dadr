@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RecordSummary } from '../../src/lib/api';
-import { detailActionRecord } from '../../src/lib/records/detail-state';
+import { detailActionRecord, detailActions } from '../../src/lib/records/detail-state';
 
 const candidate: RecordSummary = {
   id: '0193fb1f-a3a0-7000-8000-000000000002',
@@ -32,5 +32,54 @@ describe('detailActionRecord', () => {
 
   it('falls back to lifecycle data when the snapshot has not loaded the record', () => {
     expect(detailActionRecord(candidate, [])).toEqual(candidate);
+  });
+});
+
+describe('detailActions', () => {
+  it('lets the inbox edit, revise, reject, and accept a candidate', () => {
+    expect(detailActions({ surface: 'inbox', status: 'candidate', agentAvailable: true })).toEqual({
+      primary: ['edit', 'revise'],
+      lifecycle: ['reject', 'accept'],
+    });
+  });
+
+  it('hides the agent verb when no agent is available', () => {
+    expect(detailActions({ surface: 'inbox', status: 'candidate', agentAvailable: false })).toEqual({
+      primary: ['edit'],
+      lifecycle: ['reject', 'accept'],
+    });
+    expect(detailActions({ surface: 'ledger', status: 'accepted', agentAvailable: false })).toEqual({
+      primary: ['edit'],
+      lifecycle: ['supersede'],
+    });
+  });
+
+  it('lets the ledger supersede only a current accepted decision', () => {
+    expect(detailActions({ surface: 'ledger', status: 'accepted', agentAvailable: true })).toEqual({
+      primary: ['edit', 'revise'],
+      lifecycle: ['supersede'],
+    });
+    expect(detailActions({ surface: 'ledger', status: 'superseded', agentAvailable: true })).toEqual({
+      primary: ['edit', 'revise'],
+      lifecycle: [],
+    });
+    expect(detailActions({ surface: 'ledger', status: 'rejected', agentAvailable: true })).toEqual({
+      primary: ['edit', 'revise'],
+      lifecycle: [],
+    });
+  });
+
+  it('only offers to edit a candidate reached through the ledger', () => {
+    expect(detailActions({ surface: 'ledger', status: 'candidate', agentAvailable: true })).toEqual({
+      primary: ['edit'],
+      lifecycle: [],
+    });
+  });
+
+  it('never offers lifecycle verbs for non-candidates in the inbox', () => {
+    expect(detailActions({ surface: 'inbox', status: 'accepted', agentAvailable: true })).toEqual({
+      primary: ['edit', 'revise'],
+      lifecycle: [],
+    });
   });
 });
