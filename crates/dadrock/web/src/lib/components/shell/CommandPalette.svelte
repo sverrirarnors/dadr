@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { createMutation, createQuery, useQueryClient } from '@tanstack/svelte-query';
+  import { createQuery, useQueryClient } from '@tanstack/svelte-query';
   import { createApi } from '$lib/api';
   import {
     buildCommandPaletteItems,
@@ -9,7 +9,8 @@
     type CommandPaletteItem,
     type CommandPaletteRoute,
   } from '$lib/command-palette/items';
-  import { applyMutationResponse } from '$lib/query/mutation-cache';
+  import { ledgerUrl } from '$lib/navigation/routes';
+  import { composer } from '$lib/stores/composer.svelte';
   import { palette } from '$lib/stores/palette.svelte';
   import { theme } from '$lib/stores/theme.svelte';
   import { toasts } from '$lib/stores/toast.svelte';
@@ -20,17 +21,6 @@
   const snapshot = createQuery(() => ({
     queryKey: ['snapshot'],
     queryFn: () => api.getSnapshot(),
-  }));
-
-  const runValidation = createMutation(() => ({
-    mutationFn: () => api.runValidation('project'),
-    onSuccess: async (response) => {
-      toasts.push({ severity: 'info', message: response.message });
-      await applyMutationResponse(queryClient, response);
-    },
-    onError: (error) => {
-      toasts.push({ severity: 'error', message: 'Validation failed', detail: error.message });
-    },
   }));
 
   let query = $state('');
@@ -62,7 +52,9 @@
   async function pick(item: CommandPaletteItem) {
     palette.hide();
     if (item.recordId) {
-      goto(resolve(`/records?id=${item.recordId}`));
+      const record = snapshot.data?.records.find((candidate) => candidate.id === item.recordId);
+      const history = record ? record.status !== 'accepted' || record.superseded : false;
+      goto(resolve(ledgerUrl({ id: item.recordId, history })));
       return;
     }
     if (item.route) {
@@ -71,22 +63,19 @@
     }
 
     switch (item.action) {
-      case 'new-candidate':
-        goto(resolve('/candidates/new'));
-        break;
-      case 'run-validation':
-        runValidation.mutate();
+      case 'draft':
+        composer.show({ mode: 'new' });
         break;
       case 'toggle-theme':
         theme.cycle();
         toasts.push({ severity: 'info', message: `Theme set to ${theme.current}` });
         break;
       case 'reload-snapshot':
-        await queryClient.invalidateQueries({ queryKey: ['snapshot'] });
-        toasts.push({ severity: 'info', message: 'Snapshot reloaded' });
-        break;
-      case 'open-settings':
-        goto(resolve('/settings'));
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['snapshot'] }),
+          queryClient.invalidateQueries({ queryKey: ['inbox-runs'] }),
+        ]);
+        toasts.push({ severity: 'info', message: 'Reloaded' });
         break;
     }
   }

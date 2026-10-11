@@ -625,6 +625,7 @@ fn build_snapshot(cwd: &Utf8PathBuf) -> Result<ApiSnapshot, DadrError> {
             link_health: ApiDiagnosticPanel::default(),
             settings: ApiSettings {
                 agent: agent_settings_lines(),
+                agent_available: agent_available(),
                 ..ApiSettings::default()
             },
             command_catalog,
@@ -870,6 +871,7 @@ fn settings_panel(
     let mut settings = ApiSettings {
         tag_counts: tag_report.counts,
         agent: agent_settings_lines(),
+        agent_available: agent_available(),
         tags: tag_lines(tag_report),
         diagnostics: tag_report
             .issues
@@ -920,6 +922,13 @@ fn settings_panel(
     }
 
     settings
+}
+
+fn agent_available() -> bool {
+    match env::var(ACP_AGENT_ENV) {
+        Ok(agent) if !agent.trim().is_empty() => configured_local_acp_agent().is_ok(),
+        _ => detect_local_acp_agent().is_some(),
+    }
 }
 
 fn agent_settings_lines() -> Vec<String> {
@@ -1141,6 +1150,8 @@ struct ApiSettings {
     config: Vec<String>,
     templates: Vec<String>,
     agent: Vec<String>,
+    /// True when a local ACP agent is configured or auto-detected on PATH.
+    agent_available: bool,
     tags: Vec<String>,
     tag_counts: IssueCounts,
     diagnostics: Vec<ApiDiagnostic>,

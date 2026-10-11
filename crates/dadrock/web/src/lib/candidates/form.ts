@@ -1,10 +1,6 @@
 import type { MutationResponse } from '$lib/api';
-
-export interface CandidateDestination {
-  route: '/records' | '/records/[id]';
-  params?: { id: string };
-  query?: string;
-}
+import { inboxUrl, type InboxHref } from '$lib/navigation/routes';
+import { candidateItemId } from '$lib/inbox/items';
 
 export function parseListInput(input: string): string[] {
   return input
@@ -13,15 +9,8 @@ export function parseListInput(input: string): string[] {
     .filter(Boolean);
 }
 
-export function candidateDestination(response: MutationResponse): CandidateDestination {
-  if (response.focus?.selected_id) {
-    return {
-      route: '/records/[id]',
-      params: { id: response.focus.selected_id },
-    };
-  }
-  return {
-    route: '/records',
-    query: '?status=candidate',
-  };
+/** Where to go after a candidate is created: straight to it in the Inbox. */
+export function candidateDestination(response: MutationResponse): InboxHref {
+  const id = response.focus?.selected_id;
+  return inboxUrl(id ? candidateItemId(id) : null);
 }

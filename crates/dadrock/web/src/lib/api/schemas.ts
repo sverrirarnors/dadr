@@ -87,6 +87,8 @@ export const settingsSchema = z.object({
   config: z.array(z.string()),
   templates: z.array(z.string()),
   agent: z.array(z.string()),
+  /** True when a local ACP agent is configured or auto-detected on PATH. */
+  agent_available: z.boolean().default(false),
   tags: z.array(z.string()),
   tag_counts: issueCountsSchema,
   diagnostics: z.array(diagnosticSchema),

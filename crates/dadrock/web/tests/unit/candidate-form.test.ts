@@ -17,24 +17,17 @@ describe('parseListInput', () => {
 });
 
 describe('candidateDestination', () => {
-  it('routes to the selected candidate when mutation focus includes an id', () => {
+  it('selects the new candidate in the inbox when the response names it', () => {
     const response = {
-      focus: {
-        selected_id: '0193fb1f-a3a0-7000-8000-000000000003',
-        status_filter: 'candidate',
-      },
+      focus: { selected_id: '0193fb1f-a3a0-7000-8000-000000000003', status_filter: 'candidate' },
     } as MutationResponse;
 
-    expect(candidateDestination(response)).toEqual({
-      route: '/records/[id]',
-      params: { id: '0193fb1f-a3a0-7000-8000-000000000003' },
-    });
+    expect(candidateDestination(response)).toBe(
+      '/inbox?item=candidate%3A0193fb1f-a3a0-7000-8000-000000000003',
+    );
   });
 
-  it('falls back to the candidate record list when no selected id exists', () => {
-    expect(candidateDestination({} as MutationResponse)).toEqual({
-      route: '/records',
-      query: '?status=candidate',
-    });
+  it('falls back to the inbox when no selected id exists', () => {
+    expect(candidateDestination({} as MutationResponse)).toBe('/inbox');
   });
 });

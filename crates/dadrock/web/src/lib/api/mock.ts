@@ -118,7 +118,8 @@ const fixture: Snapshot = {
   settings: {
     config: [],
     templates: [],
-    agent: [],
+    agent: ['mode: local ACP agent adaptor', 'auto-detected: mock-agent (mock-agent --acp)'],
+    agent_available: true,
     tags: [],
     tag_counts: { errors: 0, warnings: 0, infos: 1 },
     diagnostics: [
@@ -360,8 +361,19 @@ function taskResultFor(request: RunTaskRequest): TaskResult {
     case 'find-conflicts':
       return {
         kind: 'conflict_set.v1',
-        summary: 'No conflicts found in mock records.',
-        findings: [],
+        summary: 'One pair of accepted decisions overlaps.',
+        findings: [
+          {
+            id: 'lazy-vs-ipc',
+            title: 'Lazy frames and IPC snapshots overlap',
+            left_record_id: '0193fb1f-a3a0-7000-8000-000000000003',
+            right_record_id: '0193fb1f-a3a0-7000-8000-000000000004',
+            relationship: 'overlap',
+            conflict_explanation:
+              'Both records describe how intermediate data flows between steps without saying which one wins.',
+            suggested_actions: ['Replace one record with a combined decision.'],
+          },
+        ],
       };
     case 'code-to-record':
       return {

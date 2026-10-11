@@ -1,12 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/state';
-  import RecordDetailPanel from '$lib/components/records/RecordDetailPanel.svelte';
-
-  const id = $derived(page.params.id ?? '');
+  import LegacyRedirect from '$lib/components/shell/LegacyRedirect.svelte';
 </script>
 
-<div class="h-full overflow-auto p-8">
-  <div class="max-w-6xl">
-    <RecordDetailPanel {id} />
-  </div>
-</div>
+<LegacyRedirect />
