@@ -47,5 +47,5 @@ test('an uninitialized project can be initialized from the popover', async ({ pa
   await popover.getByRole('button', { name: 'Initialize project' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'created 8 paths, reused 0 paths' })).toBeVisible();
   await expect(popover.getByRole('button', { name: 'Initialize project' })).toHaveCount(0);
-  await expect(page.locator('[data-app-header]').getByRole('button', { name: 'Draft' })).toBeEnabled();
+  await expect(page.locator('[data-app-header]').getByRole('link', { name: 'Draft' })).not.toHaveAttribute('aria-disabled', 'true');
 });

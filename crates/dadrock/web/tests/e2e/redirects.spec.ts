@@ -25,12 +25,14 @@ for (const [from, to] of cases) {
   });
 }
 
-test('legacy drafting routes open the composer and drop the draft parameter', async ({ page }) => {
+test('legacy drafting routes land on the Draft page with the right prefill', async ({ page }) => {
   await page.goto('/candidates/new');
-  await expect(page.getByRole('dialog', { name: 'Draft' })).toBeVisible();
-  await expect(page).toHaveURL(/\/inbox$/);
+  await expect(page).toHaveURL(/\/draft$/);
+  await expect(page.locator('[data-draft-composer]').getByRole('heading', { name: 'Draft a decision' })).toBeVisible();
 
   await page.goto('/tasks?task=edit-record&record=0193fb1f-a3a0-7000-8000-000000000002');
-  await expect(page.getByRole('dialog', { name: 'Draft' })).toBeVisible();
-  await expect(page).toHaveURL(/\/ledger\?id=0193fb1f-a3a0-7000-8000-000000000002$/);
+  await expect(page).toHaveURL(/\/draft$/);
+  await expect(
+    page.locator('[data-draft-composer]').getByRole('heading', { name: 'Revise “Adopt pre-registration for studies”' }),
+  ).toBeVisible();
 });

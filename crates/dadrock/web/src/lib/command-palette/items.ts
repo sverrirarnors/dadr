@@ -3,7 +3,7 @@ import { primaryNavItems, type PrimaryNavHref } from '$lib/navigation/routes';
 import { recordSearchText } from '$lib/records/filters';
 
 export type CommandPaletteSection = 'Navigation' | 'Records' | 'Actions';
-export type CommandPaletteAction = 'draft' | 'toggle-theme' | 'reload-snapshot';
+export type CommandPaletteAction = 'toggle-theme' | 'reload-snapshot';
 
 export type CommandPaletteRoute = PrimaryNavHref;
 
@@ -23,7 +23,6 @@ const NAVIGATION: CommandPaletteItem[] = primaryNavItems.map((item) =>
 );
 
 const ACTIONS: CommandPaletteItem[] = [
-  actionItem('draft', 'Draft', 'Describe a decision or attach files to scan'),
   actionItem('toggle-theme', 'Toggle Theme', 'Cycle system, light, and dark'),
   actionItem('reload-snapshot', 'Reload', 'Refresh records and diagnostics'),
 ];

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronDown, ChevronRight } from 'lucide-svelte';
+  import { ChevronDown, ChevronRight, Tag } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import type { TagSummary } from '$lib/api';
   import { Button } from '$lib/components/ui';
@@ -52,6 +52,7 @@
       {:else}
         <ChevronRight class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       {/if}
+      <Tag class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       <span>Tags</span>
       {#if selected}
         <span data-ledger-tag-active class="min-w-0 truncate font-mono font-normal text-accent">

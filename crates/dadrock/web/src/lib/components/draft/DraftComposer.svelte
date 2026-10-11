@@ -2,8 +2,7 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { createQuery, useQueryClient } from '@tanstack/svelte-query';
-  import { tick } from 'svelte';
-  import { fly } from 'svelte/transition';
+  import { onDestroy, tick } from 'svelte';
   import { Send, X } from 'lucide-svelte';
   import { createApi } from '$lib/api';
   import RecordSelectionDialog from '$lib/components/records/RecordSelectionDialog.svelte';
@@ -67,7 +66,7 @@
   let picker = $state<'attach' | 'replace' | null>(null);
   let pickerQuery = $state('');
   let pickerStatus = $state<RecordStatusFilter>('all');
-  let sheet = $state<HTMLElement | undefined>();
+  let root = $state<HTMLElement | undefined>();
 
   let focusedForOpen = false;
 
@@ -84,27 +83,33 @@
     if (focusedForOpen || !loaded) return;
     focusedForOpen = true;
     void tick().then(() => {
-      sheet?.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+      root?.querySelector<HTMLElement>('[data-autofocus]')?.focus();
     });
   });
 
-  /** Escape with focus inside the sheet. */
-  function handleSheetKeydown(event: KeyboardEvent) {
-    if (event.key !== 'Escape') return;
-    event.preventDefault();
-    event.stopPropagation();
+  /** Where Close goes: back to the record this draft is about, else the Inbox. */
+  const returnHref = $derived(
+    pinned ? ledgerUrl({ id: pinned.id, history: pinned.status !== 'accepted' || pinned.superseded }) : inboxUrl(),
+  );
+
+  function close() {
+    const href = returnHref;
     composer.hide();
+    void goto(resolve(href as '/inbox'));
   }
 
-  /** Escape with focus anywhere else, except in the record picker above the sheet. */
+  /** Escape leaves the page, except while the record picker is open above it. */
   function handleWindowKeydown(event: KeyboardEvent) {
     if (!composer.open || event.key !== 'Escape') return;
     if (picker) return;
     const target = event.target as Element | null;
     if (target?.closest('[data-record-picker-dialog]')) return;
     event.preventDefault();
-    composer.hide();
+    close();
   }
+
+  // Leaving the page forgets the prefill, so a plain Draft link starts fresh.
+  onDestroy(() => composer.hide());
 
   function openAttachPicker() {
     pickerQuery = '';
@@ -179,35 +184,24 @@
 
 {#if composer.open}
   <div
+    bind:this={root}
     data-draft-composer
-    class="fixed inset-0 z-40 flex justify-end bg-fg/30"
-    role="presentation"
-    onclick={() => composer.hide()}
+    aria-label="Draft"
+    class="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-5 md:px-6"
   >
-    <div
-      bind:this={sheet}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Draft"
-      tabindex="-1"
-      class="flex h-full w-full max-w-full flex-col border-l border-border bg-bg shadow-2xl focus:outline-none md:max-w-xl"
-      in:fly={{ x: 24, duration: 160 }}
-      onclick={(event) => event.stopPropagation()}
-      onkeydown={handleSheetKeydown}
-    >
-      <header class="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4">
-        <h2 class="min-w-0 flex-1 truncate text-sm font-semibold text-fg">{title}</h2>
-        <button
-          type="button"
-          class="-mr-1.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          aria-label="Close"
-          onclick={() => composer.hide()}
-        >
-          <X class="h-4 w-4" aria-hidden="true" />
-        </button>
-      </header>
+    <header class="flex items-center gap-3">
+      <h1 class="min-w-0 flex-1 truncate text-xl font-semibold text-fg">{title}</h1>
+      <button
+        type="button"
+        class="-mr-1.5 inline-flex h-8 w-8 items-center justify-center rounded-md text-fg-muted hover:bg-surface-2 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        aria-label="Close"
+        onclick={close}
+      >
+        <X class="h-4 w-4" aria-hidden="true" />
+      </button>
+    </header>
 
-      <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+    <div class="mt-5">
         {#if !loaded}
           <p class="text-sm text-fg-subtle">Loading the project…</p>
         {:else if view === 'manual'}
@@ -282,10 +276,10 @@
             </Button>
           </div>
         {/if}
-      </div>
+    </div>
 
       {#if loaded && view === 'agent' && agentAvailable}
-        <footer class="flex shrink-0 flex-wrap items-center gap-3 border-t border-border px-4 py-3">
+        <footer class="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-4">
           <Button type="button" disabled={!intent.ok || sending} onclick={send}>
             <Send class="h-3.5 w-3.5" aria-hidden="true" />
             <span>{sending ? 'Sending' : 'Send to agent'}</span>
@@ -303,9 +297,7 @@
           {/if}
         </footer>
       {/if}
-    </div>
   </div>
-
   {#if picker === 'attach'}
     <RecordSelectionDialog
       title="Attach records"

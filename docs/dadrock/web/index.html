@@ -860,7 +860,8 @@
 <li><strong>Issues</strong> are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. <strong>Open record</strong> jumps to the editor; <strong>Fix with agent</strong> asks for a revision; warnings and notes can be dismissed.</li>
 </ul>
 <p>Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply the missing rationale before accepting.</p>
-<p>An empty Inbox is the goal. Use <code>j</code> and <code>k</code> to move through items, <code>a</code> and <code>r</code> for the primary and secondary action, <code>e</code> to edit, and <code>o</code> to open the record in the Ledger.</p>
+<p>An empty Inbox is the goal. The search box narrows the queue to matching titles, tags, paths, and messages. Use <code>j</code> and <code>k</code> to move through items, <code>a</code> and <code>r</code> for the primary and secondary action, <code>e</code> to edit, and <code>o</code> to open the record in the Ledger.</p>
+<p>Record text is edited in a CodeMirror editor with Markdown and front-matter highlighting, search (<code>Ctrl+F</code>), and <code>Ctrl+S</code> to save.</p>
 <h2 id="ledger">Ledger<a class="headerlink" href="#ledger" title="Permanent link">&para;</a></h2>
 <p>The Ledger is what has been decided. It lists accepted records, newest first, with one search box and a tag facet. <strong>Show history</strong> reveals superseded and rejected records. Each record shows its supersession chain, an inline editor, and two verbs:</p>
 <ul>
@@ -874,7 +875,7 @@
 </span></code></pre></div>
 <p>The link uses the original record's full UUID. Keep this section if the candidate should replace that decision: it preserves the intended relationship after reloading or accepting through the CLI. On acceptance, Dadrock validates the predecessor and updates its successors together with accepting the replacement, preserving the old body. This is a Dadrock convention, not an additional required section of the DADR format.</p>
 <h2 id="draft">Draft<a class="headerlink" href="#draft" title="Permanent link">&para;</a></h2>
-<p><strong>Draft</strong> opens a composer from anywhere. Describe the decision in the text box, or attach files and folders to have a <a href="../../llms/">configured agent</a> look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same composer revises or replaces that record. Results land in the Inbox as proposals.</p>
+<p><strong>Draft</strong> is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a <a href="../../llms/">configured agent</a> look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises or replaces that record. Results land in the Inbox as proposals.</p>
 <p>Without an agent, <strong>Write it by hand</strong> gives you a plain form with the candidate template. <strong>Replace with existing decisions instead</strong> links an accepted record to records that already exist.</p>
 <h2 id="project">Project<a class="headerlink" href="#project" title="Permanent link">&para;</a></h2>
 <p>The project name in the header opens a small panel with the project root, the detected agent, and three actions: initialize a new project, run validation now, and clear the agent's run history. Local run state is stored under <code>dadr/runs/</code> and ignored by default because it may contain pasted context, source excerpts, and model transcripts.</p>

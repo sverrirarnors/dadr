@@ -167,3 +167,24 @@ test('narrow screens show the list, then the detail with a way back', async ({ p
   await expect(page).toHaveURL(/\/inbox$/);
   await expect(group(page, 'candidates').getByRole('link', { name: CANDIDATE })).toBeVisible();
 });
+
+test('the search box narrows the queue and the URL remembers it', async ({ page }) => {
+  await page.goto('/inbox');
+  const search = page.getByLabel('Search inbox');
+  await expect(search).toBeVisible();
+
+  await search.fill('polars');
+  await expect(page).toHaveURL(/\/inbox\?q=polars$/);
+  await expect(group(page, 'candidates')).toHaveCount(0);
+  await expect(group(page, 'issues').getByRole('link', { name: BROKEN_LINK })).toBeVisible();
+  await expect(group(page, 'issues').getByRole('link', { name: TAG_INFO })).toHaveCount(0);
+  await expect(selectedRow(page)).toContainText('missing note');
+
+  await search.fill('zzz-nothing');
+  await expect(page.getByText('Nothing in the inbox matches “zzz-nothing”.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Inbox zero' })).toHaveCount(0);
+
+  await search.fill('');
+  await expect(page).toHaveURL(/\/inbox$/);
+  await expect(group(page, 'candidates').getByRole('link', { name: CANDIDATE })).toBeVisible();
+});

@@ -4,7 +4,8 @@
   import { createMutation, useQueryClient } from '@tanstack/svelte-query';
   import { createApi } from '$lib/api';
   import { candidateDestination, parseListInput } from '$lib/candidates/form';
-  import { Alert, Button, DisclosureRow, InlineLinkBadge, TextInput, TextareaInput } from '$lib/components/ui';
+  import MarkdownEditor from '$lib/components/editor/MarkdownEditor.svelte';
+  import { Alert, Button, DisclosureRow, InlineLinkBadge, TextInput } from '$lib/components/ui';
   import { ActionBar, DocumentPane, MetadataStrip } from '$lib/components/workbench';
   import type { ProposalItem } from '$lib/inbox/items';
   import { kindBadge, recordLedgerHref } from '$lib/inbox/presentation';
@@ -111,10 +112,10 @@
           <span class="block text-xs font-medium uppercase tracking-wide text-fg-subtle">Tags</span>
           <TextInput bind:value={tagsInput} placeholder="#dadr/data/processing #dadr/methodology" />
         </label>
-        <label class="block space-y-1.5">
+        <div class="block space-y-1.5">
           <span class="block text-xs font-medium uppercase tracking-wide text-fg-subtle">Candidate Markdown</span>
-          <TextareaInput bind:value={body} rows={18} spellcheck="false" class="font-mono text-xs" />
-        </label>
+          <MarkdownEditor bind:value={body} ariaLabel="Candidate Markdown" class="h-[28rem] resize-y" />
+        </div>
       </div>
     {:else}
       <DocumentPane class="rounded-md border border-border">

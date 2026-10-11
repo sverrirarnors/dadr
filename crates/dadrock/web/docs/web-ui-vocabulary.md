@@ -4,11 +4,11 @@ Dadrock's web UI should feel dense, quiet, and utilitarian: closer to an editor 
 
 ## Places
 
-There are two places and one button. Everything else is a popover, a sheet, or a redirect.
+There are three places, all in the header with an icon before the word. Everything else is a popover or a redirect.
 
 - **Inbox** (`/inbox`, the home route): everything that needs a human decision. Candidates, agent proposals, proposed revisions, conflicts, reports, and validation issues are one grouped list; the selected item's detail sits beside it. Empty is the success state ("Inbox zero").
 - **Ledger** (`/ledger`, `/ledger/<id>`): what has been decided. Accepted records by default; a "Show history" toggle reveals superseded and rejected records. One search box, a tag facet, and the record detail with its supersession chain.
-- **Draft**: a header button that opens the composer sheet from anywhere. One text area plus attachments (files, folders, records). Where it was opened from and what is attached decide which built-in task runs (`$lib/draft/intent.ts`). Results land in the Inbox.
+- **Draft** (`/draft`): a full page, reached from the header or from a record. One text area plus attachments (files, folders, records). Where it was opened from and what is attached decide which built-in task runs (`$lib/draft/intent.ts`). Results land in the Inbox. Pages open it with `composer.show(prefill)`, which stores the prefill and navigates.
 - **Project gear**: the project name in the header opens a popover with the root path, the agent, and the few project-level actions. There is no settings page.
 
 Legacy routes (`/records`, `/candidates/*`, `/tasks`, `/validation`, `/tags`, `/settings`, `/audit`, `/links`) redirect through `$lib/navigation/legacy.ts`.
@@ -40,7 +40,8 @@ Legacy routes (`/records`, `/candidates/*`, `/tasks`, `/validation`, `/tags`, `/
 - `Alert`: errors, warnings, and important neutral notices.
 - `EmptyState`: empty lists and no-result states.
 - `Field`: labeled form controls when local layout does not need a custom label stack.
-- `TextInput`, `SelectInput`, `TextareaInput`: standard form controls for the composer and inline editors.
+- `TextInput`, `SelectInput`, `TextareaInput`: standard form controls for the composer and short fields.
+- `MarkdownEditor` (`$lib/components/editor`): the CodeMirror editor for every Markdown body (record source, candidate drafts, revisions). It binds `value`, takes an `ariaLabel`, and exposes the view on its host as `cmView` for browser tests.
 
 ## Patterns
 

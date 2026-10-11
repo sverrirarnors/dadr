@@ -4,8 +4,8 @@ import { composer, type DraftMode } from '$lib/stores/composer.svelte';
 import { legacyRedirectTarget } from './legacy';
 
 /**
- * `?draft=<mode>` opens the composer from a link, then the parameter is
- * removed so a reload does not reopen it.
+ * `?draft=<mode>` on any page opens the Draft page with a prefill. The
+ * current history entry is replaced so Back does not reopen it.
  */
 export function openComposerFromUrl(url: URL): void {
   const draft = url.searchParams.get('draft');
@@ -15,20 +15,15 @@ export function openComposerFromUrl(url: URL): void {
   const path = url.searchParams.get('path');
   const text = url.searchParams.get('text') ?? '';
   const recordIds = record ? [record] : records;
-  const mode = composerMode(draft);
-  composer.show({
-    mode,
-    recordIds,
-    paths: path ? [path] : [],
-    text,
-  });
-  const next = new URL(url);
-  for (const key of ['draft', 'record', 'records', 'path', 'text']) next.searchParams.delete(key);
-  void goto(resolve(`${next.pathname}${next.search}` as '/inbox'), {
-    replaceState: true,
-    noScroll: true,
-    keepFocus: true,
-  });
+  composer.show(
+    {
+      mode: composerMode(draft),
+      recordIds,
+      paths: path ? [path] : [],
+      text,
+    },
+    { replace: true },
+  );
 }
 
 function composerMode(value: string): DraftMode {

@@ -35,10 +35,10 @@ describe('buildCommandPaletteItems', () => {
       ),
     ).toBe(true);
     expect(items.filter((item) => item.section === 'Actions').map((item) => item.label)).toEqual([
-      'Draft',
       'Toggle Theme',
       'Reload',
     ]);
+    expect(items.some((item) => item.label === 'Go to Draft' && item.route === '/draft')).toBe(true);
   });
 
   it('builds navigation commands from the primary navigation model', () => {

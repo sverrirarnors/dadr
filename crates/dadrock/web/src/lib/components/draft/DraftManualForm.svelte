@@ -5,7 +5,8 @@
   import { untrack } from 'svelte';
   import { createApi, type RecordSummary } from '$lib/api';
   import { candidateDestination, parseListInput } from '$lib/candidates/form';
-  import { Alert, Button, Field, TextareaInput, TextInput } from '$lib/components/ui';
+  import MarkdownEditor from '$lib/components/editor/MarkdownEditor.svelte';
+  import { Alert, Button, Field, TextInput } from '$lib/components/ui';
   import { errorMessage, manualPrefill } from '$lib/draft/composer-view';
   import { applyMutationResponse } from '$lib/query/mutation-cache';
   import { composer, type DraftMode } from '$lib/stores/composer.svelte';
@@ -107,12 +108,11 @@
   </Field>
 
   <Field label="Candidate Markdown">
-    <TextareaInput
-      aria-label="Candidate Markdown"
-      class="min-h-56 font-mono text-xs"
+    <MarkdownEditor
+      ariaLabel="Candidate Markdown"
+      class="h-80 resize-y"
       bind:value={markdown}
-      disabled={creating}
-      spellcheck="false"
+      readOnly={creating}
     />
   </Field>
 
