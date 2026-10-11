@@ -10,16 +10,20 @@ extra_css = ["stylesheets/home.css"]
 nav = [
   {"Home" = "index.md"},
   {"Get started" = "getting-started.md"},
-  {"Specification" = "specification.md"},
-  {"Tags" = "tags.md"},
-  {"dadrock" = [
-    {"Overview" = "dadrock/dadrock.md"},
-    {"CLI" = "dadrock/cli.md"},
+  {"The format" = "core.md"},
+  {"Dadrock" = [
+    {"Overview and validation" = "dadrock/index.md"},
     {"Web UI" = "dadrock/web.md"},
-    {"IDE integrations" = "dadrock/ide.md"},
+    {"CLI reference" = "dadrock/cli.md"},
+    {"Editor integration" = "dadrock/ide.md"},
   ]},
-  {"LLM agents" = "llms.md"},
-  {"UUID v7" = "uuidv7.md"},
+  {"Reference" = [
+    {"Specification" = "specification.md"},
+    {"Optional tags" = "tags.md"},
+    {"Advanced agent setup" = "llms.md"},
+    {"UUID v7" = "uuidv7.md"},
+    {"Roadmap" = "roadmap.md"},
+  ]},
 ]
 
 [project.theme]

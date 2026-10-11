@@ -68,8 +68,8 @@ Add when applicable. Do not invent namespaces beyond these unless the project al
 | `confidence/` | How settled the choice or its inference is | `confidence/low`, `confidence/medium`, `confidence/high` |
 | `topic/` | Free-form subject | `topic/missingness`, `topic/winsorization`, `topic/multiple-testing` |
 | `plan/` | Plan reference | `plan/sap-2026`, `plan/pap-main` |
-| `multiverse/<axis>/` or `robustness/` | Alternative specifications and robustness work | `multiverse/model/ols`, `robustness/placebo` |
-| `people/decider/` and `people/reviewer/` | Decision ownership and review attribution | `people/decider/alice`, `people/reviewer/bob` |
+| `axis/<axis>/` or `robustness/` | Alternative specifications and robustness work | `axis/model/ols`, `robustness/placebo` |
+| `people/decider/` and `people/approver/` | Decision ownership and review attribution | `people/decider/alice`, `people/approver/bob` |
 | `rejected/` | Rejection subtype (on rejected records only) | `rejected/duplicate`, `rejected/withdrawn`, `rejected/no-longer-relevant` |
 
 ## Tidy tags

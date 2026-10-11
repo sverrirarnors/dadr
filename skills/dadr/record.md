@@ -6,13 +6,13 @@ A **record** is a Markdown file with YAML front matter and four prose sections. 
 
 ## Lifecycle
 
-The `status` field takes one of four values. Most anatomy rules apply to all of them; the differences are summarized here.
+The `status` field takes one of three values (`candidate`, `accepted`, `rejected`). Superseded is a derived state of accepted records with successors. Most anatomy rules apply to all of them; the differences are summarized here.
 
 | Status | Editable? | Notes |
 |---|---|---|
 | `candidate` | Yes — freely revisable | A proposed decision under review. Lives in `dadr/candidates/`. All four sections SHOULD be filled before acceptance; thin candidates create work for the reviewer. |
-| `accepted` | No body edits | The decision is in force. Lives under `dadr/accepted/`. The `successors` array is the only field that changes — and only via `dadrock status supersede`, never by hand. |
-| `superseded` | No edits | A formerly accepted record whose `successors` array points at a replacement. Stays in place; the supersession graph is the source of truth. |
+| `accepted` | Preserve substantive content | Lives under `dadr/accepted/`. Minor non-substantive corrections are allowed. Use `dadrock supersede` to link accepted replacements. |
+| Superseded (derived) | Preserve substantive content | An accepted record with non-empty `successors`. Its stored status remains `accepted`. |
 | `rejected` | No edits | A closed candidate. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
 
 Acceptance, rejection, and supersession are all **human approval boundaries**. No skill auto-transitions.
@@ -66,10 +66,10 @@ report the exclusion count and the missingness pattern.
 | Field | Notes |
 |---|---|
 | `title` | Noun phrase describing the choice. **Not a question.** |
-| `status` | One of `candidate \| accepted \| rejected \| superseded`. Set on creation; changed only via `dadrock status` lifecycle commands. |
+| `status` | One of `candidate \| accepted \| rejected`. Set on creation; changed only via `dadrock status` lifecycle commands. |
 | `id` | UUIDv7 allocated by `dadrock new`. **Never write by hand.** |
 | `tags` | Must include the mandatory tags (see [tags.md](tags.md)). |
-| `successors` | Optional list of UUIDv7 ids. Present on `accepted` records that have been superseded, and on `superseded` records. Written only by `dadrock status supersede`. |
+| `successors` | Optional list of UUIDv7 ids. Names accepted replacements; a non-empty list makes an accepted record superseded. Written only by `dadrock supersede`. |
 | `bibliography` | Optional list of bibliographic references. |
 
 ### Body — four sections
@@ -134,7 +134,7 @@ Agent-drafted records additionally carry:
 ```
 
 See [tags.md](tags.md) for optional namespaces (`confidence/`, `topic/`,
-`plan/`, `multiverse/`, `people/decider/`, `rejected/`, ...).
+`plan/`, `axis/`, `people/decider/`, `rejected/`, ...).
 
 ## Length envelope
 
@@ -150,10 +150,10 @@ A well-formed record is **roughly 200–400 words of body prose** — long enoug
 - **No source link in `Context`.** Every record is grounded in evidence. If you cannot link to a file/line, you cannot draft the record yet — surface the gap to the user.
 - **Two decisions in one file.** If `Decision` describes both an exclusion and a recoding, split into two records.
 - **Hand-written `id`.** Always go through `dadrock new`.
-- **Hand-written `successors`.** Always go through `dadrock status supersede`.
+- **Hand-written `successors`.** Always go through `dadrock supersede`.
 - **Question-form titles.** "Should we drop missing treatment?" → "Drop observations with missing treatment".
 - **Tense drift in `Decision`.** Active voice describing what was done (or what the code does); not "we plan to" or "we should".
-- **Editing accepted bodies.** Accepted records are frozen; revise via a new candidate plus supersession.
+- **Editing accepted bodies.** Preserve substantive content; changed decisions require a new candidate plus supersession. Minor corrections are allowed.
 
 ## Minimum viable record
 
