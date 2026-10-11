@@ -57,7 +57,7 @@ With no command, prints this help menu.
 * `help` — Show top-level help or detailed metadata for one command.
 * `commands` — List command metadata for automation and command discovery.
 * `completions` — Generate a shell completion script.
-* `dir` — Print the discovered Dadrock project directory (dadr/).
+* `dir` — Print the project's dadr/ directory, even before it exists.
 * `config` — Print the resolved project layout.
 * `init` — Create a Dadrock dadr/ directory.
 * `demo` — Seed a new project with a named DADR example.
@@ -86,7 +86,7 @@ Show top-level help or detailed metadata for one command.
 
 ###### **Arguments:**
 
-* `<TOPIC>`
+* `<TOPIC>` — The command to describe, such as `validate changes`
 
 
 
@@ -98,7 +98,7 @@ List command metadata for automation and command discovery.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -110,7 +110,7 @@ Generate a shell completion script.
 
 ###### **Arguments:**
 
-* `<SHELL>`
+* `<SHELL>` — The shell to generate the script for
 
   Possible values: `bash`, `zsh`, `fish`
 
@@ -119,7 +119,7 @@ Generate a shell completion script.
 
 ## `dadrock dir`
 
-Print the discovered Dadrock project directory (dadr/).
+Print the project's dadr/ directory, even before it exists.
 
 **Usage:** `dadrock dir`
 
@@ -133,7 +133,7 @@ Print the resolved project layout.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -145,7 +145,7 @@ Create a Dadrock dadr/ directory.
 
 ###### **Arguments:**
 
-* `<DIRECTORY>`
+* `<DIRECTORY>` — Where to create `dadr/`: its parent directory, or a path ending in `dadr` (defaults to the current directory)
 
 
 
@@ -157,12 +157,12 @@ Seed a new project with a named DADR example.
 
 ###### **Arguments:**
 
-* `<DIRECTORY>`
+* `<DIRECTORY>` — The directory to seed, which must be new or empty (defaults to the current directory)
 
 ###### **Options:**
 
-* `--json`
-* `--example <EXAMPLE>`
+* `--json` — Print the JSON envelope instead of text
+* `--example <EXAMPLE>` — The example project to seed
 
   Default value: `lifecycle`
 
@@ -179,12 +179,12 @@ Create a candidate decision record from the active candidate template.
 
 ###### **Arguments:**
 
-* `<TITLE>`
+* `<TITLE>` — The record's title; the words join into one title. Options can come before or after it; put `--` before a title that starts with `-`
 
 ###### **Options:**
 
-* `--tag <TAGS>`
-* `--quiet`
+* `--tag <TAG>` — A tag for the record, without `#`; repeat for more
+* `--quiet` — Print only the new record's id instead of the JSON envelope
 
 
 
@@ -196,13 +196,13 @@ List records, optionally filtered by lifecycle status, tag, or query.
 
 ###### **Options:**
 
-* `--status <STATUS>`
+* `--status <STATUS>` — Only records with this status; `accepted` leaves out superseded records, and `superseded` lists only them
 
   Possible values: `candidate`, `accepted`, `rejected`, `superseded`
 
-* `--tag <TAG>`
-* `--query <QUERY>`
-* `--unique`
+* `--tag <TAG>` — Only records with this tag, in front matter or inline (the `#` is optional)
+* `--query <QUERY>` — Only records matching a full id, an id prefix, or part of a filename or title
+* `--unique` — Exit non-zero unless exactly one record matches
 
 
 
@@ -219,7 +219,7 @@ Show a decision's versions as a graph, newest first, with the reason for each ch
 ###### **Options:**
 
 * `--patch` — Print each change's diff under its link, and each text edit's diff under its version
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -236,7 +236,7 @@ Compare two records: title, tags, and body without `## Supersedes`.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -254,7 +254,7 @@ Inspect one record's lifecycle status or run lifecycle transitions.
 
 ###### **Arguments:**
 
-* `<QUERY>`
+* `<QUERY>` — The record to inspect: full id, id prefix, filename, or title; the words join into one query
 
 
 
@@ -282,7 +282,7 @@ Reject a candidate and move it to the archive.
 
 ###### **Arguments:**
 
-* `<QUERY>`
+* `<QUERY>` — The candidate: full id, id prefix, filename, or title; the words join into one query
 
 
 
@@ -294,8 +294,8 @@ Link accepted successors to the records they supersede and move those records to
 
 ###### **Options:**
 
-* `--from <FROM>`
-* `--to <TO>`
+* `--from <FROM>` — An accepted record to supersede: full id, id prefix, filename, or title. Repeat for more
+* `--to <TO>` — An accepted record that replaces it. Repeat for more; every `--from` record gets every `--to` record as a successor
 
 
 
@@ -323,7 +323,7 @@ Reject a candidate decision.
 
 ###### **Arguments:**
 
-* `<QUERY>`
+* `<QUERY>` — The candidate: full id, id prefix, filename, or title; the words join into one query
 
 
 
@@ -335,8 +335,8 @@ Link accepted successors to the records they supersede and move those records to
 
 ###### **Options:**
 
-* `--from <FROM>`
-* `--to <TO>`
+* `--from <FROM>` — An accepted record to supersede: full id, id prefix, filename, or title. Repeat for more
+* `--to <TO>` — An accepted record that replaces it. Repeat for more; every `--from` record gets every `--to` record as a successor
 
 
 
@@ -355,7 +355,7 @@ Run project validation, or target records, links, tags, or changes.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the project validation's JSON envelope instead of text
 
 
 
@@ -367,11 +367,11 @@ Validate record front matter and structure.
 
 ###### **Arguments:**
 
-* `<PATHS>`
+* `<PATHS>` — Record files or directories to validate (defaults to every record in the project)
 
 ###### **Options:**
 
-* `--json`
+* `--json` — No effect: this command always prints the JSON envelope
 
 
 
@@ -383,7 +383,7 @@ Report broken or ambiguous wikilinks and local Markdown links.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -395,7 +395,7 @@ Report malformed YAML and inline tags.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -412,7 +412,7 @@ Check accepted and rejected records against a Git revision: a changed id or stat
   Default value: `HEAD`
 * `--staged` — Compare the index (staged changes) instead of the working tree
 * `--strict` — Report title and body edits to accepted and rejected records as errors
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -436,7 +436,7 @@ List normalized YAML and inline tags.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -460,11 +460,11 @@ Serve Dadrock MCP tools over stdio.
 
 ###### **Arguments:**
 
-* `<DIRECTORY>`
+* `<DIRECTORY>` — The directory to find the project from (defaults to the current directory)
 
 ###### **Options:**
 
-* `--read-only`
+* `--read-only` — Serve only the read tools, so no tool can create or change a record
 
 
 
@@ -490,9 +490,9 @@ Check that a local ACP agent can start a Dadrock session.
 
 ###### **Options:**
 
-* `--agent <AGENT>`
-* `--agent-arg <AGENT_ARGS>`
-* `--no-mcp`
+* `--agent <AGENT>` — The ACP agent program to start (defaults to `DADROCK_ACP_AGENT`, then an installed provider)
+* `--agent-arg <AGENT_ARGS>` — An extra argument for the agent program; repeat for more
+* `--no-mcp` — Start the agent without Dadrock's MCP tools
 
 
 
@@ -504,22 +504,22 @@ Ask a local ACP agent to draft a candidate decision.
 
 ###### **Arguments:**
 
-* `<PROMPT>`
+* `<PROMPT>` — The decision to draft; the words join into one prompt
 
 ###### **Options:**
 
-* `--write`
-* `--json`
-* `--permission <PERMISSION>`
+* `--write` — Save the draft as a new candidate record; without it, the draft is only printed
+* `--json` — Print the JSON envelope instead of text
+* `--permission <PERMISSION>` — How to answer the agent's tool permission requests
 
   Default value: `deny`
 
   Possible values: `deny`, `allow-once`, `allow-always`
 
-* `--agent <AGENT>`
-* `--agent-arg <AGENT_ARGS>`
-* `--skill <SKILLS>` \[alias: `prompt-pack`\]
-* `--no-mcp`
+* `--agent <AGENT>` — The ACP agent program to start (defaults to `DADROCK_ACP_AGENT`, then an installed provider)
+* `--agent-arg <AGENT_ARGS>` — An extra argument for the agent program; repeat for more
+* `--skill <SKILLS>` \[alias: `prompt-pack`\] — An agent skill or prompt pack to include, by name or path; repeat for more
+* `--no-mcp` — Start the agent without Dadrock's MCP tools
 
 
 
@@ -531,7 +531,7 @@ List available Dadrock agent skills and prompt packs.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -559,7 +559,7 @@ List built-in, user, and project task packages.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -571,11 +571,11 @@ Show one resolved task package.
 
 ###### **Arguments:**
 
-* `<TASK_ID>`
+* `<TASK_ID>` — The task id, as `dadrock task list` prints it
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 * `--raw` — Print the task file exactly as written, front matter included
 
 
@@ -618,7 +618,7 @@ List persisted local task runs.
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the JSON envelope instead of text
 
 
 
@@ -630,11 +630,11 @@ Read a persisted task run result.
 
 ###### **Arguments:**
 
-* `<RUN_ID>`
+* `<RUN_ID>` — The run id, as `dadrock task runs` prints it
 
 ###### **Options:**
 
-* `--json`
+* `--json` — Print the whole JSON envelope instead of the result alone
 
 
 
@@ -646,14 +646,14 @@ Serve the local web review UI.
 
 ###### **Arguments:**
 
-* `<DIRECTORY>`
+* `<DIRECTORY>` — The directory to find the project from (defaults to the current directory)
 
 ###### **Options:**
 
-* `--port <PORT>`
+* `--port <PORT>` — The port to listen on; 0 picks a free one
 
   Default value: `4004`
-* `--host <HOST>`
+* `--host <HOST>` — The address to listen on: only `localhost`, `127.0.0.1`, and `::1` are accepted
 
   Default value: `127.0.0.1`
 

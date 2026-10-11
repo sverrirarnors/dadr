@@ -1,4 +1,8 @@
-use std::{io::Write, process::ExitCode};
+use std::{
+    fmt,
+    io::{self, Write},
+    process::ExitCode,
+};
 
 use anyhow::{bail, Context, Result};
 use clap::{CommandFactory, Parser};
@@ -19,6 +23,27 @@ use dadrock::{
 };
 use serde::Serialize;
 
+// Defined before the modules so `web` can use them too.
+
+/// Like `print!`, but returns an error instead of panicking when stdout
+/// fails; see [`StdoutClosed`].
+macro_rules! out {
+    ($($arg:tt)*) => {
+        $crate::write_stdout(format_args!($($arg)*))
+    };
+}
+
+/// Like `println!`, but returns an error instead of panicking when stdout
+/// fails; see [`StdoutClosed`].
+macro_rules! outln {
+    () => {
+        $crate::write_stdout(format_args!("\n"))
+    };
+    ($($arg:tt)*) => {
+        $crate::write_stdout(format_args!("{}\n", format_args!($($arg)*)))
+    };
+}
+
 mod cli;
 mod web;
 
@@ -34,7 +59,58 @@ fn main() -> ExitCode {
 
 fn run() -> Result<ExitCode> {
     let cli = cli::Cli::parse();
-    dispatch_command(cli.into_command_or_default())
+    let code = match dispatch_command(cli.into_command_or_default()) {
+        // Commands that report an outcome keep it through `finish_output`;
+        // the others have nothing left to fail on once they print.
+        Err(err) if err.is::<StdoutClosed>() => ExitCode::SUCCESS,
+        outcome => outcome?,
+    };
+    finish_output(Ok(()), code)
+}
+
+/// The reader closed stdout early, as `head` does in `dadrock list | head -1`.
+/// Writing stops and the command exits quietly, keeping its outcome.
+#[derive(Debug)]
+struct StdoutClosed;
+
+impl fmt::Display for StdoutClosed {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("stdout was closed")
+    }
+}
+
+impl std::error::Error for StdoutClosed {}
+
+fn write_stdout(args: fmt::Arguments<'_>) -> Result<()> {
+    io::stdout().lock().write_fmt(args).map_err(stdout_error)
+}
+
+fn write_stdout_bytes(bytes: &[u8]) -> Result<()> {
+    io::stdout().lock().write_all(bytes).map_err(stdout_error)
+}
+
+fn stdout_error(err: io::Error) -> anyhow::Error {
+    if err.kind() == io::ErrorKind::BrokenPipe {
+        StdoutClosed.into()
+    } else {
+        anyhow::Error::new(err).context("failed to write to stdout")
+    }
+}
+
+/// `printed`, except that a closed stdout is not an error.
+fn tolerate_stdout_closed(printed: Result<()>) -> Result<()> {
+    match printed {
+        Err(err) if err.is::<StdoutClosed>() => Ok(()),
+        printed => printed,
+    }
+}
+
+/// `code`, once the command's output is printed and flushed. A closed stdout
+/// does not change it: `dadrock validate | head -2` still fails when
+/// validation does.
+fn finish_output(printed: Result<()>, code: ExitCode) -> Result<ExitCode> {
+    tolerate_stdout_closed(printed.and_then(|()| io::stdout().flush().map_err(stdout_error)))?;
+    Ok(code)
 }
 
 fn dispatch_command(command: cli::Command) -> Result<ExitCode> {
@@ -64,18 +140,18 @@ fn dispatch_command(command: cli::Command) -> Result<ExitCode> {
     }
 }
 
-fn print_help() {
-    println!("Dadrock\n\nUSAGE:\n    dadrock [COMMAND]\n\nWith no command, prints this help menu.");
+fn print_help() -> Result<()> {
+    outln!("Dadrock\n\nUSAGE:\n    dadrock [COMMAND]\n\nWith no command, prints this help menu.")?;
     for command in core_commands::COMMANDS {
-        println!("    dadrock {}", command.usage);
+        outln!("    dadrock {}", command.usage)?;
     }
-    println!("\nDadrock stores project artifacts under dadr/.");
-    println!("Use `dadrock help <command>` for Dadrock's command catalog metadata.");
+    outln!("\nDadrock stores project artifacts under dadr/.")?;
+    outln!("Use `dadrock help <command>` for Dadrock's command catalog metadata.")
 }
 
 fn help(args: cli::HelpArgs) -> Result<ExitCode> {
     if args.topic.is_empty() {
-        print_help();
+        print_help()?;
         return Ok(ExitCode::SUCCESS);
     }
 
@@ -83,7 +159,7 @@ fn help(args: cli::HelpArgs) -> Result<ExitCode> {
     let Some(command) = core_commands::find_command_info(&path) else {
         bail!("unknown help topic `{}`", args.topic.join(" "));
     };
-    print_command_help(command);
+    print_command_help(command)?;
     Ok(ExitCode::SUCCESS)
 }
 
@@ -92,7 +168,7 @@ fn commands(args: cli::JsonArg) -> Result<ExitCode> {
         let envelope = core_commands::command_catalog();
         print_json(&envelope)?;
     } else {
-        print_command_catalog();
+        print_command_catalog()?;
     }
     Ok(ExitCode::SUCCESS)
 }
@@ -100,12 +176,14 @@ fn commands(args: cli::JsonArg) -> Result<ExitCode> {
 fn completions(args: cli::CompletionsArgs) -> Result<ExitCode> {
     let mut command = cli::Cli::command();
     let shell: clap_complete::Shell = args.shell.into();
-    clap_complete::generate(shell, &mut command, "dadrock", &mut std::io::stdout());
+    let mut script = Vec::new();
+    clap_complete::generate(shell, &mut command, "dadrock", &mut script);
+    write_stdout_bytes(&script)?;
     Ok(ExitCode::SUCCESS)
 }
 
 fn gen_cli_docs() -> Result<ExitCode> {
-    print!("{}", render_cli_docs());
+    out!("{}", render_cli_docs())?;
     Ok(ExitCode::SUCCESS)
 }
 
@@ -114,14 +192,14 @@ fn render_cli_docs() -> String {
         .replace("[alias: `prompt-pack`]", r"\[alias: `prompt-pack`\]")
 }
 
-fn print_command_catalog() {
+fn print_command_catalog() -> Result<()> {
     let width = core_commands::COMMANDS
         .iter()
         .map(|command| format!("dadrock {}", command.usage).len())
         .max()
         .unwrap_or(0);
 
-    println!("Dadrock commands\n");
+    outln!("Dadrock commands\n")?;
     for command in core_commands::COMMANDS {
         let usage = format!("dadrock {}", command.usage);
         let mutation = command.mutation.label();
@@ -130,31 +208,32 @@ fn print_command_catalog() {
         } else {
             "text"
         };
-        println!(
+        outln!(
             "  {usage:<width$}  {mutation:<19}  {json:<4}  {}",
             command.description
-        );
+        )?;
     }
-    println!("\nUse `dadrock help <command>` for command details.");
+    outln!("\nUse `dadrock help <command>` for command details.")
 }
 
-fn print_command_help(command: &core_commands::CommandInfo) {
-    println!("Dadrock command: dadrock {}\n", command.name());
-    println!("USAGE:\n    dadrock {}\n", command.usage);
-    println!("{}\n", command.description);
-    println!("METADATA:");
-    println!("    Mutation: {}", command.mutation.label());
-    println!(
+fn print_command_help(command: &core_commands::CommandInfo) -> Result<()> {
+    outln!("Dadrock command: dadrock {}\n", command.name())?;
+    outln!("USAGE:\n    dadrock {}\n", command.usage)?;
+    outln!("{}\n", command.description)?;
+    outln!("METADATA:")?;
+    outln!("    Mutation: {}", command.mutation.label())?;
+    outln!(
         "    JSON output: {}",
         if command.supports_json { "yes" } else { "no" }
-    );
-    println!("    Exit behavior: {}", command.exit_behavior);
+    )?;
+    outln!("    Exit behavior: {}", command.exit_behavior)?;
     if !command.subcommands.is_empty() {
-        println!("\nSUBCOMMANDS:");
+        outln!("\nSUBCOMMANDS:")?;
         for subcommand in command.subcommands {
-            println!("    dadrock {subcommand}");
+            outln!("    dadrock {subcommand}")?;
         }
     }
+    Ok(())
 }
 
 fn command_context() -> Result<core_commands::CommandContext> {
@@ -162,8 +241,7 @@ fn command_context() -> Result<core_commands::CommandContext> {
 }
 
 fn print_json<T: Serialize + ?Sized>(value: &T) -> Result<()> {
-    println!("{}", serde_json::to_string_pretty(value)?);
-    Ok(())
+    outln!("{}", serde_json::to_string_pretty(value)?)
 }
 
 fn envelope_exit_code<T>(envelope: &core_commands::CommandEnvelope<T>) -> ExitCode {
@@ -177,8 +255,7 @@ fn envelope_exit_code<T>(envelope: &core_commands::CommandEnvelope<T>) -> ExitCo
 fn print_json_envelope<T: Serialize>(
     envelope: &core_commands::CommandEnvelope<T>,
 ) -> Result<ExitCode> {
-    print_json(envelope)?;
-    Ok(envelope_exit_code(envelope))
+    finish_output(print_json(envelope), envelope_exit_code(envelope))
 }
 
 fn print_envelope<T: Serialize>(
@@ -186,24 +263,26 @@ fn print_envelope<T: Serialize>(
     json: bool,
     print_text: impl FnOnce(&T) -> Result<()>,
 ) -> Result<ExitCode> {
-    if json {
-        print_json(envelope)?;
+    let printed = if json {
+        print_json(envelope)
     } else {
-        print_text(&envelope.data)?;
-    }
-    Ok(envelope_exit_code(envelope))
+        print_text(&envelope.data)
+    };
+    finish_output(printed, envelope_exit_code(envelope))
 }
 
 fn show_dir() -> Result<ExitCode> {
     let envelope = core_commands::show_dir(&command_context()?)?;
-    println!("{}", envelope.data.project_dir);
-    Ok(envelope_exit_code(&envelope))
+    finish_output(
+        outln!("{}", envelope.data.project_dir),
+        envelope_exit_code(&envelope),
+    )
 }
 
 fn config(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::show_config(&command_context()?)?;
     print_envelope(&envelope, args.json, |layout| {
-        print_project_layout(layout);
+        print_project_layout(layout)?;
         Ok(())
     })
 }
@@ -220,12 +299,12 @@ fn demo(args: cli::DemoArgs) -> Result<ExitCode> {
         args.directory,
     )?;
     print_envelope(&envelope, args.json, |result| {
-        println!(
+        outln!(
             "seeded {} DADR demo at {}",
             result.example.as_str(),
             result.project_dir
-        );
-        println!("{} record(s)", result.records.len());
+        )?;
+        outln!("{} record(s)", result.records.len())?;
         Ok(())
     })
 }
@@ -235,8 +314,10 @@ fn new_record(args: cli::NewArgs) -> Result<ExitCode> {
 
     let envelope = core_commands::new_record(&command_context()?, &title, &args.tags)?;
     if args.quiet {
-        println!("{}", envelope.data.id);
-        return Ok(envelope_exit_code(&envelope));
+        return finish_output(
+            outln!("{}", envelope.data.id),
+            envelope_exit_code(&envelope),
+        );
     }
     print_json_envelope(&envelope)
 }
@@ -261,16 +342,14 @@ fn history(args: cli::HistoryArgs) -> Result<ExitCode> {
         print_command_diagnostics(&envelope.diagnostics);
     }
     print_envelope(&envelope, args.json, |history| {
-        print!("{}", dadrock::history::render_history_text(history));
-        Ok(())
+        out!("{}", dadrock::history::render_history_text(history))
     })
 }
 
 fn diff(args: cli::DiffArgs) -> Result<ExitCode> {
     let envelope = core_commands::diff(&command_context()?, &args.old, &args.new)?;
     print_envelope(&envelope, args.json, |result| {
-        print!("{}", dadrock::history::render_diff_text(result));
-        Ok(())
+        out!("{}", dadrock::history::render_diff_text(result))
     })
 }
 
@@ -335,7 +414,7 @@ fn validate(args: cli::ValidateArgs) -> Result<ExitCode> {
 fn validate_project(json: bool) -> Result<ExitCode> {
     let envelope = core_commands::validate_project(&command_context()?)?;
     print_envelope(&envelope, json, |report| {
-        print_project_validation_report(report);
+        print_project_validation_report(report)?;
         Ok(())
     })
 }
@@ -348,7 +427,7 @@ fn validate_records_cli(args: cli::ValidateRecordsArgs) -> Result<ExitCode> {
 fn validate_links_cli(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::validate_links(&command_context()?)?;
     print_envelope(&envelope, args.json, |report| {
-        print_link_report(report);
+        print_link_report(report)?;
         Ok(())
     })
 }
@@ -356,7 +435,7 @@ fn validate_links_cli(args: cli::JsonArg) -> Result<ExitCode> {
 fn validate_tags_cli(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::validate_tags(&command_context()?)?;
     print_envelope(&envelope, args.json, |report| {
-        print_tag_validation(report);
+        print_tag_validation(report)?;
         Ok(())
     })
 }
@@ -371,7 +450,7 @@ fn validate_changes_cli(args: cli::ValidateChangesArgs) -> Result<ExitCode> {
         },
     )?;
     print_envelope(&envelope, args.json, |report| {
-        print_change_validation_report(report);
+        print_change_validation_report(report)?;
         Ok(())
     })
 }
@@ -394,7 +473,7 @@ fn agent_check(args: cli::AgentCheckArgs) -> Result<ExitCode> {
             ..AcpHealthOptions::default()
         },
     )?;
-    println!("{}", report.message);
+    outln!("{}", report.message)?;
     Ok(ExitCode::SUCCESS)
 }
 
@@ -402,10 +481,10 @@ fn agent_skills(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::list_agent_skills(&command_context()?)?;
     print_envelope(&envelope, args.json, |result| {
         if result.skills.is_empty() {
-            println!("No Dadrock agent skills found.");
+            outln!("No Dadrock agent skills found.")?;
         } else {
             for skill in &result.skills {
-                println!("{}\t{}\t{}", skill.name, skill.sha256, skill.source);
+                outln!("{}\t{}\t{}", skill.name, skill.sha256, skill.source)?;
             }
         }
         Ok(())
@@ -427,14 +506,14 @@ fn agent_draft(args: cli::AgentDraftArgs) -> Result<ExitCode> {
 
     print_envelope(&envelope, args.json, |result| {
         if let Some(candidate) = &result.candidate {
-            println!("drafted candidate {}", candidate.id);
-            println!("{}", candidate.path);
+            outln!("drafted candidate {}", candidate.id)?;
+            outln!("{}", candidate.path)?;
             if !result.response.summary.trim().is_empty() {
-                println!("\n{}", result.response.summary.trim());
+                outln!("\n{}", result.response.summary.trim())?;
             }
         } else {
-            println!("{}", result.response.summary.trim());
-            println!("\n{}", result.response.body_markdown.trim());
+            outln!("{}", result.response.summary.trim())?;
+            outln!("\n{}", result.response.body_markdown.trim())?;
         }
         Ok(())
     })
@@ -473,7 +552,7 @@ fn task(args: cli::TaskArgs) -> Result<ExitCode> {
 fn task_list(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::list_tasks_command(&command_context()?);
     print_envelope(&envelope, args.json, |listing| {
-        print_task_list(listing);
+        print_task_list(listing)?;
         Ok(())
     })
 }
@@ -481,13 +560,11 @@ fn task_list(args: cli::JsonArg) -> Result<ExitCode> {
 fn task_show(args: cli::TaskShowArgs) -> Result<ExitCode> {
     let envelope = core_commands::show_task_command(&command_context()?, &args.task_id)?;
     if args.raw {
-        let mut stdout = std::io::stdout().lock();
-        stdout.write_all(envelope.data.document.as_bytes())?;
-        stdout.flush()?;
-        return Ok(envelope_exit_code(&envelope));
+        let printed = write_stdout_bytes(envelope.data.document.as_bytes());
+        return finish_output(printed, envelope_exit_code(&envelope));
     }
     print_envelope(&envelope, args.json, |task| {
-        print_task_package(task);
+        print_task_package(task)?;
         Ok(())
     })
 }
@@ -519,7 +596,7 @@ fn task_run(args: cli::TaskRunArgs) -> Result<ExitCode> {
     )?;
 
     print_envelope(&envelope, args.json, |run| {
-        print_task_run(run);
+        print_task_run(run)?;
         Ok(())
     })
 }
@@ -527,7 +604,7 @@ fn task_run(args: cli::TaskRunArgs) -> Result<ExitCode> {
 fn task_runs(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::list_task_runs_command(&command_context()?)?;
     print_envelope(&envelope, args.json, |runs| {
-        print_task_runs(runs);
+        print_task_runs(runs)?;
         Ok(())
     })
 }
@@ -546,7 +623,7 @@ fn tags(args: cli::TagsArgs) -> Result<ExitCode> {
 fn tags_list(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::list_tags(&command_context()?)?;
     print_envelope(&envelope, args.json, |report| {
-        print_tag_list(report);
+        print_tag_list(report)?;
         Ok(())
     })
 }
@@ -583,26 +660,28 @@ fn preview(args: cli::PreviewArgs) -> Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-fn print_project_layout(layout: &ProjectLayout) {
-    println!("project_dir\t{}", layout.project_dir);
-    println!("inbox_dir\t{}", layout.inbox_dir);
-    println!("ledger_dir\t{}", layout.ledger_dir);
-    println!("archive_dir\t{}", layout.archive_dir);
-    println!("templates_dir\t{}", layout.templates_dir);
-    println!("tasks_dir\t{}", layout.tasks_dir);
-    println!("runs_dir\t{}", layout.runs_dir);
+fn print_project_layout(layout: &ProjectLayout) -> Result<()> {
+    outln!("project_dir\t{}", layout.project_dir)?;
+    outln!("inbox_dir\t{}", layout.inbox_dir)?;
+    outln!("ledger_dir\t{}", layout.ledger_dir)?;
+    outln!("archive_dir\t{}", layout.archive_dir)?;
+    outln!("templates_dir\t{}", layout.templates_dir)?;
+    outln!("tasks_dir\t{}", layout.tasks_dir)?;
+    outln!("runs_dir\t{}", layout.runs_dir)?;
+    Ok(())
 }
 
-fn print_project_validation_report(report: &ProjectValidationReport) {
+fn print_project_validation_report(report: &ProjectValidationReport) -> Result<()> {
     if report.issues.is_empty() {
-        println!("dadrock validate: ok");
-        return;
+        return outln!("dadrock validate: ok");
     }
 
-    println!(
+    outln!(
         "dadrock validate: {} error(s), {} warning(s), {} info",
-        report.counts.errors, report.counts.warnings, report.counts.infos
-    );
+        report.counts.errors,
+        report.counts.warnings,
+        report.counts.infos
+    )?;
     for issue in &report.issues {
         let location = issue
             .path
@@ -613,23 +692,23 @@ fn print_project_validation_report(report: &ProjectValidationReport) {
         } else {
             location
         };
-        println!(
+        outln!(
             "[{}] {} {}: {}",
             severity_label(issue.severity),
             issue.code,
             location,
             issue.message
-        );
+        )?;
         for related_path in &issue.related_paths {
-            println!("  - {related_path}");
+            outln!("  - {related_path}")?;
         }
     }
+    Ok(())
 }
 
-fn print_change_validation_report(report: &ChangeValidationReport) {
+fn print_change_validation_report(report: &ChangeValidationReport) -> Result<()> {
     let Some(commit) = &report.base_commit else {
-        println!("dadrock validate changes: ok (no commits yet, nothing to compare)");
-        return;
+        return outln!("dadrock validate changes: ok (no commits yet, nothing to compare)");
     };
     let compared = format!(
         "{} against {} ({}){}",
@@ -639,83 +718,90 @@ fn print_change_validation_report(report: &ChangeValidationReport) {
         if report.strict { ", strict" } else { "" }
     );
     if report.issues.is_empty() {
-        println!(
+        return outln!(
             "dadrock validate changes: ok ({compared}; {} accepted or rejected record(s) changed)",
             report.checked.len()
         );
-        return;
     }
 
-    println!(
+    outln!(
         "dadrock validate changes: {} error(s), {} warning(s) ({compared})",
-        report.counts.errors, report.counts.warnings
-    );
+        report.counts.errors,
+        report.counts.warnings
+    )?;
     for issue in &report.issues {
-        println!(
+        outln!(
             "[{}] {} {}: {}",
             severity_label(issue.severity),
             issue.code,
             issue.path,
             issue.message
-        );
+        )?;
         if let Some(base_path) = &issue.base_path {
-            println!("  - was {base_path}");
+            outln!("  - was {base_path}")?;
         }
         if let Some(diff) = &issue.diff {
             for line in dadrock::history::diff_text_lines(diff) {
                 match line.trim_end() {
-                    "" => println!(),
-                    line => println!("    {line}"),
+                    "" => outln!()?,
+                    line => outln!("    {line}")?,
                 }
             }
         }
     }
+    Ok(())
 }
 
-fn print_link_report(report: &LinkCheckReport) {
+fn print_link_report(report: &LinkCheckReport) -> Result<()> {
     if report.issues.is_empty() {
-        println!("dadrock validate links: ok");
-        return;
+        return outln!("dadrock validate links: ok");
     }
 
-    println!(
+    outln!(
         "dadrock validate links: {} error(s), {} warning(s), {} info",
-        report.counts.errors, report.counts.warnings, report.counts.infos
-    );
+        report.counts.errors,
+        report.counts.warnings,
+        report.counts.infos
+    )?;
     for issue in &report.issues {
-        println!(
+        outln!(
             "[{}] {} {}:{}: {}",
             severity_label(issue.severity),
             issue.code,
             issue.path,
             issue.line,
             issue.message
-        );
+        )?;
         for related_path in &issue.related_paths {
-            println!("  - {related_path}");
+            outln!("  - {related_path}")?;
         }
     }
+    Ok(())
 }
 
-fn print_tag_list(report: &TagReport) {
+fn print_tag_list(report: &TagReport) -> Result<()> {
     for tag in &report.tags {
-        println!(
+        outln!(
             "#{}\t{}\t{}",
-            tag.display, tag.record_count, tag.occurrence_count
-        );
+            tag.display,
+            tag.record_count,
+            tag.occurrence_count
+        )?;
     }
+    Ok(())
 }
 
-fn print_tag_validation(report: &TagReport) {
+fn print_tag_validation(report: &TagReport) -> Result<()> {
     if report.issues.is_empty() {
-        println!("dadrock validate tags: ok");
-        return;
+        return outln!("dadrock validate tags: ok");
     }
 
-    println!(
+    outln!(
         "dadrock validate tags: {} error(s), {} warning(s), {} info",
-        report.counts.errors, report.counts.warnings, report.counts.infos
-    );
+        report.counts.errors,
+        report.counts.warnings,
+        report.counts.infos
+    )?;
     for issue in &report.issues {
         let location = issue.line.map_or_else(
             || issue.path.to_string(),
@@ -725,26 +811,27 @@ fn print_tag_validation(report: &TagReport) {
             .tag
             .as_ref()
             .map_or_else(String::new, |tag| format!(" `{tag}`"));
-        println!(
+        outln!(
             "[{}] {} {}{}: {}",
             severity_label(issue.severity),
             issue.code,
             location,
             tag,
             issue.message
-        );
+        )?;
     }
+    Ok(())
 }
 
-fn print_task_list(listing: &TaskListing) {
+fn print_task_list(listing: &TaskListing) -> Result<()> {
     for task in &listing.tasks {
-        println!(
+        outln!(
             "{}\tv{}\t{}\t{}",
             task.manifest.id,
             task.manifest.version,
             task.source.kind.as_str(),
             task.manifest.title
-        );
+        )?;
     }
     for diagnostic in &listing.diagnostics {
         let path = diagnostic
@@ -758,42 +845,45 @@ fn print_task_list(listing: &TaskListing) {
             diagnostic.message
         );
     }
+    Ok(())
 }
 
-fn print_task_package(task: &TaskPackage) {
-    println!("{} v{}", task.manifest.id, task.manifest.version);
-    println!("{}", task.manifest.title);
+fn print_task_package(task: &TaskPackage) -> Result<()> {
+    outln!("{} v{}", task.manifest.id, task.manifest.version)?;
+    outln!("{}", task.manifest.title)?;
     if !task.manifest.description.trim().is_empty() {
-        println!("{}", task.manifest.description.trim());
+        outln!("{}", task.manifest.description.trim())?;
     }
-    println!("source\t{}", task.source.id);
-    println!("output\t{}", task.manifest.output.kind.as_str());
-    println!("\n{}", task.prompt.trim());
+    outln!("source\t{}", task.source.id)?;
+    outln!("output\t{}", task.manifest.output.kind.as_str())?;
+    outln!("\n{}", task.prompt.trim())?;
+    Ok(())
 }
 
-fn print_task_run(run: &PersistedTaskRun) {
-    println!("task run {}", run.id);
-    println!("task\t{}", run.task_id);
-    println!("status\t{}", run.status.as_str());
-    println!("run_dir\t{}", run.run_dir);
+fn print_task_run(run: &PersistedTaskRun) -> Result<()> {
+    outln!("task run {}", run.id)?;
+    outln!("task\t{}", run.task_id)?;
+    outln!("status\t{}", run.status.as_str())?;
+    outln!("run_dir\t{}", run.run_dir)?;
+    Ok(())
 }
 
-fn print_task_runs(runs: &[PersistedTaskRun]) {
+fn print_task_runs(runs: &[PersistedTaskRun]) -> Result<()> {
     if runs.is_empty() {
-        println!("No task runs found.");
-        return;
+        return outln!("No task runs found.");
     }
 
     for run in runs {
-        println!(
+        outln!(
             "{}\t{}\t{}\t{}\t{}",
             run.id,
             run.status.as_str(),
             run.task_id,
             run.created_at.to_rfc3339(),
             run.run_dir
-        );
+        )?;
     }
+    Ok(())
 }
 
 fn severity_label(severity: Severity) -> &'static str {

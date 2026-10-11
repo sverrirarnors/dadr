@@ -97,8 +97,11 @@ pub(crate) fn serve(options: PreviewOptions) -> Result<()> {
         .local_addr()
         .context("failed to inspect preview server address")?;
 
-    println!("dadrock preview serving {}", cwd);
-    println!("open http://{address}");
+    // A closed stdout (`dadrock preview | head -1`) does not stop the server;
+    // the address also goes to stderr.
+    crate::tolerate_stdout_closed(
+        outln!("dadrock preview serving {}", cwd).and_then(|()| outln!("open http://{address}")),
+    )?;
     eprintln!("dadrock-preview: listening on http://{address}");
 
     for stream in listener.incoming() {

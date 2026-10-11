@@ -110,10 +110,10 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["dir"],
         usage: "dir",
-        description: "Print the discovered Dadrock project directory (dadr/).",
+        description: "Print the project's dadr/ directory: the nearest one here or in a parent directory (up to the Git root), or ./dadr when none exists yet.",
         mutation: CommandMutation::ReadOnly,
         supports_json: false,
-        exit_behavior: "Exits non-zero when project discovery fails.",
+        exit_behavior: "Exits zero even when the directory does not exist yet; non-zero only when the current directory cannot be read or its path is not UTF-8.",
         subcommands: &[],
     },
     CommandInfo {
@@ -122,7 +122,7 @@ pub const COMMANDS: &[CommandInfo] = &[
         description: "Print the resolved project layout.",
         mutation: CommandMutation::ReadOnly,
         supports_json: true,
-        exit_behavior: "Exits non-zero when project discovery fails.",
+        exit_behavior: "Exits zero even when dadr/ does not exist yet, printing the layout ./dadr would have; non-zero only when the current directory cannot be read or its path is not UTF-8.",
         subcommands: &[],
     },
     CommandInfo {
@@ -136,11 +136,11 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["demo"],
-        usage: "demo [--json] [--example <example>] <directory>",
+        usage: "demo [--json] [--example <example>] [directory]",
         description: "Seed a new project with a named DADR example.",
         mutation: CommandMutation::Writes,
         supports_json: true,
-        exit_behavior: "Exits non-zero when the target dadr directory already contains files or cannot be written.",
+        exit_behavior: "Exits non-zero when the target directory exists and is not empty, or cannot be written.",
         subcommands: &[],
     },
     CommandInfo {
@@ -321,8 +321,8 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["mcp", "serve"],
-        usage: "mcp serve [directory]",
-        description: "Serve Dadrock MCP tools over stdio for a project.",
+        usage: "mcp serve [--read-only] [directory]",
+        description: "Serve Dadrock MCP tools over stdio for a project; --read-only serves only the read tools.",
         mutation: CommandMutation::ReadOnly,
         supports_json: false,
         exit_behavior: "Exits non-zero when project discovery fails or the MCP transport cannot start.",
@@ -426,11 +426,11 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["preview"],
-        usage: "preview [--port <port>] [directory]",
-        description: "Serve the local web review UI on localhost.",
+        usage: "preview [--port <port>] [--host <host>] [directory]",
+        description: "Serve the local web review UI on localhost; --host accepts only localhost, 127.0.0.1, or ::1.",
         mutation: CommandMutation::ReadOnly,
         supports_json: false,
-        exit_behavior: "Exits non-zero when the preview directory is invalid or the localhost port cannot be bound.",
+        exit_behavior: "Exits non-zero when the host is not a loopback address, the preview directory is invalid, or the port cannot be bound.",
         subcommands: &[],
     },
 ];
