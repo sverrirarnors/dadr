@@ -550,7 +550,7 @@ test('tasks route uses Files for path-like task fields', async ({ page }) => {
 
   await page.getByRole('combobox', { name: 'Task' }).selectOption('code-to-record');
   await expect(page.getByLabel('Path')).toHaveCount(0);
-  await expect(page.locator('[data-task-context-nav]').getByRole('tab', { name: /^Files & Directories 1$/ })).toBeVisible();
+  await expect(page.locator('[data-task-context-nav]').getByRole('tab', { name: /^Files & Directories/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Run task' })).toBeEnabled();
   await expect(page.locator('[data-task-run-requirement-message]')).toHaveCount(0);
 
