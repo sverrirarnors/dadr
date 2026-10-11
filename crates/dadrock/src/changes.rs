@@ -1,23 +1,25 @@
-//! `dadrock validate changes`: the immutability check against Git history.
+//! `dadrock validate changes`: accepted and rejected records against a Git
+//! base revision.
 //!
-//! Once a record is accepted or rejected, its `id`, `status`, `title`, and
-//! body never change, and entries are never removed from its `successors`.
-//! `tags` and keys outside DADR may change. This module compares every record
-//! file that changed since a base revision with its version at that revision,
-//! following renames, by shelling out to `git`. Checking each change against
-//! the previous revision is enough: the invariant carries forward.
+//! Once a record is accepted or rejected, its `id` and `status` never change
+//! and entries are never removed from its `successors`: breaking one of these
+//! rules is an error. Its title and body may take corrections, so an edit to
+//! either is a warning that carries the diff, for a reviewer to tell a
+//! correction from a change of decision; `--strict` makes those edits errors
+//! too. `tags` and keys outside DADR may change. This module compares every
+//! record file that changed since a base revision with its version at that
+//! revision, following renames, by shelling out to `git`.
 
-use std::{
-    fmt,
-    io::ErrorKind,
-    process::{Command, Output, Stdio},
-};
+use std::{fmt, io::ErrorKind};
 
 use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    commands::text_diff_lines,
     error::{DadrError, IssueCounts, Severity},
+    git::{DiffEntry, GitRepo, GrepScope},
+    history::{RecordDiff, TitleChange},
     ids::RecordId,
     model::{Record, RecordStatus},
     project::{ProjectContext, ARCHIVE_DIR, INBOX_DIR, LEDGER_DIR},
@@ -56,6 +58,8 @@ pub struct ChangeValidationReport {
     /// commits yet, so there is nothing to compare.
     pub base_commit: Option<String>,
     pub target: ChangeTarget,
+    /// Whether title and body edits are reported as errors.
+    pub strict: bool,
     pub ok: bool,
     pub counts: IssueCounts,
     /// Changed record files that were accepted or rejected at the base.
@@ -94,10 +98,10 @@ pub struct CheckedRecordChange {
 pub enum ChangeIssueCode {
     RecordIdChanged,
     RecordStatusChanged,
-    RecordTitleChanged,
-    RecordBodyChanged,
     SuccessorRemoved,
     InvalidRecord,
+    RecordTitleEdited,
+    RecordBodyEdited,
     RecordDeleted,
 }
 
@@ -121,9 +125,14 @@ pub struct ChangeIssue {
     /// The front-matter key or `body` that changed.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
+    /// For a title or body edit, what changed: `title` for
+    /// `record_title_edited`, the body's `lines` for `record_body_edited`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub diff: Option<RecordDiff>,
 }
 
-/// Compare the project's record files with their versions at `base`.
+/// Compare the project's record files with their versions at `base`. With
+/// `strict`, title and body edits are errors instead of warnings.
 ///
 /// Fails when Git is missing, the project is not inside a Git repository, or
 /// `base` does not resolve to a commit. A repository without commits has
@@ -132,6 +141,7 @@ pub fn check_record_changes(
     project: &ProjectContext,
     base: &str,
     target: ChangeTarget,
+    strict: bool,
 ) -> Result<ChangeValidationReport, DadrError> {
     let base = base.trim();
     if base.is_empty() || base.starts_with('-') {
@@ -145,6 +155,7 @@ pub fn check_record_changes(
         base: base.to_owned(),
         base_commit: None,
         target,
+        strict,
         ok: true,
         counts: IssueCounts::default(),
         checked: Vec::new(),
@@ -167,8 +178,9 @@ pub fn check_record_changes(
         base,
         commit: &commit,
         target,
+        strict,
     };
-    for entry in repo.changed_files(&commit, target)? {
+    for entry in repo.changed_files(&commit, target == ChangeTarget::Index)? {
         checker.check_entry(&entry, &mut report)?;
     }
 
@@ -188,25 +200,8 @@ pub fn check_record_changes(
     Ok(report)
 }
 
-/// One changed file under `dadr/`, by paths relative to the repository root.
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum DiffEntry {
-    Modified { path: String },
-    Renamed { from: String, to: String },
-    Deleted { path: String },
-}
-
-impl DiffEntry {
-    fn base_path(&self) -> &str {
-        match self {
-            Self::Modified { path } | Self::Deleted { path } => path,
-            Self::Renamed { from, .. } => from,
-        }
-    }
-}
-
-/// A record frozen at the base: accepted or rejected.
-struct FrozenRecord {
+/// A record that was accepted or rejected at the base.
+struct DecidedRecord {
     record: Record,
     /// Path relative to `dadr/`.
     rel_path: Utf8PathBuf,
@@ -218,6 +213,7 @@ struct ChangeChecker<'a> {
     base: &'a str,
     commit: &'a str,
     target: ChangeTarget,
+    strict: bool,
 }
 
 impl ChangeChecker<'_> {
@@ -226,7 +222,7 @@ impl ChangeChecker<'_> {
         entry: &DiffEntry,
         report: &mut ChangeValidationReport,
     ) -> Result<(), DadrError> {
-        let Some(base) = self.frozen_base_record(entry.base_path())? else {
+        let Some(base) = self.decided_base_record(entry.base_path())? else {
             return Ok(());
         };
         let id = base.record.front_matter.id;
@@ -284,6 +280,7 @@ impl ChangeChecker<'_> {
                 base_path: None,
                 record_id: id,
                 field: None,
+                diff: None,
             });
             return Ok(());
         };
@@ -306,14 +303,15 @@ impl ChangeChecker<'_> {
             base_path: base_path.clone(),
             path: Some(path.clone()),
         });
-        let issue = |code: ChangeIssueCode, field: Option<&str>, message: String| ChangeIssue {
-            severity: Severity::Error,
-            code,
-            message,
+        let issue = |finding: Finding| ChangeIssue {
+            severity: finding.severity,
+            code: finding.code,
+            message: finding.message,
             path: path.clone(),
             base_path: moved.then(|| base_path.clone()),
             record_id: id,
-            field: field.map(str::to_owned),
+            field: finding.field.map(str::to_owned),
+            diff: finding.diff,
         };
 
         let parsed = parse_record_str(&content);
@@ -326,39 +324,37 @@ impl ChangeChecker<'_> {
                     || "its front matter is incomplete".to_owned(),
                     |diagnostic| diagnostic.message.clone(),
                 );
-            report.issues.push(issue(
+            report.issues.push(issue(Finding::error(
                 ChangeIssueCode::InvalidRecord,
                 None,
                 format!(
                     "{} no longer parses as a record: {reason}.",
                     describe(&base.record)
                 ),
-            ));
+            )));
             return Ok(());
         };
 
-        for (code, field, message) in self.violations(&base.record, &record) {
-            report.issues.push(issue(code, Some(field), message));
+        for finding in self.findings(&base.record, &record) {
+            report.issues.push(issue(finding));
         }
         Ok(())
     }
 
-    fn violations(
-        &self,
-        base: &Record,
-        current: &Record,
-    ) -> Vec<(ChangeIssueCode, &'static str, String)> {
+    /// Broken rules (errors) and title or body edits (warnings, or errors
+    /// with `--strict`) from `base` to `current`.
+    fn findings(&self, base: &Record, current: &Record) -> Vec<Finding> {
         let before = &base.front_matter;
         let after = &current.front_matter;
         let record = describe(base);
         let since = self.base;
-        let advice = advice(base);
-        let mut violations = Vec::new();
+        let advice = rule_advice(base);
+        let mut findings = Vec::new();
 
         if after.id != before.id {
-            violations.push((
+            findings.push(Finding::error(
                 ChangeIssueCode::RecordIdChanged,
-                "id",
+                Some("id"),
                 format!(
                     "the id of {record} changed to `{}` since {since}. {advice}",
                     after.id
@@ -366,32 +362,13 @@ impl ChangeChecker<'_> {
             ));
         }
         if after.status != before.status {
-            violations.push((
+            findings.push(Finding::error(
                 ChangeIssueCode::RecordStatusChanged,
-                "status",
+                Some("status"),
                 format!(
                     "the status of {record} changed to `{}` since {since}. {advice}",
                     after.status
                 ),
-            ));
-        }
-        if after.title != before.title {
-            violations.push((
-                ChangeIssueCode::RecordTitleChanged,
-                "title",
-                format!(
-                    "the title of {record} changed to `{}` since {since}. {advice}",
-                    after.title
-                ),
-            ));
-        }
-        if normalize_line_endings(&current.body.raw_markdown)
-            != normalize_line_endings(&base.body.raw_markdown)
-        {
-            violations.push((
-                ChangeIssueCode::RecordBodyChanged,
-                "body",
-                format!("the body of {record} changed since {since}. {advice}"),
             ));
         }
         let removed = before
@@ -401,21 +378,63 @@ impl ChangeChecker<'_> {
             .map(|successor| format!("`{successor}`"))
             .collect::<Vec<_>>();
         if !removed.is_empty() {
-            violations.push((
+            findings.push(Finding::error(
                 ChangeIssueCode::SuccessorRemoved,
-                "successors",
+                Some("successors"),
                 format!(
                     "{record} lost successor(s) {} since {since}. Entries can be added to `successors` but never removed.",
                     removed.join(", ")
                 ),
             ));
         }
-        violations
+
+        let edit_severity = if self.strict {
+            Severity::Error
+        } else {
+            Severity::Warning
+        };
+        let edit_advice = edit_advice(base, self.strict);
+        if after.title != before.title {
+            findings.push(Finding {
+                severity: edit_severity,
+                code: ChangeIssueCode::RecordTitleEdited,
+                field: Some("title"),
+                message: format!("the title of {record} was edited since {since}. {edit_advice}"),
+                diff: Some(RecordDiff {
+                    changed: true,
+                    title: Some(TitleChange {
+                        old: before.title.clone(),
+                        new: after.title.clone(),
+                    }),
+                    tags_added: Vec::new(),
+                    tags_removed: Vec::new(),
+                    lines: Vec::new(),
+                }),
+            });
+        }
+        let old_body = normalize_line_endings(&base.body.raw_markdown);
+        let new_body = normalize_line_endings(&current.body.raw_markdown);
+        if new_body != old_body {
+            findings.push(Finding {
+                severity: edit_severity,
+                code: ChangeIssueCode::RecordBodyEdited,
+                field: Some("body"),
+                message: format!("the body of {record} was edited since {since}. {edit_advice}"),
+                diff: Some(RecordDiff {
+                    changed: true,
+                    title: None,
+                    tags_added: Vec::new(),
+                    tags_removed: Vec::new(),
+                    lines: text_diff_lines(&old_body, &new_body),
+                }),
+            });
+        }
+        findings
     }
 
     /// The record at `git_path` in the base commit, when it was accepted or
     /// rejected there. Other files, and candidates, are free to change.
-    fn frozen_base_record(&self, git_path: &str) -> Result<Option<FrozenRecord>, DadrError> {
+    fn decided_base_record(&self, git_path: &str) -> Result<Option<DecidedRecord>, DadrError> {
         let Some(rel_path) = self.repo.rel_path(git_path) else {
             return Ok(None);
         };
@@ -431,7 +450,7 @@ impl ChangeChecker<'_> {
         if record.front_matter.status == RecordStatus::Candidate {
             return Ok(None);
         }
-        Ok(Some(FrozenRecord { record, rel_path }))
+        Ok(Some(DecidedRecord { record, rel_path }))
     }
 
     /// The current content of a file: from disk, or from the index with
@@ -457,7 +476,11 @@ impl ChangeChecker<'_> {
     /// has `id`: how a record moved between folders is found when Git did not
     /// pair the move as a rename.
     fn find_current_by_id(&self, id: RecordId) -> Result<Option<(String, String)>, DadrError> {
-        for git_path in self.repo.files_containing(&id.to_string(), self.target)? {
+        let scope = match self.target {
+            ChangeTarget::Index => GrepScope::Index,
+            ChangeTarget::WorkingTree => GrepScope::WorkingTree,
+        };
+        for git_path in self.repo.files_containing(&id.to_string(), scope)? {
             let Some(rel) = self.repo.rel_path(&git_path) else {
                 continue;
             };
@@ -496,13 +519,51 @@ fn state_label(record: &Record) -> &'static str {
     }
 }
 
-fn advice(record: &Record) -> &'static str {
+/// One issue for a changed record, before its paths are attached.
+struct Finding {
+    severity: Severity,
+    code: ChangeIssueCode,
+    field: Option<&'static str>,
+    message: String,
+    diff: Option<RecordDiff>,
+}
+
+impl Finding {
+    fn error(code: ChangeIssueCode, field: Option<&'static str>, message: String) -> Self {
+        Self {
+            severity: Severity::Error,
+            code,
+            field,
+            message,
+            diff: None,
+        }
+    }
+}
+
+/// What to do instead of changing a record's `id` or `status`.
+fn rule_advice(record: &Record) -> &'static str {
     if record.front_matter.is_superseded() {
-        "Superseded records do not change: to change the decision, draft a successor to its current version instead."
+        "A superseded record keeps its id and status: to change the decision, draft a successor to its current version instead."
     } else if record.front_matter.status == RecordStatus::Rejected {
-        "Rejected records do not change: to revisit the decision, draft a new candidate instead."
+        "A rejected record keeps its id and status: to revisit the decision, draft a new candidate instead."
     } else {
-        "Accepted records do not change: to change the decision, draft a successor candidate instead."
+        "An accepted record keeps its id and status: to change the decision, draft a successor candidate instead."
+    }
+}
+
+/// What a title or body edit asks of the reviewer.
+fn edit_advice(record: &Record, strict: bool) -> String {
+    let instead = if record.front_matter.is_superseded() {
+        "If this changes the decision, supersede its current version instead."
+    } else if record.front_matter.status == RecordStatus::Rejected {
+        "If this changes what was rejected, draft a new candidate instead."
+    } else {
+        "If this changes the decision, supersede the record instead."
+    };
+    if strict {
+        format!("With `--strict`, accepted and rejected text must not change. {instead}")
+    } else {
+        instead.to_owned()
     }
 }
 
@@ -521,7 +582,7 @@ fn normalize_line_endings(text: &str) -> String {
 /// Whether a path relative to `dadr/` is a Markdown file that project scanning
 /// reads as a record: under `inbox/`, `ledger/`, or `archive/`, outside the
 /// folders the scanner skips.
-fn is_record_path(rel: &Utf8Path) -> bool {
+pub(crate) fn is_record_path(rel: &Utf8Path) -> bool {
     if rel.extension() != Some("md") {
         return false;
     }
@@ -539,218 +600,6 @@ fn is_record_path(rel: &Utf8Path) -> bool {
             }
             _ => false,
         })
-}
-
-/// The Git repository holding a project, driven through the `git` command.
-struct GitRepo {
-    /// The `dadr/` directory; every command runs there.
-    dir: Utf8PathBuf,
-    /// `dadr/`'s path from the repository root, with a trailing slash, or
-    /// empty when `dadr/` is the root.
-    prefix: String,
-}
-
-impl GitRepo {
-    fn open(project_dir: &Utf8Path) -> Result<Self, DadrError> {
-        let mut repo = Self {
-            dir: project_dir.to_owned(),
-            prefix: String::new(),
-        };
-        let output = repo.output(&["rev-parse", "--show-prefix"])?;
-        if !output.status.success() {
-            return Err(DadrError::Git(format!(
-                "`{project_dir}` is not inside a Git repository, so there is no history to compare records with ({})",
-                stderr_line(&output)
-            )));
-        }
-        repo.prefix = stdout_text(&output)?
-            .trim_end_matches(['\n', '\r'])
-            .to_owned();
-        Ok(repo)
-    }
-
-    /// The commit `revision` names, or `None` when it names none.
-    fn resolve_commit(&self, revision: &str) -> Result<Option<String>, DadrError> {
-        let output = self.output(&[
-            "rev-parse",
-            "--verify",
-            "--quiet",
-            &format!("{revision}^{{commit}}"),
-        ])?;
-        if !output.status.success() {
-            return Ok(None);
-        }
-        Ok(Some(stdout_text(&output)?.trim().to_owned()))
-    }
-
-    /// Files under `dadr/` that differ between `commit` and the target, with
-    /// rename detection. Added and copied files have no frozen base version
-    /// and are left out.
-    fn changed_files(
-        &self,
-        commit: &str,
-        target: ChangeTarget,
-    ) -> Result<Vec<DiffEntry>, DadrError> {
-        let mut args = vec![
-            "-c",
-            "diff.relative=false",
-            "diff",
-            "--no-color",
-            "--no-ext-diff",
-            "--name-status",
-            "-z",
-            "-M",
-        ];
-        if target == ChangeTarget::Index {
-            args.push("--cached");
-        }
-        args.extend([commit, "--", "."]);
-        let output = self.checked_output(&args)?;
-        parse_name_status(&stdout_text(&output)?)
-    }
-
-    /// The content of `object` (`<commit>:<path>` or `:0:<path>`), or `None`
-    /// when it does not exist.
-    fn blob(&self, object: &str) -> Result<Option<String>, DadrError> {
-        let output = self.output(&["cat-file", "blob", object])?;
-        if !output.status.success() {
-            return Ok(None);
-        }
-        Ok(Some(String::from_utf8_lossy(&output.stdout).into_owned()))
-    }
-
-    /// Paths under `dadr/`, from the repository root, of files that contain
-    /// `needle`: in the index, or in the working tree including untracked
-    /// files.
-    fn files_containing(
-        &self,
-        needle: &str,
-        target: ChangeTarget,
-    ) -> Result<Vec<String>, DadrError> {
-        let scope = match target {
-            ChangeTarget::Index => "--cached",
-            ChangeTarget::WorkingTree => "--untracked",
-        };
-        let output = self.output(&[
-            "grep",
-            "--no-color",
-            scope,
-            "--full-name",
-            "--files-with-matches",
-            "-z",
-            "--fixed-strings",
-            "-e",
-            needle,
-            "--",
-            ".",
-        ])?;
-        // `git grep` exits with 1 when nothing matches.
-        match output.status.code() {
-            Some(0) => Ok(stdout_text(&output)?
-                .split('\0')
-                .filter(|path| !path.is_empty())
-                .map(str::to_owned)
-                .collect()),
-            Some(1) => Ok(Vec::new()),
-            _ => Err(git_failure("grep", &output)),
-        }
-    }
-
-    /// A path relative to `dadr/` for a path from the repository root.
-    fn rel_path(&self, git_path: &str) -> Option<Utf8PathBuf> {
-        git_path
-            .strip_prefix(self.prefix.as_str())
-            .filter(|rel| !rel.is_empty())
-            .map(Utf8PathBuf::from)
-    }
-
-    fn output(&self, args: &[&str]) -> Result<Output, DadrError> {
-        Command::new("git")
-            .args(args)
-            .current_dir(&self.dir)
-            .env("GIT_OPTIONAL_LOCKS", "0")
-            .env("GIT_TERMINAL_PROMPT", "0")
-            .stdin(Stdio::null())
-            .output()
-            .map_err(|err| {
-                if err.kind() == ErrorKind::NotFound {
-                    DadrError::Git(
-                        "`git` was not found on PATH; `dadrock validate changes` needs Git"
-                            .to_owned(),
-                    )
-                } else {
-                    DadrError::Io(err)
-                }
-            })
-    }
-
-    fn checked_output(&self, args: &[&str]) -> Result<Output, DadrError> {
-        let output = self.output(args)?;
-        if output.status.success() {
-            Ok(output)
-        } else {
-            let command = args
-                .iter()
-                .find(|arg| !arg.starts_with('-') && !arg.contains('='))
-                .copied()
-                .unwrap_or("git");
-            Err(git_failure(command, &output))
-        }
-    }
-}
-
-fn parse_name_status(output: &str) -> Result<Vec<DiffEntry>, DadrError> {
-    let mut fields = output.split('\0').filter(|field| !field.is_empty());
-    let mut entries = Vec::new();
-    while let Some(status) = fields.next() {
-        let mut path = || {
-            fields.next().map(str::to_owned).ok_or_else(|| {
-                DadrError::Git(format!(
-                    "unexpected `git diff --name-status` output after `{status}`"
-                ))
-            })
-        };
-        match status.chars().next() {
-            Some('R') => {
-                let from = path()?;
-                let to = path()?;
-                entries.push(DiffEntry::Renamed { from, to });
-            }
-            // A copy leaves its source in place; any change to the source is
-            // listed on its own.
-            Some('C') => {
-                path()?;
-                path()?;
-            }
-            Some('D') => entries.push(DiffEntry::Deleted { path: path()? }),
-            Some('M' | 'T' | 'U') => entries.push(DiffEntry::Modified { path: path()? }),
-            _ => {
-                path()?;
-            }
-        }
-    }
-    Ok(entries)
-}
-
-fn stdout_text(output: &Output) -> Result<String, DadrError> {
-    String::from_utf8(output.stdout.clone()).map_err(|_| DadrError::PathNotUtf8 {
-        path: String::from_utf8_lossy(&output.stdout).into_owned(),
-    })
-}
-
-fn stderr_line(output: &Output) -> String {
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let line = stderr.trim();
-    let line = line.strip_prefix("fatal: ").unwrap_or(line);
-    if line.is_empty() {
-        format!("git exited with {}", output.status)
-    } else {
-        line.to_owned()
-    }
-}
-
-fn git_failure(command: &str, output: &Output) -> DadrError {
-    DadrError::Git(format!("`git {command}` failed: {}", stderr_line(output)))
 }
 
 #[cfg(test)]
@@ -782,26 +631,6 @@ mod tests {
     }
 
     #[test]
-    fn name_status_output_parses_renames_deletions_and_modifications() {
-        let output = "M\0dadr/ledger/a.md\0R087\0dadr/ledger/b.md\0dadr/archive/b.md\0D\0dadr/ledger/c.md\0A\0dadr/inbox/d.md\0C100\0dadr/ledger/e.md\0dadr/ledger/f.md\0";
-        assert_eq!(
-            parse_name_status(output).unwrap(),
-            vec![
-                DiffEntry::Modified {
-                    path: "dadr/ledger/a.md".to_owned()
-                },
-                DiffEntry::Renamed {
-                    from: "dadr/ledger/b.md".to_owned(),
-                    to: "dadr/archive/b.md".to_owned()
-                },
-                DiffEntry::Deleted {
-                    path: "dadr/ledger/c.md".to_owned()
-                },
-            ]
-        );
-    }
-
-    #[test]
     fn line_endings_are_normalized() {
         assert_eq!(normalize_line_endings("a\r\nb\rc\n"), "a\nb\nc\n");
     }
@@ -809,8 +638,8 @@ mod tests {
     #[test]
     fn issue_codes_use_snake_case_labels() {
         assert_eq!(
-            ChangeIssueCode::RecordBodyChanged.to_string(),
-            "record_body_changed"
+            ChangeIssueCode::RecordBodyEdited.to_string(),
+            "record_body_edited"
         );
         assert_eq!(
             serde_json::to_value(ChangeTarget::WorkingTree).unwrap(),

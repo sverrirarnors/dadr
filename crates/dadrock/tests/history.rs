@@ -688,6 +688,7 @@ fn history_json_has_the_documented_shape() {
         [
             "body",
             "current",
+            "edits",
             "id",
             "path",
             "short_id",

@@ -141,8 +141,8 @@ pub fn validate_task_context_requirements(
     Ok(())
 }
 
-/// Record checks for built-in tasks that change decisions. Accepted and
-/// rejected records are frozen, so `edit-record` revises only candidates, and
+/// Record checks for built-in tasks that change decisions. Agents never edit
+/// accepted or rejected text, so `edit-record` revises only candidates, and
 /// `supersede-record` drafts a successor only for current decisions.
 fn validate_builtin_record_inputs(
     project: &ProjectContext,
@@ -163,11 +163,11 @@ fn validate_builtin_record_inputs(
         let record = index.resolve_one(&query)?.record;
         let refusal = match (task_id, record.status) {
             ("edit-record", RecordStatus::Accepted) => format!(
-                "`{}` is accepted, so it cannot be edited; draft a successor that supersedes it with the supersede-record task",
+                "`{}` is accepted, and agents do not edit accepted records; draft a successor that supersedes it with the supersede-record task",
                 record.title
             ),
             ("edit-record", RecordStatus::Rejected) => format!(
-                "`{}` is rejected, so it cannot be edited; draft a new candidate instead",
+                "`{}` is rejected, and agents do not edit rejected records; draft a new candidate instead",
                 record.title
             ),
             ("supersede-record", RecordStatus::Accepted) if record.superseded => format!(

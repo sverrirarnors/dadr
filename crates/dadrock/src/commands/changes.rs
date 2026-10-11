@@ -16,6 +16,10 @@ pub struct ValidateChangesRequest {
     /// tree.
     #[serde(default)]
     pub staged: bool,
+    /// Report title and body edits to accepted and rejected records as errors
+    /// instead of warnings.
+    #[serde(default)]
+    pub strict: bool,
 }
 
 impl Default for ValidateChangesRequest {
@@ -23,6 +27,7 @@ impl Default for ValidateChangesRequest {
         Self {
             base: default_base(),
             staged: false,
+            strict: false,
         }
     }
 }
@@ -31,8 +36,10 @@ fn default_base() -> String {
     DEFAULT_BASE.to_owned()
 }
 
-/// Check that accepted and rejected records changed since `base` only where
-/// the format allows: `tags`, keys outside DADR, and added `successors`.
+/// Check accepted and rejected records changed since `base`: a changed `id` or
+/// `status`, a removed successor, or a file that no longer parses is an error;
+/// a title or body edit is a warning carrying the diff, or an error with
+/// `strict`.
 pub fn validate_changes(
     context: &CommandContext,
     request: ValidateChangesRequest,
@@ -44,7 +51,7 @@ pub fn validate_changes(
     } else {
         ChangeTarget::WorkingTree
     };
-    let report = check_record_changes(&project, &request.base, target)?;
+    let report = check_record_changes(&project, &request.base, target, request.strict)?;
     let ok = !report.has_errors();
     Ok(CommandEnvelope::new("validate changes", report).with_ok(ok))
 }

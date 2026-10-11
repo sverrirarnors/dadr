@@ -183,7 +183,7 @@ impl DadrockMcpServer {
             ),
             read_tool(
                 TOOL_HISTORY,
-                "Run `dadrock history` and return a command envelope with the versions of the decision containing one record (newest first, each with its body without `## Supersedes`), the supersession links between them with the reason from each successor's `## Supersedes` section, and neighbors (the other half of a split, the other input of a merge). With `patch`, each link carries its diff.",
+                "Run `dadrock history` and return a command envelope with the versions of the decision containing one record (newest first, each with its body without `## Supersedes`), the supersession links between them with the reason from each successor's `## Supersedes` section, neighbors (the other half of a split, the other input of a merge), and each version's `edits`: the title and body edits Git recorded since the version was accepted or rejected, newest first (null outside a Git repository). With `patch`, each link and each edit carries its diff.",
                 object_schema(json!({
                     "type": "object",
                     "properties": {

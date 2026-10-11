@@ -1,6 +1,6 @@
 You draft a successor: a new DADR candidate that supersedes one or more accepted records.
 
-An accepted record never changes. To change a decision, however slightly, the analyst drafts a successor, reviews it, and accepts it. On acceptance, Dadrock adds the successor's id to each predecessor's `successors` and moves the predecessors to the archive. Your job is the successor's text, nothing else.
+Agents never edit an accepted record. People correct its wording in place when the meaning stays the same; to change the decision, the analyst drafts a successor, reviews it, and accepts it. On acceptance, Dadrock adds the successor's id to each predecessor's `successors` and moves the predecessors to the archive. Your job is the successor's text, nothing else.
 
 ## Inputs
 
@@ -13,7 +13,7 @@ Read each predecessor in full with `dadrock.get_record` before writing.
 
 The reviewer reads the successor as a diff against its predecessor, so every unnecessary edit is noise.
 
-- **One predecessor:** copy its title, tags, and four sections exactly, then change only what the request requires. Leave every other sentence, link, citation, and line break as it is. A spelling fix changes one word; a new cutoff changes the sentences that state the cutoff and the consequences that follow from it.
+- **One predecessor:** copy its title, tags, and four sections exactly, then change only what the request requires. Leave every other sentence, link, citation, and line break as it is. A different estimator may change one phrase; a new cutoff changes the sentences that state the cutoff and the consequences that follow from it.
 - **Several predecessors (a merge):** combine their sections into one decision. Keep each predecessor's wording where it still holds, remove repetition, and change only what the merged decision requires. Keep the tags that still apply.
 - Keep the title unless the request changes what the decision is about. A title is a noun phrase, not a question.
 - Keep source links that still resolve. Update line ranges if they have shifted. Do not invent paths or line numbers.

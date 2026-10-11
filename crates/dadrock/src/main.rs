@@ -367,6 +367,7 @@ fn validate_changes_cli(args: cli::ValidateChangesArgs) -> Result<ExitCode> {
         core_commands::ValidateChangesRequest {
             base: args.base,
             staged: args.staged,
+            strict: args.strict,
         },
     )?;
     print_envelope(&envelope, args.json, |report| {
@@ -624,10 +625,11 @@ fn print_change_validation_report(report: &ChangeValidationReport) {
         return;
     };
     let compared = format!(
-        "{} against {} ({})",
+        "{} against {} ({}){}",
         report.target.label(),
         report.base,
-        commit.get(..12).unwrap_or(commit)
+        commit.get(..12).unwrap_or(commit),
+        if report.strict { ", strict" } else { "" }
     );
     if report.issues.is_empty() {
         println!(
@@ -651,6 +653,14 @@ fn print_change_validation_report(report: &ChangeValidationReport) {
         );
         if let Some(base_path) = &issue.base_path {
             println!("  - was {base_path}");
+        }
+        if let Some(diff) = &issue.diff {
+            for line in dadrock::history::diff_text_lines(diff) {
+                match line.trim_end() {
+                    "" => println!(),
+                    line => println!("    {line}"),
+                }
+            }
         }
     }
 }

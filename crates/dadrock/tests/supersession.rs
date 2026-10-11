@@ -1,5 +1,5 @@
-//! Supersession: merges, splits, stale successors, consistency, and frozen
-//! accepted and rejected records.
+//! Supersession: merges, splits, stale successors, consistency, and the rules
+//! for rewriting accepted and rejected records.
 
 use std::{
     fs,
@@ -432,23 +432,12 @@ fn save(p: &Project, id: RecordId, content: String) -> Result<(), String> {
 }
 
 #[test]
-fn accepted_records_are_frozen_except_tags_and_other_keys() {
-    let p = Project::new("frozen-accepted");
+fn accepted_records_take_corrections_but_keep_id_status_successors_and_sections() {
+    let p = Project::new("rewrite-accepted");
     let record = p.accepted("Use cluster-robust errors");
     let original = source(&record.to);
 
     let refusals = [
-        (
-            original.replace(
-                "title: Use cluster-robust errors",
-                "title: Use robust errors",
-            ),
-            "title cannot change",
-        ),
-        (
-            original.replace("What.", "Something else."),
-            "body cannot change",
-        ),
         (
             original.replace("status: accepted", "status: rejected"),
             "`status` cannot change",
@@ -460,6 +449,11 @@ fn accepted_records_are_frozen_except_tags_and_other_keys() {
             ),
             "`successors` cannot change",
         ),
+        (
+            original.replace("## Decision\n\nWhat.\n\n", ""),
+            "missing Decision",
+        ),
+        (original.replace("Why.", ""), "empty Context"),
     ];
     for (content, expected) in refusals {
         let error = save(&p, record.id, content).unwrap_err();
@@ -467,9 +461,27 @@ fn accepted_records_are_frozen_except_tags_and_other_keys() {
         assert!(error.contains("draft a successor"), "{error}");
         assert_eq!(source(&record.to), original);
     }
+    let error = save(
+        &p,
+        record.id,
+        original.replace(&record.id.to_string(), &RecordId::new_v7().to_string()),
+    )
+    .unwrap_err();
+    assert!(error.contains("`id` cannot change"), "{error}");
+    assert_eq!(source(&record.to), original);
+
+    // Corrections to the title and body stay in the record, with the same id.
+    let corrected = original
+        .replace(
+            "title: Use cluster-robust errors",
+            "title: Use cluster-robust standard errors",
+        )
+        .replace("What.", "What, spelled out.");
+    save(&p, record.id, corrected.clone()).unwrap();
+    assert_eq!(source(&record.to), corrected);
 
     // Tags, keys outside DADR, and line endings may change.
-    let retagged = original.replace(
+    let retagged = corrected.replace(
         "status: accepted\n",
         "status: accepted\ntags:\n- kind/inference\nreviewer: vab\n",
     );
@@ -498,21 +510,63 @@ fn accepted_records_are_frozen_except_tags_and_other_keys() {
 }
 
 #[test]
-fn rejected_records_are_frozen_except_tags() {
-    let p = Project::new("frozen-rejected");
+fn superseded_records_keep_their_successors() {
+    let p = Project::new("rewrite-superseded");
+    let old = p.accepted("Winsorize income");
+    let (successor, _) = p.candidate("Winsorize at p97", &successor_body(&[old.id]));
+    let accepted = accept_candidate(&p.index(), &successor.to_string()).unwrap();
+    let archived = &accepted.superseded[0].to;
+    let original = source(archived);
+
+    let without_successors: String = original
+        .lines()
+        .filter(|line| !line.contains(&successor.to_string()))
+        .map(|line| match line.trim_end() {
+            "successors:" => "successors: []\n".to_owned(),
+            line => format!("{line}\n"),
+        })
+        .collect();
+    let error = save(&p, old.id, without_successors).unwrap_err();
+    assert!(
+        error.contains("is superseded, so its `successors` cannot change"),
+        "{error}"
+    );
+    assert!(error.contains("added only by superseding"), "{error}");
+    assert_eq!(source(archived), original);
+
+    let corrected = original.replace("Why.", "Why, with a citation.");
+    save(&p, old.id, corrected.clone()).unwrap();
+    assert_eq!(source(archived), corrected);
+}
+
+#[test]
+fn rejected_records_take_corrections_but_keep_id_and_status() {
+    let p = Project::new("rewrite-rejected");
     let (id, _) = p.candidate("Drop site seven", SECTIONS);
     let rejected = reject_candidate(&p.index(), &id.to_string()).unwrap();
     let original = source(&rejected.to);
 
-    let error = save(&p, id, original.replace("Why.", "Because.")).unwrap_err();
+    let error = save(
+        &p,
+        id,
+        original.replace("status: rejected", "status: accepted"),
+    )
+    .unwrap_err();
     assert!(
-        error.contains("is rejected, so its body cannot change"),
+        error.contains("is rejected, so its `status` cannot change"),
         "{error}"
     );
     assert!(error.contains("draft a new candidate"), "{error}");
     assert_eq!(source(&rejected.to), original);
 
-    let tagged = original.replace(
+    // A rejected record needs no required sections.
+    let corrected = original
+        .replace("title: Drop site seven", "title: Drop site 7")
+        .replace("## Decision\n\nWhat.\n\n", "");
+    save(&p, id, corrected.clone()).unwrap();
+    assert_eq!(source(&rejected.to), corrected);
+
+    let tagged = corrected.replace(
         "status: rejected\n",
         "status: rejected\ntags:\n- rejected/no-longer-relevant\n",
     );

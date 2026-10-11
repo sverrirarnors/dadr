@@ -48,7 +48,7 @@ pub enum Command {
     #[command(about = "List records, optionally filtered by lifecycle status, tag, or query.")]
     List(ListArgs),
     #[command(
-        about = "Show a decision's versions as a graph, newest first, with the reason for each change."
+        about = "Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git."
     )]
     History(HistoryArgs),
     #[command(about = "Compare two records: title, tags, and body without `## Supersedes`.")]
@@ -180,7 +180,7 @@ pub struct ListArgs {
 
 #[derive(Debug, Args)]
 pub struct HistoryArgs {
-    /// Print each change's diff under its link.
+    /// Print each change's diff under its link, and each text edit's diff under its version.
     #[arg(long)]
     pub patch: bool,
     #[arg(long)]
@@ -299,7 +299,7 @@ pub enum ValidateCommand {
     #[command(about = "Report malformed YAML and inline tags.")]
     Tags(JsonArg),
     #[command(
-        about = "Check that accepted and rejected records changed since a Git revision only where allowed."
+        about = "Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff."
     )]
     Changes(ValidateChangesArgs),
 }
@@ -312,6 +312,9 @@ pub struct ValidateChangesArgs {
     /// Compare the index (staged changes) instead of the working tree.
     #[arg(long)]
     pub staged: bool,
+    /// Report title and body edits to accepted and rejected records as errors.
+    #[arg(long)]
+    pub strict: bool,
     #[arg(long)]
     pub json: bool,
 }
@@ -659,6 +662,7 @@ mod tests {
         };
         assert_eq!(args.base, "HEAD");
         assert!(!args.staged);
+        assert!(!args.strict);
         assert!(!args.json);
 
         let cli = Cli::try_parse_from([
@@ -668,6 +672,7 @@ mod tests {
             "--base",
             "origin/main",
             "--staged",
+            "--strict",
             "--json",
         ])
         .unwrap();
@@ -680,6 +685,7 @@ mod tests {
         };
         assert_eq!(args.base, "origin/main");
         assert!(args.staged);
+        assert!(args.strict);
         assert!(args.json);
     }
 

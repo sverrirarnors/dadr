@@ -1,18 +1,24 @@
 //! The history of one decision: its versions, the supersession links between
-//! them, and the records at the other end of a link that are not versions.
+//! them, the records at the other end of a link that are not versions, and
+//! each version's text edits.
 //!
-//! The history is derived from `successors` alone. A link's reason comes from
-//! the successor's `## Supersedes` section. Diffs compare the title, the tags,
-//! and the body without `## Supersedes`, after normalizing line endings; they
-//! are computed when asked for and never stored.
+//! The versions and links are derived from `successors` alone: decision
+//! history lives in the record set. A link's reason comes from the successor's
+//! `## Supersedes` section. Text edits, the corrections made to a version
+//! after it was accepted or rejected, are read from Git (see
+//! [`crate::edits`]) and never stored in records. Diffs compare the title, the
+//! tags, and the body without `## Supersedes`, after normalizing line endings;
+//! they are computed when asked for and never stored.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 
+pub use crate::edits::RecordEdit;
 use crate::{
     commands::{text_diff_lines, CommandDiagnostic, TextDiffKind, TextDiffLine},
+    edits::EditReader,
     error::{DadrError, Severity},
     index::ProjectIndex,
     model::{Record, RecordStatus},
@@ -48,6 +54,10 @@ pub struct HistoryVersion {
     /// The body without `## Supersedes`, with `\n` line endings and without
     /// leading or trailing blank lines.
     pub body: String,
+    /// Edits to the title or body since the version was accepted or rejected,
+    /// read from Git, newest first; an uncommitted edit in the working tree
+    /// comes first. Empty for candidates; `null` when Git cannot be read.
+    pub edits: Option<Vec<RecordEdit>>,
 }
 
 /// One supersession edge: `successor` takes the place of `predecessor`.
@@ -109,9 +119,9 @@ pub struct RecordDiffResult {
 }
 
 /// Build the history of the record matching `query`. With `patch`, every link
-/// carries its diff. Problems in the data (unresolved successors, cycles,
-/// invalid `## Supersedes` sections) are returned as warnings; the history is
-/// still built.
+/// and every text edit carries its diff. Problems in the data (unresolved
+/// successors, cycles, invalid `## Supersedes` sections) are returned as
+/// warnings; the history is still built.
 pub fn record_history(
     index: &ProjectIndex,
     query: &str,
@@ -199,13 +209,16 @@ pub fn record_history(
         });
     }
 
+    let edits = EditReader::new(&index.project().project_dir);
     let versions = order
         .iter()
         .filter_map(|id| {
             let record = graph.record(*id)?;
+            let summary = graph.history_record(*id)?;
             Some(HistoryVersion {
-                record: graph.history_record(*id)?,
+                edits: edits.edits(record, &summary.path, patch),
                 body: comparable_body(&record.body.raw_markdown),
+                record: summary,
             })
         })
         .collect();
@@ -514,8 +527,10 @@ impl ReasonCache {
 /// carries a link down to a predecessor, `├─╯` joins the successors of a split
 /// at their predecessor, and `├─╮` opens the predecessors of a merge. A link's
 /// reason is printed where the link is drawn, followed by its diff when the
-/// history was built with `patch`. Neighbors are listed under the version they
-/// link to.
+/// history was built with `patch`. A version with text edits gets a line such
+/// as `edited 2 times since accepted (latest 2026-10-01, Alice)` under it,
+/// followed by each edit's diff with `patch`. Neighbors are listed under the
+/// version they link to.
 pub fn render_history_text(history: &RecordHistory) -> String {
     HistoryGraphText::new(history).render()
 }
@@ -540,8 +555,9 @@ fn finish_lines(lines: Vec<String>) -> String {
     text
 }
 
-/// The title line, the tag summary, and the changed body lines of a diff.
-fn diff_text_lines(diff: &RecordDiff) -> Vec<String> {
+/// The title line, the tag summary, and the changed body lines of a diff,
+/// with a few unchanged lines around each change.
+pub fn diff_text_lines(diff: &RecordDiff) -> Vec<String> {
     if !diff.changed {
         return vec!["(no changes)".to_owned()];
     }
@@ -875,32 +891,30 @@ impl<'a> HistoryGraphText<'a> {
             });
 
             let predecessors = self.lower_predecessors(id);
-            match predecessors.split_first() {
-                None => lanes[column] = None,
-                Some((&first, rest)) => {
-                    lanes[column] = Some(first);
-                    if !rest.is_empty() {
-                        let opened: Vec<usize> = rest
-                            .iter()
-                            .map(|predecessor| {
-                                let lane = free_lane(&mut lanes, column + 1);
-                                lanes[lane] = Some(*predecessor);
-                                lane
-                            })
-                            .collect();
-                        let links: Vec<&HistoryLink> = predecessors
-                            .iter()
-                            .filter_map(|predecessor| self.links.get(&(*predecessor, id)).copied())
-                            .collect();
-                        let mut notes = self.note_lines(&links).into_iter();
-                        rows.push(Row {
-                            cells: fork_cells(&lanes, column, &opened),
-                            text: line_text(notes.next()),
-                        });
-                        for line in notes {
-                            rows.push(connector(&lanes, line_text(Some(line))));
-                        }
-                    }
+            lanes[column] = predecessors.first().copied();
+            for line in edit_lines(version) {
+                rows.push(connector(&lanes, line_text(Some(line))));
+            }
+            if let Some(rest) = predecessors.get(1..).filter(|rest| !rest.is_empty()) {
+                let opened: Vec<usize> = rest
+                    .iter()
+                    .map(|predecessor| {
+                        let lane = free_lane(&mut lanes, column + 1);
+                        lanes[lane] = Some(*predecessor);
+                        lane
+                    })
+                    .collect();
+                let links: Vec<&HistoryLink> = predecessors
+                    .iter()
+                    .filter_map(|predecessor| self.links.get(&(*predecessor, id)).copied())
+                    .collect();
+                let mut notes = self.note_lines(&links).into_iter();
+                rows.push(Row {
+                    cells: fork_cells(&lanes, column, &opened),
+                    text: line_text(notes.next()),
+                });
+                for line in notes {
+                    rows.push(connector(&lanes, line_text(Some(line))));
                 }
             }
             for line in self.neighbor_lines.get(&id).into_iter().flatten() {
@@ -912,6 +926,45 @@ impl<'a> HistoryGraphText<'a> {
         }
         rows
     }
+}
+
+/// The summary of a version's text edits and, when present, each edit's
+/// diff under a header naming its commit.
+fn edit_lines(version: &HistoryVersion) -> Vec<String> {
+    let Some(edits) = version.edits.as_deref() else {
+        return Vec::new();
+    };
+    let Some(latest) = edits.first() else {
+        return Vec::new();
+    };
+    let since = if version.record.status == RecordStatus::Rejected {
+        "rejected"
+    } else {
+        "accepted"
+    };
+    let times = match edits.len() {
+        1 => "1 time".to_owned(),
+        count => format!("{count} times"),
+    };
+    let latest = match (&latest.date, &latest.author) {
+        (Some(date), Some(author)) => {
+            format!("latest {}, {author}", date.get(..10).unwrap_or(date))
+        }
+        _ => "latest not committed yet".to_owned(),
+    };
+    let mut lines = vec![format!("edited {times} since {since} ({latest})")];
+    for edit in edits {
+        let Some(diff) = &edit.diff else {
+            continue;
+        };
+        lines.push(match (&edit.short_commit, &edit.subject) {
+            (Some(commit), Some(subject)) => format!("edit {commit}  {subject}"),
+            (Some(commit), None) => format!("edit {commit}"),
+            _ => "edit (not committed yet)".to_owned(),
+        });
+        lines.extend(diff_text_lines(diff));
+    }
+    lines
 }
 
 fn line_text(line: Option<String>) -> RowText {

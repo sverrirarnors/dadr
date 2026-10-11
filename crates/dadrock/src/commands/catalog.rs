@@ -164,7 +164,7 @@ pub const COMMANDS: &[CommandInfo] = &[
     CommandInfo {
         path: &["history"],
         usage: "history [--patch] [--json] <query>",
-        description: "Show a decision's versions as a graph, newest first, with the reason for each change.",
+        description: "Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.",
         mutation: CommandMutation::ReadOnly,
         supports_json: true,
         exit_behavior: "Exits non-zero when the query is missing, ambiguous, unresolved, or scanning fails.",
@@ -285,11 +285,11 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["validate", "changes"],
-        usage: "validate changes [--base <rev>] [--staged] [--json]",
-        description: "Check that accepted and rejected records changed since a Git revision only in tags, keys outside DADR, or added successors.",
+        usage: "validate changes [--base <rev>] [--staged] [--strict] [--json]",
+        description: "Check accepted and rejected records against a Git revision: a changed id or status, a removed successor, or an unparsable file is an error; a title or body edit is a warning with the diff (an error with --strict).",
         mutation: CommandMutation::ReadOnly,
         supports_json: true,
-        exit_behavior: "Exits non-zero when a record changed in a forbidden way, or when Git is missing, the project is not in a Git repository, or the base revision does not resolve.",
+        exit_behavior: "Exits non-zero when any error is reported (with --strict, including title and body edits), or when Git is missing, the project is not in a Git repository, or the base revision does not resolve. Warnings alone exit zero.",
         subcommands: &[],
     },
     CommandInfo {

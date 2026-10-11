@@ -1122,7 +1122,7 @@ fn save_record_source_rejects_status_changes_without_overwriting_file() {
 }
 
 #[test]
-fn save_record_source_refuses_body_changes_to_accepted_record() {
+fn save_record_source_refuses_to_drop_required_sections_of_accepted_record() {
     let root = temp_project("save-source-accepted-sections");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
@@ -1155,7 +1155,9 @@ fn save_record_source_refuses_body_changes_to_accepted_record() {
     .unwrap_err();
 
     assert!(
-        error.to_string().contains("its body cannot change"),
+        error
+            .to_string()
+            .contains("keeps each standard section exactly once and with text: missing Decision, Alternatives, Consequences"),
         "{error}"
     );
     assert!(error.to_string().contains("draft a successor"), "{error}");

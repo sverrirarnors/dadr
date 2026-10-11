@@ -24,10 +24,10 @@ use crate::{
     text::ascii_slug,
 };
 
-mod frozen;
+mod rewrite;
 mod supersession;
 
-pub use frozen::check_frozen_rewrite;
+pub use rewrite::check_record_rewrite;
 pub(crate) use supersession::record_list;
 pub use supersession::{
     accept_candidate, accept_candidates, current_successors, pending_supersedes,

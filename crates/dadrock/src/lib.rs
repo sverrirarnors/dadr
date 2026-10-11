@@ -2,8 +2,10 @@ pub mod agent;
 pub mod changes;
 pub mod commands;
 pub mod demo;
+pub(crate) mod edits;
 pub mod error;
 pub(crate) mod file_store;
+pub(crate) mod git;
 pub mod history;
 pub mod ids {
     pub use dadr::{RecordId, RecordIdPrefix, RecordRef};

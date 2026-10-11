@@ -15,7 +15,7 @@ use dadrock::{
         ChangeIssueCode, ChangeTarget, ChangeValidationReport, CheckedRecordChange,
         RecordChangeKind,
     },
-    commands::CommandEnvelope,
+    commands::{CommandEnvelope, TextDiffKind},
     project::init_project,
     RecordId, Severity,
 };
@@ -202,7 +202,7 @@ fn only_checked(report: &ChangeValidationReport) -> &CheckedRecordChange {
 }
 
 #[test]
-fn editing_an_accepted_body_is_an_error_that_names_the_record() {
+fn editing_an_accepted_body_is_a_warning_with_the_diff() {
     let path = ledger(ID_A, "winsorize");
     let repo = Repo::with_records(
         "accepted-body",
@@ -211,39 +211,126 @@ fn editing_an_accepted_body_is_an_error_that_names_the_record() {
     repo.edit(&path, "What.", "Something else.");
 
     let (envelope, success) = repo.check(&[]);
-    assert!(!success);
-    assert!(!envelope.ok);
+    assert!(success);
+    assert!(envelope.ok);
     assert_eq!(envelope.command, "validate changes");
     let report = envelope.data;
     assert_eq!(report.target, ChangeTarget::WorkingTree);
     assert_eq!(report.base, "HEAD");
-    assert_eq!(report.counts.errors, 1);
+    assert!(!report.strict);
+    assert_eq!(report.counts.errors, 0);
+    assert_eq!(report.counts.warnings, 1);
     let issue = &report.issues[0];
-    assert_eq!(issue.code, ChangeIssueCode::RecordBodyChanged);
-    assert_eq!(issue.severity, Severity::Error);
+    assert_eq!(issue.code, ChangeIssueCode::RecordBodyEdited);
+    assert_eq!(issue.severity, Severity::Warning);
     assert_eq!(issue.field.as_deref(), Some("body"));
     assert_eq!(issue.record_id.to_string(), ID_A);
     assert!(issue.path.as_str().ends_with(&path), "{}", issue.path);
     assert!(issue.message.contains("`Winsorize income at p99`"));
     assert!(issue.message.contains(&short(ID_A)));
-    assert!(issue.message.contains("draft a successor"));
+    assert!(
+        issue
+            .message
+            .contains("If this changes the decision, supersede the record instead."),
+        "{}",
+        issue.message
+    );
+    let diff = issue.diff.as_ref().expect("a body edit carries its diff");
+    assert!(diff.changed);
+    assert!(diff.title.is_none());
+    assert!(diff
+        .lines
+        .iter()
+        .any(|line| line.kind == TextDiffKind::Removed && line.text == "What."));
+    assert!(diff
+        .lines
+        .iter()
+        .any(|line| line.kind == TextDiffKind::Added && line.text == "Something else."));
     assert_eq!(only_checked(&report).kind, RecordChangeKind::Modified);
 
     let text = repo.dadrock(&["validate", "changes"]);
-    assert!(!text.status.success());
+    assert!(text.status.success());
     let stdout = String::from_utf8(text.stdout).unwrap();
-    assert!(stdout.contains("1 error(s)"), "{stdout}");
-    assert!(stdout.contains("[error] record_body_changed"), "{stdout}");
+    assert!(stdout.contains("0 error(s), 1 warning(s)"), "{stdout}");
+    assert!(stdout.contains("[warning] record_body_edited"), "{stdout}");
     assert!(stdout.contains(&path), "{stdout}");
+    assert!(
+        stdout.contains("      ## Decision\n\n    - What.\n    + Something else.\n"),
+        "{stdout}"
+    );
 }
 
 #[test]
-fn editing_an_accepted_title_is_an_error() {
+fn editing_an_accepted_title_is_a_warning_with_old_and_new_titles() {
     let path = ledger(ID_A, "winsorize");
     let repo = Repo::with_records("accepted-title", &[(&path, &accepted("Winsorize", ID_A))]);
     repo.edit(&path, "title: Winsorize", "title: Winsorise");
 
-    assert_eq!(repo.codes(&[]), [ChangeIssueCode::RecordTitleChanged]);
+    assert_eq!(repo.codes(&[]), [ChangeIssueCode::RecordTitleEdited]);
+    let (envelope, _) = repo.check(&[]);
+    let issue = &envelope.data.issues[0];
+    assert_eq!(issue.severity, Severity::Warning);
+    assert_eq!(issue.field.as_deref(), Some("title"));
+    let diff = issue.diff.as_ref().unwrap();
+    let title = diff.title.as_ref().unwrap();
+    assert_eq!(
+        (title.old.as_str(), title.new.as_str()),
+        ("Winsorize", "Winsorise")
+    );
+    assert!(diff.lines.is_empty());
+
+    let stdout = String::from_utf8(repo.dadrock(&["validate", "changes"]).stdout).unwrap();
+    assert!(stdout.contains("[warning] record_title_edited"), "{stdout}");
+    assert!(
+        stdout.contains("    title: Winsorize → Winsorise\n"),
+        "{stdout}"
+    );
+}
+
+#[test]
+fn strict_reports_title_and_body_edits_as_errors() {
+    let path = ledger(ID_A, "winsorize");
+    let repo = Repo::with_records("strict", &[(&path, &accepted("Winsorize", ID_A))]);
+    repo.edit(&path, "title: Winsorize", "title: Winsorise");
+    repo.edit(&path, "What.", "Something else.");
+
+    let (envelope, success) = repo.check(&["--strict"]);
+    assert!(!success);
+    assert!(!envelope.ok);
+    assert!(envelope.data.strict);
+    assert_eq!(envelope.data.counts.errors, 2);
+    let mut codes: Vec<_> = envelope
+        .data
+        .issues
+        .iter()
+        .map(|issue| issue.code)
+        .collect();
+    codes.sort();
+    assert_eq!(
+        codes,
+        [
+            ChangeIssueCode::RecordTitleEdited,
+            ChangeIssueCode::RecordBodyEdited
+        ]
+    );
+    for issue in &envelope.data.issues {
+        assert_eq!(issue.severity, Severity::Error);
+        assert!(issue.message.contains("`--strict`"), "{}", issue.message);
+        assert!(issue.diff.is_some());
+    }
+
+    let text = repo.dadrock(&["validate", "changes", "--strict"]);
+    assert!(!text.status.success());
+    let stdout = String::from_utf8(text.stdout).unwrap();
+    assert!(stdout.contains("2 error(s), 0 warning(s)"), "{stdout}");
+    assert!(stdout.contains(", strict)"), "{stdout}");
+    assert!(stdout.contains("[error] record_body_edited"), "{stdout}");
+    assert!(stdout.contains("    + Something else."), "{stdout}");
+
+    // Without --strict the same edits are warnings.
+    let (envelope, success) = repo.check(&[]);
+    assert!(success);
+    assert_eq!(envelope.data.counts.warnings, 2);
 }
 
 #[test]
@@ -333,7 +420,7 @@ fn changing_an_accepted_status_is_an_error() {
 }
 
 #[test]
-fn editing_a_rejected_body_is_an_error() {
+fn editing_a_rejected_body_is_a_warning() {
     let path = archive(ID_A, "drop-outliers");
     let repo = Repo::with_records(
         "rejected-body",
@@ -345,11 +432,43 @@ fn editing_a_rejected_body_is_an_error() {
     repo.edit(&path, "Too aggressive.", "Fine after all.");
 
     let (envelope, success) = repo.check(&[]);
-    assert!(!success);
+    assert!(success);
     let issue = &envelope.data.issues[0];
-    assert_eq!(issue.code, ChangeIssueCode::RecordBodyChanged);
+    assert_eq!(issue.code, ChangeIssueCode::RecordBodyEdited);
+    assert_eq!(issue.severity, Severity::Warning);
     assert!(issue.message.contains("rejected record `Drop outliers`"));
     assert!(issue.message.contains("draft a new candidate"));
+}
+
+#[test]
+fn hard_rules_stay_errors_next_to_edit_warnings() {
+    let path = ledger(ID_A, "winsorize");
+    let repo = Repo::with_records("mixed", &[(&path, &accepted("Winsorize", ID_A))]);
+    repo.edit(&path, "status: accepted", "status: candidate");
+    repo.edit(&path, "What.", "Something else.");
+
+    let (envelope, success) = repo.check(&[]);
+    assert!(!success);
+    let issues: Vec<_> = envelope
+        .data
+        .issues
+        .iter()
+        .map(|issue| (issue.severity, issue.code))
+        .collect();
+    assert_eq!(
+        issues,
+        [
+            (Severity::Error, ChangeIssueCode::RecordStatusChanged),
+            (Severity::Warning, ChangeIssueCode::RecordBodyEdited)
+        ]
+    );
+    let status = &envelope.data.issues[0];
+    assert!(status.diff.is_none());
+    assert!(
+        status.message.contains("keeps its id and status"),
+        "{}",
+        status.message
+    );
 }
 
 #[test]
@@ -518,7 +637,7 @@ fn moving_and_editing_an_accepted_record_reports_both_paths() {
 
     let (envelope, _) = repo.check(&[]);
     let issue = &envelope.data.issues[0];
-    assert_eq!(issue.code, ChangeIssueCode::RecordBodyChanged);
+    assert_eq!(issue.code, ChangeIssueCode::RecordBodyEdited);
     assert!(issue.path.as_str().ends_with(&moved));
     assert!(issue.base_path.as_ref().unwrap().as_str().ends_with(&path));
 }
@@ -543,13 +662,13 @@ fn staged_compares_the_index_and_ignores_unstaged_edits() {
     repo.git(&["add", &path]);
     repo.edit(&path, "What.", "Unstaged edit.");
     assert!(repo.codes(&["--staged"]).is_empty());
-    assert_eq!(repo.codes(&[]), [ChangeIssueCode::RecordBodyChanged]);
+    assert_eq!(repo.codes(&[]), [ChangeIssueCode::RecordBodyEdited]);
 
     repo.git(&["add", &path]);
     repo.edit(&path, "Unstaged edit.", "What.");
     assert_eq!(
         repo.codes(&["--staged"]),
-        [ChangeIssueCode::RecordBodyChanged]
+        [ChangeIssueCode::RecordBodyEdited]
     );
     assert!(repo.codes(&[]).is_empty());
 }
@@ -563,14 +682,16 @@ fn base_can_name_an_older_commit() {
 
     assert!(repo.codes(&[]).is_empty());
     let (envelope, success) = repo.check(&["--base", "HEAD~1"]);
-    assert!(!success);
+    assert!(success);
     assert_eq!(envelope.data.base, "HEAD~1");
     let first = repo.git(&["rev-parse", "HEAD~1"]);
     assert_eq!(envelope.data.base_commit.as_deref(), Some(first.trim()));
     assert_eq!(
         envelope.data.issues[0].code,
-        ChangeIssueCode::RecordBodyChanged
+        ChangeIssueCode::RecordBodyEdited
     );
+    let (_, success) = repo.check(&["--base", "HEAD~1", "--strict"]);
+    assert!(!success);
 }
 
 #[test]
@@ -632,7 +753,7 @@ fn json_output_has_a_stable_shape() {
     let output = repo.dadrock(&["validate", "changes", "--json"]);
     let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(json["command"], "validate changes");
-    assert_eq!(json["ok"], false);
+    assert_eq!(json["ok"], true);
     let data = &json["data"];
     let keys = |value: &serde_json::Value| {
         let mut keys = value
@@ -654,20 +775,39 @@ fn json_output_has_a_stable_shape() {
             "issues",
             "ok",
             "project_dir",
+            "strict",
             "target"
         ]
     );
     assert_eq!(data["base"], "HEAD");
     assert_eq!(data["target"], "working_tree");
-    assert_eq!(data["counts"]["errors"], 1);
+    assert_eq!(data["strict"], false);
+    assert_eq!(data["counts"]["errors"], 0);
+    assert_eq!(data["counts"]["warnings"], 1);
     assert_eq!(
         keys(&data["issues"][0]),
-        ["code", "field", "message", "path", "record_id", "severity"]
+        [
+            "code",
+            "diff",
+            "field",
+            "message",
+            "path",
+            "record_id",
+            "severity"
+        ]
     );
-    assert_eq!(data["issues"][0]["code"], "record_title_changed");
-    assert_eq!(data["issues"][0]["severity"], "error");
+    assert_eq!(data["issues"][0]["code"], "record_title_edited");
+    assert_eq!(data["issues"][0]["severity"], "warning");
     assert_eq!(data["issues"][0]["field"], "title");
     assert_eq!(data["issues"][0]["record_id"], ID_A);
+    assert_eq!(
+        keys(&data["issues"][0]["diff"]),
+        ["changed", "lines", "tags_added", "tags_removed", "title"]
+    );
+    assert_eq!(
+        data["issues"][0]["diff"]["title"],
+        serde_json::json!({"old": "Winsorize", "new": "Winsorise"})
+    );
     assert_eq!(
         keys(&data["checked"][0]),
         [
@@ -685,22 +825,24 @@ fn json_output_has_a_stable_shape() {
 
 #[cfg(unix)]
 #[test]
-fn a_pre_commit_hook_blocks_commits_that_edit_accepted_records() {
+fn a_pre_commit_hook_with_strict_blocks_commits_that_edit_accepted_records() {
     use std::os::unix::fs::PermissionsExt;
 
     let path = ledger(ID_A, "winsorize");
     let repo = Repo::with_records("hook", &[(&path, &accepted("Winsorize", ID_A))]);
     let hook = repo.root.join(".git/hooks/pre-commit");
     fs::create_dir_all(hook.parent().unwrap()).unwrap();
-    fs::write(
-        &hook,
-        format!(
-            "#!/bin/sh\nexec '{}' validate changes --staged\n",
-            env!("CARGO_BIN_EXE_dadrock")
-        ),
-    )
-    .unwrap();
-    fs::set_permissions(&hook, fs::Permissions::from_mode(0o755)).unwrap();
+    let install = |flags: &str| {
+        fs::write(
+            &hook,
+            format!(
+                "#!/bin/sh\nexec '{}' validate changes --staged{flags}\n",
+                env!("CARGO_BIN_EXE_dadrock")
+            ),
+        )
+        .unwrap();
+        fs::set_permissions(&hook, fs::Permissions::from_mode(0o755)).unwrap();
+    };
     let commit = |args: &[&str]| {
         repo.command("git")
             .args(["commit", "-q"])
@@ -708,6 +850,7 @@ fn a_pre_commit_hook_blocks_commits_that_edit_accepted_records() {
             .output()
             .unwrap()
     };
+    install(" --strict");
 
     // A plain commit gives the hook a relative GIT_INDEX_FILE, while
     // `commit -a` gives it a temporary index; both must be read.
@@ -715,7 +858,7 @@ fn a_pre_commit_hook_blocks_commits_that_edit_accepted_records() {
     repo.git(&["add", &path]);
     let blocked = commit(&["-m", "edit an accepted record"]);
     assert!(!blocked.status.success());
-    assert!(String::from_utf8_lossy(&blocked.stderr).contains("record_body_changed"));
+    assert!(String::from_utf8_lossy(&blocked.stderr).contains("record_body_edited"));
     repo.git(&["reset", "-q"]);
     let blocked = commit(&["-a", "-m", "edit an accepted record"]);
     assert!(!blocked.status.success());
@@ -725,7 +868,7 @@ fn a_pre_commit_hook_blocks_commits_that_edit_accepted_records() {
         String::from_utf8_lossy(&blocked.stdout),
         String::from_utf8_lossy(&blocked.stderr)
     );
-    assert!(report.contains("record_body_changed"), "{report}");
+    assert!(report.contains("record_body_edited"), "{report}");
 
     repo.edit(&path, "Something else.", "What.");
     repo.edit(&path, "topic/income", "topic/outliers");
@@ -735,6 +878,20 @@ fn a_pre_commit_hook_blocks_commits_that_edit_accepted_records() {
         "{}",
         String::from_utf8_lossy(&allowed.stderr)
     );
+
+    // Without --strict, a correction is committed with a warning, while a
+    // changed status is still blocked.
+    install("");
+    repo.edit(&path, "Effects.", "Effects, spelled out.");
+    let corrected = commit(&["-a", "-m", "correct an accepted record"]);
+    assert!(
+        corrected.status.success(),
+        "{}",
+        String::from_utf8_lossy(&corrected.stderr)
+    );
+    repo.edit(&path, "status: accepted", "status: rejected");
+    let blocked = commit(&["-a", "-m", "reject an accepted record"]);
+    assert!(!blocked.status.success());
 }
 
 #[test]

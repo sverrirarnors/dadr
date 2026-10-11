@@ -8,7 +8,7 @@ use crate::{
     file_store,
     links::{check_project_links, LinkCheckReport},
     records::{
-        accept_candidates, check_frozen_rewrite, create_candidate, create_candidate_with_body,
+        accept_candidates, check_record_rewrite, create_candidate, create_candidate_with_body,
         parse_record_str, reject_candidate, scan_input, status_record, successor_candidate_body,
         supersede_record, supersede_records as supersede_records_impl, AcceptRecordResult,
         NewRecordResult, RecordMove, RecordStatusResult, RejectRecordResult, ScannedRecordSummary,
@@ -157,14 +157,15 @@ pub fn save_record_source(
             "record markdown is invalid: missing record front matter".to_owned(),
         ));
     };
-    // Accepted and rejected records keep their id, status, title, body, and
-    // successors; only tags and keys outside DADR can change.
+    // Accepted and rejected records keep their id, status, and successors,
+    // and accepted records their required sections; corrections to the title,
+    // body, and tags are saved in place.
     let current = parse_record_str(&fs::read_to_string(found.record.path.as_std_path())?)
         .record
         .ok_or_else(|| {
             DadrError::ProjectInvariant(format!("failed to parse `{}`", found.record.path))
         })?;
-    check_frozen_rewrite(&current, &record)?;
+    check_record_rewrite(&current, &record)?;
     if record.front_matter.id != found.record.id {
         return Err(DadrError::InvalidInput(
             "record id cannot be changed in the web editor".to_owned(),
