@@ -13,11 +13,11 @@ The `status` field takes one of three values: `candidate`, `accepted`, or `rejec
 | Record | Editable? | Notes |
 |---|---|---|
 | `candidate` | Yes — freely revisable | A proposed decision under review. Lives in `dadr/inbox/`. Each of the four sections must have text before acceptance; thin candidates create work for the reviewer. |
-| `accepted` | Corrections in place | The decision is in force. Lives in `dadr/ledger/`. Its `id` and `status` never change, `successors` only gains entries through supersession, and the four sections stay. A person may correct the title and body when the meaning stays the same (spelling, formatting, links, citations); Git keeps those edits and `dadrock history` lists them. Changing the decision goes through a successor candidate: accept a successor with a `## Supersedes` section naming it, or use `dadrock supersede` to link records that are already accepted. Agents never edit it. |
+| `accepted` | Corrections in place | The decision is in force. Lives in `dadr/ledger/`. Its `id` and `status` never change, `successors` only gains entries through supersession, and the four sections stay. A person may correct the title and body when the meaning stays the same (spelling, formatting, links, citations), and tags may change; Git keeps those edits and `dadrock history` lists them. Changing the decision goes through a successor candidate: accept a successor with a `## Supersedes` section naming it, or use `dadrock supersede` to link records that are already accepted. Agents never edit it. |
 | `accepted`, superseded | Corrections in place | An accepted record whose `successors` array names the records that supersede it. Moved to `dadr/archive/`; keeps `status: accepted`. Gains successors only by being superseded; same rules as an accepted record. |
-| `rejected` | Corrections in place | A closed candidate. Lives in `dadr/archive/`. Its `id` and `status` never change; a person may correct its wording. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
+| `rejected` | Corrections in place | A closed candidate. Lives in `dadr/archive/`. Its `id` and `status` never change; a person may correct its wording. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). To revisit the idea, draft a new candidate. |
 
-Acceptance, rejection, and supersession are all **human approval boundaries**. No skill auto-transitions.
+Acceptance, rejection, and supersession are all **human approval boundaries**. Agents never perform them on their own.
 
 ## Anatomy
 
@@ -68,7 +68,7 @@ report the exclusion count and the missingness pattern.
 | Field | Notes |
 |---|---|
 | `title` | Noun phrase describing the choice. **Not a question.** |
-| `status` | One of `candidate \| accepted \| rejected`. Set on creation; changed only via `dadrock status` lifecycle commands. |
+| `status` | One of `candidate \| accepted \| rejected`. Set on creation; changed only when a human accepts or rejects the candidate (`dadrock accept`, `dadrock reject`). |
 | `id` | UUIDv7 allocated by `dadrock new`. **Never write by hand.** Its first 12 hex digits are the record's short id. |
 | `tags` | Optional; follow project conventions (see [tags.md](tags.md)). |
 | `successors` | Optional list of UUIDv7 ids. Names the accepted records that supersede this one; a non-empty list makes an accepted record superseded. Written by Dadrock when a successor is accepted or by an explicit `dadrock supersede` action. |
@@ -88,7 +88,7 @@ Every accepted record has all four `##` headings, each appearing exactly once an
 
 What problem, dataset, or constraint motivates this choice?
 
-- **Always** include a Markdown link to the source surface. Relative paths resolve from the record's own directory; records live in `dadr/<status>/`, so a repository file is `../../path`: `[analysis/build_sample.py:42-58](../../analysis/build_sample.py#L42-L58)`.
+- **Always** include a Markdown link to the source surface. Relative paths resolve from the record's own directory; records live one folder below `dadr/` (`dadr/inbox/`, `dadr/ledger/`, or `dadr/archive/`), so a repository file is `../../path`: `[analysis/build_sample.py:42-58](../../analysis/build_sample.py#L42-L58)`.
 - Link other records with a short-id wikilink: `[[01938b8e4d70]]`.
 - Mention the dataset, prior decision, or plan section that frames the choice.
 - For a successor, keep the predecessor's Context unless the change requires otherwise. The predecessor and the reason for the change belong in `## Supersedes`, not in Context.
@@ -165,10 +165,10 @@ A well-formed record is **roughly 200–400 words of body prose** — long enoug
 
 - **Empty `Alternatives`.** Write "Not applicable" or describe a generic methodological alternative honestly tagged `confidence/low`.
 - **Bullet dumps.** Use prose. Bullets are fine in `Alternatives`; the other three sections should be sentences.
-- **No source link in `Context`.** Every record is grounded in evidence. If you cannot link to a file/line, you cannot draft the record yet — surface the gap to the user.
+- **No source link in `Context`.** Every record is grounded in evidence. If you cannot link to a file, line range, or document anchor, flag the gap rather than inventing a link.
 - **Two decisions in one file.** If `Decision` describes both an exclusion and a recoding, split into two records.
-- **Hand-written `id`.** Always go through `dadrock new`.
-- **Hand-written `successors`.** Let Dadrock write them, when a successor with a `## Supersedes` section is accepted or through `dadrock supersede`.
+- **Hand-written `id`.** Dadrock allocates the id when it creates the record; never write one.
+- **Hand-written `successors`.** Dadrock writes them when a successor with a `## Supersedes` section is accepted or through `dadrock supersede`; never edit them.
 - **Question-form titles.** "Should we drop missing treatment?" → "Drop observations with missing treatment".
 - **Tense drift in `Decision`.** Active voice describing what was done (or what the code does); not "we plan to" or "we should".
 - **Agents editing accepted or rejected records.** Agents never edit their text. A person corrects wording in place when the meaning stays the same; Dadrock refuses only a changed `id`, `status`, or `successors`, or an accepted record without its four sections. To change the decision, draft a successor candidate that supersedes the accepted record.

@@ -1,121 +1,82 @@
 ---
-name: dadr-supersede-record
-description: Propose a candidate that supersedes one or more accepted DADRs. Use when what an accepted decision says needs to change, because of new evidence, a plan amendment, a substantive correction, or a downstream conflict, or when several accepted decisions should be merged into one, without editing the originals.
+id: supersede-record
+title: "Supersede record"
+description: "Draft a successor candidate that supersedes one or more accepted DADRs when the decision has changed."
+version: 2
+inputs:
+  - name: record_ids
+    label: "Records to supersede"
+    type: textarea
+    required: true
+  - name: requested_changes
+    label: "Requested changes"
+    type: textarea
+    required: true
+requirements:
+  records: one_or_more
+  record_status: accepted
+  paths: none
+  notes: required
+  scope: none
+output:
+  kind: supersession_proposal.v1
+mcp_access: full
+tools:
+  - name: dadrock.get_record
+    mode: read
 ---
 
 # Supersede record
 
-Draft a successor: a new candidate that, once accepted, supersedes one or more accepted records, its predecessors. A person may correct an accepted record in place when the meaning stays the same (spelling, formatting, links, citations), and Git keeps those edits; every change to what was decided goes through a successor, and agents never edit accepted text. When the successor is accepted, Dadrock adds its id to each predecessor's `successors` and moves the predecessors to `dadr/archive/`. This skill produces the successor candidate, not the lifecycle transition itself.
+Draft a successor: a new candidate that, once a human accepts it, supersedes one or more accepted records, its predecessors. Agents never edit an accepted record. A person may correct its wording in place when the meaning stays the same (spelling, formatting, links, citations); every change to what was decided goes through a successor. When the successor is accepted, dadrock adds its id to each predecessor's `successors` and moves the predecessors to `dadr/archive/`.
 
-Use this when the user wants to change an accepted decision or merge several accepted decisions into one. If the records are still candidates, use [edit-record.md](edit-record.md) or [merge-records.md](merge-records.md) instead. If you are detecting conflicts across the ledger, start at [find-conflicts.md](find-conflicts.md) and use this skill on each confirmed pair.
+## Inputs
 
-Trigger phrases:
+- `record_ids`: the accepted records to supersede, one per line. Several records make a merge: one successor takes the place of all of them.
+- `requested_changes`: what the analyst wants changed, and usually why: new evidence, a plan amendment, a conflict with another decision, a correction.
 
-- "supersede decision 0193…"
-- "change the accepted choice"
-- "merge these two accepted decisions"
-- "draft a successor for this DADR"
-- "the SAP just changed — update the corresponding decision"
+Interactively, these come from the user's request. "I changed my mind" is a valid reason, but state it concretely.
 
-## Preconditions
+Each predecessor must be accepted and current. A superseded record is closed: its current successors hold the decision now in force. Say so and name them rather than drafting; the change belongs in a successor of those decisions. If the records are still candidates, revise them with [edit-record](edit-record.md) or consolidate them with [merge-records](merge-records.md).
 
-Shared preconditions in [../SKILL.md](../SKILL.md) apply. In addition:
+Read each predecessor in full before writing: title, tags, and the four sections, with their exact wording.
 
-- Each predecessor must be accepted and current (`dadrock status <query>` to confirm). You cannot supersede a candidate or a rejected record. A record that is already superseded is closed: draft a successor to its current successor instead.
-- The user must say what should change and, ideally, why. Capture the why concretely; it becomes the reason in `## Supersedes`.
-
-## Workflow
-
-### Step 1 — Read the predecessors
-
-```bash
-dadrock status <query>
-```
-
-Read each predecessor in full: title, tags, and the four sections, with their exact wording.
-
-### Step 2 — State the reason
-
-In one to three sentences, say why the decision changed: new evidence, a plan amendment, a conflict with another decision, a correction. Be concrete: "SAP amendment §4.3 requires multiple imputation rather than complete cases", not "we want to do it differently". This reason goes into `## Supersedes`, not into Context.
-
-### Step 3 — Start from the predecessor's exact text
+## Start from the predecessor's exact text
 
 The reviewer reads the successor as a diff against its predecessor, so every unnecessary edit is noise.
 
-- **One predecessor:** copy its title, tags, and four sections exactly, then change only what the request requires. A different estimator may change one phrase; a new cutoff changes the sentences that state the cutoff and the consequences that follow from it.
-- **Several predecessors (a merge):** combine their sections into one decision. Keep each predecessor's wording where it still holds, remove repetition, and change only what the merged decision requires.
-- **Do not narrate the supersession.** Do not rewrite Context to say that a predecessor existed or why it is being replaced. The successor reads as a complete record of the decision now in force; the reason lives in `## Supersedes`.
-- Keep source links that still resolve, updating shifted line ranges. Keep the tags that still apply.
+- **One predecessor:** copy its title, tags, and four sections exactly, then change only what the request requires. Leave every other sentence, link, citation, and line break as it is. A different estimator may change one phrase; a new cutoff changes the sentences that state the cutoff and the consequences that follow from it.
+- **Several predecessors (a merge):** combine their sections into one decision. Keep each predecessor's wording where it still holds, remove repetition, and change only what the merged decision requires. Keep the tags that still apply.
+- Keep the title unless the request changes what the decision is about. A title is a noun phrase, not a question.
+- Keep source links that still resolve, and update line ranges that have shifted. Do not invent paths or line numbers.
+- When the decision itself changed, the predecessor's choice often becomes an alternative, with the reason it no longer holds.
 
-See [../record.md](../record.md) for the anatomy of the four sections.
+The body has exactly the four sections of the [record reference](../record.md), each once and with text. If a predecessor lacks one, write it from the evidence you have; if genuinely no alternative applies, write "Not applicable".
 
-### Step 4 — Write the candidate with `## Supersedes` first
+## What not to write
 
-Scaffold the candidate, then write its body:
+- **Do not narrate the supersession.** Do not rewrite Context to say that a predecessor existed, why it is being superseded, or that this record supersedes it. The successor reads as a complete record of the decision now in force.
+- **Do not put a `## Supersedes` section in the body**, or add links to the predecessors for the sake of the supersession. The successor's `## Supersedes` section is built from the superseded record ids and the rationale: one link per predecessor, then the rationale as the reason for the change.
+- **Do not edit the predecessors**, list successors, or suggest lifecycle commands. Accepting the successor links the records; no separate supersede step follows.
 
-```bash
-dadrock new "Impute missing treatment via multiple imputation (mice)" \
-  --tag kind/sample \
-  --tag writer/agent \
-  --quiet
-```
+## Rationale
 
-The body starts with a `## Supersedes` section: one line per predecessor, each a link by full UUID labeled with the predecessor's title, then the reason from Step 2. The four sections follow.
-
-```markdown
-## Supersedes
-
-[[<predecessor-uuid>|<predecessor title>]]
-[[<second-predecessor-uuid>|<second predecessor title>]]
-
-<Why the decision changed, in one to three sentences.>
-
-## Context
-...
-```
-
-A record has at most one `## Supersedes` section, and a section without a link is an error. The section stays in the body after acceptance as the permanent record of why the decision changed. It is a Dadrock convention, not a required core-format section.
-
-When the `supersede-record` agent task runs instead (`dadrock task run supersede-record` or the web interface), the agent returns `superseded_record_ids`, the title, the four sections, and a `rationale`; Dadrock writes the `## Supersedes` section from them when the proposal is saved as a candidate.
-
-### Step 5 — Validate and report
-
-```bash
-dadrock validate
-```
-
-Then ask the human to review the candidate. Accepting it links every predecessor and moves them to `dadr/archive/`:
-
-```bash
-dadrock accept <new-id>
-```
-
-For a **split**, where several successors replace one predecessor, the candidates each name the same predecessor and are accepted together, so the predecessor gains all of them at once:
-
-```bash
-dadrock accept <first-new-id> --with <second-new-id>
-```
-
-Include the predecessor ids, the new candidate's path and id, the reason, and the suggested accept command. **Do not run `accept` or `supersede` yourself.** Do not run `dadrock supersede` after acceptance: acceptance already links the records.
-
-## Stale successors
-
-If a predecessor is superseded while your candidate waits (for example, a competing candidate was accepted first), your candidate is stale. `dadrock validate` warns with `stale_supersedes` and names the decisions now in force, and acceptance is refused. Point the `## Supersedes` link at the current decision, adjusting the text if needed, or ask the user to reject the stale candidate.
+The rationale explains why the decision changed, in one to three sentences, for a reviewer deciding whether to accept the successor. Be concrete: "SAP amendment §4.3 requires multiple imputation rather than complete cases", not "this is better". It becomes the reason in the successor's `## Supersedes` section, the permanent record of why the decision changed, so write it as plain prose that stands on its own, without headings.
 
 ## Constraints
 
-- **Never edit a predecessor.** Agents never edit accepted or rejected text. People may correct wording in place, but Dadrock refuses changes to `id`, `status`, and `successors`; the successor carries the change of decision.
-- **Never modify `successors` by hand, or move records between folders.** Dadrock does both when the successor is accepted.
-- **No lost evidence.** Do not silently discard sources or alternatives from a predecessor. Keep them, or explain in the reason why they no longer apply.
-- **Acceptance is a human boundary.** This skill writes only to `dadr/inbox/`. Lifecycle transitions are user actions.
+- **No lost evidence.** Do not silently drop sources or alternatives from a predecessor. Keep them, or explain in the rationale why they no longer apply.
+- **One decision per successor.** If the request splits a decision in two, draft the successor for the part the request names and mention the other part in the summary.
+- Never edit a predecessor, and never write `successors` by hand.
+- Never accept the successor or supersede the predecessors. Those are the reviewer's actions.
 
-## Example
+## Result
 
-User: "supersede 01938fc1 — the SAP was amended last week to require multiple imputation instead of complete cases."
+A supersession proposal:
 
-1. `dadrock status 01938fc1` — predecessor "Drop observations with missing treatment", tags `kind/sample`, `plan/sap-2026`.
-2. Reason: SAP amendment §4.3 requires multiple imputation for missing treatment.
-3. Copy the predecessor's sections. Change the Decision to multiple imputation via `mice`, move complete-case dropping into Alternatives with the reason it no longer applies, and update the Consequences that follow from the sample size. Leave the rest of Context as it was.
-4. `dadrock new "Impute missing treatment via multiple imputation (mice)" --tag kind/sample --tag writer/agent --tag plan/sap-2026 --quiet`, then write `## Supersedes` first, linking 01938fc1 by full UUID with its title and the SAP amendment as the reason, followed by the four sections.
-5. `dadrock validate` → clean.
-6. Report the new candidate's path, the predecessor id, the reason, and the suggested `dadrock accept <new-id>`.
+- **Summary**: one sentence describing the change.
+- **Superseded record ids**: the full id of every predecessor, one per record in `record_ids`.
+- **Title** of the successor: the predecessor's title unless the request changes what the decision is about.
+- **Tags** of the successor, starting from the predecessors' tags.
+- **Body** of the successor: the four sections, and nothing else.
+- **Rationale**: why the decision changed.

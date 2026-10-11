@@ -95,7 +95,7 @@ Key `dadrock` modules:
 | `links` | Wikilink and Markdown-link checks |
 | `tags` | Tag normalization, listing, validation |
 | `templates` | Candidate template with built-in fallback |
-| `tasks` | Task packages (`tasks/builtin/*/prompt.md`), runs under `dadr/runs/` |
+| `tasks` | Task documents (`<id>.md`: YAML manifest front matter + prompt body); built-ins embed `skills/dadr/tasks/*.md`; runs under `dadr/runs/` |
 | `agent` | ACP integration for drafting and revising candidates via local agents |
 | `mcp` | MCP server |
 | `demo` | Seeded example projects (`dadrock demo --example ...`) |
@@ -125,7 +125,7 @@ The spec (`docs-src/specification.md`) is authoritative. In short:
 
 ## Onboarding and agent boundaries
 
-Agent tasks return proposals for human review. Do not invent an analyst's rationale from code alone or automatically accept a candidate. Advanced ACP/MCP integration details belong in `docs-src/dadrock/llms.md`, not onboarding.
+Agent tasks return proposals for human review. Do not invent an analyst's rationale from code alone or automatically accept a candidate. Advanced ACP/MCP integration details belong in `docs-src/llms.md`, not onboarding. Corrections, successors (`## Supersedes`, merges, splits, stale successors), decision history, and `validate changes` are documented in `docs-src/changing.md`; Dadrock's folders and filenames in `docs-src/layout.md`; `docs-src/dadrock/cli.md` is only the generated command reference (`make cli-docs`).
 
 Use `dadrock accept`, `dadrock reject`, and `dadrock supersede` for everyday lifecycle actions; the `status` subcommands remain compatible. A successor candidate names its predecessors in an optional `## Supersedes` section: one or more lines, each a record link by full UUID (`[[uuid]]` or `[[uuid|label]]`), then optionally the reason in ordinary Markdown. When Dadrock writes the section (`records::successor_candidate_body`), it is the first section of the body and each link is labeled with the predecessor's title. Several links are a merge; several candidates naming the same predecessor are a split, accepted together with `dadrock accept QUERY --with QUERY` (`records::accept_candidates`). Acceptance checks the whole set before writing, links each predecessor and moves it to `dadr/archive/` while preserving its body, and restores every file if a write fails. A malformed section or missing predecessor is the lifecycle diagnostic `invalid_supersedes`; validation warns about stale successor candidates (`stale_supersedes`) and accepted records whose predecessors do not list them (`unlinked_supersedes`).
 

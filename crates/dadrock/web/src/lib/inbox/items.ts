@@ -450,6 +450,7 @@ function runningTitle(taskId: string): string {
     'supersede-record': 'Drafting a successor',
     'merge-records': 'Merging candidates',
     'find-conflicts': 'Checking for conflicting decisions',
+    'decisions-to-spec': 'Writing a spec from accepted decisions',
     custom: 'Running your request',
   };
   return labels[taskId] ?? `Running ${taskId}`;

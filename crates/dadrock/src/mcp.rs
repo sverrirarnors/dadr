@@ -66,10 +66,14 @@ pub struct DadrockMcpServer {
     access: DadrockMcpAccess,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+/// How much of the Dadrock MCP server an ACP agent session may use. Task
+/// manifests declare it as `mcp_access: full` or `mcp_access: read_only`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum DadrockMcpAccess {
+    #[default]
     Full,
+    #[serde(alias = "read-only")]
     ReadOnly,
 }
 

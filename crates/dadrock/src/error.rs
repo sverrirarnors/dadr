@@ -12,9 +12,6 @@ pub enum DadrError {
     #[error("YAML error: {0}")]
     Yaml(#[from] serde_yaml::Error),
 
-    #[error("TOML error: {0}")]
-    Toml(#[from] toml::de::Error),
-
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
 

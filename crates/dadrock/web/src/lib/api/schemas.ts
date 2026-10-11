@@ -265,7 +265,7 @@ export const taskManifestSchema = z.object({
   inputs: z.array(taskInputSchema).default([]),
   requirements: taskRequirementsSchema,
   output: z.object({ kind: z.string() }),
-  prompt: z.object({ system: z.string() }),
+  mcp_access: z.enum(['full', 'read_only']).default('full'),
   tools: z.array(z.object({ name: z.string(), mode: z.string() })).default([]),
 });
 export type TaskManifest = z.infer<typeof taskManifestSchema>;

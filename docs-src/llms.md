@@ -1,6 +1,6 @@
 # LLM agents
 
-Agent assistance is optional. The [first decision](web.md#first-decision) needs only DADRock. Agents can work with DADRock in three ways:
+Agent assistance is optional: you can record decisions with DADRock alone. Agents can work with DADRock in three ways:
 
 - **[MCP](#mcp):** an agent client calls DADRock's tools through its Model Context Protocol server.
 - **[ACP](#acp):** DADRock directs a local agent through the Agent Client Protocol to draft and revise candidates.
@@ -10,7 +10,7 @@ Whichever route you use, agent outputs are proposals for review. Code can show w
 
 ## MCP
 
-DADRock exposes a Model Context Protocol server over stdio:
+DADRock exposes a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio:
 
 ```sh
 dadrock mcp serve
@@ -35,7 +35,7 @@ Register the server with your client as a stdio command. The configuration file 
 
 ## ACP
 
-DADRock connects to a locally installed agent through the Agent Client Protocol (ACP). The agent may use a remote model. You need an ACP-compatible provider or bridge and its authentication. An ordinary `claude` or `codex` executable alone is not necessarily an ACP provider.
+DADRock connects to a locally installed agent through the [Agent Client Protocol](https://agentclientprotocol.com) (ACP). The agent may use a remote model. You need an ACP-compatible provider or bridge and its authentication. An ordinary `claude` or `codex` executable alone is not necessarily an ACP provider.
 
 Use your provider's own installation and authentication instructions. Choose a bridge explicitly supported by your agent provider. DADRock does not install providers or manage their credentials.
 
@@ -48,7 +48,7 @@ dadrock agent check
 dadrock agent skills
 ```
 
-Built-in tasks include their own instructions; no separately installed skill is required. `agent skills` lists optional local instructions.
+Every task carries its own instructions; no separately installed skill is required. `agent skills` lists optional local instructions.
 
 DADRock attaches its own [MCP server](#mcp) to its agent sessions by default. `--no-mcp` disables that attachment for providers where it is unsuitable.
 
@@ -59,7 +59,7 @@ dadrock task run code-to-record --path analysis/ --limit 5
 dadrock task run context-to-record --context "Explain our choice of sample restrictions"
 ```
 
-The limit asks the agent to prioritize a small batch, rather than treating every operation as a decision. It is a drafting request, not a hard guarantee on model output. The [web interface](web.md#draft) offers the same drafting actions, and results land in its Inbox.
+The limit asks the agent to prioritize a small batch, rather than treating every operation as a decision. It is a drafting request, not a hard guarantee on model output. The [web interface](dadrock/web.md) offers the same drafting actions, and results land in its Inbox.
 
 Tool permission requests default to `deny`. When your selected workflow needs tools, explicitly choose the appropriate permission mode with `--permission allow-once` or `--permission allow-always`. This does not authorize an agent to accept decisions on your behalf.
 
@@ -74,7 +74,9 @@ dadrock task runs
 dadrock task result RUN_ID
 ```
 
-Built-in workflows include drafting, editing candidates, drafting successors for accepted decisions, merging drafts, finding conflicts, and synthesizing accepted decisions. Project overrides live in `dadr/tasks/<task-id>/`, with a `task.toml` manifest and a prompt file. Inspect an existing task before customizing it. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
+Built-in workflows include drafting, editing candidates, [drafting successors](changing.md#drafting-a-successor) for accepted decisions, merging drafts, finding conflicts, and synthesizing accepted decisions into a spec. The built-in tasks are the task guides of the `dadr` skill, the files in `skills/dadr/tasks/` of this repository. Each is one Markdown file: its YAML front matter is the task manifest (id, inputs, requirements, output kind, and `mcp_access`, which is `full` or `read_only`) and its body is the prompt. `dadrock task show <task-id>` prints a task's prompt, and `--json` adds its manifest.
+
+To customize a task, copy its guide to `dadr/tasks/<task-id>.md` and adapt it. A project task overrides a user task in `~/.dadrock/tasks/<task-id>.md` (or `$DADROCK_TASKS_DIR`), which overrides the built-in task with the same id. The file name must match the `id` in the front matter; `dadrock task list` reports files that do not load, including task directories in the old `task.toml` layout. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
 
 Runs are persisted under `dadr/runs/`, which is ignored by default and may contain source excerpts or model transcripts. Output kinds determine how results are rendered. Protocol and run metadata stay outside record front matter.
 
@@ -89,8 +91,8 @@ dadrock new "Decision title"
 dadrock validate --json
 ```
 
-`dadrock commands --json` describes every command: its usage, whether it changes the project, whether it supports JSON, and when it exits non-zero. `dadrock help COMMAND` prints the same detail for one command. The full list is in the [command-line reference](cli.md#reference).
+`dadrock commands --json` describes every command: its usage, whether it changes the project, whether it supports JSON, and when it exits non-zero. `dadrock help COMMAND` prints the same detail for one command. The full list is in the [command-line reference](dadrock/cli.md).
 
 For guidance beyond the built-in tasks, copy `skills/dadr/` from this checkout to your agent's supported skill directory, such as `.agents/skills/dadr` or `~/.codex/skills/dadr`. The agent's own discovery rules determine which location works. The skill routes requests such as bootstrapping candidates from existing code, finding conflicting decisions, or synthesizing a spec to the matching `dadrock` commands.
 
-Future automated faithfulness and coverage checks are described on the [roadmap](../roadmap.md).
+Future automated faithfulness and coverage checks are described on the [roadmap](roadmap.md).

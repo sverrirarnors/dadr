@@ -26,7 +26,7 @@ dadrock agent check
 dadrock agent skills
 ```
 
-There is no mandatory skill-loading preflight for built-in tasks. If setup fails, inspect the provider executable, its authentication, and explicit `--agent` selection before changing configuration.
+Tasks do not require an installed skill: built-in tasks are compiled from this skill's task guides. If setup fails, inspect the provider executable, its authentication, and explicit `--agent` selection before changing configuration.
 
 ## First draft
 

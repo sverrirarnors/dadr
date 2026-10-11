@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- App icon source. The "d" is the glyph from docs-src/assets/dadrock_logo.svg;
+  <!-- App icon source. The "d" is the Gotham HTF Bold glyph that used to sit above the docs-src/assets/dadrock_logo.svg wordmark;
        the body sits on Apple's 824px grid inside the 1024px canvas. Regenerate
        the PNG/ICNS/ICO set with `make desktop-icons`. -->
   <rect x="100" y="100" width="824" height="824" rx="185" fill="#faf9f6"/>

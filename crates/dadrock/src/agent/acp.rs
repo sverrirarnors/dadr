@@ -657,16 +657,6 @@ pub fn run_acp_agent_json_with_events_and_cancellation(
     output.parse_json_response()
 }
 
-pub fn run_acp_prompt_json_with_events(
-    command: &LocalAcpAgentCommand,
-    cwd: PathBuf,
-    prompt: String,
-    options: AcpPromptOptions,
-    events: Option<AcpPromptEventSink>,
-) -> Result<Value, DadrError> {
-    run_acp_prompt(command, cwd, &prompt, options, events, None)?.parse_json_response()
-}
-
 pub fn run_acp_prompt_text_with_events(
     command: &LocalAcpAgentCommand,
     cwd: PathBuf,

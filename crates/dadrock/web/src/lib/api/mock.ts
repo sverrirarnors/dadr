@@ -192,6 +192,9 @@ const taskPackages: TaskPackage[] = [
     { name: 'record_ids', label: 'Records to supersede', type: 'textarea', options: [], required: true },
     { name: 'requested_changes', label: 'Requested changes', type: 'textarea', options: [], required: true },
   ]),
+  taskPackage('decisions-to-spec', 'Decisions to spec', 'Synthesize accepted DADRs into an implementation, analysis, or reporting spec for downstream work.', 'markdown_report.v1', [
+    { name: 'focus', label: 'Spec focus', type: 'textarea', options: [], required: false },
+  ]),
 ];
 
 function snapshotCounts(records: RecordSummary[]): Snapshot['counts'] {
@@ -246,7 +249,7 @@ function taskPackage(
       inputs,
       requirements: taskRequirementsFor(id, inputs),
       output: { kind: outputKind },
-      prompt: { system: 'prompt.md' },
+      mcp_access: id === 'context-to-record' || id === 'decisions-to-spec' ? 'read_only' : 'full',
       tools: [],
     },
     source: {
@@ -297,7 +300,7 @@ function taskRequirementsFor(id: string, inputs: TaskPackage['manifest']['inputs
               ? 'one'
               : 'none',
     record_status:
-      id === 'supersede-record'
+      id === 'supersede-record' || id === 'decisions-to-spec'
         ? 'accepted'
         : id === 'merge-records' || id === 'edit-record'
           ? 'candidate'
@@ -311,7 +314,7 @@ function taskRequirementsFor(id: string, inputs: TaskPackage['manifest']['inputs
             ? 'optional'
             : 'none',
     notes: id === 'custom' ? 'required' : hasRequiredDetail ? 'required' : hasDetailInput ? 'optional' : 'none',
-    scope: hasInput('status_scope') ? 'live' : 'none',
+    scope: id === 'decisions-to-spec' ? 'accepted' : hasInput('status_scope') ? 'live' : 'none',
   };
 }
 

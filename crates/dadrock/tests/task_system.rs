@@ -20,11 +20,12 @@ use dadrock::{
     },
     error::DomainErrorKind,
     index::ProjectIndex,
+    mcp::DadrockMcpAccess,
     project::{init_project, DiscoverySource, ProjectContext},
     tasks::{
         append_or_extend_task_run_log, append_task_run_log, create_task_run,
         create_task_run_for_task, discover_tasks, list_task_runs, mark_task_run_cancelled,
-        parse_task_manifest, read_task_run, read_task_run_log, task_runs_dir, validate_task_output,
+        parse_task_document, read_task_run, read_task_run_log, task_runs_dir, validate_task_output,
         write_task_failure, write_task_result, TaskContext, TaskDiagnosticCode, TaskInputType,
         TaskNoteRequirement, TaskOutputKind, TaskOutputValue, TaskPathRequirement,
         TaskRecordRequirement, TaskRecordStatusRequirement, TaskRunCommandRequest, TaskRunStatus,
@@ -58,48 +59,45 @@ impl Drop for EnvVarGuard {
 }
 
 #[test]
-fn task_manifest_parses_form_inputs_output_and_tools() {
-    let manifest = parse_task_manifest(
+fn task_document_parses_front_matter_manifest_and_prompt_body() {
+    let document = parse_task_document(
         "builtin:find-conflicts",
-        r#"
-id = "find-conflicts"
-title = "Find conflicting decisions"
-description = "Scan live decisions and candidates for contradictions."
-version = 1
+        r#"---
+id: find-conflicts
+title: "Find conflicting decisions"
+description: "Scan live decisions and candidates for contradictions."
+version: 1
+inputs:
+  - name: status_scope
+    label: "Records to scan"
+    type: select
+    default: "live"
+    options: ["live", "candidates", "accepted"]
+requirements:
+  records: none
+  record_status: all
+  paths: none
+  notes: optional
+  scope: live
+output:
+  kind: conflict_set.v1
+tools:
+  - name: dadrock.list_records
+    mode: read
+---
 
-[input]
-mode = "form"
+# Find conflicts
 
-[[inputs]]
-name = "status_scope"
-label = "Records to scan"
-type = "select"
-default = "live"
-options = ["live", "candidates", "accepted"]
-
-[requirements]
-records = "none"
-record_status = "all"
-paths = "none"
-notes = "optional"
-scope = "live"
-
-[output]
-kind = "conflict_set.v1"
-
-[prompt]
-system = "prompt.md"
-
-[[tools]]
-name = "dadrock.list_records"
-mode = "read"
+Return conflicts as JSON.
 "#,
     )
     .unwrap();
+    let manifest = document.manifest;
 
     assert_eq!(manifest.id, "find-conflicts");
     assert_eq!(manifest.version, 1);
     assert_eq!(manifest.inputs[0].field_type, TaskInputType::Select);
+    assert_eq!(manifest.inputs[0].default.as_deref(), Some("live"));
     assert_eq!(manifest.requirements.records, TaskRecordRequirement::None);
     assert_eq!(
         manifest.requirements.record_status,
@@ -109,22 +107,97 @@ mode = "read"
     assert_eq!(manifest.requirements.notes, TaskNoteRequirement::Optional);
     assert_eq!(manifest.requirements.scope, TaskScopeRequirement::Live);
     assert_eq!(manifest.output.kind, TaskOutputKind::ConflictSetV1);
+    assert_eq!(manifest.mcp_access, DadrockMcpAccess::Full);
     assert_eq!(manifest.tools[0].mode, TaskToolMode::Read);
+    assert_eq!(
+        document.prompt,
+        "# Find conflicts\n\nReturn conflicts as JSON."
+    );
+}
+
+#[test]
+fn task_document_reads_mcp_access_and_scalar_input_defaults() {
+    let document = parse_task_document(
+        "project:read-only-task",
+        r#"---
+id: read-only-task
+title: Read-only task
+description: Reads the ledger without changing it.
+version: 2
+inputs:
+  - name: limit
+    label: Limit
+    type: number
+    default: 5
+  - name: include_rejected
+    label: Include rejected
+    type: checkbox
+    default: false
+output:
+  kind: markdown_report.v1
+mcp_access: read_only
+---
+Summarize the ledger.
+"#,
+    )
+    .unwrap();
+
+    assert_eq!(document.manifest.mcp_access, DadrockMcpAccess::ReadOnly);
+    assert_eq!(document.manifest.inputs[0].default.as_deref(), Some("5"));
+    assert_eq!(
+        document.manifest.inputs[1].default.as_deref(),
+        Some("false")
+    );
+    assert_eq!(document.prompt, "Summarize the ledger.");
+    let serialized = serde_json::to_value(&document.manifest).unwrap();
+    assert_eq!(serialized["mcp_access"], json!("read_only"));
+    assert!(serialized.get("prompt").is_none());
+}
+
+#[test]
+fn task_document_requires_front_matter() {
+    let error = parse_task_document("project:no-front-matter", "# Just a prompt\n").unwrap_err();
+    assert!(error.to_string().contains("YAML front matter"));
+
+    let error = parse_task_document("project:unclosed", "---\nid: unclosed\ntitle: Unclosed\n")
+        .unwrap_err();
+    assert!(error.to_string().contains("closing `---`"));
+}
+
+#[test]
+fn task_document_rejects_unknown_mcp_access() {
+    let error = parse_task_document(
+        "project:bad-access",
+        r#"---
+id: bad-access
+title: Bad access
+description: Uses an unknown MCP access level.
+version: 1
+output:
+  kind: markdown_report.v1
+mcp_access: write_everything
+---
+Prompt.
+"#,
+    )
+    .unwrap_err();
+
+    assert!(error.to_string().contains("mcp_access"));
 }
 
 #[test]
 fn task_manifest_rejects_invalid_ids() {
-    let error = parse_task_manifest(
+    let error = parse_task_document(
         "project:bad",
-        r#"
-id = "Bad Task"
-title = "Bad"
-description = "Bad id"
-version = 1
-[output]
-kind = "markdown_report.v1"
-[prompt]
-system = "prompt.md"
+        r#"---
+id: "Bad Task"
+title: Bad
+description: Bad id
+version: 1
+output:
+  kind: markdown_report.v1
+---
+Prompt.
 "#,
     )
     .unwrap_err();
@@ -134,40 +207,40 @@ system = "prompt.md"
 
 #[test]
 fn vendor_output_kind_is_preserved_for_fallback_rendering() {
-    let manifest = parse_task_manifest(
+    let document = parse_task_document(
         "project:lab-audit",
-        r#"
-id = "lab-audit"
-title = "Lab audit"
-description = "Project-specific audit."
-version = 1
-[output]
-kind = "lab.audit.v1"
-[prompt]
-system = "prompt.md"
+        r#"---
+id: lab-audit
+title: Lab audit
+description: Project-specific audit.
+version: 1
+output:
+  kind: lab.audit.v1
+---
+Prompt.
 "#,
     )
     .unwrap();
 
     assert_eq!(
-        manifest.output.kind,
+        document.manifest.output.kind,
         TaskOutputKind::Vendor("lab.audit.v1".to_owned())
     );
 }
 
 #[test]
 fn task_manifest_rejects_built_in_output_kind_typos() {
-    let error = parse_task_manifest(
+    let error = parse_task_document(
         "project:bad-output",
-        r#"
-id = "bad-output"
-title = "Bad output"
-description = "Uses a typo for a built-in output kind."
-version = 1
-[output]
-kind = "candidate-draft.v1"
-[prompt]
-system = "prompt.md"
+        r#"---
+id: bad-output
+title: Bad output
+description: Uses a typo for a built-in output kind.
+version: 1
+output:
+  kind: candidate-draft.v1
+---
+Prompt.
 "#,
     )
     .unwrap_err();
@@ -179,18 +252,18 @@ system = "prompt.md"
 
 #[test]
 fn task_manifest_rejects_local_execution_until_executor_exists() {
-    let error = parse_task_manifest(
+    let error = parse_task_document(
         "project:local-task",
-        r#"
-id = "local-task"
-title = "Local task"
-description = "Attempts to use the future local task executor."
-version = 1
-execution = "local"
-[output]
-kind = "markdown_report.v1"
-[prompt]
-system = "prompt.md"
+        r#"---
+id: local-task
+title: Local task
+description: Attempts to use the future local task executor.
+version: 1
+execution: local
+output:
+  kind: markdown_report.v1
+---
+Prompt.
 "#,
     )
     .unwrap_err();
@@ -351,6 +424,7 @@ fn discovery_lists_built_in_starter_tasks() {
             "code-to-record",
             "context-to-record",
             "custom",
+            "decisions-to-spec",
             "edit-record",
             "find-conflicts",
             "merge-records",
@@ -419,6 +493,39 @@ fn discovery_lists_built_in_starter_tasks() {
     assert!(tasks
         .values()
         .all(|task| task.source.id == format!("builtin:{}", task.manifest.id)));
+    assert_eq!(
+        tasks["decisions-to-spec"].manifest.output.kind,
+        TaskOutputKind::MarkdownReportV1
+    );
+    assert_eq!(
+        tasks["decisions-to-spec"]
+            .manifest
+            .requirements
+            .record_status,
+        TaskRecordStatusRequirement::Accepted
+    );
+    for task in tasks.values() {
+        // The skill task guide's body is the prompt; its front matter is not.
+        assert!(
+            !task.prompt.is_empty(),
+            "{} has no prompt",
+            task.manifest.id
+        );
+        assert!(
+            !task.prompt.starts_with("---") && !task.prompt.contains("\nmcp_access:"),
+            "{} prompt still contains front matter",
+            task.manifest.id
+        );
+        let expected_access = match task.manifest.id.as_str() {
+            "context-to-record" | "decisions-to-spec" => DadrockMcpAccess::ReadOnly,
+            _ => DadrockMcpAccess::Full,
+        };
+        assert_eq!(
+            task.manifest.mcp_access, expected_access,
+            "{} MCP access",
+            task.manifest.id
+        );
+    }
 
     let _ = fs::remove_dir_all(root);
 }
@@ -450,13 +557,10 @@ fn project_task_shadows_builtin_task_by_id() {
         .source
         .path
         .as_ref()
-        .is_some_and(|path| { path.ends_with("dadr/tasks/find-conflicts") }));
+        .is_some_and(|path| { path.ends_with("dadr/tasks/find-conflicts.md") }));
     assert_eq!(task.manifest.output.kind, TaskOutputKind::MarkdownReportV1);
-    assert_eq!(
-        task.prompt,
-        "Return project conflict results as JSON only.\n"
-    );
-    assert_eq!(tasks.len(), 7);
+    assert_eq!(task.prompt, "Return project conflict results as JSON only.");
+    assert_eq!(tasks.len(), 8);
 
     let _ = fs::remove_dir_all(root);
 }
@@ -464,25 +568,22 @@ fn project_task_shadows_builtin_task_by_id() {
 #[test]
 fn invalid_project_task_is_reported_as_diagnostic() {
     let root = unique_temp_dir("dadrock-task-invalid-project");
-    let task_dir = root.join("dadr/tasks/bad-project-task");
-    fs::create_dir_all(&task_dir).expect("create task dir");
+    let tasks_dir = root.join("dadr/tasks");
+    fs::create_dir_all(&tasks_dir).expect("create task dir");
     fs::write(
-        task_dir.join("task.toml"),
-        r#"
-id = "Bad Project Task"
-title = "Bad project task"
-description = "Invalid id."
-version = 1
-
-[output]
-kind = "markdown_report.v1"
-
-[prompt]
-system = "prompt.md"
+        tasks_dir.join("bad-project-task.md"),
+        r#"---
+id: "Bad Project Task"
+title: Bad project task
+description: Invalid id.
+version: 1
+output:
+  kind: markdown_report.v1
+---
+Return JSON only.
 "#,
     )
-    .expect("write invalid task manifest");
-    fs::write(task_dir.join("prompt.md"), "Return JSON only.\n").expect("write prompt");
+    .expect("write invalid task document");
     let user_tasks = root.join("user-tasks");
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
     let user_tasks = Utf8PathBuf::from_path_buf(user_tasks).expect("utf8 user tasks");
@@ -491,10 +592,11 @@ system = "prompt.md"
 
     assert!(listing.diagnostics.iter().any(|diagnostic| diagnostic.code
         == TaskDiagnosticCode::InvalidManifest
+        && diagnostic.source_id.as_deref() == Some("project:bad-project-task")
         && diagnostic
             .path
             .as_ref()
-            .is_some_and(|path| { path.ends_with("dadr/tasks/bad-project-task/task.toml") })));
+            .is_some_and(|path| { path.ends_with("dadr/tasks/bad-project-task.md") })));
     assert!(!listing
         .tasks
         .iter()
@@ -530,110 +632,186 @@ fn user_task_shadows_builtin_task_by_id() {
         .source
         .path
         .as_ref()
-        .is_some_and(|path| path.ends_with("user-tasks/find-conflicts")));
+        .is_some_and(|path| path.ends_with("user-tasks/find-conflicts.md")));
     assert_eq!(task.manifest.output.kind, TaskOutputKind::MarkdownReportV1);
-    assert_eq!(task.prompt, "Return user conflict results as JSON only.\n");
-    assert_eq!(tasks.len(), 7);
+    assert_eq!(task.prompt, "Return user conflict results as JSON only.");
+    assert_eq!(tasks.len(), 8);
 
     let _ = fs::remove_dir_all(root);
 }
 
 #[test]
-fn project_task_with_absolute_prompt_path_is_reported_as_diagnostic() {
-    let root = unique_temp_dir("dadrock-task-project-absolute-prompt");
-    fs::create_dir_all(&root).expect("create temp dir");
-    let outside_prompt = root.join("outside-prompt.md");
-    fs::write(&outside_prompt, "This should not be loaded.\n").expect("write outside prompt");
+fn project_task_shadows_user_task_by_id() {
+    let root = unique_temp_dir("dadrock-task-project-over-user");
     let project_tasks = root.join("dadr/tasks");
     let user_tasks = root.join("user-tasks");
-    write_task_with_prompt_system(
-        &project_tasks,
-        "absolute-prompt",
-        "Absolute prompt",
-        "Attempts to load an absolute prompt path.",
-        "markdown_report.v1",
-        outside_prompt.to_str().expect("utf8 outside prompt"),
-        None,
-    );
-    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
-    let user_tasks = Utf8PathBuf::from_path_buf(user_tasks).expect("utf8 user tasks");
-
-    let listing = discover_tasks(&cwd, Some(&user_tasks));
-
-    assert_invalid_prompt_diagnostic(&listing, "project:absolute-prompt", "absolute prompt path");
-    assert!(!listing
-        .tasks
-        .iter()
-        .any(|task| task.manifest.id == "absolute-prompt"));
-
-    let _ = fs::remove_dir_all(root);
-}
-
-#[test]
-fn user_task_with_parent_relative_prompt_path_is_reported_as_diagnostic() {
-    let root = unique_temp_dir("dadrock-task-user-parent-prompt");
-    fs::create_dir_all(&root).expect("create temp dir");
-    let user_tasks = root.join("user-tasks");
-    fs::create_dir_all(&user_tasks).expect("create user task root");
-    fs::write(
-        user_tasks.join("outside-prompt.md"),
-        "This should not be loaded.\n",
-    )
-    .expect("write outside prompt");
-    write_task_with_prompt_system(
+    write_task(
         &user_tasks,
-        "parent-prompt",
-        "Parent prompt",
-        "Attempts to load a parent-relative prompt path.",
+        "lab-audit",
+        "User lab audit",
+        "User-level audit.",
         "markdown_report.v1",
-        "../outside-prompt.md",
-        None,
+        "User prompt.\n",
+    );
+    write_task(
+        &project_tasks,
+        "lab-audit",
+        "Project lab audit",
+        "Project-level audit.",
+        "markdown_report.v1",
+        "Project prompt.\n",
     );
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
     let user_tasks = Utf8PathBuf::from_path_buf(user_tasks).expect("utf8 user tasks");
 
     let listing = discover_tasks(&cwd, Some(&user_tasks));
 
-    assert_invalid_prompt_diagnostic(&listing, "user:parent-prompt", "parent directory component");
-    assert!(!listing
-        .tasks
-        .iter()
-        .any(|task| task.manifest.id == "parent-prompt"));
+    assert_eq!(listing.diagnostics, Vec::new());
+    let tasks = tasks_by_id(&listing.tasks);
+    let task = tasks["lab-audit"];
+    assert_eq!(task.source.kind, TaskSourceKind::Project);
+    assert_eq!(task.manifest.title, "Project lab audit");
+    assert_eq!(task.prompt, "Project prompt.");
 
     let _ = fs::remove_dir_all(root);
 }
 
-#[cfg(unix)]
 #[test]
-fn project_task_with_prompt_symlink_outside_package_is_reported_as_diagnostic() {
-    let root = unique_temp_dir("dadrock-task-project-symlink-prompt");
-    fs::create_dir_all(&root).expect("create temp dir");
-    let outside_prompt = root.join("outside-prompt.md");
-    fs::write(&outside_prompt, "This should not be loaded.\n").expect("write outside prompt");
+fn task_file_name_must_match_declared_id() {
+    let root = unique_temp_dir("dadrock-task-stem-mismatch");
     let project_tasks = root.join("dadr/tasks");
-    let task_dir = project_tasks.join("symlink-prompt");
-    let user_tasks = root.join("user-tasks");
-    write_task_with_prompt_system(
+    write_task(
         &project_tasks,
-        "symlink-prompt",
-        "Symlink prompt",
-        "Attempts to load a prompt symlink outside the task package.",
+        "lab-audit",
+        "Lab audit",
+        "Project-specific lab audit.",
         "markdown_report.v1",
-        "prompt.md",
-        None,
+        "Return lab audit JSON only.\n",
     );
-    std::os::unix::fs::symlink(&outside_prompt, task_dir.join("prompt.md"))
-        .expect("create prompt symlink");
+    fs::rename(
+        project_tasks.join("lab-audit.md"),
+        project_tasks.join("find-conflicts.md"),
+    )
+    .expect("rename task file");
+    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    let user_tasks = Utf8PathBuf::from_path_buf(root.join("user-tasks")).expect("utf8 user tasks");
+
+    let listing = discover_tasks(&cwd, Some(&user_tasks));
+
+    assert!(
+        listing.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == TaskDiagnosticCode::InvalidManifest
+                && diagnostic.source_id.as_deref() == Some("project:find-conflicts")
+                && diagnostic.message.contains("declares id `lab-audit`")
+                && diagnostic
+                    .path
+                    .as_ref()
+                    .is_some_and(|path| path.ends_with("dadr/tasks/find-conflicts.md"))
+        }),
+        "expected stem mismatch diagnostic; diagnostics: {:?}",
+        listing.diagnostics
+    );
+    let tasks = tasks_by_id(&listing.tasks);
+    assert!(!tasks.contains_key("lab-audit"));
+    assert_eq!(tasks["find-conflicts"].source.kind, TaskSourceKind::Builtin);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn old_task_package_directory_is_reported_and_skipped() {
+    let root = unique_temp_dir("dadrock-task-old-layout");
+    let task_dir = root.join("dadr/tasks/find-conflicts");
+    fs::create_dir_all(&task_dir).expect("create old task dir");
+    fs::write(
+        task_dir.join("task.toml"),
+        r#"
+id = "find-conflicts"
+title = "Old conflict finder"
+description = "Old layout."
+version = 1
+
+[output]
+kind = "markdown_report.v1"
+
+[prompt]
+system = "prompt.md"
+"#,
+    )
+    .expect("write old manifest");
+    fs::write(task_dir.join("prompt.md"), "Old prompt.\n").expect("write old prompt");
+    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    let user_tasks = Utf8PathBuf::from_path_buf(root.join("user-tasks")).expect("utf8 user tasks");
+
+    let listing = discover_tasks(&cwd, Some(&user_tasks));
+
+    assert_eq!(listing.diagnostics.len(), 1, "{:?}", listing.diagnostics);
+    let diagnostic = &listing.diagnostics[0];
+    assert_eq!(diagnostic.code, TaskDiagnosticCode::InvalidManifest);
+    assert_eq!(
+        diagnostic.source_id.as_deref(),
+        Some("project:find-conflicts")
+    );
+    assert!(diagnostic.message.contains("<dir>/<id>.md"));
+    assert!(diagnostic.message.contains("YAML front matter"));
+    assert!(diagnostic
+        .path
+        .as_ref()
+        .is_some_and(|path| path.ends_with("dadr/tasks/find-conflicts/task.toml")));
+    let tasks = tasks_by_id(&listing.tasks);
+    assert_eq!(tasks["find-conflicts"].source.kind, TaskSourceKind::Builtin);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn task_document_without_prompt_body_is_reported() {
+    let root = unique_temp_dir("dadrock-task-empty-body");
+    let user_tasks = root.join("user-tasks");
+    write_task(
+        &user_tasks,
+        "empty-body",
+        "Empty body",
+        "Has front matter but no prompt.",
+        "markdown_report.v1",
+        "\n  \n",
+    );
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
     let user_tasks = Utf8PathBuf::from_path_buf(user_tasks).expect("utf8 user tasks");
 
     let listing = discover_tasks(&cwd, Some(&user_tasks));
 
-    assert_invalid_prompt_diagnostic(&listing, "project:symlink-prompt", "outside task package");
+    assert!(
+        listing.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == TaskDiagnosticCode::MissingPrompt
+                && diagnostic.source_id.as_deref() == Some("user:empty-body")
+        }),
+        "expected missing prompt diagnostic; diagnostics: {:?}",
+        listing.diagnostics
+    );
     assert!(!listing
         .tasks
         .iter()
-        .any(|task| task.manifest.id == "symlink-prompt"));
+        .any(|task| task.manifest.id == "empty-body"));
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn non_task_entries_in_task_directories_are_ignored() {
+    let root = unique_temp_dir("dadrock-task-ignored-entries");
+    let project_tasks = root.join("dadr/tasks");
+    fs::create_dir_all(project_tasks.join("notes")).expect("create unrelated dir");
+    fs::write(project_tasks.join("notes/todo.md"), "Not a task.\n").expect("write nested file");
+    fs::write(project_tasks.join("draft.txt"), "Not a task.\n").expect("write text file");
+    fs::write(project_tasks.join(".hidden.md"), "Not a task.\n").expect("write hidden file");
+    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    let user_tasks = Utf8PathBuf::from_path_buf(root.join("user-tasks")).expect("utf8 user tasks");
+
+    let listing = discover_tasks(&cwd, Some(&user_tasks));
+
+    assert_eq!(listing.diagnostics, Vec::new());
+    assert_eq!(listing.tasks.len(), 8);
 
     let _ = fs::remove_dir_all(root);
 }
@@ -1294,8 +1472,7 @@ fn run_task_prompt_demands_declared_output_kind() {
     assert!(prompt.contains("01960000000000000000000000"));
     assert!(prompt.contains("Pay attention to lifecycle drift."));
     assert!(prompt.contains("crates/dadrock/src/mcp.rs"));
-    assert!(prompt.contains("supplied task prompt is authoritative for tool use"));
-    assert!(prompt.contains("must not turn a proposal-only task into a file-writing task"));
+    assert!(prompt.contains("Task mode rules:"));
     assert!(!prompt.contains("prefer calling it with the task `run_id`"));
     assert!(prompt.contains("\"kind\": \"markdown_report.v1\""));
     assert!(prompt.contains("Dadrock task request:"));
@@ -1338,8 +1515,8 @@ fn run_task_prompt_includes_output_contract_for_declared_kind() {
 }
 
 #[test]
-fn run_task_prompt_includes_compact_dadr_task_guidance() {
-    let root = unique_temp_dir("dadrock-task-agent-dadr-guidance");
+fn run_task_prompt_includes_skill_record_and_tag_references() {
+    let root = unique_temp_dir("dadrock-task-agent-skill-references");
     fs::create_dir_all(&root).expect("create temp dir");
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
     let project = agent_project_context(&cwd);
@@ -1361,43 +1538,47 @@ fn run_task_prompt_includes_compact_dadr_task_guidance() {
 
     let prompt = run_task_prompt(&request).expect("render task prompt");
 
-    assert!(prompt.contains("DADR task guidance"));
-    assert!(prompt.contains("one consequential analytic choice"));
-    assert!(prompt.contains("Context, Decision, Alternatives, Consequences"));
-    assert!(prompt.contains("kind/<surface>"));
-    assert!(prompt.contains("writer/agent"));
-    assert!(prompt.contains("Do not accept, reject, or supersede records"));
+    assert!(prompt.contains("## Record anatomy"));
+    assert!(prompt.contains("## Tags"));
+    assert!(prompt.contains(include_str!("../../../skills/dadr/record.md").trim()));
+    assert!(prompt.contains(include_str!("../../../skills/dadr/tags.md").trim()));
+    assert!(prompt.contains("`../record.md` and `../tags.md` refer to"));
+    assert!(!prompt.contains("DADR task guidance"));
 
     let _ = fs::remove_dir_all(root);
 }
 
 #[test]
-fn supersede_task_prompt_starts_from_the_predecessor_text() {
-    let root = unique_temp_dir("dadrock-task-agent-supersede-wikilink");
+fn run_task_prompt_embeds_builtin_task_guide() {
+    let root = unique_temp_dir("dadrock-task-agent-builtin-guide");
     fs::create_dir_all(&root).expect("create temp dir");
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    let user_tasks = Utf8PathBuf::from_path_buf(root.join("user-tasks")).expect("utf8 user tasks");
     let project = agent_project_context(&cwd);
+    let task = discovered_task(&cwd, Some(&user_tasks), "supersede-record");
     let request = AgentRequestEnvelope::run_task(
-        "Draft a supersession proposal.".to_owned(),
+        task.prompt.clone(),
         AgentProjectSnapshot::new(&project, Vec::new()),
         AgentTaskRequest {
-            id: "supersede-record".to_owned(),
+            id: task.manifest.id.clone(),
             run_id: "01960000000000000000000000".to_owned(),
-            title: "Supersede record".to_owned(),
-            description: "Draft a successor candidate for an accepted DADR.".to_owned(),
-            output_kind: TaskOutputKind::SupersessionProposalV1,
+            title: task.manifest.title.clone(),
+            description: task.manifest.description.clone(),
+            output_kind: task.manifest.output.kind.clone(),
             input: json!({
                 "record_ids": "01960000-0000-7000-8000-000000000000",
                 "requested_changes": "new evidence"
             }),
             context: TaskContext::default(),
-            prompt: include_str!("../src/tasks/builtin/supersede-record/prompt.md").to_owned(),
+            prompt: task.prompt.clone(),
         },
     )
     .expect("run task request");
 
     let prompt = run_task_prompt(&request).expect("render task prompt");
 
+    let encoded_guide = serde_json::to_string(&task.prompt).expect("encode task guide");
+    assert!(prompt.contains(&encoded_guide));
     assert!(prompt.contains("Start from the predecessor's exact text"));
     assert!(prompt.contains("Do not narrate the supersession"));
     assert!(prompt.contains("superseded_record_ids"));
@@ -1408,8 +1589,8 @@ fn supersede_task_prompt_starts_from_the_predecessor_text() {
 }
 
 #[test]
-fn run_task_prompt_does_not_require_external_skill_for_builtins() {
-    let root = unique_temp_dir("dadrock-task-agent-installed-skill");
+fn run_task_prompt_states_task_mode_rules() {
+    let root = unique_temp_dir("dadrock-task-agent-task-mode");
     fs::create_dir_all(&root).expect("create temp dir");
     let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
     let project = agent_project_context(&cwd);
@@ -1431,8 +1612,14 @@ fn run_task_prompt_does_not_require_external_skill_for_builtins() {
 
     let prompt = run_task_prompt(&request).expect("render task prompt");
 
-    assert!(prompt.contains("external skill is not required for built-in tasks"));
     assert!(prompt.contains("task id `code-to-record`"));
+    assert!(prompt.contains("dadrock decides how it is delivered"));
+    assert!(prompt.contains(
+        "Do not create, edit, move, accept, reject, or supersede records or other files."
+    ));
+    assert!(prompt.contains("proposals that a human reviews"));
+    assert!(prompt.contains("put that content in the result instead"));
+    assert!(!prompt.contains("installed `dadr` skill"));
     assert!(!prompt.contains("--- Prompt pack: dadr"));
 
     let _ = fs::remove_dir_all(root);
@@ -1572,6 +1759,7 @@ fn list_tasks_command_returns_builtins() {
             "code-to-record",
             "context-to-record",
             "custom",
+            "decisions-to-spec",
             "edit-record",
             "find-conflicts",
             "merge-records",
@@ -1900,15 +2088,7 @@ fn write_task(
     output_kind: &str,
     prompt: &str,
 ) {
-    write_task_with_prompt_system(
-        tasks_root,
-        id,
-        title,
-        description,
-        output_kind,
-        "prompt.md",
-        Some(prompt),
-    );
+    write_task_with_version(tasks_root, id, title, description, 1, output_kind, prompt);
 }
 
 fn write_task_with_version(
@@ -1920,82 +2100,22 @@ fn write_task_with_version(
     output_kind: &str,
     prompt: &str,
 ) {
-    let task_dir = tasks_root.join(id);
-    fs::create_dir_all(&task_dir).expect("create task dir");
+    fs::create_dir_all(tasks_root).expect("create task dir");
     fs::write(
-        task_dir.join("task.toml"),
+        tasks_root.join(format!("{id}.md")),
         format!(
-            r#"
-id = "{id}"
-title = "{title}"
-description = "{description}"
-version = {version}
-
-[output]
-kind = "{output_kind}"
-
-[prompt]
-system = "prompt.md"
-"#,
+            r#"---
+id: {id}
+title: "{title}"
+description: "{description}"
+version: {version}
+output:
+  kind: {output_kind}
+---
+{prompt}"#,
         ),
     )
-    .expect("write task manifest");
-    fs::write(task_dir.join("prompt.md"), prompt).expect("write prompt");
-}
-
-fn write_task_with_prompt_system(
-    tasks_root: &std::path::Path,
-    id: &str,
-    title: &str,
-    description: &str,
-    output_kind: &str,
-    prompt_system: &str,
-    prompt: Option<&str>,
-) {
-    let task_dir = tasks_root.join(id);
-    fs::create_dir_all(&task_dir).expect("create task dir");
-    fs::write(
-        task_dir.join("task.toml"),
-        format!(
-            r#"
-id = "{id}"
-title = "{title}"
-description = "{description}"
-version = 1
-
-[output]
-kind = "{output_kind}"
-
-[prompt]
-system = "{}"
-"#,
-            toml_string(prompt_system)
-        ),
-    )
-    .expect("write task manifest");
-    if let Some(prompt) = prompt {
-        fs::write(task_dir.join("prompt.md"), prompt).expect("write prompt");
-    }
-}
-
-fn assert_invalid_prompt_diagnostic(
-    listing: &dadrock::tasks::TaskListing,
-    source_id: &str,
-    message_fragment: &str,
-) {
-    assert!(
-        listing.diagnostics.iter().any(|diagnostic| {
-            diagnostic.code == TaskDiagnosticCode::InvalidManifest
-                && diagnostic.source_id.as_deref() == Some(source_id)
-                && diagnostic.message.contains(message_fragment)
-        }),
-        "expected invalid prompt diagnostic for {source_id}; diagnostics: {:?}",
-        listing.diagnostics
-    );
-}
-
-fn toml_string(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('"', "\\\"")
+    .expect("write task document");
 }
 
 fn unique_temp_dir(label: &str) -> PathBuf {
@@ -2039,4 +2159,86 @@ fn code_drafting_rejects_invalid_json_limits_before_starting_agent() {
         assert!(error.to_string().contains("positive integer"));
     }
     fs::remove_dir_all(root).unwrap();
+}
+
+/// Fake ACP agent that records each `session/new` request and answers every
+/// prompt with a `markdown_report.v1` result.
+const RECORDING_ACP_AGENT: &str = r#"
+import json, sys
+log_path = sys.argv[1]
+for line in sys.stdin:
+    q = json.loads(line)
+    method = q.get('method')
+    if method == 'initialize':
+        result = {'protocolVersion': 1, 'agentCapabilities': {}, 'authMethods': []}
+    elif method == 'session/new':
+        with open(log_path, 'a') as log:
+            log.write(json.dumps(q.get('params', {})) + '\n')
+        result = {'sessionId': 'test', 'configOptions': []}
+    elif method == 'session/prompt':
+        output = {'kind': 'markdown_report.v1', 'title': 'Spec', 'body_markdown': '## Spec\nDone.'}
+        print(json.dumps({'jsonrpc': '2.0', 'method': 'session/update', 'params': {'sessionId': 'test', 'update': {'sessionUpdate': 'agent_message_chunk', 'content': {'type': 'text', 'text': json.dumps(output)}}}}), flush=True)
+        result = {'stopReason': 'end_turn'}
+    else:
+        continue
+    print(json.dumps({'jsonrpc': '2.0', 'id': q['id'], 'result': result}), flush=True)
+"#;
+
+fn run_task_with_recording_agent(root: &Path, task_id: &str) -> String {
+    let script = root.join("recording-agent.py");
+    let log = root.join(format!("{task_id}-sessions.jsonl"));
+    fs::write(&script, RECORDING_ACP_AGENT).expect("write fake agent");
+    let context = CommandContext::from_path(root).unwrap();
+    let envelope = run_task_command(
+        &context,
+        TaskRunCommandRequest {
+            task_id: task_id.to_owned(),
+            input: json!({}),
+            context: TaskContext::default(),
+            local_agent: Some(dadrock::agent::providers::LocalAcpAgentCommand::new(
+                "python3",
+                vec![
+                    script.to_string_lossy().into_owned(),
+                    log.to_string_lossy().into_owned(),
+                ],
+            )),
+            permission_policy: dadrock::agent::acp::AcpPermissionPolicy::Deny,
+            enable_dadrock_mcp: true,
+        },
+    )
+    .unwrap_or_else(|err| panic!("run {task_id}: {err}"));
+    assert_eq!(envelope.data.status, TaskRunStatus::Succeeded);
+    fs::read_to_string(log).expect("read recorded sessions")
+}
+
+#[test]
+fn task_runs_attach_dadrock_mcp_with_manifest_access() {
+    let _env_lock = TASK_ENV_LOCK.lock().unwrap();
+    let root = unique_temp_dir("dadrock-task-mcp-access");
+    init_project(&root).unwrap();
+    let _env = EnvVarGuard::set_path("DADROCK_TASKS_DIR", root.join("user-tasks"));
+    write_task(
+        &root.join("dadr/tasks"),
+        "lab-report",
+        "Lab report",
+        "Project task that relies on the default MCP access.",
+        "markdown_report.v1",
+        "Write a lab report.\n",
+    );
+
+    let read_only_sessions = run_task_with_recording_agent(&root, "decisions-to-spec");
+    assert!(read_only_sessions.contains("mcp"));
+    assert!(
+        read_only_sessions.contains("--read-only"),
+        "decisions-to-spec should attach a read-only Dadrock MCP server: {read_only_sessions}"
+    );
+
+    let full_sessions = run_task_with_recording_agent(&root, "lab-report");
+    assert!(full_sessions.contains("mcp"));
+    assert!(
+        !full_sessions.contains("--read-only"),
+        "tasks default to full Dadrock MCP access: {full_sessions}"
+    );
+
+    let _ = fs::remove_dir_all(root);
 }

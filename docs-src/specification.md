@@ -319,4 +319,4 @@ missingness is not concentrated in one site.
 
 ## Reference implementation { #reference-implementation }
 
-The reference implementation is **DADRock**, a Rust tool with a CLI, a web UI, and IDE integrations. See the [**DADRock**](dadrock/cli.md) command-line page for its project layout, commands, and validation, and the [Tags](tags.md) page for the recommended tag vocabulary.
+The reference implementation is **DADRock**, a Rust tool with a CLI, a web UI, and IDE integrations. See the [Project layout](layout.md) page for the directories it uses, the [**DADRock**](dadrock/cli.md) command-line page for its commands and validation, and the [Tags](tags.md) page for the recommended tag vocabulary.

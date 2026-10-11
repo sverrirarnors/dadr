@@ -1,334 +1,78 @@
 # Command line
 
-`dadrock` is one command with subcommands. Running it without a subcommand prints help; `dadrock help COMMAND` describes one command, and `dadrock completions bash|zsh|fish` prints a shell completion script.
-
-## Project layout
-
-The DADR format does not mandate a directory structure. **DADRock** uses this one, created by `dadrock init`:
-
-```text
-dadr/
-  inbox/
-    country-exclusions.md
-  ledger/
-    income-preprocessing.md
-    drop-missing-treatment.md
-  archive/
-    deprecated-cohort-filter.md
-  templates/
-    candidate.md                # optional
-  tasks/
-  runs/
-    .gitignore
-```
-
-| Directory | Contents |
-|---|---|
-| `dadr/inbox/` | Candidates: proposals awaiting review |
-| `dadr/ledger/` | Decisions in force: accepted records without successors |
-| `dadr/archive/` | Records kept but no longer in force: rejected records and superseded records |
-| `dadr/templates/` | Optional template overrides for new candidates |
-| `dadr/tasks/` | Optional project-specific agent workflows (`dadr/tasks/<task-id>/task.toml` plus its prompt file) |
-| `dadr/runs/` | Agent-run inputs, results, and logs; ignored by version control |
-
-`dadrock accept` changes a candidate's `status` to `accepted` and moves the file from `dadr/inbox/` to `dadr/ledger/`. `dadrock reject` changes it to `rejected` and moves it to `dadr/archive/`. The `id` never changes. Superseding a decision, by [accepting its successor](web.md#accepting-successors) or with `dadrock supersede`, appends the successor's `id` to the predecessor's `successors` and moves the predecessor to `dadr/archive/`; its `status` stays `accepted`.
-
-Filenames carry no meaning: DADRock identifies a record by its `id`, never by its filename. It names a new record after its title, `income-preprocessing.md`, and adds the short id, `income-preprocessing-01938b8e4d70.md`, only when the inbox already has that name. Accepting, rejecting, and superseding keep the filename and change only the folder; the short id is added only when the target folder already has that name. A name that another record leaves in the same operation counts as free, so a successor with its predecessor's title takes the predecessor's filename in the ledger. Renaming a record file does not change the record.
-
-The directory is a convenience: the front matter is authoritative. `dadrock validate` warns when a record sits in a directory that does not match its `status` and `successors`. Moving a file breaks relative Markdown links to its path; record wikilinks use ids and are unaffected. Use `dadrock config` to inspect the resolved layout. Keep the record directories in version control; run state may contain pasted context and source excerpts and is ignored by default.
-
-Earlier versions of DADRock used `candidates/`, `accepted/`, and `rejected/`. DADRock no longer reads those directories: move candidates to `inbox/`, current decisions to `ledger/`, and rejected and superseded records to `archive/`.
-
-## History
-
-A decision's history is its chain of versions, linked by [supersession](web.md#changing-a-decision), plus the corrections made to each version. DADRock derives the versions from `successors` alone, so they need no extra front matter and no Git. Corrections stay in the record itself, and DADRock reads them from Git.
-
-```sh
-dadrock history QUERY            # versions as a graph, newest first
-dadrock history QUERY --patch    # with the diff of each change and each text edit
-dadrock history QUERY --json
-dadrock diff OLD NEW             # compare any two records
-```
-
-`QUERY` is any version: a full id, an id prefix, a filename, or a title. The history of a record contains:
-
-- **versions**: the record, its predecessors back to the first version, and its successors forward to the current ones;
-- **current versions**: the versions without successors;
-- **links**: each supersession between two records, with its reason, the text after the links in the successor's `## Supersedes` section. Records linked with `dadrock supersede` alone have no reason;
-- **neighbors**: records at the other end of a link that are not versions, listed on one line without their own history;
-- **text edits**: for each version, the edits Git recorded to its title or body since the version was accepted or rejected, newest first.
-
-Versions are listed newest first, and a record always appears above its predecessors, even when it was created earlier. `◉` marks the record you asked for. A decision superseded by several records is a split; several decisions superseded by one record are a merge:
-
-```text
-●   0193b2a1d117  Multiple imputation for income  current
-│ ● 0193b2a1c0f4  Complete cases for the outcome  current
-├─╯ Outcome and covariates need different treatment.
-●   01938c20a3b4  Listwise deletion
-│   Complete cases lose a third of the sample.
-◉   01938a77e310  Pairwise deletion
-```
-
-```text
-◉   0193c4e1a2b0  One outlier rule for all covariates  current
-├─╮ The two rules disagreed at the 99th percentile.
-● │ 0193a0b7e911  Winsorize income at p99
-│ ● 01939f2c4d07  Drop implausible ages
-●   01938f11aa02  Trim income at p95
-```
-
-The history from one half of a split shows the other half as a neighbor ("also became …"), and the history from one input of a merge shows the other input as a neighbor ("merged with …").
-
-Diffs compare the title, the tags, and the body without `## Supersedes`, after normalizing line endings; other front matter is not compared. `--patch` prints each link's diff under it: the title change, the tag changes (`+topic/missing-data −topic/attrition`), and the changed lines with a few lines of context. `dadrock diff OLD NEW` prints the same comparison for any two records, linked or not. Diffs are computed when shown and never stored.
-
-The history ignores successor ids that match no record and stops at cycles, with a warning; `dadrock validate` reports both. In the web interface, the Ledger's [**History** tab](web.md#ledger) shows the same versions and text edits. The local web server serves the same JSON at `/api/records/{id}/history` (`?patch=1` for diffs) and `/api/records/{id}/diff?against={other}`, which compares `{other}` to `{id}`.
-
-### Text edits
-
-A correction that leaves the meaning intact, such as a fixed typo, link, or citation, is made in the record itself and keeps its `id` ([specification §6.3](../specification.md#immutability)). DADRock never copies these edits into records. It reads them from Git with `git log --follow` on the version's file, which follows the moves between `inbox/`, `ledger/`, and `archive/`:
-
-- The baseline is the earliest commit in which the record is accepted or rejected. Edits made while it was a candidate are not listed.
-- Every later commit whose title or body (without `## Supersedes`, line endings aside) differs from the previous commit's is an edit. A commit that changes only tags, `successors`, or the folder is not.
-- A change not committed yet, the working tree against `HEAD`, is listed first.
-
-A version with edits gets one line under it in the graph, and `--patch` adds each edit's diff under a header with the commit's short hash and subject:
-
-```text
-◉   01938c20a3b4  Winsorize income at p99  current
-    edited 2 times since accepted (latest 2026-10-01, Alice)
-```
-
-In JSON, each version has `edits`, newest first. Each edit is `{commit, short_commit, author, date, subject, title_changed, body_changed}`, plus `diff` with `--patch`; `date` is the author date in ISO 8601, and the commit fields are `null` for an edit not committed yet. Candidates have no edits (`[]`). Outside a Git repository, or without `git`, `edits` is `null` and the rest of the history is unchanged.
-
-Listing the edits does not judge them. Whether an edit is a correction or a change of decision is the reviewer's call; to change the decision, supersede the record instead.
-
-## Validation
-
-```sh
-dadrock validate
-dadrock validate --json
-```
-
-Current validation checks:
-
-- no `date` key or ISO 8601 date/time values in front matter;
-- YAML fields, UUIDv7 IDs, four sections each appearing exactly once with text, and status/location consistency;
-- duplicate full IDs and short IDs;
-- missing or invalid successors and cycles in supersession relationships;
-- [stale successor candidates](web.md#stale-successors), and accepted records whose `## Supersedes` predecessors do not list them in `successors`;
-- broken or ambiguous record wikilinks and missing local Markdown-link targets;
-- malformed tags and unreadable candidate templates.
-
-Focused commands are `dadrock validate records`, `dadrock validate links`, and `dadrock validate tags`. Use labeled links such as `[[01938c20a3b4|sampling rule]]` to make raw Markdown easier to read.
-
-### Changes since a Git revision
-
-Once a record is accepted or rejected, its `id` and `status` do not change, and entries are not removed from its `successors`. Its title and body take corrections that leave the meaning intact; changing the decision means superseding the record ([specification §6.3](../specification.md#immutability)). `dadrock validate changes` checks the first rule against Git and shows every title and body edit, so a reviewer can judge the second:
-
-```sh
-dadrock validate changes                      # working tree against HEAD
-dadrock validate changes --staged             # staged changes against HEAD
-dadrock validate changes --base origin/main   # everything since another revision
-dadrock validate changes --strict             # title and body edits are errors too
-```
-
-For each record file in `dadr/inbox/`, `dadr/ledger/`, or `dadr/archive/` that changed since the base revision, DADRock reads the file's version at the base. If that version was accepted or rejected, DADRock compares the current version with it. A record that moved between folders, by being accepted, rejected, or superseded, is followed through Git's rename detection or by its `id`.
-
-- **Errors:** a changed `id` (`record_id_changed`) or `status` (`record_status_changed`), a removed `successors` entry (`successor_removed`), or a file that no longer parses (`invalid_record`). The message names the record and suggests [drafting a successor](web.md#changing-a-decision) instead.
-- **Warnings, with the diff:** an edited title (`record_title_edited`) or body (`record_body_edited`; line endings aside). The message names the record and says to supersede it instead if the edit changes the decision. The text output prints the diff under the warning: the old and new title, or the changed body lines with a few lines of context. In JSON, the issue's `diff` carries the same change: `title` with `old` and `new`, or the body's `lines`, each `{kind, text}` with `kind` one of `context`, `added`, or `removed`.
-- Deleting an accepted or rejected record is a warning (`record_deleted`).
-
-```text
-dadrock validate changes: 0 error(s), 1 warning(s) (working tree against HEAD (5309d425ba44))
-[warning] record_body_edited /home/me/analysis/dadr/ledger/winsorize-income-at-p99.md: the body of accepted record `Winsorize income at p99` (01938c20a3b4) was edited since HEAD. If this changes the decision, supersede the record instead.
-      ## Consequences
-
-    - Estimates are less sensitive to outliers.
-    + Estimates are much less sensitive to outliers.
-```
-
-`tags`, keys outside DADR, and new `successors` entries change freely, and so do candidates. New files have no earlier version to compare, and a repository without commits passes. Warnings alone exit with status zero. With `--strict`, title and body edits are errors too, for projects that want accepted text frozen; there is no project setting, so pass the flag wherever the check runs. Outside a Git repository, or when the base revision does not resolve, the command fails. Ordinary `dadrock validate` does not use Git.
-
-Validation checks the records' structure, their internal references, and, with `validate changes`, their history in Git. It does not resolve bibliography citations, detect `TBD` prose, enforce plan-deviation sections, or determine whether code follows a decision. Those checks are [roadmap work](../roadmap.md). Human review remains necessary.
-
-## Continuous integration
-
-Once DADRock is installed in your CI environment, run `dadrock validate` from the analysis project root. A nonzero exit status signals an error; `--json` provides structured diagnostics. Install from a pinned source revision for reproducibility; a CLI-only CI build can use the [`no-js-build` feature](index.md#without-the-web-interface).
-
-To review what a pull request changes in accepted and rejected records, compare it with its target branch. The checkout needs that branch's history:
-
-```sh
-git fetch origin main
-dadrock validate
-dadrock validate changes --base origin/main
-```
-
-A changed `id` or `status`, or a removed successor, fails the check. Title and body edits appear in the CI log as warnings with their diffs, so a reviewer can tell a correction from a change of decision. A project that wants accepted text frozen adds `--strict`, which fails the check on those edits too:
-
-```sh
-dadrock validate changes --base origin/main --strict
-```
-
-`--base origin/main` compares with the tip of `main`. That is right when the checkout already includes `main`, such as the merge commit many CI services check out for a pull request. For a branch that `main` has moved past, compare with the point where the branch started: `--base "$(git merge-base origin/main HEAD)"`.
-
-To catch changes before they are committed, run the check on the staged changes in a pre-commit hook, `.git/hooks/pre-commit`, made executable:
-
-```sh
-#!/bin/sh
-exec dadrock validate changes --staged
-```
-
-The hook blocks a commit only on errors; title and body edits print as warnings. Add `--strict` to block those edits too. Git runs hooks from the repository root. If the project lives in a subdirectory, such as `analysis/dadr/`, change into that subdirectory first: `cd analysis && exec dadrock validate changes --staged`.
-
-## Reference
-
-Generated from the CLI definition by `make cli-docs`; it mirrors `dadrock help`.
+<!-- Generated from the CLI definition by `make cli-docs`; it mirrors `dadrock help`. -->
 
 <!-- cli-docs:start -->
 
-**Command Overview:**
+## Commands
 
-* [`dadrock`↴](#dadrock)
-* [`dadrock help`↴](#dadrock-help)
-* [`dadrock commands`↴](#dadrock-commands)
-* [`dadrock completions`↴](#dadrock-completions)
-* [`dadrock dir`↴](#dadrock-dir)
-* [`dadrock config`↴](#dadrock-config)
-* [`dadrock init`↴](#dadrock-init)
-* [`dadrock demo`↴](#dadrock-demo)
-* [`dadrock new`↴](#dadrock-new)
-* [`dadrock list`↴](#dadrock-list)
-* [`dadrock history`↴](#dadrock-history)
-* [`dadrock diff`↴](#dadrock-diff)
-* [`dadrock status`↴](#dadrock-status)
-* [`dadrock status accept`↴](#dadrock-status-accept)
-* [`dadrock status reject`↴](#dadrock-status-reject)
-* [`dadrock status supersede`↴](#dadrock-status-supersede)
-* [`dadrock accept`↴](#dadrock-accept)
-* [`dadrock reject`↴](#dadrock-reject)
-* [`dadrock supersede`↴](#dadrock-supersede)
-* [`dadrock validate`↴](#dadrock-validate)
-* [`dadrock validate records`↴](#dadrock-validate-records)
-* [`dadrock validate links`↴](#dadrock-validate-links)
-* [`dadrock validate tags`↴](#dadrock-validate-tags)
-* [`dadrock validate changes`↴](#dadrock-validate-changes)
-* [`dadrock tags`↴](#dadrock-tags)
-* [`dadrock tags list`↴](#dadrock-tags-list)
-* [`dadrock mcp`↴](#dadrock-mcp)
-* [`dadrock mcp serve`↴](#dadrock-mcp-serve)
-* [`dadrock agent`↴](#dadrock-agent)
-* [`dadrock agent check`↴](#dadrock-agent-check)
-* [`dadrock agent draft`↴](#dadrock-agent-draft)
-* [`dadrock agent skills`↴](#dadrock-agent-skills)
-* [`dadrock task`↴](#dadrock-task)
-* [`dadrock task list`↴](#dadrock-task-list)
-* [`dadrock task show`↴](#dadrock-task-show)
-* [`dadrock task run`↴](#dadrock-task-run)
-* [`dadrock task runs`↴](#dadrock-task-runs)
-* [`dadrock task result`↴](#dadrock-task-result)
-* [`dadrock preview`↴](#dadrock-preview)
+**Projects**
 
-### `dadrock`
+| Command | Description |
+|---|---|
+| [`init`](#dadrock-init) | Create a Dadrock dadr/ directory. |
+| [`demo`](#dadrock-demo) | Seed a new project with a named DADR example. |
+| [`preview`](#dadrock-preview) | Serve the local web review UI. |
+| [`config`](#dadrock-config) | Print the resolved project layout. |
+| [`dir`](#dadrock-dir) | Print the discovered Dadrock project directory (dadr/). |
 
-DADR decision records and web review UI.
+**Records**
 
-With no command, prints this help menu.
+| Command | Description |
+|---|---|
+| [`new`](#dadrock-new) | Create a candidate decision record from the active candidate template. |
+| [`list`](#dadrock-list) | List records, optionally filtered by lifecycle status, tag, or query. |
+| [`history`](#dadrock-history) | Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git. |
+| [`diff`](#dadrock-diff) | Compare two records: title, tags, and body without `## Supersedes`. |
+| [`accept`](#dadrock-accept) | Accept a candidate decision, or several together with --with. |
+| [`reject`](#dadrock-reject) | Reject a candidate decision. |
+| [`supersede`](#dadrock-supersede) | Link accepted successors to the records they supersede and move those records to the archive. |
+| [`status`](#dadrock-status) | Inspect one record's lifecycle status or run lifecycle transitions. |
 
-**Usage:** `dadrock [COMMAND]`
+**Validation**
 
-###### **Subcommands:**
+| Command | Description |
+|---|---|
+| [`validate`](#dadrock-validate) | Run project validation, or target records, links, tags, or changes. |
+| [`tags`](#dadrock-tags) | Inspect DADR tag usage. |
 
-* `help` — Show top-level help or detailed metadata for one command.
-* `commands` — List command metadata for automation and command discovery.
-* `completions` — Generate a shell completion script.
-* `dir` — Print the discovered Dadrock project directory (dadr/).
-* `config` — Print the resolved project layout.
-* `init` — Create a Dadrock dadr/ directory.
-* `demo` — Seed a new project with a named DADR example.
-* `new` — Create a candidate decision record from the active candidate template.
-* `list` — List records, optionally filtered by lifecycle status, tag, or query.
-* `history` — Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.
-* `diff` — Compare two records: title, tags, and body without `## Supersedes`.
-* `status` — Inspect one record's lifecycle status or run lifecycle transitions.
-* `accept` — Accept a candidate decision, or several together with --with.
-* `reject` — Reject a candidate decision.
-* `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
-* `validate` — Run project validation, or target records, links, tags, or changes.
-* `tags` — Inspect DADR tag usage.
-* `mcp` — Serve Dadrock MCP tools over stdio.
-* `agent` — Call a configured local ACP agent for candidate drafting.
-* `task` — Discover, inspect, and run Dadrock task packages.
-* `preview` — Serve the local web review UI.
+**Agents**
 
-### `dadrock help`
+| Command | Description |
+|---|---|
+| [`agent`](#dadrock-agent) | Call a configured local ACP agent for candidate drafting. |
+| [`task`](#dadrock-task) | Discover, inspect, and run Dadrock task packages. |
+| [`mcp`](#dadrock-mcp) | Serve Dadrock MCP tools over stdio. |
 
-Show top-level help or detailed metadata for one command.
+**Help**
 
-**Usage:** `dadrock help [TOPIC]...`
+| Command | Description |
+|---|---|
+| [`help`](#dadrock-help) | Show top-level help or detailed metadata for one command. |
+| [`commands`](#dadrock-commands) | List command metadata for automation and command discovery. |
+| [`completions`](#dadrock-completions) | Generate a shell completion script. |
 
-###### **Arguments:**
-
-* `<TOPIC>`
-
-### `dadrock commands`
-
-List command metadata for automation and command discovery.
-
-**Usage:** `dadrock commands [OPTIONS]`
-
-###### **Options:**
-
-* `--json`
-
-### `dadrock completions`
-
-Generate a shell completion script.
-
-**Usage:** `dadrock completions <SHELL>`
-
-###### **Arguments:**
-
-* `<SHELL>`
-
-  Possible values: `bash`, `zsh`, `fish`
-
-### `dadrock dir`
-
-Print the discovered Dadrock project directory (dadr/).
-
-**Usage:** `dadrock dir`
-
-### `dadrock config`
-
-Print the resolved project layout.
-
-**Usage:** `dadrock config [OPTIONS]`
-
-###### **Options:**
-
-* `--json`
-
-### `dadrock init`
+## `dadrock init`
 
 Create a Dadrock dadr/ directory.
 
 **Usage:** `dadrock init [DIRECTORY]`
 
-###### **Arguments:**
+**Arguments**
 
 * `<DIRECTORY>`
 
-### `dadrock demo`
+## `dadrock demo`
 
 Seed a new project with a named DADR example.
 
 **Usage:** `dadrock demo [OPTIONS] [DIRECTORY]`
 
-###### **Arguments:**
+**Arguments**
 
 * `<DIRECTORY>`
 
-###### **Options:**
+**Options**
 
 * `--json`
 * `--example <EXAMPLE>`
@@ -337,28 +81,63 @@ Seed a new project with a named DADR example.
 
   Possible values: `lifecycle`, `candidate-review`, `penguins`, `broken`, `conflicts`, `task-history`
 
-### `dadrock new`
+## `dadrock preview`
+
+Serve the local web review UI.
+
+**Usage:** `dadrock preview [OPTIONS] [DIRECTORY]`
+
+**Arguments**
+
+* `<DIRECTORY>`
+
+**Options**
+
+* `--port <PORT>`
+
+  Default value: `4004`
+* `--host <HOST>`
+
+  Default value: `127.0.0.1`
+
+## `dadrock config`
+
+Print the resolved project layout.
+
+**Usage:** `dadrock config [OPTIONS]`
+
+**Options**
+
+* `--json`
+
+## `dadrock dir`
+
+Print the discovered Dadrock project directory (dadr/).
+
+**Usage:** `dadrock dir`
+
+## `dadrock new`
 
 Create a candidate decision record from the active candidate template.
 
 **Usage:** `dadrock new [OPTIONS] <TITLE>...`
 
-###### **Arguments:**
+**Arguments**
 
 * `<TITLE>`
 
-###### **Options:**
+**Options**
 
 * `--tag <TAGS>`
 * `--quiet`
 
-### `dadrock list`
+## `dadrock list`
 
 List records, optionally filtered by lifecycle status, tag, or query.
 
 **Usage:** `dadrock list [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--status <STATUS>`
 
@@ -368,49 +147,84 @@ List records, optionally filtered by lifecycle status, tag, or query.
 * `--query <QUERY>`
 * `--unique`
 
-### `dadrock history`
+## `dadrock history`
 
 Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.
 
 **Usage:** `dadrock history [OPTIONS] <QUERY>...`
 
-###### **Arguments:**
+**Arguments**
 
 * `<QUERY>` — Any version of the decision: full id, id prefix, filename, or title
 
-###### **Options:**
+**Options**
 
 * `--patch` — Print each change's diff under its link, and each text edit's diff under its version
 * `--json`
 
-### `dadrock diff`
+## `dadrock diff`
 
 Compare two records: title, tags, and body without `## Supersedes`.
 
 **Usage:** `dadrock diff [OPTIONS] <OLD> <NEW>`
 
-###### **Arguments:**
+**Arguments**
 
 * `<OLD>` — The record to compare from: full id, id prefix, filename, or title
 * `<NEW>` — The record to compare to
 
-###### **Options:**
+**Options**
 
 * `--json`
 
-### `dadrock status`
+## `dadrock accept`
+
+Accept a candidate decision, or several together with --with.
+
+**Usage:** `dadrock accept [OPTIONS] <QUERY>...`
+
+**Arguments**
+
+* `<QUERY>` — The candidate to accept; the words join into one query
+
+**Options**
+
+* `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
+
+## `dadrock reject`
+
+Reject a candidate decision.
+
+**Usage:** `dadrock reject <QUERY>...`
+
+**Arguments**
+
+* `<QUERY>`
+
+## `dadrock supersede`
+
+Link accepted successors to the records they supersede and move those records to the archive.
+
+**Usage:** `dadrock supersede [OPTIONS]`
+
+**Options**
+
+* `--from <FROM>`
+* `--to <TO>`
+
+## `dadrock status`
 
 Inspect one record's lifecycle status or run lifecycle transitions.
 
 **Usage:** `dadrock status [QUERY]... [COMMAND]`
 
-###### **Subcommands:**
+**Subcommands**
 
-* `accept` — Accept a candidate and move it to the ledger, or several together with --with.
-* `reject` — Reject a candidate and move it to the archive.
-* `supersede` — Link accepted successors to the records they supersede and move those records to the archive.
+* [`accept`](#dadrock-status-accept) — Accept a candidate and move it to the ledger, or several together with --with.
+* [`reject`](#dadrock-status-reject) — Reject a candidate and move it to the archive.
+* [`supersede`](#dadrock-status-supersede) — Link accepted successors to the records they supersede and move those records to the archive.
 
-###### **Arguments:**
+**Arguments**
 
 * `<QUERY>`
 
@@ -420,11 +234,11 @@ Accept a candidate and move it to the ledger, or several together with --with.
 
 **Usage:** `dadrock status accept [OPTIONS] <QUERY>...`
 
-###### **Arguments:**
+**Arguments**
 
 * `<QUERY>` — The candidate to accept; the words join into one query
 
-###### **Options:**
+**Options**
 
 * `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
 
@@ -434,7 +248,7 @@ Reject a candidate and move it to the archive.
 
 **Usage:** `dadrock status reject <QUERY>...`
 
-###### **Arguments:**
+**Arguments**
 
 * `<QUERY>`
 
@@ -444,60 +258,25 @@ Link accepted successors to the records they supersede and move those records to
 
 **Usage:** `dadrock status supersede [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--from <FROM>`
 * `--to <TO>`
 
-### `dadrock accept`
-
-Accept a candidate decision, or several together with --with.
-
-**Usage:** `dadrock accept [OPTIONS] <QUERY>...`
-
-###### **Arguments:**
-
-* `<QUERY>` — The candidate to accept; the words join into one query
-
-###### **Options:**
-
-* `--with <QUERY>` — Another candidate to accept in the same operation, such as the other half of a split. Repeat for more
-
-### `dadrock reject`
-
-Reject a candidate decision.
-
-**Usage:** `dadrock reject <QUERY>...`
-
-###### **Arguments:**
-
-* `<QUERY>`
-
-### `dadrock supersede`
-
-Link accepted successors to the records they supersede and move those records to the archive.
-
-**Usage:** `dadrock supersede [OPTIONS]`
-
-###### **Options:**
-
-* `--from <FROM>`
-* `--to <TO>`
-
-### `dadrock validate`
+## `dadrock validate`
 
 Run project validation, or target records, links, tags, or changes.
 
 **Usage:** `dadrock validate [OPTIONS] [COMMAND]`
 
-###### **Subcommands:**
+**Subcommands**
 
-* `records` — Validate record front matter and structure.
-* `links` — Report broken or ambiguous wikilinks and local Markdown links.
-* `tags` — Report malformed YAML and inline tags.
-* `changes` — Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.
+* [`records`](#dadrock-validate-records) — Validate record front matter and structure.
+* [`links`](#dadrock-validate-links) — Report broken or ambiguous wikilinks and local Markdown links.
+* [`tags`](#dadrock-validate-tags) — Report malformed YAML and inline tags.
+* [`changes`](#dadrock-validate-changes) — Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.
 
-###### **Options:**
+**Options**
 
 * `--json`
 
@@ -507,11 +286,11 @@ Validate record front matter and structure.
 
 **Usage:** `dadrock validate records [OPTIONS] [PATHS]...`
 
-###### **Arguments:**
+**Arguments**
 
 * `<PATHS>`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
@@ -521,7 +300,7 @@ Report broken or ambiguous wikilinks and local Markdown links.
 
 **Usage:** `dadrock validate links [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
@@ -531,7 +310,7 @@ Report malformed YAML and inline tags.
 
 **Usage:** `dadrock validate tags [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
@@ -541,7 +320,7 @@ Check accepted and rejected records against a Git revision: a changed id or stat
 
 **Usage:** `dadrock validate changes [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--base <BASE>` — Git revision to compare with
 
@@ -550,15 +329,15 @@ Check accepted and rejected records against a Git revision: a changed id or stat
 * `--strict` — Report title and body edits to accepted and rejected records as errors
 * `--json`
 
-### `dadrock tags`
+## `dadrock tags`
 
 Inspect DADR tag usage.
 
 **Usage:** `dadrock tags <COMMAND>`
 
-###### **Subcommands:**
+**Subcommands**
 
-* `list` — List normalized YAML and inline tags.
+* [`list`](#dadrock-tags-list) — List normalized YAML and inline tags.
 
 ### `dadrock tags list`
 
@@ -566,45 +345,21 @@ List normalized YAML and inline tags.
 
 **Usage:** `dadrock tags list [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
-### `dadrock mcp`
-
-Serve Dadrock MCP tools over stdio.
-
-**Usage:** `dadrock mcp <COMMAND>`
-
-###### **Subcommands:**
-
-* `serve` — Serve Dadrock MCP tools over stdio.
-
-### `dadrock mcp serve`
-
-Serve Dadrock MCP tools over stdio.
-
-**Usage:** `dadrock mcp serve [OPTIONS] [DIRECTORY]`
-
-###### **Arguments:**
-
-* `<DIRECTORY>`
-
-###### **Options:**
-
-* `--read-only`
-
-### `dadrock agent`
+## `dadrock agent`
 
 Call a configured local ACP agent for candidate drafting.
 
 **Usage:** `dadrock agent <COMMAND>`
 
-###### **Subcommands:**
+**Subcommands**
 
-* `check` — Check that a local ACP agent can start a Dadrock session.
-* `draft` — Ask a local ACP agent to draft a candidate decision.
-* `skills` — List available Dadrock agent skills and prompt packs.
+* [`check`](#dadrock-agent-check) — Check that a local ACP agent can start a Dadrock session.
+* [`draft`](#dadrock-agent-draft) — Ask a local ACP agent to draft a candidate decision.
+* [`skills`](#dadrock-agent-skills) — List available Dadrock agent skills and prompt packs.
 
 ### `dadrock agent check`
 
@@ -612,7 +367,7 @@ Check that a local ACP agent can start a Dadrock session.
 
 **Usage:** `dadrock agent check [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--agent <AGENT>`
 * `--agent-arg <AGENT_ARGS>`
@@ -624,11 +379,11 @@ Ask a local ACP agent to draft a candidate decision.
 
 **Usage:** `dadrock agent draft [OPTIONS] <PROMPT>...`
 
-###### **Arguments:**
+**Arguments**
 
 * `<PROMPT>`
 
-###### **Options:**
+**Options**
 
 * `--write`
 * `--json`
@@ -649,23 +404,23 @@ List available Dadrock agent skills and prompt packs.
 
 **Usage:** `dadrock agent skills [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
-### `dadrock task`
+## `dadrock task`
 
 Discover, inspect, and run Dadrock task packages.
 
 **Usage:** `dadrock task <COMMAND>`
 
-###### **Subcommands:**
+**Subcommands**
 
-* `list` — List built-in, user, and project task packages.
-* `show` — Show one resolved task package.
-* `run` — Run one resolved task package with a local ACP agent.
-* `runs` — List persisted local task runs.
-* `result` — Read a persisted task run result.
+* [`list`](#dadrock-task-list) — List built-in, user, and project task packages.
+* [`show`](#dadrock-task-show) — Show one resolved task package.
+* [`run`](#dadrock-task-run) — Run one resolved task package with a local ACP agent.
+* [`runs`](#dadrock-task-runs) — List persisted local task runs.
+* [`result`](#dadrock-task-result) — Read a persisted task run result.
 
 ### `dadrock task list`
 
@@ -673,7 +428,7 @@ List built-in, user, and project task packages.
 
 **Usage:** `dadrock task list [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
@@ -683,11 +438,11 @@ Show one resolved task package.
 
 **Usage:** `dadrock task show [OPTIONS] <TASK_ID>`
 
-###### **Arguments:**
+**Arguments**
 
 * `<TASK_ID>`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
@@ -697,16 +452,16 @@ Run one resolved task package with a local ACP agent.
 
 **Usage:** `dadrock task run [OPTIONS] <TASK_ID>`
 
-###### **Arguments:**
+**Arguments**
 
 * `<TASK_ID>`
 
-###### **Options:**
+**Options**
 
 * `--input-json <INPUT_JSON>`
 * `--path <PATH>` — File or directory to inspect
 * `--context <CONTEXT>` — Describe the decision to capture
-* `--focus <FOCUS>` — Focus the code review on a topic
+* `--focus <FOCUS>` — Topic to concentrate on (code-to-record, decisions-to-spec)
 * `--limit <LIMIT>` — Maximum initial candidates (code-to-record defaults to 5)
 * `--json`
 * `--permission <PERMISSION>`
@@ -725,7 +480,7 @@ List persisted local task runs.
 
 **Usage:** `dadrock task runs [OPTIONS]`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
@@ -735,38 +490,68 @@ Read a persisted task run result.
 
 **Usage:** `dadrock task result [OPTIONS] <RUN_ID>`
 
-###### **Arguments:**
+**Arguments**
 
 * `<RUN_ID>`
 
-###### **Options:**
+**Options**
 
 * `--json`
 
-### `dadrock preview`
+## `dadrock mcp`
 
-Serve the local web review UI.
+Serve Dadrock MCP tools over stdio.
 
-**Usage:** `dadrock preview [OPTIONS] [DIRECTORY]`
+**Usage:** `dadrock mcp <COMMAND>`
 
-###### **Arguments:**
+**Subcommands**
+
+* [`serve`](#dadrock-mcp-serve) — Serve Dadrock MCP tools over stdio.
+
+### `dadrock mcp serve`
+
+Serve Dadrock MCP tools over stdio.
+
+**Usage:** `dadrock mcp serve [OPTIONS] [DIRECTORY]`
+
+**Arguments**
 
 * `<DIRECTORY>`
 
-###### **Options:**
+**Options**
 
-* `--port <PORT>`
+* `--read-only`
 
-  Default value: `4004`
-* `--host <HOST>`
+## `dadrock help`
 
-  Default value: `127.0.0.1`
+Show top-level help or detailed metadata for one command.
 
-<hr/>
+**Usage:** `dadrock help [TOPIC]...`
 
-<small><i>
-    This document was generated automatically by
-    <a href="https://crates.io/crates/clap-markdown"><code>clap-markdown</code></a>.
-</i></small>
+**Arguments**
+
+* `<TOPIC>`
+
+## `dadrock commands`
+
+List command metadata for automation and command discovery.
+
+**Usage:** `dadrock commands [OPTIONS]`
+
+**Options**
+
+* `--json`
+
+## `dadrock completions`
+
+Generate a shell completion script.
+
+**Usage:** `dadrock completions <SHELL>`
+
+**Arguments**
+
+* `<SHELL>`
+
+  Possible values: `bash`, `zsh`, `fish`
 
 <!-- cli-docs:end -->

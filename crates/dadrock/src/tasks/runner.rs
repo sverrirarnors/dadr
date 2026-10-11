@@ -11,9 +11,8 @@ use crate::{
     agent::{
         acp::{
             parse_acp_agent_json_response, run_acp_agent_json_with_events_and_cancellation,
-            run_acp_agent_text_with_events_and_cancellation, run_acp_prompt_json_with_events,
-            AcpCancellationToken, AcpPermissionPolicy, AcpPromptEvent, AcpPromptEventSink,
-            AcpPromptOptions,
+            run_acp_agent_text_with_events_and_cancellation, AcpCancellationToken,
+            AcpPermissionPolicy, AcpPromptEvent, AcpPromptEventSink, AcpPromptOptions,
         },
         prompts::task_output_repair_prompt,
         providers::{configured_local_acp_agent, LocalAcpAgentCommand},
@@ -612,19 +611,6 @@ fn execute_created_task_run(
     let _cancellation_registration =
         TaskCancellationRegistration::register(run.id, cancellation.clone())
             .map_err(TaskRunFailure::from)?;
-    // Built-in tasks ship their complete instructions; external skills are optional.
-    if task.source.kind != crate::tasks::TaskSourceKind::Builtin {
-        preflight_dadr_skill_access(
-            project,
-            task,
-            local_agent,
-            permission_policy,
-            enable_dadrock_mcp,
-            run,
-            events.clone(),
-        )
-        .map_err(TaskRunFailure::from)?;
-    }
     let current_run = read_task_run(&run.run_dir).map_err(TaskRunFailure::from)?;
     if current_run.status == TaskRunStatus::Cancelled {
         return Ok(current_run);
@@ -648,7 +634,7 @@ fn execute_created_task_run(
         AcpPromptOptions {
             permission_policy,
             enable_dadrock_mcp,
-            dadrock_mcp_access: task_mcp_access(task),
+            dadrock_mcp_access: task.manifest.mcp_access,
             ..AcpPromptOptions::default()
         },
         events.clone(),
@@ -685,7 +671,7 @@ fn execute_created_task_run(
                 AcpPromptOptions {
                     permission_policy,
                     enable_dadrock_mcp,
-                    dadrock_mcp_access: task_mcp_access(task),
+                    dadrock_mcp_access: task.manifest.mcp_access,
                     ..AcpPromptOptions::default()
                 },
                 events,
@@ -708,104 +694,6 @@ fn execute_created_task_run(
     let run = write_task_result(&run.run_dir, validated_output).map_err(TaskRunFailure::from)?;
     append_task_run_log(&run.run_dir, "Task succeeded.").map_err(TaskRunFailure::from)?;
     Ok(run)
-}
-
-fn preflight_dadr_skill_access(
-    project: &ProjectContext,
-    task: &TaskPackage,
-    local_agent: &LocalAcpAgentCommand,
-    permission_policy: AcpPermissionPolicy,
-    enable_dadrock_mcp: bool,
-    run: &PersistedTaskRun,
-    events: Option<AcpPromptEventSink>,
-) -> Result<(), DadrError> {
-    append_task_run_log(
-        &run.run_dir,
-        "Checking local ACP agent access to installed `dadr` skill.",
-    )?;
-    let output = run_acp_prompt_json_with_events(
-        local_agent,
-        project.cwd.clone().into_std_path_buf(),
-        dadr_skill_preflight_prompt(&task.manifest.id),
-        AcpPromptOptions {
-            permission_policy,
-            enable_dadrock_mcp,
-            dadrock_mcp_access: task_mcp_access(task),
-            ..AcpPromptOptions::default()
-        },
-        events,
-    )?;
-    validate_dadr_skill_preflight_output(&output, &task.manifest.id)?;
-    let evidence = output
-        .get("evidence")
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .unwrap_or("agent confirmed access");
-    append_task_run_log(
-        &run.run_dir,
-        format!("Local ACP agent confirmed installed `dadr` skill access: {evidence}"),
-    )?;
-    Ok(())
-}
-
-fn dadr_skill_preflight_prompt(task_id: &str) -> String {
-    format!(
-        r#"dadrock task skill preflight.
-
-Load your installed skill named `dadr`. Confirm that you can access the DADR task guide for task id `{task_id}`.
-
-Return exactly one JSON object and no markdown fence or prose outside it:
-{{
-  "ok": true,
-  "skill_name": "dadr",
-  "task_guide": "tasks/{task_id}.md",
-  "evidence": "short evidence from the loaded skill, such as the guide heading or routing entry",
-  "message": "ready"
-}}
-
-If you cannot access an installed `dadr` skill, return:
-{{
-  "ok": false,
-  "skill_name": null,
-  "task_guide": null,
-  "evidence": "",
-  "message": "dadr skill is not installed or not available to this ACP agent"
-}}
-"#
-    )
-}
-
-fn validate_dadr_skill_preflight_output(output: &Value, task_id: &str) -> Result<(), DadrError> {
-    match output.get("ok").and_then(Value::as_bool) {
-        Some(true) => {
-            let evidence = output
-                .get("evidence")
-                .and_then(Value::as_str)
-                .map(str::trim)
-                .unwrap_or_default();
-            if evidence.is_empty() {
-                return Err(DadrError::Acp(format!(
-                    "local ACP agent claimed access to the installed `dadr` skill for task `{task_id}` but returned no evidence"
-                )));
-            }
-            Ok(())
-        }
-        Some(false) => {
-            let message = output
-                .get("message")
-                .and_then(Value::as_str)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .unwrap_or("dadr skill is not installed or not available to this ACP agent");
-            Err(DadrError::Acp(format!(
-                "local ACP agent cannot access the installed `dadr` skill required for task `{task_id}`: {message}"
-            )))
-        }
-        None => Err(DadrError::Acp(format!(
-            "local ACP agent did not return a valid `dadr` skill preflight result for task `{task_id}`"
-        ))),
-    }
 }
 
 fn resolve_task(project: &ProjectContext, task_id: &str) -> Result<TaskPackage, DadrError> {
@@ -873,12 +761,4 @@ fn task_run_log_sink(run_dir: camino::Utf8PathBuf) -> AcpPromptEventSink {
             }
         }
     })
-}
-
-fn task_mcp_access(task: &TaskPackage) -> crate::mcp::DadrockMcpAccess {
-    if task.manifest.id == "context-to-record" {
-        crate::mcp::DadrockMcpAccess::ReadOnly
-    } else {
-        AcpPromptOptions::default().dadrock_mcp_access
-    }
 }

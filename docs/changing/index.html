@@ -1,0 +1,1197 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+      
+      
+      
+        <link rel="canonical" href="https://vincentarelbundock.github.io/dadr/changing/">
+      
+      
+        <link rel="prev" href="../core/">
+      
+      
+        <link rel="next" href="../layout/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/dadr_logo.svg">
+      <meta name="generator" content="zensical-0.0.40">
+    
+    
+      
+        <title>Changing decisions - DADR</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.fba56155.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+  
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Serif+4:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Source Serif 4";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+    
+      <link rel="stylesheet" href="../stylesheets/home.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  
+    
+  
+  
+  
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="DADR">
+  <meta property="og:title" content="Changing decisions - DADR">
+  <meta property="og:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  
+    <meta property="og:url" content="https://vincentarelbundock.github.io/dadr/changing/">
+  
+  <meta property="og:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="DADR — Data Analysis Decision Records">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Changing decisions - DADR">
+  <meta name="twitter:description" content="Data Analysis Decision Records: a file-first format for capturing the choices behind an empirical analysis.">
+  <meta name="twitter:image" content="https://vincentarelbundock.github.io/dadr/assets/social-card.png">
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="red">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changing-decisions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      <header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="./.." title="DADR" class="md-header__button md-logo" aria-label="DADR" data-md-component="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+     stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+     viewBox="0 0 24 24" role="img" aria-label="Home"
+     style="height:1.2rem;width:1.2rem">
+  <title>Home</title>
+  <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+  <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+</svg>
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    
+    
+    <nav class="dadr-header-nav" aria-label="Primary">
+      
+        <a href="../core/" class="dadr-header-nav__link dadr-header-nav__link--active" aria-current="page">Documentation</a>
+      
+        <a href="../dadrock/" class="dadr-header-nav__link">Software</a>
+      
+    </nav>
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/vincentarelbundock/dadr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vincentarelbundock/dadr
+  </div>
+</a>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DADR" class="md-nav__button md-logo" aria-label="DADR" data-md-component="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor"
+     stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+     viewBox="0 0 24 24" role="img" aria-label="Home"
+     style="height:1.2rem;width:1.2rem">
+  <title>Home</title>
+  <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+  <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+</svg>
+    </a>
+    DADR
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/vincentarelbundock/dadr" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vincentarelbundock/dadr
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Making decisions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Changing decisions
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Changing decisions
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#correcting-a-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Correcting a record
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drafting-a-successor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Drafting a successor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accepting-a-successor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Accepting a successor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stale-successors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stale successors
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#history" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        History
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="History">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#text-edits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Text edits
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Checking changes
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Checking changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-continuous-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In continuous integration
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-pre-commit-hook" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In a pre-commit hook
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project layout
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../specification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Specification
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tags
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  DADRock
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  DADRock
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web interface
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Standalone app
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/editors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Editors
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dadrock/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../llms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  LLM agents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uuidv7/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  UUID v7
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Roadmap
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#correcting-a-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Correcting a record
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#drafting-a-successor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Drafting a successor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accepting-a-successor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Accepting a successor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stale-successors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Stale successors
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#history" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        History
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="History">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#text-edits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Text edits
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#checking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Checking changes
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Checking changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-continuous-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In continuous integration
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-a-pre-commit-hook" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        In a pre-commit hook
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="changing-decisions">Changing decisions<a class="headerlink" href="#changing-decisions" title="Permanent link">&para;</a></h1>
+<p>Once approved, a decision's substantive content is preserved. Corrections that leave the meaning intact, such as fixed spelling, formatting, links, or citations, are made in the record itself. Changing the decision, however slightly, means accepting a successor that supersedes the original.</p>
+<p>The original remains accepted, and its <code>successors</code> field names the records that supersede it. “Superseded” describes an accepted record with successors, not a fourth stored status. DADRock keeps superseded records in its <a href="../layout/">archive</a>, next to rejected ones, and offers a superseded filter for convenience. The web interface's Ledger lists the decisions in force; <strong>Show archived</strong> adds the rejected and superseded records.</p>
+<h2 id="correcting-a-record">Correcting a record<a class="headerlink" href="#correcting-a-record" title="Permanent link">&para;</a></h2>
+<p>To correct a decided record, edit it. In the <a href="../dadrock/web/">web interface</a> or the <a href="../dadrock/app/">standalone app</a>, <strong>Edit</strong> opens the record's Markdown in place, on every record; on a decided record, a note above the editor says the edit is for corrections. You can also open the file in your usual <a href="../dadrock/editors/">editor</a>. The record keeps its ID and stays in its folder. When you save from the web interface, DADRock refuses to change the <code>id</code>, <code>status</code>, or <code>successors</code> of an accepted, superseded, or rejected record, and an accepted record must keep its four required sections; the title, body, tags, and front-matter keys outside DADR can change.</p>
+<p>Whether an edit corrects a record or changes the decision is a judgment no rule can make (<a href="../specification/#immutability">specification §6.3</a>), so DADRock makes every edit visible instead of forbidding it. The record's <a href="#history">history</a> lists the edits Git recorded to its title and body since it was accepted or rejected, including changes not committed yet, and <a href="#checking-changes"><code>dadrock validate changes</code></a> reports them with their diffs.</p>
+<p>Agents never edit decided text. The <code>edit-record</code> agent task revises candidates only; for a decision in force, <strong>Revise with agent</strong> and <strong>Fix with agent</strong> draft a successor instead, and archived records offer no agent fix.</p>
+<h2 id="drafting-a-successor">Drafting a successor<a class="headerlink" href="#drafting-a-successor" title="Permanent link">&para;</a></h2>
+<p>To change what was decided, draft a successor: a new candidate that supersedes the old record, its predecessor. The predecessor stays in force until you accept the successor.</p>
+<ul>
+<li><strong>Supersede</strong> on a record in the Ledger opens a full-page successor draft on the Draft page. It starts from the record's exact title, tags, and body and asks "Why does this decision change?"; the reason is optional. Attach more decisions in force to supersede them together with one successor (a merge); the draft then starts from every predecessor's sections. Saving creates the successor candidate and opens it in the Inbox. <strong>Supersede with existing decisions instead</strong> links an accepted record to successors that already exist.</li>
+<li><strong>Revise with agent</strong> on the record, or the <code>supersede-record</code> <a href="../llms/#custom-workflows-and-runs">task</a>, asks a local agent to draft the successor. The task takes one or more accepted records and the change you want. The agent starts from the predecessor's exact text and changes only what the request requires, so the successor reads as a small diff; for several predecessors it combines them into one decision. It returns the reason separately, and DADRock writes it into <code>## Supersedes</code> when you save the proposal as a candidate.</li>
+<li>You can also write the candidate yourself.</li>
+</ul>
+<p>The successor names its predecessors in a <code>## Supersedes</code> section, optionally followed by the reason for the change:</p>
+<div class="language-markdown highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gu">## Supersedes</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>[[01938c20-a3b4-7000-8000-111122223333|Winsorize income at p99]]
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Winsorizing at p99 still left implausible incomes in two waves.
+</span></code></pre></div>
+<p>The section starts with one or more lines, each exactly one record link by full UUID, <code>[[uuid]]</code> or <code>[[uuid|label]]</code>. The text after the links, if any, is the reason, in ordinary Markdown. A record has at most one <code>## Supersedes</code> section, and a section without a link is an error. When DADRock writes the section, from the web interface, a <code>supersede-record</code> result, or <a href="../llms/#mcp">MCP</a>, it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links.</p>
+<h2 id="accepting-a-successor">Accepting a successor<a class="headerlink" href="#accepting-a-successor" title="Permanent link">&para;</a></h2>
+<p>In the Inbox, a successor candidate opens on a <strong>Changes</strong> tab: the reason from its <code>## Supersedes</code> section, then the difference from its predecessor, with a changed title, the tags added and removed, and a line diff of the body without <code>## Supersedes</code>. The <strong>Document</strong> tab shows the record itself. A successor of several decisions opens on a section view, Decision first, with each predecessor's text followed by the new text; <strong>Compare with</strong> switches to a line diff against one predecessor.</p>
+<p>Accepting a successor adds its <code>id</code> to each predecessor's <code>successors</code> and moves each predecessor to <code>dadr/archive/</code> with its body unchanged. The <code>## Supersedes</code> section stays in the successor's body as the record of why the decision changed. It is a DADRock convention, not an additional required section of the DADR format. A superseded record says where the decision went ("Superseded by …", linking the decisions now in force); it keeps <strong>Edit</strong> but has no <strong>Supersede</strong> or <strong>Revise with agent</strong>.</p>
+<ul>
+<li><strong>One-to-one:</strong> the successor names one predecessor.</li>
+<li><strong>Merge:</strong> one successor names several predecessors, and each gains the successor's <code>id</code>.</li>
+<li><strong>Split:</strong> several successors name the same predecessor. Accept them together so that the predecessor gains all of their ids at once.</li>
+</ul>
+<p>The Inbox shows candidates that supersede the same decision as one item, "Split “X” into 2 decisions", with each candidate's reason and diff. Select the ones that belong together and choose <strong>Accept selected</strong>: all of them to split the decision, or one of them to choose between competing alternatives. Reject the others one by one. From a terminal, accept them together with <code>--with</code>:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dadrock<span class="w"> </span>accept<span class="w"> </span><span class="s2">&quot;Impute income&quot;</span><span class="w"> </span>--with<span class="w"> </span><span class="s2">&quot;Complete cases for the outcome&quot;</span>
+</span></code></pre></div>
+<p><code>--with</code> repeats, and the positional words still join into one query. In general, accepting a set of candidates adds, for each predecessor named in the set, every candidate in the set that names it. Candidates without <code>## Supersedes</code> are simply accepted.</p>
+<p>DADRock checks the whole set before writing anything: every candidate must meet the acceptance requirements, and every named predecessor must exist, be accepted, not already be superseded, and not be in the set. A predecessor that is already superseded is refused with the names of its current successors. If a write fails partway, every record is restored.</p>
+<p>For two records that are already accepted, <code>dadrock supersede --from OLD --to NEW</code> links them explicitly and moves <code>OLD</code> to <code>dadr/archive/</code>. Records linked this way have no <code>## Supersedes</code> section, so no reason is recorded.</p>
+<h2 id="stale-successors">Stale successors<a class="headerlink" href="#stale-successors" title="Permanent link">&para;</a></h2>
+<p>Two candidates that name the same predecessor may be the halves of a split or competing alternatives; you decide by what you accept together. Once one of them is accepted alone, the other is stale: its predecessor was superseded after it was drafted, like a branch whose base has moved. <code>dadrock validate</code> warns about a stale candidate (<code>stale_supersedes</code>) and names the decisions now in force, and acceptance refuses it. Point its <code>## Supersedes</code> link at the current decision, or reject it.</p>
+<p>DADRock never retargets a link on its own. In the Inbox, a stale successor shows a warning that names the decisions now in force, and <strong>Accept</strong> waits until you choose <strong>Retarget</strong>, which points the link in <code>## Supersedes</code> at the current decision (you pick one when there are several), saves the candidate, and shows the diff against it.</p>
+<p>Validation also warns when an accepted record's <code>## Supersedes</code> section names a predecessor that does not list it in <code>successors</code> (<code>unlinked_supersedes</code>), for example after a record was accepted by hand.</p>
+<h2 id="history">History<a class="headerlink" href="#history" title="Permanent link">&para;</a></h2>
+<p>A decision's history is its chain of versions, linked by supersession, plus the corrections made to each version. DADRock derives the versions from <code>successors</code> alone, so they need no extra front matter and no Git. Corrections stay in the record itself, and DADRock reads them from Git.</p>
+<p>In the web interface, a record's <strong>History</strong> tab shows the decision's versions newest first, the opened one highlighted and the current ones labeled. Lanes join where a decision was split and fork where several were merged. Each change shows its reason and, on request, its diff. Records at the other end of a split or merge appear on one line ("Also became …", "Merged with …") and link to their own history. Under each version, "Edited 2 times since accepted" lists its <a href="#text-edits">text edits</a> newest first: the date, the author, and the commit subject, each with its diff. An edit that is not committed yet comes first, marked "Not committed yet". A record whose text changed after acceptance shows "Edited since acceptance" ("Edited since rejection" for a rejected record) next to its file name, which opens the History tab. Outside a Git repository, History shows the versions without edits.</p>
+<p>From a terminal:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dadrock<span class="w"> </span><span class="nb">history</span><span class="w"> </span>QUERY<span class="w">            </span><span class="c1"># versions as a graph, newest first</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>dadrock<span class="w"> </span><span class="nb">history</span><span class="w"> </span>QUERY<span class="w"> </span>--patch<span class="w">    </span><span class="c1"># with the diff of each change and each text edit</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>dadrock<span class="w"> </span><span class="nb">history</span><span class="w"> </span>QUERY<span class="w"> </span>--json
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>dadrock<span class="w"> </span>diff<span class="w"> </span>OLD<span class="w"> </span>NEW<span class="w">             </span><span class="c1"># compare any two records</span>
+</span></code></pre></div>
+<p><code>QUERY</code> is any version: a full id, an id prefix, a filename, or a title. The history of a record contains:</p>
+<ul>
+<li><strong>versions</strong>: the record, its predecessors back to the first version, and its successors forward to the current ones;</li>
+<li><strong>current versions</strong>: the versions without successors;</li>
+<li><strong>links</strong>: each supersession between two records, with its reason, the text after the links in the successor's <code>## Supersedes</code> section. Records linked with <code>dadrock supersede</code> alone have no reason;</li>
+<li><strong>neighbors</strong>: records at the other end of a link that are not versions, listed on one line without their own history;</li>
+<li><strong>text edits</strong>: for each version, the edits Git recorded to its title or body since the version was accepted or rejected, newest first.</li>
+</ul>
+<p>Versions are listed newest first, and a record always appears above its predecessors, even when it was created earlier. <code>◉</code> marks the record you asked for. A decision superseded by several records is a split; several decisions superseded by one record are a merge:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>●   0193b2a1d117  Multiple imputation for income  current
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>│ ● 0193b2a1c0f4  Complete cases for the outcome  current
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>├─╯ Outcome and covariates need different treatment.
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>●   01938c20a3b4  Listwise deletion
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>│   Complete cases lose a third of the sample.
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>◉   01938a77e310  Pairwise deletion
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>◉   0193c4e1a2b0  One outlier rule for all covariates  current
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>├─╮ The two rules disagreed at the 99th percentile.
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>● │ 0193a0b7e911  Winsorize income at p99
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>│ ● 01939f2c4d07  Drop implausible ages
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>●   01938f11aa02  Trim income at p95
+</span></code></pre></div>
+<p>The history from one half of a split shows the other half as a neighbor ("also became …"), and the history from one input of a merge shows the other input as a neighbor ("merged with …").</p>
+<p>Diffs compare the title, the tags, and the body without <code>## Supersedes</code>, after normalizing line endings; other front matter is not compared. <code>--patch</code> prints each link's diff under it: the title change, the tag changes (<code>+topic/missing-data −topic/attrition</code>), and the changed lines with a few lines of context. <code>dadrock diff OLD NEW</code> prints the same comparison for any two records, linked or not. Diffs are computed when shown and never stored.</p>
+<p>The history ignores successor ids that match no record and stops at cycles, with a warning; <code>dadrock validate</code> reports both. The local web server serves the same JSON at <code>/api/records/{id}/history</code> (<code>?patch=1</code> for diffs) and <code>/api/records/{id}/diff?against={other}</code>, which compares <code>{other}</code> to <code>{id}</code>.</p>
+<h3 id="text-edits">Text edits<a class="headerlink" href="#text-edits" title="Permanent link">&para;</a></h3>
+<p>A correction that leaves the meaning intact, such as a fixed typo, link, or citation, is made in the record itself and keeps its <code>id</code> (<a href="../specification/#immutability">specification §6.3</a>). DADRock never copies these edits into records. It reads them from Git with <code>git log --follow</code> on the version's file, which follows the moves between <code>inbox/</code>, <code>ledger/</code>, and <code>archive/</code>:</p>
+<ul>
+<li>The baseline is the earliest commit in which the record is accepted or rejected. Edits made while it was a candidate are not listed.</li>
+<li>Every later commit whose title or body (without <code>## Supersedes</code>, line endings aside) differs from the previous commit's is an edit. A commit that changes only tags, <code>successors</code>, or the folder is not.</li>
+<li>A change not committed yet, the working tree against <code>HEAD</code>, is listed first.</li>
+</ul>
+<p>A version with edits gets one line under it in the graph, and <code>--patch</code> adds each edit's diff under a header with the commit's short hash and subject:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>◉   01938c20a3b4  Winsorize income at p99  current
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    edited 2 times since accepted (latest 2026-10-01, Alice)
+</span></code></pre></div>
+<p>In JSON, each version has <code>edits</code>, newest first. Each edit is <code>{commit, short_commit, author, date, subject, title_changed, body_changed}</code>, plus <code>diff</code> with <code>--patch</code>; <code>date</code> is the author date in ISO 8601, and the commit fields are <code>null</code> for an edit not committed yet. Candidates have no edits (<code>[]</code>). Outside a Git repository, or without <code>git</code>, <code>edits</code> is <code>null</code> and the rest of the history is unchanged.</p>
+<p>Listing the edits does not judge them. Whether an edit is a correction or a change of decision is the reviewer's call; to change the decision, supersede the record instead.</p>
+<h2 id="checking-changes">Checking changes<a class="headerlink" href="#checking-changes" title="Permanent link">&para;</a></h2>
+<p>Once a record is accepted or rejected, its <code>id</code> and <code>status</code> do not change, and entries are not removed from its <code>successors</code>. Its title and body take corrections that leave the meaning intact; changing the decision means superseding the record (<a href="../specification/#immutability">specification §6.3</a>). <code>dadrock validate changes</code> checks the first rule against Git and shows every title and body edit, so a reviewer can judge the second:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>changes<span class="w">                      </span><span class="c1"># working tree against HEAD</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>changes<span class="w"> </span>--staged<span class="w">             </span><span class="c1"># staged changes against HEAD</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>changes<span class="w"> </span>--base<span class="w"> </span>origin/main<span class="w">   </span><span class="c1"># everything since another revision</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>changes<span class="w"> </span>--strict<span class="w">             </span><span class="c1"># title and body edits are errors too</span>
+</span></code></pre></div>
+<p>For each record file in <code>dadr/inbox/</code>, <code>dadr/ledger/</code>, or <code>dadr/archive/</code> that changed since the base revision, DADRock reads the file's version at the base. If that version was accepted or rejected, DADRock compares the current version with it. A record that moved between folders, by being accepted, rejected, or superseded, is followed through Git's rename detection or by its <code>id</code>.</p>
+<ul>
+<li><strong>Errors:</strong> a changed <code>id</code> (<code>record_id_changed</code>) or <code>status</code> (<code>record_status_changed</code>), a removed <code>successors</code> entry (<code>successor_removed</code>), or a file that no longer parses (<code>invalid_record</code>). The message names the record and suggests <a href="#drafting-a-successor">drafting a successor</a> instead.</li>
+<li><strong>Warnings, with the diff:</strong> an edited title (<code>record_title_edited</code>) or body (<code>record_body_edited</code>; line endings aside). The message names the record and says to supersede it instead if the edit changes the decision. The text output prints the diff under the warning: the old and new title, or the changed body lines with a few lines of context. In JSON, the issue's <code>diff</code> carries the same change: <code>title</code> with <code>old</code> and <code>new</code>, or the body's <code>lines</code>, each <code>{kind, text}</code> with <code>kind</code> one of <code>context</code>, <code>added</code>, or <code>removed</code>.</li>
+<li>Deleting an accepted or rejected record is a warning (<code>record_deleted</code>).</li>
+</ul>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>dadrock validate changes: 0 error(s), 1 warning(s) (working tree against HEAD (5309d425ba44))
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>[warning] record_body_edited /home/me/analysis/dadr/ledger/winsorize-income-at-p99.md: the body of accepted record `Winsorize income at p99` (01938c20a3b4) was edited since HEAD. If this changes the decision, supersede the record instead.
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>      ## Consequences
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    - Estimates are less sensitive to outliers.
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    + Estimates are much less sensitive to outliers.
+</span></code></pre></div>
+<p><code>tags</code>, keys outside DADR, and new <code>successors</code> entries change freely, and so do candidates. New files have no earlier version to compare, and a repository without commits passes. Warnings alone exit with status zero. With <code>--strict</code>, title and body edits are errors too, for projects that want accepted text frozen; there is no project setting, so pass the flag wherever the check runs. Outside a Git repository, or when the base revision does not resolve, the command fails. Ordinary <code>dadrock validate</code> does not use Git.</p>
+<h3 id="in-continuous-integration">In continuous integration<a class="headerlink" href="#in-continuous-integration" title="Permanent link">&para;</a></h3>
+<p>To review what a pull request changes in accepted and rejected records, compare it with its target branch. The checkout needs that branch's history:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>git<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>main
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>dadrock<span class="w"> </span>validate
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>changes<span class="w"> </span>--base<span class="w"> </span>origin/main
+</span></code></pre></div>
+<p>A changed <code>id</code> or <code>status</code>, or a removed successor, fails the check. Title and body edits appear in the CI log as warnings with their diffs, so a reviewer can tell a correction from a change of decision. A project that wants accepted text frozen adds <code>--strict</code>, which fails the check on those edits too:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>dadrock<span class="w"> </span>validate<span class="w"> </span>changes<span class="w"> </span>--base<span class="w"> </span>origin/main<span class="w"> </span>--strict
+</span></code></pre></div>
+<p><code>--base origin/main</code> compares with the tip of <code>main</code>. That is right when the checkout already includes <code>main</code>, such as the merge commit many CI services check out for a pull request. For a branch that <code>main</code> has moved past, compare with the point where the branch started: <code>--base "$(git merge-base origin/main HEAD)"</code>. A CLI-only CI build can use the <a href="../dadrock/#without-the-web-interface"><code>no-js-build</code> feature</a>.</p>
+<h3 id="in-a-pre-commit-hook">In a pre-commit hook<a class="headerlink" href="#in-a-pre-commit-hook" title="Permanent link">&para;</a></h3>
+<p>To catch changes before they are committed, run the check on the staged changes in a pre-commit hook, <code>.git/hooks/pre-commit</code>, made executable:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="ch">#!/bin/sh</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">exec</span><span class="w"> </span>dadrock<span class="w"> </span>validate<span class="w"> </span>changes<span class="w"> </span>--staged
+</span></code></pre></div>
+<p>The hook blocks a commit only on errors; title and body edits print as warnings. Add <code>--strict</code> to block those edits too. Git runs hooks from the repository root. If the project lives in a subdirectory, such as <code>analysis/dadr/</code>, change into that subdirectory first: <code>cd analysis &amp;&amp; exec dadrock validate changes --staged</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../core/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Making decisions">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Making decisions
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../layout/" class="md-footer__link md-footer__link--next" aria-label="Next: Project layout">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Project layout
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.copy","navigation.footer","navigation.expand","toc.follow"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.dbc0afdc.min.js"></script>
+      
+    
+  </body>
+</html>
