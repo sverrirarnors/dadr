@@ -9,7 +9,7 @@ const CONFLICT = /Lazy frames and IPC snapshots overlap/;
 
 // Matches issueItemId('Links', <broken_markdown_link diagnostic>) in src/lib/inbox/items.ts.
 const BROKEN_LINK_ISSUE_ID =
-  'issue:Links:broken_markdown_link:dadr/archive/0001-use-polars.md:' +
+  'issue:Links:broken_markdown_link:dadr/archive/use-polars.md:' +
   `${POLARS_ID}:./missing-note.md:12:A local Markdown link points at a missing note.`;
 
 function group(page: Page, id: string) {

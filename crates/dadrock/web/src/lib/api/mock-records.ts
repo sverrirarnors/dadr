@@ -50,7 +50,10 @@ export interface MockRecord {
   body: string;
   /** Front matter lines for keys outside DADR. */
   extra: string[];
-  /** File name; the folder follows the lifecycle. */
+  /**
+   * File name; the folder follows the lifecycle. Like Dadrock, a new record is
+   * named after its title and keeps the name when it changes folders.
+   */
   file: string;
   timestamp_ms: number;
   /** The source exactly as last saved, until the lifecycle rewrites the file. */
@@ -100,7 +103,7 @@ function seed(
     successors: (options.successors ?? []).map(mockId),
     body: `\n${body}`,
     extra: [],
-    file: options.file ?? `${String(suffix).padStart(4, '0')}-${slugify(title)}.md`,
+    file: options.file ?? `${slugify(title)}.md`,
     timestamp_ms: options.timestamp ?? 1730000000000 + suffix * 1000,
     head: status === 'candidate' ? undefined : { title, body: `\n${options.head ?? body}` },
     log: options.log ?? [],
@@ -112,12 +115,12 @@ function defaultRecords(): MockRecord[] {
     seed(1, 'Use Polars over pandas', 'accepted', 'Use Polars for tabular transformations.\n', {
       tags: ['#dadr/data/processing'],
       successors: [3],
-      file: '0001-use-polars.md',
+      file: 'use-polars.md',
       timestamp: 1730000000000,
     }),
     seed(2, 'Adopt pre-registration for studies', 'candidate', 'Candidate decision for pre-registration practice.\n', {
       tags: ['#dadr/methodology'],
-      file: '0002-preregister.md',
+      file: 'preregister.md',
       timestamp: 1730000100000,
     }),
     seed(
@@ -125,14 +128,14 @@ function defaultRecords(): MockRecord[] {
       'Use Polars lazy frames',
       'accepted',
       'Use lazy frames for transformations that can benefit from deferred execution.\n',
-      { tags: ['#dadr/data/processing'], file: '0003-use-polars-lazy.md', timestamp: 1730000200000 },
+      { tags: ['#dadr/data/processing'], file: 'use-polars-lazy.md', timestamp: 1730000200000 },
     ),
     seed(4, 'Use Arrow IPC snapshots', 'accepted', sections(
       'Intermediate data moves between the cleaning and modeling steps.',
       'Use Arrow IPC snapshots for portable intermediate data.',
       'Write CSV files between steps.',
       'Snapshots keep column types and load quickly.',
-    ), { tags: ['#dadr/data/processing'], file: '0004-use-arrow-ipc.md', timestamp: 1730000300000 }),
+    ), { tags: ['#dadr/data/processing'], file: 'use-arrow-ipc.md', timestamp: 1730000300000 }),
   ];
 }
 
@@ -265,15 +268,24 @@ export function scenarioRecords(scenario: MockScenario): MockRecord[] {
   return scenario === 'history' ? historyRecords() : defaultRecords();
 }
 
+/** A title as Dadrock slugs it for a file name: lowercase ASCII letters and digits joined by hyphens. */
 export function slugify(title: string): string {
   return (
     title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 48) || 'candidate'
+      .replace(/^-+/, '')
+      .slice(0, 80)
+      .replace(/-+$/, '') || 'untitled'
   );
 }
+
+/** The first 12 hex digits of an id. */
+export function shortId(id: string): string {
+  return id.replaceAll('-', '').slice(0, 12);
+}
+
+type Folder = 'inbox' | 'ledger' | 'archive';
 
 /** An in-memory project with Dadrock's lifecycle rules. */
 export class MockRecordStore {
@@ -315,10 +327,53 @@ export class MockRecordStore {
     return this.records.filter((other) => other.successors.includes(record.id));
   }
 
+  folder(record: MockRecord): Folder {
+    if (record.status === 'candidate') return 'inbox';
+    return record.status === 'accepted' && !this.isSuperseded(record) ? 'ledger' : 'archive';
+  }
+
   path(record: MockRecord): string {
-    const folder =
-      record.status === 'candidate' ? 'inbox' : record.status === 'accepted' && !this.isSuperseded(record) ? 'ledger' : 'archive';
-    return `dadr/${folder}/${record.file}`;
+    return `dadr/${this.folder(record)}/${record.file}`;
+  }
+
+  /** A new candidate's file name: its slug, or the slug and short id when the inbox already has that name. */
+  newFile(id: string, title: string): string {
+    const slug = slugify(title);
+    const taken = (file: string) => this.records.some((record) => this.folder(record) === 'inbox' && record.file === file);
+    const file = [`${slug}.md`, `${slug}-${shortId(id)}.md`].find((name) => !taken(name));
+    if (!file) throw new Error(`refusing to overwrite existing path \`dadr/inbox/${slug}-${shortId(id)}.md\``);
+    return file;
+  }
+
+  /**
+   * Apply a lifecycle change to `moving` records, which keep their file
+   * names in their new folders, like Dadrock. A record whose name its new
+   * folder already holds takes its short id as a suffix; a name that another
+   * record leaves in the same change is free. On a collision nothing changes.
+   */
+  relocate(moving: MockRecord[], change: () => void): void {
+    const saved = this.records.map((record) => ({ ...record, successors: [...record.successors] }));
+    change();
+    const placed = this.records.filter((record) => !moving.includes(record));
+    const holds = (folder: Folder, file: string) =>
+      placed.some((other) => this.folder(other) === folder && other.file === file);
+    const files = new Map<MockRecord, string>();
+    for (const record of moving) {
+      const folder = this.folder(record);
+      let file = record.file;
+      if (holds(folder, file)) {
+        const stem = file.replace(/\.md$/, '');
+        const suffix = `-${shortId(record.id)}`;
+        file = `${stem}${suffix}.md`;
+        if (stem.endsWith(suffix) || holds(folder, file)) {
+          this.records.forEach((other, index) => Object.assign(other, saved[index]));
+          throw new Error(`refusing to overwrite existing path \`dadr/${folder}/${file}\``);
+        }
+      }
+      files.set(record, file);
+      placed.push({ ...record, file });
+    }
+    for (const [record, file] of files) record.file = file;
   }
 
   summary(record: MockRecord): RecordSummary {
@@ -471,28 +526,42 @@ export class MockRecordStore {
         edges.set(predecessor, [...(edges.get(predecessor) ?? []), candidate]);
       }
     }
-    for (const [predecessor, successors] of edges) {
-      predecessor.successors.push(...successors.map((successor) => successor.id));
-      predecessor.raw = undefined;
-    }
-    for (const candidate of set) {
-      candidate.status = 'accepted';
-      candidate.raw = undefined;
-      // As if the acceptance were committed: later edits show as text edits.
-      candidate.head = { title: candidate.title, body: candidate.body };
-      candidate.log = [];
-    }
+    this.relocate([...set, ...edges.keys()], () => {
+      for (const [predecessor, successors] of edges) {
+        predecessor.successors.push(...successors.map((successor) => successor.id));
+        predecessor.raw = undefined;
+      }
+      for (const candidate of set) {
+        candidate.status = 'accepted';
+        candidate.raw = undefined;
+        // As if the acceptance were committed: later edits show as text edits.
+        candidate.head = { title: candidate.title, body: candidate.body };
+        candidate.log = [];
+      }
+    });
     return set;
   }
 
   reject(query: string): MockRecord {
     const record = this.get(query);
     if (record.status !== 'candidate') throw new Error(`\`${record.title}\` is not a candidate`);
-    record.status = 'rejected';
-    record.raw = undefined;
-    record.head = { title: record.title, body: record.body };
-    record.log = [];
+    this.relocate([record], () => {
+      record.status = 'rejected';
+      record.raw = undefined;
+      record.head = { title: record.title, body: record.body };
+      record.log = [];
+    });
     return record;
+  }
+
+  /** Link accepted records as successors of `old`, which moves to the archive. */
+  supersede(old: MockRecord, successors: MockRecord[]): void {
+    this.relocate([old], () => {
+      for (const successor of successors) {
+        if (!old.successors.includes(successor.id)) old.successors.push(successor.id);
+      }
+      old.raw = undefined;
+    });
   }
 
   /**

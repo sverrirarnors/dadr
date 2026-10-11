@@ -99,7 +99,7 @@ test('selecting a row shows the record and its history', async ({ page }) => {
 
   await expect(page).toHaveURL(new RegExp(`/ledger\\?archived=1&id=${lazyFramesId}$`));
   await expect(detail(page).getByRole('heading', { name: 'Use Polars lazy frames' }).first()).toBeVisible();
-  await expect(detail(page).getByText('0003-use-polars-lazy.md')).toBeVisible();
+  await expect(detail(page).getByText('use-polars-lazy.md')).toBeVisible();
   await expect(detail(page).getByRole('link', { name: '#dadr/data/processing' })).toHaveAttribute(
     'href',
     '/ledger?tag=%23dadr%2Fdata%2Fprocessing',
@@ -122,7 +122,7 @@ test('selecting a row shows the record and its history', async ({ page }) => {
 
   await expect(page).toHaveURL(new RegExp(`/ledger\\?archived=1&id=${supersededId}$`));
   await expect(detail(page).getByRole('heading', { name: 'Use Polars over pandas' }).first()).toBeVisible();
-  await expect(detail(page).getByText('0001-use-polars.md')).toBeVisible();
+  await expect(detail(page).getByText('use-polars.md')).toBeVisible();
   const supersededBy = detail(page).locator('[data-record-superseded-by]');
   await expect(supersededBy).toContainText('Superseded by');
   await expect(supersededBy.getByRole('link', { name: '“Use Polars lazy frames”' })).toHaveAttribute(

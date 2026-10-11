@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MockApi, resetMockProject } from '../../src/lib/api/mock';
-import { mockId } from '../../src/lib/api/mock-records';
+import { mockId, shortId } from '../../src/lib/api/mock-records';
 import { supersedesSection } from '../../src/lib/records/supersedes';
 
 const api = new MockApi();
@@ -103,6 +103,48 @@ describe('mock lifecycle', () => {
     await expect(
       api.createCandidate({ title: 'x', tags: [], body_markdown: sections, supersedes: PANDAS }),
     ).rejects.toThrow(/already superseded/);
+  });
+});
+
+describe('mock file names', () => {
+  const pathOf = async (id: string) => (await api.getRecordSource(id)).path;
+  const SHORT = shortId(OUTLIERS);
+
+  it('names records after their titles and adds the short id only on a collision', async () => {
+    const first = await api.createCandidate({ title: 'Report the sample size!', tags: [], body_markdown: sections });
+    const second = await api.createCandidate({ title: 'Report the sample size', tags: [], body_markdown: sections });
+    expect(first.changed_paths).toEqual(['dadr/inbox/report-the-sample-size.md']);
+    expect(second.changed_paths).toEqual([`dadr/inbox/report-the-sample-size-${SHORT}.md`]);
+    await expect(
+      api.createCandidate({ title: 'Report the sample size', tags: [], body_markdown: sections }),
+    ).rejects.toThrow(/refusing to overwrite/);
+  });
+
+  it('keeps file names across folders; a successor takes the name its predecessor leaves', async () => {
+    expect(await pathOf(OUTLIERS)).toBe('dadr/ledger/outlier-rule-for-covariates.md');
+    const response = await api.createCandidate({
+      title: 'Outlier rule for covariates',
+      tags: [],
+      body_markdown: sections,
+      supersedes: [OUTLIERS],
+    });
+    const successor = response.focus?.selected_id ?? '';
+    expect(await pathOf(successor)).toBe('dadr/inbox/outlier-rule-for-covariates.md');
+
+    await api.acceptCandidate(successor);
+    expect(await pathOf(successor)).toBe('dadr/ledger/outlier-rule-for-covariates.md');
+    expect(await pathOf(OUTLIERS)).toBe('dadr/archive/outlier-rule-for-covariates.md');
+
+    await api.rejectCandidate(INCOME);
+    expect(await pathOf(INCOME)).toBe('dadr/archive/winsorize-income-at-p99.md');
+  });
+
+  it('adds the short id when the new folder already has the name', async () => {
+    const response = await api.createCandidate({ title: 'Use SAS for estimation', tags: [], body_markdown: sections });
+    const id = response.focus?.selected_id ?? '';
+    await api.rejectCandidate(id);
+    expect(await pathOf(SAS)).toBe('dadr/archive/use-sas-for-estimation.md');
+    expect(await pathOf(id)).toBe(`dadr/archive/use-sas-for-estimation-${SHORT}.md`);
   });
 });
 

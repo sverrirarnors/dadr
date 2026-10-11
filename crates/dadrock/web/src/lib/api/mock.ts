@@ -22,7 +22,7 @@ import type {
   RunTaskRequest,
   SupersedeRecordsRequest,
 } from './types';
-import { MockRecordStore, mockId, scenarioRecords, slugify, type MockRecord, type MockScenario } from './mock-records';
+import { MockRecordStore, mockId, scenarioRecords, type MockRecord, type MockScenario } from './mock-records';
 import { hasSupersedesHeading, supersedesLink } from '$lib/records/supersedes';
 
 const fixture: Snapshot = {
@@ -46,7 +46,7 @@ const fixture: Snapshot = {
         severity: 'warning',
         code: 'candidate_backlog',
         message: 'One candidate is waiting for review.',
-        path: 'dadr/inbox/0002-preregister.md',
+        path: 'dadr/inbox/preregister.md',
         record_id: '0193fb1f-a3a0-7000-8000-000000000002',
         field: 'status',
         line: null,
@@ -62,7 +62,7 @@ const fixture: Snapshot = {
         severity: 'error',
         code: 'broken_markdown_link',
         message: 'A local Markdown link points at a missing note.',
-        path: 'dadr/archive/0001-use-polars.md',
+        path: 'dadr/archive/use-polars.md',
         record_id: '0193fb1f-a3a0-7000-8000-000000000001',
         field: './missing-note.md',
         line: 12,
@@ -220,7 +220,7 @@ function newCandidateRecord(title: string, tags: string[], body: string): MockRe
     successors: [],
     body: `\n${body.trim() ? `${body.trimEnd()}\n` : ''}`,
     extra: [],
-    file: `${String(suffix).padStart(4, '0')}-${slugify(title)}.md`,
+    file: store().newFile(mockId(suffix), title),
     timestamp_ms: Date.now(),
   };
   store().records.push(record);
@@ -630,10 +630,7 @@ export class MockApi implements DadrApi {
   async supersedeRecords(request: SupersedeRecordsRequest): Promise<MutationResponse> {
     const oldRecord = store().get(request.from);
     const successors = request.to.map((recordId) => store().get(recordId));
-    for (const successor of successors) {
-      if (!oldRecord.successors.includes(successor.id)) oldRecord.successors.push(successor.id);
-    }
-    oldRecord.raw = undefined;
+    store().supersede(oldRecord, successors);
     return {
       message: 'record superseded',
       changed_paths: [store().path(oldRecord), ...successors.map((record) => store().path(record))],

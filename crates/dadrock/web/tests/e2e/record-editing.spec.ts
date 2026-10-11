@@ -69,7 +69,7 @@ test('record editor shows Cancel and a disabled Save before markdown changes', a
 test('record detail places tags below the file name and links them to the ledger', async ({ page }) => {
   await page.goto(`/ledger/${supersededId}`);
 
-  const fileName = page.getByText('0001-use-polars.md');
+  const fileName = page.getByText('use-polars.md');
   const tag = page.getByRole('link', { name: '#dadr/data/processing' });
   await expect(fileName).toBeVisible();
   await expect(tag).toBeVisible();

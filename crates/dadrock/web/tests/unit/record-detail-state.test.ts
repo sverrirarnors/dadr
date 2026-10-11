@@ -9,7 +9,7 @@ const candidate: RecordSummary = {
   title: 'Adopt pre-registration for studies',
   status: 'candidate',
   superseded: false,
-  path: 'dadr/inbox/0002-preregister.md',
+  path: 'dadr/inbox/preregister.md',
   preview: 'Candidate decision.',
   tags: ['#dadr/methodology'],
   timestamp_ms: 1730000100000,
@@ -18,7 +18,7 @@ const candidate: RecordSummary = {
 const accepted: RecordSummary = {
   ...candidate,
   status: 'accepted',
-  path: 'dadr/ledger/0002-preregister.md',
+  path: 'dadr/ledger/preregister.md',
 };
 
 describe('detailActionRecord', () => {

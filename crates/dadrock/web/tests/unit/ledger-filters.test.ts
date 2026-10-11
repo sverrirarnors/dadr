@@ -50,7 +50,7 @@ const rejected = record({
   id: '0193fb1f-a3a0-7000-8000-000000000005',
   title: 'Keep manual spreadsheet merge',
   status: 'rejected',
-  path: 'dadr/archive/0005-spreadsheet.md',
+  path: 'dadr/archive/spreadsheet.md',
   tags: ['#dadr/data'],
   timestamp_ms: 1730000400000,
 });
@@ -58,7 +58,7 @@ const candidate = record({
   id: '0193fb1f-a3a0-7000-8000-000000000002',
   title: 'Adopt pre-registration for studies',
   status: 'candidate',
-  path: 'dadr/inbox/0002-preregister.md',
+  path: 'dadr/inbox/preregister.md',
   tags: ['#dadr/methodology'],
   timestamp_ms: 1730000100000,
 });
@@ -98,7 +98,7 @@ describe('ledgerRecords', () => {
   it('matches the query against title, path, tag, and id', () => {
     const all = { archived: true, tag: null };
     expect(titles(ledgerRecords(records, { ...all, q: 'arrow' }))).toEqual(['Use Arrow IPC snapshots']);
-    expect(titles(ledgerRecords(records, { ...all, q: '0005-spreadsheet' }))).toEqual([
+    expect(titles(ledgerRecords(records, { ...all, q: 'archive/spreadsheet' }))).toEqual([
       'Keep manual spreadsheet merge',
     ]);
     expect(titles(ledgerRecords(records, { ...all, q: '#kind/sample' }))).toEqual(['Use Arrow IPC snapshots']);

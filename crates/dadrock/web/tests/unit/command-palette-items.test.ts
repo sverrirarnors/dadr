@@ -14,7 +14,7 @@ const records: RecordSummary[] = [
     title: 'Use Polars over pandas',
     status: 'accepted',
     superseded: false,
-    path: 'dadr/ledger/0001-use-polars.md',
+    path: 'dadr/ledger/use-polars.md',
     preview: 'Use Polars for tabular transforms.',
     tags: ['#dadr/data/processing'],
     timestamp_ms: 1730000000000,
@@ -56,7 +56,7 @@ describe('filterCommandPaletteItems', () => {
   it('matches records by title, path, id, and tag', () => {
     const items = buildCommandPaletteItems(records);
 
-    for (const query of ['polars', '0001-use-polars', '0193fb1f', '#dadr/data']) {
+    for (const query of ['polars', 'ledger/use-polars', '0193fb1f', '#dadr/data']) {
       expect(filterCommandPaletteItems(items, query).map((item) => item.label)).toContain(
         'Use Polars over pandas',
       );
