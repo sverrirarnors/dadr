@@ -4,7 +4,6 @@
   import Header from '$lib/components/shell/Header.svelte';
   import ToastRegion from '$lib/components/shell/ToastRegion.svelte';
   import CommandPalette from '$lib/components/shell/CommandPalette.svelte';
-  import DraftComposer from '$lib/components/draft/DraftComposer.svelte';
   import { createQueryClient } from '$lib/query';
   import { openComposerFromUrl } from '$lib/navigation/deep-links';
   import { page } from '$app/state';
@@ -57,5 +56,4 @@
   </div>
   <ToastRegion />
   <CommandPalette />
-  <DraftComposer />
 </QueryClientProvider>

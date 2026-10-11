@@ -19,8 +19,8 @@ function url(path: string) {
 }
 
 describe('primary navigation', () => {
-  it('has exactly two destinations: Inbox and Ledger', () => {
-    expect(primaryNavItems.map((item) => item.label)).toEqual(['Inbox', 'Ledger']);
+  it('has three destinations, in order: Inbox, Ledger, Draft', () => {
+    expect(primaryNavItems.map((item) => item.label)).toEqual(['Inbox', 'Ledger', 'Draft']);
     expect(homeHref).toBe('/inbox');
   });
 
@@ -28,6 +28,7 @@ describe('primary navigation', () => {
     expect(isPrimaryNavItemActive(navItem('inbox'), url('/inbox?item=candidate:x'))).toBe(true);
     expect(isPrimaryNavItemActive(navItem('ledger'), url('/ledger/0193'))).toBe(true);
     expect(isPrimaryNavItemActive(navItem('ledger'), url('/inbox'))).toBe(false);
+    expect(isPrimaryNavItemActive(navItem('draft'), url('/draft'))).toBe(true);
   });
 });
 
@@ -41,8 +42,11 @@ describe('url builders', () => {
     expect(ledgerRecordUrl('a b')).toBe('/ledger/a%20b');
   });
 
-  it('builds inbox urls with an optional selected item', () => {
+  it('builds inbox urls with an optional selected item and search', () => {
     expect(inboxUrl()).toBe('/inbox');
     expect(inboxUrl('candidate:abc')).toBe('/inbox?item=candidate%3Aabc');
+    expect(inboxUrl(null, { q: 'polars' })).toBe('/inbox?q=polars');
+    expect(inboxUrl('candidate:abc', { q: 'polars' })).toBe('/inbox?q=polars&item=candidate%3Aabc');
+    expect(inboxUrl('candidate:abc', { q: '' })).toBe('/inbox?item=candidate%3Aabc');
   });
 });

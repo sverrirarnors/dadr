@@ -10,7 +10,6 @@
     type CommandPaletteRoute,
   } from '$lib/command-palette/items';
   import { ledgerUrl } from '$lib/navigation/routes';
-  import { composer } from '$lib/stores/composer.svelte';
   import { palette } from '$lib/stores/palette.svelte';
   import { theme } from '$lib/stores/theme.svelte';
   import { toasts } from '$lib/stores/toast.svelte';
@@ -63,9 +62,6 @@
     }
 
     switch (item.action) {
-      case 'draft':
-        composer.show({ mode: 'new' });
-        break;
       case 'toggle-theme':
         theme.cycle();
         toasts.push({ severity: 'info', message: `Theme set to ${theme.current}` });

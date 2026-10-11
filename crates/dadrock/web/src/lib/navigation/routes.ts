@@ -1,10 +1,12 @@
 export const inboxHref = '/inbox' as const;
 export const ledgerHref = '/ledger' as const;
+export const draftHref = '/draft' as const;
 export const homeHref = inboxHref;
 
 export const primaryNavItems = [
   { id: 'inbox', href: inboxHref, label: 'Inbox', ariaLabel: 'Inbox' },
   { id: 'ledger', href: ledgerHref, label: 'Ledger', ariaLabel: 'Ledger' },
+  { id: 'draft', href: draftHref, label: 'Draft', ariaLabel: 'Draft' },
 ] as const;
 
 export type PrimaryNavItem = (typeof primaryNavItems)[number];
@@ -42,6 +44,14 @@ export function ledgerRecordUrl(id: string): `/ledger/${string}` {
   return `/ledger/${encodeURIComponent(id)}`;
 }
 
-export function inboxUrl(itemId?: string | null): InboxHref {
-  return itemId ? (`/inbox?item=${encodeURIComponent(itemId)}` as InboxHref) : '/inbox';
+export interface InboxQuery {
+  q?: string | null | undefined;
+}
+
+export function inboxUrl(itemId?: string | null, query: InboxQuery = {}): InboxHref {
+  const params = new URLSearchParams();
+  if (query.q) params.set('q', query.q);
+  if (itemId) params.set('item', itemId);
+  const search = params.toString();
+  return (search ? `/inbox?${search}` : '/inbox') as InboxHref;
 }

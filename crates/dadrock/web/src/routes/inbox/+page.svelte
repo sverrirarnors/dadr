@@ -9,9 +9,10 @@
   import InboxDetail from '$lib/components/inbox/InboxDetail.svelte';
   import InboxZero from '$lib/components/inbox/InboxZero.svelte';
   import InitializePrompt from '$lib/components/shell/InitializePrompt.svelte';
-  import { Alert, Badge, Button, EmptyState, ListRow } from '$lib/components/ui';
-  import { PaneHeader, ResizableWorkbenchSplit, WorkbenchPane } from '$lib/components/workbench';
+  import { Alert, Badge, Button, EmptyState, ListRow, TextInput } from '$lib/components/ui';
+  import { PaneHeader, PaneToolbar, ResizableWorkbenchSplit, WorkbenchPane } from '$lib/components/workbench';
   import { recordEditHref } from '$lib/diagnostics/actions';
+  import { filterInboxGroups } from '$lib/inbox/filter';
   import { buildInboxGroups, countActionable, flattenInboxGroups, type InboxItem } from '$lib/inbox/items';
   import { actionSelector, inboxKeyAction, isTypingTarget, neighbourItemId } from '$lib/inbox/keyboard';
   import { kindBadge, recordLedgerHref } from '$lib/inbox/presentation';
@@ -35,7 +36,7 @@
     refetchInterval: (query) => inboxRunsRefetchInterval(query.state.data),
   }));
 
-  const groups = $derived(
+  const allGroups = $derived(
     buildInboxGroups({
       snapshot: snapshot.data,
       runs: runs.data?.runs ?? [],
@@ -43,9 +44,11 @@
       resolved: resolvedItems.ids,
     }),
   );
+  const query = $derived(page.url.searchParams.get('q') ?? '');
+  const groups = $derived(filterInboxGroups(allGroups, query));
   const items = $derived(flattenInboxGroups(groups));
   const itemIds = $derived(items.map((item) => item.id));
-  const actionable = $derived(countActionable(groups));
+  const actionable = $derived(countActionable(allGroups));
   const subtitle = $derived(
     actionable === 0 ? 'Nothing waiting' : actionable === 1 ? '1 to deal with' : `${actionable} to deal with`,
   );
@@ -89,7 +92,12 @@
   });
 
   function select(itemId: string) {
-    void goto(resolve(inboxUrl(itemId)), { replaceState: true, noScroll: true, keepFocus: true });
+    void goto(resolve(inboxUrl(itemId, { q: query })), { replaceState: true, noScroll: true, keepFocus: true });
+  }
+
+  function search(value: string) {
+    const keep = requestedId && items.some((item) => item.id === requestedId) ? requestedId : null;
+    void goto(resolve(inboxUrl(keep, { q: value })), { replaceState: true, noScroll: true, keepFocus: true });
   }
 
   function handleRowClick(event: MouseEvent, item: InboxItem) {
@@ -148,7 +156,7 @@
     <Alert class="m-2" variant="danger" title="Failed to load snapshot">{snapshot.error.message}</Alert>
   {:else if !snapshot.data.project.initialized}
     <InitializePrompt cwd={snapshot.data.project.cwd} />
-  {:else if groups.length === 0}
+  {:else if allGroups.length === 0}
     {#if runs.isPending}
       <p class="p-4 text-sm text-fg-muted">Loading...</p>
     {:else}
@@ -193,11 +201,27 @@
               {/snippet}
             </PaneHeader>
 
+            <PaneToolbar>
+              <TextInput
+                type="search"
+                aria-label="Search inbox"
+                placeholder="Search the inbox"
+                class="min-w-0 flex-1"
+                value={query}
+                oninput={(event) => search(event.currentTarget.value)}
+              />
+            </PaneToolbar>
+
             {#if runs.isError}
               <Alert class="m-2" variant="warning" title="Agent results unavailable">{runs.error.message}</Alert>
             {/if}
 
             <div data-inbox-list class="min-h-0 flex-1 overflow-auto pb-2">
+              {#if groups.length === 0}
+                <div class="p-3">
+                  <EmptyState>Nothing in the inbox matches “{query}”.</EmptyState>
+                </div>
+              {/if}
               {#each groups as group (group.id)}
                 <section data-inbox-group={group.id} aria-labelledby={`inbox-group-${group.id}`}>
                   <h3
@@ -214,7 +238,7 @@
                       <li>
                         <a
                           class="block rounded"
-                          href={resolve(inboxUrl(item.id))}
+                          href={resolve(inboxUrl(item.id, { q: query }))}
                           data-inbox-item={item.id}
                           aria-current={active ? 'page' : undefined}
                           onclick={(event) => handleRowClick(event, item)}

@@ -127,12 +127,13 @@ test('selecting a row shows the record and its supersession chain', async ({ pag
   await expect(list(page).getByRole('link', { name: /Use Polars over pandas/ })).toHaveAttribute('aria-current', 'page');
 });
 
-test('supersede opens the draft composer', async ({ page }) => {
+test('supersede opens the Draft page for that decision', async ({ page }) => {
   await page.goto(`/ledger?id=${arrowId}`);
 
   await detail(page).getByRole('button', { name: 'Supersede' }).click();
 
-  await expect(page.getByRole('dialog', { name: 'Draft' })).toBeVisible();
+  await expect(page).toHaveURL(/\/draft$/);
+  await expect(page.locator('[data-draft-composer]').getByRole('heading', { name: 'Replace “Use Arrow IPC snapshots”' })).toBeVisible();
 });
 
 test('narrow screens open records on their own page', async ({ page }) => {
