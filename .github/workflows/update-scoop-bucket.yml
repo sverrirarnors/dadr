@@ -1,0 +1,58 @@
+name: Update Scoop Bucket
+
+# Called by release-desktop.yml with the tag once the Windows desktop archive
+# is published, since its manifest needs the hash. It cannot listen for that
+# workflow with workflow_run (see the note in release-desktop.yml). It can
+# also be run by hand for a tag.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.0.2). Resolved from the checked-out commit when omitted."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-22.04
+    steps:
+      # The default branch rather than the tag, so a fix to the script on main
+      # applies when an older release is re-run by hand.
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - id: resolve
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          TAG="${INPUT_TAG:-}"
+          if [ -z "$TAG" ]; then
+            TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || true)
+          fi
+          TAG=${TAG#refs/tags/}
+
+          if [ -z "$TAG" ] || ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "No release tag found for $(git rev-parse HEAD); skipping."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag: $TAG"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update Scoop bucket
+        if: steps.resolve.outputs.proceed == 'true'
+        run: bash scripts/update-scoop-bucket.sh
+        env:
+          DADROCK_RELEASE_TAG: ${{ steps.resolve.outputs.tag }}
+          SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}

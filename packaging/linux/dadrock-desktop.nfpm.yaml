@@ -1,0 +1,79 @@
+# The `dadrock-desktop` package: the Tauri window around `dadrock preview`.
+# Rendered into a .deb, an .rpm and an Arch .pkg.tar.zst by
+# scripts/make-linux-packages.sh, like dadrock.nfpm.yaml.
+#
+# On Linux the app does not embed its own copy of the CLI, unlike the macOS
+# and Windows bundles. It looks for a `dadrock` next to its own executable, and
+# /usr/bin/dadrock from the `dadrock` package is exactly that. Depending on the
+# package keeps one copy of the binary on disk and lets the package manager
+# upgrade both together. The dependency is pinned to the same version because
+# the app drives the CLI's `preview` command and parses its startup line, so a
+# mismatched pair is not a combination anyone has tested.
+#
+# The script supplies DADROCK_VERSION, DADROCK_ARCH and DADROCK_DEP_VERSION
+# (the version as each packager spells it, which differs from the tag only for
+# prereleases: nfpm writes 1.2.3-rc.1 as 1.2.3~rc.1 for deb and rpm).
+
+name: dadrock-desktop
+version: ${DADROCK_VERSION}
+arch: ${DADROCK_ARCH}
+platform: linux
+maintainer: Vincent Arel-Bundock <vincent@arelbundock.com>
+description: |
+  Desktop app for Data Analysis Decision Records.
+  Dadrock opens a project folder in a native window and runs the dadrock
+  review UI inside it, so records can be drafted, reviewed and accepted
+  without a browser tab.
+vendor: Vincent Arel-Bundock
+homepage: https://vincentarelbundock.github.io/dadr
+license: MIT OR Apache-2.0
+section: devel
+priority: optional
+
+# The window is WebKitGTK 4.1 inside GTK 3. Those two pull in everything else
+# the binary links against (libsoup 3, JavaScriptCore, GLib, cairo, pango).
+# linux-packages.yml checks that claim with ldd after installing the .deb.
+depends:
+  - dadrock (= ${DADROCK_DEP_VERSION})
+  - libwebkit2gtk-4.1-0
+  - libgtk-3-0
+
+overrides:
+  rpm:
+    depends:
+      - dadrock = ${DADROCK_DEP_VERSION}
+      - webkit2gtk4.1
+      - gtk3
+
+  archlinux:
+    # Unpinned on Arch only: nfpm's archlinux packager renders prerelease
+    # versions in a form that an `=` constraint does not reliably match, and
+    # the Arch package is a release attachment rather than something a
+    # repository resolves.
+    depends:
+      - dadrock
+      - webkit2gtk-4.1
+      - gtk3
+
+contents:
+  - src: ./dist/linux-staging/dadrock-desktop
+    dst: /usr/bin/dadrock-desktop
+
+  # Named after the binary because that is the Wayland app_id the window
+  # reports (and its X11 WM_CLASS), which is how compositors match the window
+  # to this launcher and find its icon. The bundle identifier
+  # com.arelbundock.dadrock is what macOS and Windows use instead.
+  - src: ./packaging/linux/dadrock-desktop.desktop
+    dst: /usr/share/applications/dadrock-desktop.desktop
+
+  - src: ./desktop/icons/32x32.png
+    dst: /usr/share/icons/hicolor/32x32/apps/dadrock-desktop.png
+  - src: ./desktop/icons/128x128.png
+    dst: /usr/share/icons/hicolor/128x128/apps/dadrock-desktop.png
+  - src: ./desktop/icons/128x128@2x.png
+    dst: /usr/share/icons/hicolor/256x256/apps/dadrock-desktop.png
+  - src: ./desktop/icons/icon.png
+    dst: /usr/share/icons/hicolor/512x512/apps/dadrock-desktop.png
+
+  - src: ./README.md
+    dst: /usr/share/doc/dadrock-desktop/README.md

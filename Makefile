@@ -26,10 +26,16 @@ bump: ## Bump workspace version (usage: make bump VERSION=x.y.z)
 	fi
 	@sed -i.bak -E 's/^version = "[^"]*"/version = "$(VERSION)"/' Cargo.toml && rm Cargo.toml.bak
 	@cargo update -w >/dev/null
-	@echo "Bumped workspace to $(VERSION)."
-	@git diff --stat Cargo.toml Cargo.lock
+	@# The desktop app is a Cargo workspace of its own, so it does not inherit
+	@# the version; release-desktop.yml refuses a tag that does not match it.
+	@# Only the first `version =` line is the package's own.
+	@awk -v v="$(VERSION)" '!done && /^version = "/ { sub(/"[^"]*"/, "\"" v "\""); done = 1 } { print }' \
+	    desktop/Cargo.toml > desktop/Cargo.toml.tmp && mv desktop/Cargo.toml.tmp desktop/Cargo.toml
+	@if [ -f desktop/Cargo.lock ]; then cargo update -w --manifest-path desktop/Cargo.toml >/dev/null; fi
+	@echo "Bumped workspace and desktop app to $(VERSION)."
+	@git diff --stat Cargo.toml Cargo.lock desktop/Cargo.toml desktop/Cargo.lock
 	@echo ""
-	@echo "Next: update CHANGELOG.md, commit Cargo.toml + Cargo.lock, then 'make release'."
+	@echo "Next: update CHANGELOG.md, commit Cargo.toml, Cargo.lock and desktop/Cargo.*, then 'make release'."
 
 release: ## Tag and push v$(VERSION); fires cargo-dist release workflow
 	@test -z "$$(git status --porcelain)" || { echo "working tree is dirty; commit or stash first"; exit 1; }
@@ -170,3 +176,71 @@ vscode-publish: ## Publish packaged VSIX files to VS Marketplace and Open VSX
 	  npx --prefix $(VSCODE_DIR) vsce publish --no-dependencies --packagePath $$v -p $$VSCE_PAT; \
 	  npx --prefix $(VSCODE_DIR) ovsx publish $$v -p $$OVSX_PAT; \
 	done
+
+# ------------------------------------------------------------------------------
+# Linux packages (packaging/linux/, scripts/make-linux-packages.sh)
+#
+# Requires nfpm on PATH. The release workflow (linux-packages.yml, called by
+# release-desktop.yml) runs the same script against the binaries already
+# published, for both architectures. On NixOS the script refuses the local
+# binaries, whose ELF interpreter lives in /nix/store.
+# ------------------------------------------------------------------------------
+
+.PHONY: linux-packages
+
+linux-packages: ## Build dist/ .deb, .rpm and .pkg.tar.zst for dadrock, and dadrock-desktop if built (Linux only)
+	DADROCK_REQUIRE_JS_BUILD=1 cargo build --release -p dadrock --bin dadrock
+	./scripts/make-linux-packages.sh dadrock
+	@if [ -f desktop/target/release/dadrock-desktop ]; then \
+		./scripts/make-linux-packages.sh dadrock-desktop; \
+	else \
+		echo "desktop/target/release/dadrock-desktop is not built; skipping the dadrock-desktop packages"; \
+	fi
+
+# ------------------------------------------------------------------------------
+# Desktop app (desktop/): a Tauri window around `dadrock preview`.
+#
+# desktop/ is a Cargo workspace of its own. On NixOS its WebKitGTK build
+# inputs and GSettings schemas come from desktop/shell.nix; elsewhere install
+# Tauri's prerequisites (https://v2.tauri.app/start/prerequisites/) and the
+# CLI with `cargo install tauri-cli --version "^2" --locked`.
+# ------------------------------------------------------------------------------
+
+.PHONY: desktop-dev desktop-demo desktop desktop-icons
+
+ifneq ($(wildcard /etc/NIXOS),)
+  DESKTOP_ENV := nix-shell $(CURDIR)/desktop/shell.nix --run
+else
+  DESKTOP_ENV := sh -c
+endif
+HOST_TRIPLE = $(shell rustc -vV | sed -n 's/^host: //p')
+
+desktop-dev: ## Run the desktop app with a debug dadrock (PROJECT=path opens it directly)
+	cargo build --quiet -p dadrock --bin dadrock
+	$(DESKTOP_ENV) 'cd desktop && DADROCK_BIN="$(CURDIR)/target/debug/dadrock" cargo run -- $(PROJECT)'
+
+desktop-demo: ## Seed the demo project (like `make demo`) and open it in the desktop app
+	@if [ -e "$(DEMO_DIR)" ] && [ ! -d "$(DEMO_DIR)/dadr" ]; then \
+		echo "refusing to replace $(DEMO_DIR): it is not a dadrock demo project"; exit 1; \
+	fi
+	@rm -rf "$(DEMO_DIR)"
+	cargo run --quiet -p dadrock --bin dadrock -- demo --example $(DEMO_EXAMPLE) "$(DEMO_DIR)"
+	$(MAKE) desktop-dev PROJECT="$(DEMO_DIR)"
+
+# macOS gets a .dmg with dadrock inside the app; Linux gets the bare binary,
+# which `make linux-packages` turns into .deb/.rpm packages that depend on the
+# dadrock package instead. Release builds come from release-desktop.yml.
+desktop: ## Build the desktop app for this machine (macOS .dmg, Linux binary)
+	DADROCK_REQUIRE_JS_BUILD=1 cargo build --release -p dadrock --bin dadrock
+ifeq ($(UNAME_S),Darwin)
+	cp target/release/dadrock desktop/binaries/dadrock-$(HOST_TRIPLE)
+	cd desktop && cargo tauri build --bundles dmg
+else
+	$(DESKTOP_ENV) 'cd desktop && cargo tauri build --no-bundle'
+endif
+
+desktop-icons: ## Regenerate desktop/icons/ from desktop/icons/icon.svg
+	$(DESKTOP_ENV) 'set -e; tmp=$$(mktemp -d); \
+	  rsvg-convert -w 1024 -h 1024 desktop/icons/icon.svg -o "$$tmp/icon.png"; \
+	  cd desktop && cargo tauri icon "$$tmp/icon.png" --output icons; \
+	  rm -rf icons/android icons/ios icons/Square*Logo.png icons/StoreLogo.png "$$tmp"'

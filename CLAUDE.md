@@ -11,6 +11,8 @@ DADR ("Data Analysis Decision Records") is a file-first Markdown format for capt
 - **Future-work RFCs** in `specs/` (code tags, git hooks, faithfulness checks, roadmap). Implemented behavior belongs in `docs-src/`, not `specs/`.
 - `skills/dadr/` — the agent skill shipped for DADR workflows (record anatomy, tags, task guides).
 - `editors/vscode/` — the VS Code extension.
+- `desktop/` — the Tauri desktop app (`dadrock-desktop`), a window around `dadrock preview`; its own Cargo workspace (see `desktop/README.md`).
+- `packaging/linux/` + `scripts/` + `.github/workflows/` — release distribution: cargo-dist, then `release-desktop.yml`, which calls the Linux package, Homebrew and Scoop workflows.
 - `reference/` — non-normative notes on related tools.
 
 The user-facing artifacts keep the `dadr` name (`dadr/` project directory, `#dadr/...` code tags) even though the binary is `dadrock`.
@@ -42,6 +44,16 @@ bun run lint
 `web/build/` is gitignored and embedded into the binary with `rust-embed`; building without Bun (or with `--features no-js-build`) falls back to a no-assets page.
 
 The UI has three routes, `/inbox` (everything that needs a human decision), `/ledger` (what was decided), and `/draft` (the composer page), plus a project popover; Markdown bodies are edited with CodeMirror (`src/lib/components/editor/MarkdownEditor.svelte`); legacy routes (`/records`, `/tasks`, `/validation`, `/tags`, `/settings`, `/candidates/*`) redirect through `src/lib/navigation/legacy.ts`. The design vocabulary lives in `crates/dadrock/web/docs/web-ui-vocabulary.md`.
+
+### Desktop app (`desktop/`, Tauri 2)
+
+```bash
+make desktop-dev PROJECT=path   # debug dadrock + app; on NixOS runs inside desktop/shell.nix
+make desktop                    # release build (macOS .dmg / Linux binary)
+cd desktop && cargo clippy --all-targets && cargo test
+```
+
+`desktop/` is deliberately outside the root workspace so `cargo test --workspace` never needs WebKitGTK; `make bump` keeps its version in step. The app finds `dadrock` via `$DADROCK_BIN`, a sibling executable, or `PATH`, and relies on the `dadrock-preview: listening on <url>` stderr line and `DADROCK_PREVIEW_EXIT_ON_STDIN_EOF` (both in `web.rs`) — keep them stable.
 
 ### Docs site
 

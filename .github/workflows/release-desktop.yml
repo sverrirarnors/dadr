@@ -1,0 +1,321 @@
+name: Release Desktop
+
+# Runs after cargo-dist finishes creating the GitHub Release, builds the Tauri
+# desktop app for each platform, and attaches it to that release. cargo-dist
+# owns release.yml and regenerates it, so this cannot live there.
+#
+# The app embeds the dadrock CLI on macOS and Windows (Tauri's externalBin).
+# That copy is not rebuilt here: it is the binary cargo-dist already published
+# for the same target, so the CLI inside the app is byte for byte the one
+# users get from the tarball, the shell installer and Scoop. On Linux the app
+# embeds nothing; the dadrock-desktop package depends on the dadrock package
+# instead (see packaging/linux/dadrock-desktop.nfpm.yaml).
+#
+# Once the bundles are up, this workflow calls the distribution workflows
+# (Linux packages, Homebrew, Scoop) itself and hands them the tag. They cannot
+# wait for this workflow with workflow_run, the way calepin's wait for
+# Release: a run started by workflow_run reports the default branch's head
+# commit rather than the tag, so a workflow chained after it could not tell
+# which release to package.
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build (e.g. v0.0.2). Resolved from workflow_run when omitted."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      proceed: ${{ steps.resolve.outputs.proceed }}
+    steps:
+      # Check out the released tag (or the workflow_run commit it came from),
+      # not whatever is on the default branch right now. main can move between
+      # the tag push and this job running.
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.tag || github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - id: resolve
+        env:
+          DISPATCH_TAG: ${{ github.event.inputs.tag }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        shell: bash
+        run: |
+          SHA="${RELEASE_SHA:-}"
+          if [ -z "$SHA" ]; then
+            SHA=$(git rev-parse HEAD)
+          fi
+
+          if [ -n "$DISPATCH_TAG" ]; then
+            TAG="$DISPATCH_TAG"
+          else
+            TAG=$(git describe --tags --exact-match "$SHA" 2>/dev/null || true)
+            if [ -z "$TAG" ]; then
+              TAG="$RUN_HEAD_BRANCH"
+            fi
+          fi
+          TAG=${TAG#refs/tags/}
+
+          if [ -z "$TAG" ] || ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "No release tag found for $SHA; skipping."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # The desktop crate is its own Cargo workspace, so its version is
+          # not inherited from the root manifest; `make bump` rewrites both.
+          # A mismatch means the tag was pushed against an unbumped desktop
+          # manifest, which would ship an app reporting the wrong version.
+          version="$(awk -F'"' '/^version/ { print $2; exit }' desktop/Cargo.toml)"
+          if [ "v${version}" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match desktop/Cargo.toml version $version"
+            exit 1
+          fi
+
+          echo "Tag: $TAG at $SHA"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: aarch64-apple-darwin,      runner: macos-14 }
+          # Cross-compiled on the arm64 runner; Apple's toolchain targets both.
+          - { target: x86_64-apple-darwin,       runner: macos-14 }
+          - { target: x86_64-pc-windows-msvc,    runner: windows-2022 }
+          # Built on 22.04 so the binary needs nothing newer than jammy's glibc
+          # and WebKitGTK, the same floor as the cargo-dist CLI builds.
+          - { target: x86_64-unknown-linux-gnu,  runner: ubuntu-22.04 }
+          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-22.04-arm }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAG: ${{ needs.resolve.outputs.tag }}
+      TARGET: ${{ matrix.target }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve.outputs.tag }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      # Tauri's documented Linux prerequisites
+      # (https://v2.tauri.app/start/prerequisites/#linux).
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          set -eu
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install the Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Stage the released dadrock as the sidecar
+        if: runner.os != 'Linux'
+        run: |
+          set -eu
+          if [ "$RUNNER_OS" = Windows ]; then
+            asset="dadrock-${TARGET}.zip"
+            ext=.exe
+          else
+            asset="dadrock-${TARGET}.tar.xz"
+            ext=
+          fi
+
+          # Relative paths throughout: on Windows they mean the same thing to
+          # Git Bash's tools and to native ones like gh and 7z.
+          unpack=.sidecar
+          rm -rf "$unpack"
+          mkdir -p "$unpack"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$asset" --dir "$unpack" --clobber
+          if [ "$RUNNER_OS" = Windows ]; then
+            7z x -y -o"$unpack" "$unpack/$asset" >/dev/null
+          else
+            tar -xJf "$unpack/$asset" -C "$unpack"
+          fi
+
+          bin="$(find "$unpack" -type f -name "dadrock${ext}" | head -n 1)"
+          if [ -z "$bin" ]; then
+            echo "::error::$asset contains no dadrock${ext}"
+            exit 1
+          fi
+          mkdir -p desktop/binaries
+          cp "$bin" "desktop/binaries/dadrock-${TARGET}${ext}"
+          chmod 755 "desktop/binaries/dadrock-${TARGET}${ext}"
+          ls -l desktop/binaries
+
+      - name: Build the app
+        working-directory: desktop
+        env:
+          # Read under other names so that a secret that is not set leaves the
+          # variable Tauri reads unset rather than empty: Tauri treats an empty
+          # APPLE_CERTIFICATE as a certificate to import and an empty
+          # APPLE_SIGNING_IDENTITY as an identity, and both then fail. Without
+          # the secrets the app is ad-hoc signed (signingIdentity "-" in
+          # tauri.macos.conf.json), which lets it run on Apple silicon but not
+          # past Gatekeeper; the Homebrew cask says how to allow it.
+          SECRET_APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          SECRET_APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          SECRET_APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          SECRET_APPLE_ID: ${{ secrets.APPLE_ID }}
+          SECRET_APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          SECRET_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -eu
+          case "$RUNNER_OS" in
+            macOS)
+              if [ -n "${SECRET_APPLE_CERTIFICATE:-}" ]; then
+                export APPLE_CERTIFICATE="$SECRET_APPLE_CERTIFICATE"
+                export APPLE_CERTIFICATE_PASSWORD="$SECRET_APPLE_CERTIFICATE_PASSWORD"
+                export APPLE_SIGNING_IDENTITY="$SECRET_APPLE_SIGNING_IDENTITY"
+                echo "Signing with the Developer ID certificate"
+                # Tauri notarizes when these are present, and skips it
+                # otherwise.
+                if [ -n "${SECRET_APPLE_ID:-}" ]; then
+                  export APPLE_ID="$SECRET_APPLE_ID"
+                  export APPLE_PASSWORD="$SECRET_APPLE_PASSWORD"
+                  export APPLE_TEAM_ID="$SECRET_APPLE_TEAM_ID"
+                  echo "Notarizing with $APPLE_ID"
+                fi
+              else
+                echo "::notice::APPLE_CERTIFICATE is not set: the app is ad-hoc signed and not notarized"
+              fi
+              cargo tauri build --target "$TARGET" --bundles dmg
+              ;;
+            Windows)
+              cargo tauri build --target "$TARGET" --bundles nsis
+              ;;
+            Linux)
+              # The .deb and .rpm come from nfpm in linux-packages.yml, so that
+              # the CLI and the app are packaged from one kind of description.
+              cargo tauri build --target "$TARGET" --no-bundle
+              ;;
+          esac
+
+      # The contract the apt and rpm repositories rely on: the app answers
+      # --version without opening a window, so it can be checked headless.
+      - name: Check the binary runs
+        if: runner.os != 'Windows'
+        run: |
+          set -eu
+          rel="desktop/target/$TARGET/release"
+          if [ "$RUNNER_OS" = macOS ]; then
+            app="$rel/bundle/macos/Dadrock.app/Contents/MacOS/dadrock-desktop"
+          else
+            app="$rel/dadrock-desktop"
+          fi
+          version="$(awk -F'"' '/^version/ { print $2; exit }' desktop/Cargo.toml)"
+          "$app" --version | tee /dev/stderr | grep -qx "dadrock-desktop ${version}"
+
+      - name: Collect the release assets
+        run: |
+          set -eu
+          rel="desktop/target/$TARGET/release"
+          name="dadrock-desktop-$TARGET"
+          # Relative, for the same reason as the sidecar step.
+          out=dist-desktop
+          stage=.stage
+          rm -rf "$out" "$stage"
+          mkdir -p "$out" "$stage"
+
+          # Exactly one match, or a readable failure instead of an upload of
+          # the wrong file.
+          pick_one() {
+            if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
+              echo "::error::expected exactly one file, found: $*"
+              exit 1
+            fi
+            picked="$1"
+          }
+
+          case "$RUNNER_OS" in
+            macOS)
+              pick_one "$rel"/bundle/dmg/*.dmg
+              cp "$picked" "$out/$name.dmg"
+              ;;
+            Windows)
+              pick_one "$rel"/bundle/nsis/*-setup.exe
+              cp "$picked" "$out/$name-setup.exe"
+              # Scoop wants a plain archive rather than an installer: the app
+              # and the CLI side by side, which is where the app looks for it.
+              cp "$rel/dadrock-desktop.exe" "$stage/dadrock-desktop.exe"
+              cp "desktop/binaries/dadrock-$TARGET.exe" "$stage/dadrock.exe"
+              (cd "$stage" && 7z a -tzip "../$out/$name.zip" dadrock-desktop.exe dadrock.exe >/dev/null)
+              ;;
+            Linux)
+              # The cargo-dist layout, so linux-packages.yml unpacks both kinds
+              # of tarball the same way.
+              mkdir -p "$stage/$name"
+              cp "$rel/dadrock-desktop" "$stage/$name/dadrock-desktop"
+              tar -C "$stage" -cJf "$out/$name.tar.xz" "$name"
+              ;;
+          esac
+
+          cd "$out"
+          for f in *; do
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$f" > "$f.sha256"
+            else
+              shasum -a 256 "$f" > "$f.sha256"
+            fi
+          done
+          ls -l
+
+      - name: Attach to the release
+        run: gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber dist-desktop/*
+
+  # The distribution workflows run even when one platform's build failed, so
+  # a broken macOS build does not also hold back the Linux packages. Each of
+  # them skips a missing desktop asset with a warning; the CLI parts only
+  # need cargo-dist's assets, which exist by the time this workflow runs.
+  linux-packages:
+    needs: [resolve, build]
+    if: ${{ !cancelled() && needs.resolve.outputs.proceed == 'true' }}
+    uses: ./.github/workflows/linux-packages.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+    secrets: inherit
+
+  homebrew:
+    needs: [resolve, build]
+    if: ${{ !cancelled() && needs.resolve.outputs.proceed == 'true' }}
+    uses: ./.github/workflows/update-homebrew-tap.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+    secrets: inherit
+
+  scoop:
+    needs: [resolve, build]
+    if: ${{ !cancelled() && needs.resolve.outputs.proceed == 'true' }}
+    uses: ./.github/workflows/update-scoop-bucket.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+    secrets: inherit

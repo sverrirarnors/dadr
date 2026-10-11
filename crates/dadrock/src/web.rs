@@ -64,6 +64,12 @@ use self::{
     routing::route_request,
 };
 
+/// Set by a parent that runs `dadrock preview` as a child process (the desktop
+/// app) and holds the write end of its stdin. The server exits when stdin
+/// closes, which the OS does whenever the parent goes away, crashes included,
+/// so a server never outlives the window it was started for.
+const EXIT_ON_STDIN_EOF_ENV: &str = "DADROCK_PREVIEW_EXIT_ON_STDIN_EOF";
+
 #[derive(Debug, Clone)]
 pub(crate) struct PreviewOptions {
     pub(crate) directory: Option<Utf8PathBuf>,
@@ -73,6 +79,12 @@ pub(crate) struct PreviewOptions {
 
 pub(crate) fn serve(options: PreviewOptions) -> Result<()> {
     validate_bind_host(&options.host).map_err(|err| anyhow::anyhow!(err))?;
+    if env::var_os(EXIT_ON_STDIN_EOF_ENV).is_some() {
+        thread::spawn(|| {
+            let _ = std::io::copy(&mut std::io::stdin().lock(), &mut std::io::sink());
+            std::process::exit(0);
+        });
+    }
     let cwd = preview_cwd(options.directory)?;
     let listener = TcpListener::bind((options.host.as_str(), options.port)).with_context(|| {
         format!(

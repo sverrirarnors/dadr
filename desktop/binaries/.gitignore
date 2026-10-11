@@ -1,0 +1,4 @@
+# Sidecars are staged here before a macOS or Windows build:
+# dadrock-<target-triple>[.exe]. See desktop/README.md.
+*
+!.gitignore
