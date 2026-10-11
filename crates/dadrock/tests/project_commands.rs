@@ -1878,7 +1878,12 @@ fn replacement_acceptance_links_history_and_preserves_original_body() {
     let root = temp_project("replacement-acceptance");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
-    let first = create_candidate(&project, "Previous choice", &[]).unwrap();
+    let first = dadrock::records::create_candidate_with_body(
+        &project,
+        "Previous choice",
+        &[],
+        "## Context\nPrevious needs.\n## Decision\nUse the selected method.\n## Alternatives\nRetain the old method.\n## Consequences\nRecompute results.\n",
+    ).unwrap();
     let old = accept_candidate(&project_index(&project), &first.id.to_string()).unwrap();
     let original = fs::read_to_string(&old.to).unwrap();
     let body = format!("## Context\nChanged needs.\n\n## Decision\nUse a new method.\n\n## Alternatives\nKeep old method.\n\n## Consequences\nRecompute results.\n\n## Replaces\n\n[[{}|Previous decision]]\n", old.id);
@@ -1964,7 +1969,12 @@ fn replacement_staging_failure_leaves_candidate_and_original_unchanged() {
     let root = temp_project("replacement-staging-failure");
     init_project(&root).unwrap();
     let project = discover_from(&root).unwrap();
-    let first = create_candidate(&project, "Previous choice", &[]).unwrap();
+    let first = dadrock::records::create_candidate_with_body(
+        &project,
+        "Previous choice",
+        &[],
+        "## Context\nPrevious needs.\n## Decision\nUse the selected method.\n## Alternatives\nRetain the old method.\n## Consequences\nRecompute results.\n",
+    ).unwrap();
     let old = accept_candidate(&project_index(&project), &first.id.to_string()).unwrap();
     let nested = project.decisions_dir.join("nested");
     fs::create_dir_all(&nested).unwrap();

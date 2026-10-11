@@ -1229,7 +1229,7 @@ mod tests {
                 path: "/api/records".into(),
                 headers: vec![],
                 body: serde_json::to_vec(
-                    &serde_json::json!({"title": title, "tags": [], "supersedes": supersedes}),
+                    &serde_json::json!({"title": title, "tags": [], "supersedes": supersedes, "body_markdown": "## Context\nPrevious needs.\n## Decision\nUse the selected method.\n## Alternatives\nRetain the old method.\n## Consequences\nRecompute results.\n"}),
                 )
                 .unwrap(),
             };
