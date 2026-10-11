@@ -28,7 +28,7 @@ Draft one candidate DADR from context the user supplies: a plan paragraph, a cod
 ## Inputs
 
 - `context`: the description of the decision to capture.
-- Optionally, files or folders the context refers to.
+- Optionally, files, folders, or records the context refers to.
 
 Interactively, these come from the user's request and any files they point at.
 

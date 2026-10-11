@@ -18,7 +18,7 @@ dadrock mcp serve --read-only
 dadrock mcp serve path/to/project
 ```
 
-The normal server exposes inspection and mutation tools through the same command layer as the CLI: listing, searching, and reading records, lifecycle status, decision history and diffs, tags, tasks and task runs, validation, and a project snapshot; plus creating candidates and submitting task results. Use read-only mode for clients that should only inspect records. Lifecycle actions are not exposed over MCP: humans accept, reject, and supersede records in the [web interface](dadrock/web.md) (also available in an [editor panel](dadrock/editors.md)) or with the CLI.
+The normal server exposes inspection and mutation tools through the same command layer as the CLI: listing, searching, and reading records, lifecycle status, decision history and diffs, tags, tasks and task runs, validation, and a project snapshot; plus creating candidates, including successors that supersede decisions in force, and submitting task results. Use read-only mode for clients that should only inspect records. Lifecycle actions are not exposed over MCP: humans accept, reject, and supersede records in the [web interface](dadrock/web.md) (also available in an [editor panel](dadrock/editors.md)) or with the CLI.
 
 Register the server with your client as a stdio command. The configuration file and its location depend on the client; many accept an entry like this:
 
@@ -48,7 +48,7 @@ dadrock agent check
 dadrock agent skills
 ```
 
-Every task carries its own instructions; no separately installed skill is required. `agent skills` lists optional local instructions.
+Every task carries its own instructions; no separately installed skill is required. `agent skills` lists optional local instructions, which `dadrock agent draft --skill NAME` can add to a draft.
 
 DADRock attaches its own [MCP server](#mcp) to its agent sessions by default. `--no-mcp` disables that attachment for providers where it is unsuitable.
 
@@ -59,9 +59,9 @@ dadrock task run code-to-record --path analysis/ --limit 5
 dadrock task run context-to-record --context "Explain our choice of sample restrictions"
 ```
 
-The limit asks the agent to prioritize a small batch, rather than treating every operation as a decision. It is a drafting request, not a hard guarantee on model output. The [web interface](dadrock/web.md) offers the same drafting actions, and results land in its Inbox.
+The limit asks the agent to prioritize a small batch, rather than treating every operation as a decision. It is a drafting request, not a hard guarantee on model output. The [web interface](dadrock/web.md) offers the same drafting actions, and the results of task runs, including those started from the command line, land in its Inbox.
 
-Tool permission requests default to `deny`. When your selected workflow needs tools, explicitly choose the appropriate permission mode with `--permission allow-once` or `--permission allow-always`. This does not authorize an agent to accept decisions on your behalf.
+On the command line, tool permission requests default to `deny`. When your selected workflow needs tools, explicitly choose the appropriate permission mode with `--permission allow-once` or `--permission allow-always`. Task runs started from the web interface allow each request once. This does not authorize an agent to accept decisions on your behalf.
 
 `dadrock agent draft` remains available for compatibility. New workflows should use `task run context-to-record`.
 
@@ -76,7 +76,7 @@ dadrock task result RUN_ID
 
 Built-in workflows include drafting, editing candidates, [drafting successors](changing.md#drafting-a-successor) for accepted decisions, merging drafts, finding conflicts, and synthesizing accepted decisions into a spec. The built-in tasks are the task guides of the `dadr` skill, the files in `skills/dadr/tasks/` of this repository. Each is one Markdown file: its YAML front matter is the task manifest (id, inputs, requirements, and output kind) and its body is the prompt. Every task run gets read-only access to the [MCP server](#mcp) plus task-result submission. `dadrock task show <task-id>` prints a task's prompt, and `--json` adds its manifest.
 
-To customize a task, copy its guide with `dadrock task show <task-id> --raw > dadr/tasks/<task-id>.md` and adapt it. A project task overrides a user task in `~/.dadrock/tasks/<task-id>.md` (or `$DADROCK_TASKS_DIR`), which overrides the built-in task with the same id. The file name must match the `id` in the front matter; `dadrock task list` reports files that do not load, including task directories in the old `task.toml` layout. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
+To customize a task, copy its guide with `dadrock task show <task-id> --raw > dadr/tasks/<task-id>.md` and adapt it. A project task overrides a user task in `~/.dadrock/tasks/<task-id>.md` (or `$DADROCK_TASKS_DIR`), which overrides the built-in task with the same id. The file name must match the `id` in the front matter; `dadrock task list` reports files that do not load, including task directories in the old `task.toml` layout. Friendly input flags cover `code-to-record` (`--path`, `--focus`, `--limit`), `context-to-record` (`--context`), and `decisions-to-spec` (`--focus`). Other tasks, including your own, take their inputs, such as `record_id` or `record_ids`, as JSON with `--input-json`; do not combine it with the friendly flags.
 
 Runs are persisted under `dadr/runs/`, which is ignored by default and may contain source excerpts or model transcripts. Output kinds determine how results are rendered. Protocol and run metadata stay outside record front matter.
 
@@ -93,6 +93,6 @@ dadrock validate --json
 
 `dadrock commands --json` describes every command: its usage, whether it changes the project, whether it supports JSON, and when it exits non-zero. `dadrock help COMMAND` prints the same detail for one command. The full list is in the [command-line reference](dadrock/cli.md).
 
-For guidance beyond the built-in tasks, copy `skills/dadr/` from this checkout to your agent's supported skill directory, such as `.agents/skills/dadr` or `~/.codex/skills/dadr`. The agent's own discovery rules determine which location works. The skill routes requests such as bootstrapping candidates from existing code, finding conflicting decisions, or synthesizing a spec to the matching `dadrock` commands.
+For guidance beyond the built-in tasks, copy `skills/dadr/` from this checkout to your agent's supported skill directory, such as `.agents/skills/dadr` or `~/.codex/skills/dadr`. The agent's own discovery rules determine which location works. The skill routes requests such as bootstrapping candidates from existing code, finding conflicting decisions, or synthesizing a spec to its task guides, the same guides the built-in tasks run, and says how to deliver the results with `dadrock` commands.
 
 Future automated faithfulness and coverage checks are described on the [roadmap](roadmap.md).

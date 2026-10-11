@@ -54,20 +54,21 @@ Weaker signals, worth checking but not conclusive:
 Not a conflict:
 
 - one record is the other's successor: already resolved;
+- a candidate's `## Supersedes` section names the other record: it is already a proposed successor, awaiting review;
 - both are rejected;
 - one is a robustness or alternative-specification record that explicitly varies the other, primary choice: they coexist by design;
 - they describe different steps of the same pipeline, such as a row filter and a later imputation. Read the Decision text, not just the Context paths.
 
 ## Work cheaply first
 
-Reading bodies is the expensive part. Narrow the corpus with metadata before reading any: drop records outside the scope and superseded records, group the rest by `kind/` tag, then by `topic/` or `plan/` tags and title keywords (missing, winsorize, cluster, treatment, …). Order each group by creation time, which the UUIDv7 id encodes, so the newer record reads as the likely revision. Read Decisions and Context links only for groups with more than one record. With only a handful of records, read them all and say there is little to find.
+Reading bodies is the expensive part. Narrow the corpus with metadata before reading any: drop records outside the scope (superseded records are outside every scope but `all`), group the rest by `kind/` tag, then by `topic/` or `plan/` tags and title keywords (missing, winsorize, cluster, treatment, …). Order each group by creation time, which the UUIDv7 id encodes, so the newer record reads as the likely revision. Read Decisions and Context links only for groups with more than one record. With only a handful of records, read them all and say there is little to find.
 
 ## Relationships and resolutions
 
 | Relationship | What happened | Typical resolution |
 |---|---|---|
 | candidate ↔ candidate | Two drafts of the same choice, neither accepted | Keep one and reject the other (`rejected/duplicate`), or merge them into a new candidate ([merge-records](merge-records.md)). |
-| candidate ↔ accepted | A newer candidate revises an accepted decision | Turn the candidate into a successor that supersedes the accepted record ([supersede-record](supersede-record.md)) and accept it, or reject the candidate if the accepted decision stands. |
+| candidate ↔ accepted | A newer candidate revises an accepted decision | Make the candidate a successor of the accepted record (give it a `## Supersedes` section naming that record, or draft a successor in its place with [supersede-record](supersede-record.md)) and accept it, or reject the candidate if the accepted decision stands. |
 | accepted ↔ accepted | Two decisions in force contradict each other | Draft one successor that supersedes both once accepted ([supersede-record](supersede-record.md)). |
 | candidate ↔ rejected | A rejected idea has been drafted again | Possibly intentional (new evidence), possibly an oversight; the reviewer decides. |
 
