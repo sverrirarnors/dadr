@@ -226,12 +226,17 @@ pub const COMMANDS: &[CommandInfo] = &[
     },
     CommandInfo {
         path: &["validate"],
-        usage: "validate [--json] [records|links|tags] [options]",
-        description: "Run project validation, or target records, links, or tags.",
+        usage: "validate [--json] [records|links|tags|changes] [options]",
+        description: "Run project validation, or target records, links, tags, or changes since a Git revision.",
         mutation: CommandMutation::ReadOnly,
         supports_json: true,
         exit_behavior: "Exits non-zero when validation diagnostics contain one or more errors.",
-        subcommands: &["validate records", "validate links", "validate tags"],
+        subcommands: &[
+            "validate records",
+            "validate links",
+            "validate tags",
+            "validate changes",
+        ],
     },
     CommandInfo {
         path: &["validate", "records"],
@@ -258,6 +263,15 @@ pub const COMMANDS: &[CommandInfo] = &[
         mutation: CommandMutation::ReadOnly,
         supports_json: true,
         exit_behavior: "Exits non-zero when tag diagnostics contain one or more errors.",
+        subcommands: &[],
+    },
+    CommandInfo {
+        path: &["validate", "changes"],
+        usage: "validate changes [--base <rev>] [--staged] [--json]",
+        description: "Check that accepted and rejected records changed since a Git revision only in tags, keys outside DADR, or added successors.",
+        mutation: CommandMutation::ReadOnly,
+        supports_json: true,
+        exit_behavior: "Exits non-zero when a record changed in a forbidden way, or when Git is missing, the project is not in a Git repository, or the base revision does not resolve.",
         subcommands: &[],
     },
     CommandInfo {

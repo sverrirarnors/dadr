@@ -1,4 +1,5 @@
 pub mod agent;
+pub mod changes;
 pub mod commands;
 pub mod demo;
 pub mod error;

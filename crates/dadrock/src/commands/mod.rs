@@ -11,6 +11,7 @@ use crate::{
 
 mod agent;
 mod catalog;
+mod changes;
 mod diff;
 mod project;
 mod records;
@@ -26,6 +27,7 @@ pub use catalog::{
     command_catalog, find_command_info, CommandCatalogResult, CommandInfo, CommandInfoRecord,
     CommandMutation, COMMANDS,
 };
+pub use changes::{validate_changes, ValidateChangesRequest};
 pub use diff::{TextDiffKind, TextDiffLine};
 pub use project::{
     demo_project, demo_project_with_example, initialize_project, show_config, show_dir,
@@ -348,7 +350,7 @@ mod tests {
 
         assert_eq!(
             validate.usage,
-            "dadrock validate [--json] [records|links|tags] [options]"
+            "dadrock validate [--json] [records|links|tags|changes] [options]"
         );
         assert_eq!(validate.mutation, "read-only");
         assert!(!validate.mutates_project);

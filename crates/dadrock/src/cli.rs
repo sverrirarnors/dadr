@@ -57,7 +57,7 @@ pub enum Command {
         about = "Link accepted successors to the records they supersede and move those records to the archive."
     )]
     Supersede(StatusSupersedeArgs),
-    #[command(about = "Run project validation, or target records, links, or tags.")]
+    #[command(about = "Run project validation, or target records, links, tags, or changes.")]
     Validate(ValidateArgs),
     #[command(about = "Inspect DADR tag usage.")]
     Tags(TagsArgs),
@@ -248,6 +248,22 @@ pub enum ValidateCommand {
     Links(JsonArg),
     #[command(about = "Report malformed YAML and inline tags.")]
     Tags(JsonArg),
+    #[command(
+        about = "Check that accepted and rejected records changed since a Git revision only where allowed."
+    )]
+    Changes(ValidateChangesArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct ValidateChangesArgs {
+    /// Git revision to compare with.
+    #[arg(long, default_value = "HEAD")]
+    pub base: String,
+    /// Compare the index (staged changes) instead of the working tree.
+    #[arg(long)]
+    pub staged: bool,
+    #[arg(long)]
+    pub json: bool,
 }
 
 #[derive(Debug, Args)]
@@ -543,6 +559,42 @@ mod tests {
             };
             assert_eq!(args.example, expected);
         }
+    }
+
+    #[test]
+    fn parses_validate_changes_options() {
+        let cli = Cli::try_parse_from(["dadrock", "validate", "changes"]).unwrap();
+        let Some(Command::Validate(ValidateArgs {
+            command: Some(ValidateCommand::Changes(args)),
+            ..
+        })) = cli.command
+        else {
+            panic!("expected validate changes command");
+        };
+        assert_eq!(args.base, "HEAD");
+        assert!(!args.staged);
+        assert!(!args.json);
+
+        let cli = Cli::try_parse_from([
+            "dadrock",
+            "validate",
+            "changes",
+            "--base",
+            "origin/main",
+            "--staged",
+            "--json",
+        ])
+        .unwrap();
+        let Some(Command::Validate(ValidateArgs {
+            command: Some(ValidateCommand::Changes(args)),
+            ..
+        })) = cli.command
+        else {
+            panic!("expected validate changes command");
+        };
+        assert_eq!(args.base, "origin/main");
+        assert!(args.staged);
+        assert!(args.json);
     }
 
     #[test]

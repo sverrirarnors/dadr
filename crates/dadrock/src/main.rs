@@ -7,6 +7,7 @@ use dadrock::{
     agent::providers::{
         configured_local_acp_agent, resolve_local_acp_agent_command, LocalAcpAgentCommand,
     },
+    changes::ChangeValidationReport,
     commands as core_commands,
     links::LinkCheckReport,
     mcp as core_mcp,
@@ -294,6 +295,7 @@ fn validate(args: cli::ValidateArgs) -> Result<ExitCode> {
         Some(cli::ValidateCommand::Records(args)) => validate_records_cli(args),
         Some(cli::ValidateCommand::Links(args)) => validate_links_cli(args),
         Some(cli::ValidateCommand::Tags(args)) => validate_tags_cli(args),
+        Some(cli::ValidateCommand::Changes(args)) => validate_changes_cli(args),
         None => validate_project(args.json),
     }
 }
@@ -323,6 +325,20 @@ fn validate_tags_cli(args: cli::JsonArg) -> Result<ExitCode> {
     let envelope = core_commands::validate_tags(&command_context()?)?;
     print_envelope(&envelope, args.json, |report| {
         print_tag_validation(report);
+        Ok(())
+    })
+}
+
+fn validate_changes_cli(args: cli::ValidateChangesArgs) -> Result<ExitCode> {
+    let envelope = core_commands::validate_changes(
+        &command_context()?,
+        core_commands::ValidateChangesRequest {
+            base: args.base,
+            staged: args.staged,
+        },
+    )?;
+    print_envelope(&envelope, args.json, |report| {
+        print_change_validation_report(report);
         Ok(())
     })
 }
@@ -566,6 +582,43 @@ fn print_project_validation_report(report: &ProjectValidationReport) {
         );
         for related_path in &issue.related_paths {
             println!("  - {related_path}");
+        }
+    }
+}
+
+fn print_change_validation_report(report: &ChangeValidationReport) {
+    let Some(commit) = &report.base_commit else {
+        println!("dadrock validate changes: ok (no commits yet, nothing to compare)");
+        return;
+    };
+    let compared = format!(
+        "{} against {} ({})",
+        report.target.label(),
+        report.base,
+        commit.get(..12).unwrap_or(commit)
+    );
+    if report.issues.is_empty() {
+        println!(
+            "dadrock validate changes: ok ({compared}; {} accepted or rejected record(s) changed)",
+            report.checked.len()
+        );
+        return;
+    }
+
+    println!(
+        "dadrock validate changes: {} error(s), {} warning(s) ({compared})",
+        report.counts.errors, report.counts.warnings
+    );
+    for issue in &report.issues {
+        println!(
+            "[{}] {} {}: {}",
+            severity_label(issue.severity),
+            issue.code,
+            issue.path,
+            issue.message
+        );
+        if let Some(base_path) = &issue.base_path {
+            println!("  - was {base_path}");
         }
     }
 }

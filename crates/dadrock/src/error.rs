@@ -39,8 +39,8 @@ pub enum DadrError {
     #[error("refusing to overwrite existing path `{path}`")]
     OverwriteCollision { path: Utf8PathBuf },
 
-    #[error("{0}")]
-    Domain(#[source] DomainError),
+    #[error(transparent)]
+    Domain(DomainError),
 }
 
 impl From<dadr::DadrError> for DadrError {
@@ -61,6 +61,7 @@ pub enum DomainErrorKind {
     Template,
     Acp,
     Mcp,
+    Git,
 }
 
 impl DomainErrorKind {
@@ -73,6 +74,7 @@ impl DomainErrorKind {
             Self::Template => "template error",
             Self::Acp => "ACP error",
             Self::Mcp => "MCP error",
+            Self::Git => "Git error",
         }
     }
 }
@@ -196,5 +198,10 @@ impl DadrError {
     #[allow(non_snake_case)]
     pub fn Mcp(message: impl Into<String>) -> Self {
         Self::Domain(DomainError::new(DomainErrorKind::Mcp, message))
+    }
+
+    #[allow(non_snake_case)]
+    pub fn Git(message: impl Into<String>) -> Self {
+        Self::Domain(DomainError::new(DomainErrorKind::Git, message))
     }
 }
