@@ -15,7 +15,7 @@ A file also has three required YAML fields: `title`, `status`, and `id`. Dadrock
 
 A new record is a **candidate**. A human reviews it and marks it **accepted** or **rejected**. Acceptance keeps the same ID. An agent may help draft a candidate, but cannot decide whether you endorse it.
 
-Once approved, a decision's substantive content is preserved. Changing the decision means accepting a successor that supersedes the original; minor corrections remain possible. The original remains accepted, and its `successors` field names the records that supersede it. “Superseded” describes an accepted record with successors, not a fourth stored status. Dadrock keeps superseded records in its archive, next to rejected ones, and offers a superseded filter for convenience.
+Once a record is accepted or rejected, its title and body never change; only its tags can. Changing a decision, however slightly, means accepting a successor that supersedes the original. The original remains accepted, and its `successors` field names the records that supersede it. “Superseded” describes an accepted record with successors, not a fourth stored status. Dadrock keeps superseded records in its archive, next to rejected ones, and offers a superseded filter for convenience.
 
 ## What deserves a record?
 

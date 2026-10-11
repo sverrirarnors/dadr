@@ -11,9 +11,9 @@ The `status` field takes one of three values: `candidate`, `accepted`, or `rejec
 | Record | Editable? | Notes |
 |---|---|---|
 | `candidate` | Yes — freely revisable | A proposed decision under review. Lives in `dadr/inbox/`. Each of the four sections must have text before acceptance; thin candidates create work for the reviewer. |
-| `accepted` | No changes in meaning | The decision is in force. Lives in `dadr/ledger/`. Typo and link fixes are fine; anything else goes through a successor candidate and supersession. Accept a successor candidate with a `## Supersedes` section, or use `dadrock supersede` to link records that are already accepted. |
-| `accepted`, superseded | No changes in meaning | An accepted record whose `successors` array names the records that supersede it. Moved to `dadr/archive/`; keeps `status: accepted`. |
-| `rejected` | No edits | A closed candidate. Lives in `dadr/archive/`. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
+| `accepted` | Tags only | The decision is in force. Lives in `dadr/ledger/`. Its `id`, `status`, `title`, body, and `successors` never change, not even for a typo; Dadrock refuses such edits. Every change goes through a successor candidate: accept a successor with a `## Supersedes` section naming it, or use `dadrock supersede` to link records that are already accepted. |
+| `accepted`, superseded | Tags only | An accepted record whose `successors` array names the records that supersede it. Moved to `dadr/archive/`; keeps `status: accepted`. Gains successors only by being superseded. |
+| `rejected` | Tags only | A closed candidate. Lives in `dadr/archive/`. Its `id`, `status`, `title`, and body never change. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
 
 Acceptance, rejection, and supersession are all **human approval boundaries**. No skill auto-transitions.
 
@@ -89,7 +89,7 @@ What problem, dataset, or constraint motivates this choice?
 - **Always** include a Markdown link to the source surface. Relative paths resolve from the record's own directory; records live in `dadr/<status>/`, so a repository file is `../../path`: `[analysis/build_sample.py:42-58](../../analysis/build_sample.py#L42-L58)`.
 - Link other records with a short-id wikilink: `[[01938b8e4d70]]`.
 - Mention the dataset, prior decision, or plan section that frames the choice.
-- For records produced by supersession, also name the predecessor and the supersession trigger.
+- For a successor, keep the predecessor's Context unless the change requires otherwise. The predecessor and the reason for the change belong in `## Supersedes`, not in Context.
 
 #### Decision — 1–3 sentences
 
@@ -107,7 +107,7 @@ The defensible options not chosen, with a one-line reason each.
 
 - Real alternatives only. **Do not fabricate.**
 - If genuinely no alternative applies, write **"Not applicable"** — never leave empty.
-- For records produced by supersession, the predecessor itself usually appears here as a rejected alternative.
+- For a successor whose decision changed, the predecessor's choice often becomes an alternative, with the reason it no longer holds.
 - Bullets are acceptable here; prose is fine too.
 
 #### Consequences — 2–4 sentences
@@ -117,6 +117,20 @@ Downstream effects on sample size, estimand, robustness obligations, or reportin
 - Quantify when possible (sample-size delta, expected direction).
 - Note follow-ups the analyst should consider.
 - For records produced by supersession, note any prior result that may need to be re-run.
+
+### `## Supersedes` — successors only
+
+A successor candidate names the accepted records it supersedes in an optional `## Supersedes` section, placed first in the body: one line per predecessor, each exactly one link by full UUID labeled with the predecessor's title, then the reason for the change in ordinary Markdown.
+
+```markdown
+## Supersedes
+
+[[01938c20-a3b4-7000-8000-111122223333|Winsorize income at p99]]
+
+Winsorizing at p99 still left implausible incomes in two waves.
+```
+
+Several links make a merge. A record has at most one `## Supersedes` section, and a section without a link is an error. Accepting the candidate links every predecessor and moves it to the archive; the section stays in the body as the record of why the decision changed. Several candidates that name the same predecessor (a split) are accepted together with `dadrock accept <id> --with <id>`. See [tasks/supersede-record.md](tasks/supersede-record.md).
 
 ## Suggested tags
 
@@ -155,7 +169,7 @@ A well-formed record is **roughly 200–400 words of body prose** — long enoug
 - **Hand-written `successors`.** Let Dadrock write them, when a successor with a `## Supersedes` section is accepted or through `dadrock supersede`.
 - **Question-form titles.** "Should we drop missing treatment?" → "Drop observations with missing treatment".
 - **Tense drift in `Decision`.** Active voice describing what was done (or what the code does); not "we plan to" or "we should".
-- **Editing accepted bodies.** Preserve substantive content; changed decisions require a new candidate plus supersession. Minor corrections are allowed.
+- **Editing accepted or rejected records.** Their title and body never change, not even for a typo, and Dadrock refuses the edit. Draft a successor candidate that supersedes the accepted record instead; only tags and keys outside DADR can change in place.
 
 ## Minimum viable record
 

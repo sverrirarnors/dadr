@@ -5,7 +5,7 @@ description: Revise an existing DADR candidate to apply reviewer-requested chang
 
 # Edit record
 
-Apply requested changes to an existing candidate DADR. The candidate stays a candidate; only its body, title, or tags change. If the request would change the underlying choice to a different one, this is the wrong skill — use [supersede-record.md](supersede-record.md) (if the predecessor is already accepted) or draft a fresh candidate via [context-to-record.md](context-to-record.md).
+Apply requested changes to an existing candidate DADR. The candidate stays a candidate; only its body, title, or tags change. Accepted and rejected records are frozen: to change an accepted decision, however slightly, use [supersede-record.md](supersede-record.md); to revisit a rejected one, draft a fresh candidate via [context-to-record.md](context-to-record.md). The same applies when the request would change the underlying choice to a different one.
 
 Trigger phrases:
 
@@ -18,7 +18,7 @@ Trigger phrases:
 
 Shared preconditions in [../SKILL.md](../SKILL.md) apply. In addition:
 
-- The target must be a candidate (`dadrock list --status candidate` to confirm). This skill does not edit accepted, rejected, or superseded records.
+- The target must be a candidate (`dadrock list --status candidate` to confirm). This skill does not edit accepted, rejected, or superseded records, and the `edit-record` agent task refuses them before it runs.
 - The user's revision request must be specific. "Make it better" is not actionable; ask for the section(s) and the change desired before editing.
 
 ## What to preserve
@@ -85,7 +85,7 @@ Then summarize:
 ## Constraints
 
 - **This skill does not run lifecycle transitions.** No `accept`, `reject`, or `supersede` from here — those are separate user actions.
-- **No edits to accepted, rejected, or superseded records.** Use supersession instead.
+- **No edits to accepted, rejected, or superseded records.** Their `id`, `status`, `title`, body, and `successors` never change, not even for a typo, and Dadrock refuses such edits. Use [supersede-record.md](supersede-record.md) instead.
 - **One candidate per invocation.** If two candidates need revising, run the skill twice.
 - **Preserve `id` and `status`.** Both are dadrock-owned front-matter fields.
 
