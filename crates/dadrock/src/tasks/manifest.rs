@@ -1,9 +1,12 @@
-use serde::{Deserialize, Serialize};
+use dadr::{frontmatter::split_front_matter, DiagnosticCode};
+use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 
-use crate::DadrError;
+use crate::{mcp::DadrockMcpAccess, DadrError};
 
 use super::{ids::is_valid_task_id, output::TaskOutputKind};
 
+/// A task's manifest: the YAML front matter of its task document. The
+/// document body, after the front matter, is the task prompt.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TaskManifest {
     pub id: String,
@@ -17,9 +20,18 @@ pub struct TaskManifest {
     #[serde(default)]
     pub requirements: TaskRequirements,
     pub output: TaskOutput,
-    pub prompt: TaskPrompt,
+    /// Dadrock MCP access granted to the agent while it runs this task.
+    #[serde(default)]
+    pub mcp_access: DadrockMcpAccess,
     #[serde(default)]
     pub tools: Vec<TaskTool>,
+}
+
+/// A parsed task document: its manifest plus the trimmed prompt body.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TaskDocument {
+    pub manifest: TaskManifest,
+    pub prompt: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -36,7 +48,11 @@ pub struct TaskInput {
     pub label: String,
     #[serde(rename = "type")]
     pub field_type: TaskInputType,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_scalar_default",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub default: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub options: Vec<String>,
@@ -135,11 +151,6 @@ pub struct TaskOutput {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TaskPrompt {
-    pub system: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TaskTool {
     pub name: String,
     pub mode: TaskToolMode,
@@ -152,12 +163,50 @@ pub enum TaskToolMode {
     Write,
 }
 
-pub fn parse_task_manifest(source: &str, content: &str) -> Result<TaskManifest, DadrError> {
-    let manifest: TaskManifest = toml::from_str(content).map_err(|err| {
-        DadrError::InvalidInput(format!("failed to parse task manifest `{source}`: {err}"))
+/// Parse a task document: YAML front matter (the manifest) followed by the
+/// Markdown task prompt. The returned prompt is trimmed and may be empty;
+/// callers decide how to report a task without a prompt.
+pub fn parse_task_document(source: &str, content: &str) -> Result<TaskDocument, DadrError> {
+    let split = split_front_matter(content);
+    if let Some(diagnostic) = split.diagnostics.first() {
+        let problem = match diagnostic.code {
+            DiagnosticCode::MissingFrontMatter => {
+                "it must start with YAML front matter between `---` lines"
+            }
+            _ => "its YAML front matter is missing a closing `---` line",
+        };
+        return Err(DadrError::InvalidInput(format!(
+            "failed to parse task document `{source}`: {problem}"
+        )));
+    }
+    let yaml = split.raw_yaml.unwrap_or_default();
+    let manifest: TaskManifest = serde_yaml::from_str(&yaml).map_err(|err| {
+        DadrError::InvalidInput(format!(
+            "failed to parse task front matter `{source}`: {err}"
+        ))
     })?;
     validate_manifest(source, &manifest)?;
-    Ok(manifest)
+    Ok(TaskDocument {
+        manifest,
+        prompt: split.body.trim().to_owned(),
+    })
+}
+
+/// YAML reads `default: 5` or `default: true` as a number or boolean; input
+/// defaults are strings, so accept any scalar and keep its text.
+fn deserialize_scalar_default<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    match Option::<serde_yaml::Value>::deserialize(deserializer)? {
+        None | Some(serde_yaml::Value::Null) => Ok(None),
+        Some(serde_yaml::Value::String(value)) => Ok(Some(value)),
+        Some(serde_yaml::Value::Number(value)) => Ok(Some(value.to_string())),
+        Some(serde_yaml::Value::Bool(value)) => Ok(Some(value.to_string())),
+        Some(_) => Err(D::Error::custom(
+            "input default must be a string, number, or boolean",
+        )),
+    }
 }
 
 fn validate_manifest(source: &str, manifest: &TaskManifest) -> Result<(), DadrError> {
@@ -176,12 +225,6 @@ fn validate_manifest(source: &str, manifest: &TaskManifest) -> Result<(), DadrEr
     if manifest.description.trim().is_empty() {
         return Err(DadrError::InvalidInput(format!(
             "task `{}` must have a non-empty description",
-            manifest.id
-        )));
-    }
-    if manifest.prompt.system.trim().is_empty() {
-        return Err(DadrError::InvalidInput(format!(
-            "task `{}` must name a system prompt file",
             manifest.id
         )));
     }

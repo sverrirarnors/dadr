@@ -1,9 +1,9 @@
 use std::{collections::BTreeMap, env, fs, io, path::PathBuf};
 
-use camino::{Utf8Component, Utf8Path, Utf8PathBuf};
+use camino::{Utf8Path, Utf8PathBuf};
 use serde::{Deserialize, Serialize};
 
-use super::{builtin, parse_task_manifest, TaskManifest};
+use super::{builtin, parse_task_document, TaskDocument, TaskManifest};
 use crate::paths::home_dir;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -138,20 +138,21 @@ fn collect_builtin_tasks(
     diagnostics: &mut Vec<TaskDiagnostic>,
 ) {
     for spec in builtin::starter_task_specs() {
-        let declared_source_id = format!("builtin:{}", spec.id);
-        let manifest = match parse_task_manifest(&declared_source_id, spec.manifest) {
-            Ok(manifest) => manifest,
+        let source_id = format!("builtin:{}", spec.id);
+        let document = match parse_task_document(&source_id, spec.document) {
+            Ok(document) => document,
             Err(err) => {
                 diagnostics.push(
                     TaskDiagnostic::new(
                         TaskDiagnosticCode::InvalidManifest,
                         format!("failed to load built-in task `{}`: {err}", spec.id),
                     )
-                    .with_source_id(declared_source_id),
+                    .with_source_id(source_id),
                 );
                 continue;
             }
         };
+        let TaskDocument { manifest, prompt } = document;
 
         if manifest.id != spec.id {
             diagnostics.push(
@@ -162,18 +163,18 @@ fn collect_builtin_tasks(
                         spec.id, manifest.id
                     ),
                 )
-                .with_source_id(declared_source_id),
+                .with_source_id(source_id),
             );
             continue;
         }
 
-        if spec.prompt.trim().is_empty() {
+        if prompt.is_empty() {
             diagnostics.push(
                 TaskDiagnostic::new(
                     TaskDiagnosticCode::MissingPrompt,
                     format!("built-in task `{}` has an empty prompt", manifest.id),
                 )
-                .with_source_id(format!("builtin:{}", manifest.id)),
+                .with_source_id(source_id),
             );
             continue;
         }
@@ -183,16 +184,18 @@ fn collect_builtin_tasks(
             TaskPackage {
                 source: TaskSource {
                     kind: TaskSourceKind::Builtin,
-                    id: format!("builtin:{}", manifest.id),
+                    id: source_id,
                     path: None,
                 },
                 manifest,
-                prompt: spec.prompt.to_owned(),
+                prompt,
             },
         );
     }
 }
 
+/// Read `<root>/<id>.md` task documents. Other entries are ignored, except
+/// directories in the old `<id>/task.toml` layout, which get a diagnostic.
 fn collect_filesystem_tasks(
     kind: TaskSourceKind,
     root: &Utf8Path,
@@ -217,7 +220,8 @@ fn collect_filesystem_tasks(
         }
     };
 
-    let mut task_dirs = Vec::new();
+    let mut task_files = Vec::new();
+    let mut legacy_dirs = Vec::new();
     for entry in entries {
         let entry = match entry {
             Ok(entry) => entry,
@@ -252,14 +256,23 @@ fn collect_filesystem_tasks(
                 continue;
             }
         };
-        if file_type.is_dir() {
-            task_dirs.push(path);
+        if path.file_name().is_some_and(|name| name.starts_with('.')) {
+            continue;
+        }
+        if file_type.is_file() && path.extension() == Some("md") {
+            task_files.push(path);
+        } else if file_type.is_dir() && path.join("task.toml").is_file() {
+            legacy_dirs.push(path);
         }
     }
-    task_dirs.sort_by(|left, right| left.as_str().cmp(right.as_str()));
+    task_files.sort();
+    legacy_dirs.sort();
 
-    for task_dir in task_dirs {
-        if let Some(task) = read_filesystem_task(kind, &task_dir, diagnostics) {
+    for legacy_dir in legacy_dirs {
+        diagnostics.push(legacy_task_package_diagnostic(kind, root, &legacy_dir));
+    }
+    for task_file in task_files {
+        if let Some(task) = read_filesystem_task(kind, &task_file, diagnostics) {
             tasks.insert(task.manifest.id.clone(), task);
         }
     }
@@ -267,60 +280,66 @@ fn collect_filesystem_tasks(
 
 fn read_filesystem_task(
     kind: TaskSourceKind,
-    task_dir: &Utf8Path,
+    task_file: &Utf8Path,
     diagnostics: &mut Vec<TaskDiagnostic>,
 ) -> Option<TaskPackage> {
-    let fallback_source_id = filesystem_source_id(kind, task_dir);
-    let manifest_path = task_dir.join("task.toml");
-    let manifest_content = match fs::read_to_string(manifest_path.as_std_path()) {
+    let file_id = task_file.file_stem().unwrap_or_default();
+    let fallback_source_id = format!("{}:{file_id}", kind.as_str());
+    let content = match fs::read_to_string(task_file.as_std_path()) {
         Ok(content) => content,
         Err(err) => {
             diagnostics.push(
-                manifest_read_diagnostic(kind, &fallback_source_id, &manifest_path, err)
-                    .with_path(manifest_path),
-            );
-            return None;
-        }
-    };
-
-    let manifest = match parse_task_manifest(&fallback_source_id, &manifest_content) {
-        Ok(manifest) => manifest,
-        Err(err) => {
-            diagnostics.push(
                 TaskDiagnostic::new(
-                    TaskDiagnosticCode::InvalidManifest,
-                    format!("failed to parse task manifest `{manifest_path}`: {err}"),
+                    TaskDiagnosticCode::ReadFailed,
+                    format!("failed to read {} task `{task_file}`: {err}", kind.as_str()),
                 )
                 .with_source_id(fallback_source_id)
-                .with_path(manifest_path),
+                .with_path(task_file.to_path_buf()),
             );
             return None;
         }
     };
 
-    let source_id = format!("{}:{}", kind.as_str(), manifest.id);
-    let prompt_path = match resolve_prompt_path(task_dir, &source_id, &manifest.prompt.system) {
-        Ok(path) => path,
-        Err(diagnostic) => {
-            diagnostics.push(diagnostic);
-            return None;
-        }
-    };
-    let prompt = match fs::read_to_string(prompt_path.as_std_path()) {
-        Ok(prompt) => prompt,
+    let TaskDocument { manifest, prompt } = match parse_task_document(task_file.as_str(), &content)
+    {
+        Ok(document) => document,
         Err(err) => {
-            diagnostics.push(prompt_read_diagnostic(&source_id, &prompt_path, err));
+            diagnostics.push(
+                TaskDiagnostic::new(TaskDiagnosticCode::InvalidManifest, err.to_string())
+                    .with_source_id(fallback_source_id)
+                    .with_path(task_file.to_path_buf()),
+            );
             return None;
         }
     };
-    if prompt.trim().is_empty() {
+
+    if manifest.id != file_id {
+        diagnostics.push(
+            TaskDiagnostic::new(
+                TaskDiagnosticCode::InvalidManifest,
+                format!(
+                    "task file `{task_file}` declares id `{}`; a task file must be named `<id>.md`, so rename it to `{}.md` or change its id to `{file_id}`",
+                    manifest.id, manifest.id
+                ),
+            )
+            .with_source_id(fallback_source_id)
+            .with_path(task_file.to_path_buf()),
+        );
+        return None;
+    }
+
+    let source_id = format!("{}:{}", kind.as_str(), manifest.id);
+    if prompt.is_empty() {
         diagnostics.push(
             TaskDiagnostic::new(
                 TaskDiagnosticCode::MissingPrompt,
-                format!("task `{}` prompt `{prompt_path}` is empty", manifest.id),
+                format!(
+                    "task `{}` in `{task_file}` has no prompt after its front matter",
+                    manifest.id
+                ),
             )
             .with_source_id(source_id)
-            .with_path(prompt_path),
+            .with_path(task_file.to_path_buf()),
         );
         return None;
     }
@@ -330,142 +349,24 @@ fn read_filesystem_task(
         source: TaskSource {
             kind,
             id: source_id,
-            path: Some(task_dir.to_path_buf()),
+            path: Some(task_file.to_path_buf()),
         },
         prompt,
     })
 }
 
-fn manifest_read_diagnostic(
+fn legacy_task_package_diagnostic(
     kind: TaskSourceKind,
-    source_id: &str,
-    manifest_path: &Utf8Path,
-    err: io::Error,
+    root: &Utf8Path,
+    task_dir: &Utf8Path,
 ) -> TaskDiagnostic {
-    let code = if err.kind() == io::ErrorKind::NotFound {
-        TaskDiagnosticCode::InvalidManifest
-    } else {
-        TaskDiagnosticCode::ReadFailed
-    };
+    let name = task_dir.file_name().unwrap_or("unknown-task");
     TaskDiagnostic::new(
-        code,
+        TaskDiagnosticCode::InvalidManifest,
         format!(
-            "failed to read {} task manifest `{manifest_path}`: {err}",
-            kind.as_str()
+            "`{task_dir}` uses the old task layout (`task.toml` plus a prompt file), which is no longer read; tasks are now `<dir>/<id>.md` files whose YAML front matter is the manifest and whose body is the prompt, so move this task to `{root}/{name}.md`"
         ),
     )
-    .with_source_id(source_id.to_owned())
-}
-
-fn prompt_read_diagnostic(
-    source_id: &str,
-    prompt_path: &Utf8Path,
-    err: io::Error,
-) -> TaskDiagnostic {
-    let code = if err.kind() == io::ErrorKind::NotFound {
-        TaskDiagnosticCode::MissingPrompt
-    } else {
-        TaskDiagnosticCode::ReadFailed
-    };
-    TaskDiagnostic::new(
-        code,
-        format!("failed to read task prompt `{prompt_path}`: {err}"),
-    )
-    .with_source_id(source_id.to_owned())
-    .with_path(prompt_path.to_path_buf())
-}
-
-fn resolve_prompt_path(
-    task_dir: &Utf8Path,
-    source_id: &str,
-    prompt: &str,
-) -> Result<Utf8PathBuf, TaskDiagnostic> {
-    let prompt = prompt.trim();
-    if prompt.is_empty() {
-        return Err(invalid_prompt_reference(
-            source_id,
-            task_dir.to_path_buf(),
-            "task prompt path cannot be empty",
-        ));
-    }
-
-    let prompt_path = Utf8Path::new(prompt);
-    if prompt_path.is_absolute() {
-        return Err(invalid_prompt_reference(
-            source_id,
-            prompt_path.to_path_buf(),
-            format!("absolute prompt path `{prompt}` is not allowed"),
-        ));
-    }
-
-    for component in prompt_path.components() {
-        match component {
-            Utf8Component::ParentDir => {
-                return Err(invalid_prompt_reference(
-                    source_id,
-                    task_dir.join(prompt_path),
-                    format!("prompt path `{prompt}` cannot include a parent directory component"),
-                ));
-            }
-            Utf8Component::Prefix(_) | Utf8Component::RootDir => {
-                return Err(invalid_prompt_reference(
-                    source_id,
-                    prompt_path.to_path_buf(),
-                    format!("prompt path `{prompt}` must be relative to the task package"),
-                ));
-            }
-            Utf8Component::CurDir | Utf8Component::Normal(_) => {}
-        }
-    }
-
-    let prompt_path = task_dir.join(prompt_path);
-    let canonical_task_dir = match canonical_utf8_path(task_dir) {
-        Ok(path) => path,
-        Err(err) => {
-            return Err(TaskDiagnostic::new(
-                TaskDiagnosticCode::ReadFailed,
-                format!("failed to resolve task directory `{task_dir}`: {err}"),
-            )
-            .with_source_id(source_id.to_owned())
-            .with_path(task_dir.to_path_buf()));
-        }
-    };
-    let canonical_prompt_path = match canonical_utf8_path(&prompt_path) {
-        Ok(path) => path,
-        Err(err) => return Err(prompt_read_diagnostic(source_id, &prompt_path, err)),
-    };
-
-    if !canonical_prompt_path.starts_with(&canonical_task_dir) {
-        return Err(invalid_prompt_reference(
-            source_id,
-            prompt_path,
-            format!("prompt path `{prompt}` resolves outside task package `{task_dir}`"),
-        ));
-    }
-
-    Ok(canonical_prompt_path)
-}
-
-fn canonical_utf8_path(path: &Utf8Path) -> Result<Utf8PathBuf, io::Error> {
-    let canonical = fs::canonicalize(path.as_std_path())?;
-    Utf8PathBuf::from_path_buf(canonical)
-        .map_err(|path| io::Error::new(io::ErrorKind::InvalidData, path.display().to_string()))
-}
-
-fn invalid_prompt_reference(
-    source_id: &str,
-    path: Utf8PathBuf,
-    message: impl Into<String>,
-) -> TaskDiagnostic {
-    TaskDiagnostic::new(TaskDiagnosticCode::InvalidManifest, message)
-        .with_source_id(source_id.to_owned())
-        .with_path(path)
-}
-
-fn filesystem_source_id(kind: TaskSourceKind, task_dir: &Utf8Path) -> String {
-    format!(
-        "{}:{}",
-        kind.as_str(),
-        task_dir.file_name().unwrap_or("unknown-task")
-    )
+    .with_source_id(format!("{}:{name}", kind.as_str()))
+    .with_path(task_dir.join("task.toml"))
 }
