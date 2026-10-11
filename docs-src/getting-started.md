@@ -56,7 +56,7 @@ dadrock validate
 
 Validation checks the records' structure and internal references. It does not establish that the analysis implements your decision correctly.
 
-When your choice changes, use **Change this decision** in the web interface to prepare a replacement. Preserve the original explanation. See [the format in one page](core.md) for the lifecycle.
+When your choice changes, use **Supersede** on the record in the web interface to prepare a replacement. Preserve the original explanation. See [the format in one page](core.md) for the lifecycle.
 
 ## Optional: ask an agent to draft
 

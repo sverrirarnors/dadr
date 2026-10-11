@@ -6,7 +6,7 @@ DADR is the Markdown record format. Dadrock is its CLI and local web application
 
 - `crates/dadr`: format library (parsing, IDs, model and format rules).
 - `crates/dadrock`: application logic, commands, CLI, project discovery, validation, agents, tasks and local web server.
-- `crates/dadrock/web`: Svelte frontend; built with Bun and embedded by the Rust build script.
+- `crates/dadrock/web`: Svelte frontend; built with Bun and embedded by the Rust build script. Two routes (`/inbox`, `/ledger`) plus a Draft composer sheet and a project popover; legacy routes redirect (`src/lib/navigation/legacy.ts`). See `crates/dadrock/web/docs/web-ui-vocabulary.md`.
 - `editors/vscode`: editor extension source.
 - `docs-src`: documentation sources; `zensical.toml` controls the site. `docs/` is generated output.
 - `skills/dadr`: agent-facing workflow guidance.
