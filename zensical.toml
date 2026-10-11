@@ -9,17 +9,20 @@ repo_name = "vincentarelbundock/dadr"
 extra_css = ["stylesheets/home.css"]
 nav = [
   {"Home" = "index.md"},
-  {"DADR" = "core.md"},
+  {"Making decisions" = "core.md"},
+  {"Changing decisions" = "changing.md"},
+  {"Project layout" = "layout.md"},
   {"Specification" = "specification.md"},
   {"Tags" = "tags.md"},
-  {"UUID v7" = "uuidv7.md"},
   {"DADRock" = [
     {"Installation" = "dadrock/index.md"},
     {"Web interface" = "dadrock/web.md"},
+    {"Standalone app" = "dadrock/app.md"},
     {"Editors" = "dadrock/editors.md"},
-    {"LLM agents" = "dadrock/llms.md"},
     {"Command line" = "dadrock/cli.md"},
   ]},
+  {"LLM agents" = "llms.md"},
+  {"UUID v7" = "uuidv7.md"},
   {"Roadmap" = "roadmap.md"},
 ]
 
@@ -29,7 +32,7 @@ favicon = "assets/dadr_logo.svg"
 custom_dir = "docs-src/overrides"
 font.text = "Source Serif 4"
 font.code = "JetBrains Mono"
-features = ["content.code.copy", "navigation.footer", "toc.follow"]
+features = ["content.code.copy", "navigation.footer", "navigation.expand", "toc.follow"]
 
 [project.theme.palette]
 scheme = "default"
