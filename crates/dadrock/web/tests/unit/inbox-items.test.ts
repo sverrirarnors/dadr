@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { RecordSummary, Snapshot, TaskRun } from '../../src/lib/api';
-import { buildInboxGroups, countActionable, flattenInboxGroups, previewText } from '../../src/lib/inbox/items';
+import {
+  buildInboxGroups,
+  countActionable,
+  flattenInboxGroups,
+  groupSuccessorCandidates,
+  itemForCandidate,
+  previewText,
+} from '../../src/lib/inbox/items';
 
 function record(id: string, status: RecordSummary['status'], title: string, timestamp_ms = 0): RecordSummary {
   return {
@@ -148,5 +155,87 @@ describe('previewText', () => {
     expect(previewText('## Context Island may confound species differences.')).toBe('Island may confound species differences.');
     expect(previewText('## Context\nA reviewer asked.\n\n## Decision\nAdd one outcome.')).toBe('A reviewer asked. Add one outcome.');
     expect(previewText('Plain preview.')).toBe('Plain preview.');
+  });
+});
+
+describe('successor candidates', () => {
+  const P1 = '0193fb1f-a3a0-7000-8000-000000002001';
+  const P2 = '0193fb1f-a3a0-7000-8000-000000003001';
+  const P3 = '0193fb1f-a3a0-7000-8000-000000003002';
+  const OLD = '0193fb1f-a3a0-7000-8000-000000004001';
+  const NOW = '0193fb1f-a3a0-7000-8000-000000004002';
+
+  function successor(id: string, title: string, predecessors: string[], timestamp_ms: number): RecordSummary {
+    return {
+      ...record(id, 'candidate', title, timestamp_ms),
+      preview: `## Supersedes\n\n${predecessors.map((p) => `[[${p}|x]]`).join('\n')}\n\nWhy.\n\n## Decision\n\n${title}.`,
+    };
+  }
+
+  const project: Snapshot = {
+    ...snapshot,
+    records: [
+      record(P1, 'accepted', 'Outlier rule'),
+      record(P2, 'accepted', 'Trim income'),
+      record(P3, 'accepted', 'Cap ages'),
+      { ...record(OLD, 'accepted', 'Use pandas'), superseded: true },
+      record(NOW, 'accepted', 'Use Polars'),
+      successor('half-1', 'Winsorize income', [P1], 30),
+      successor('half-2', 'Drop implausible ages', [P1], 20),
+      successor('merge', 'One outlier rule', [P2, P3], 40),
+      successor('stale-1', 'Use pandas 2', [OLD], 50),
+      successor('stale-2', 'Use pandas with Arrow', [OLD], 10),
+      record('plain', 'candidate', 'Plain candidate', 5),
+    ],
+    project_validation: emptyPanel,
+    link_health: emptyPanel,
+    settings: { ...snapshot.settings, diagnostics: [] },
+  };
+
+  it('shows candidates that supersede the same decision as one split item', () => {
+    const items = flattenInboxGroups(buildInboxGroups({ snapshot: project, runs: [], results: {}, resolved: [] }));
+    expect(items.map((item) => item.id)).toEqual([
+      'candidate:stale-1',
+      'candidate:merge',
+      `split:${P1}`,
+      'candidate:stale-2',
+      'candidate:plain',
+    ]);
+    const split = items.find((item) => item.kind === 'split');
+    expect(split).toMatchObject({
+      title: 'Split “Outlier rule” into 2 decisions',
+      subtitle: 'Winsorize income · Drop implausible ages',
+      predecessors: [{ id: P1 }],
+      records: [{ id: 'half-1' }, { id: 'half-2' }],
+    });
+    expect(itemForCandidate(items, 'half-2')?.id).toBe(`split:${P1}`);
+    expect(itemForCandidate(items, 'merge')?.id).toBe('candidate:merge');
+    expect(itemForCandidate(items, 'missing')).toBeUndefined();
+  });
+
+  it('says what a successor supersedes, and when that decision moved on', () => {
+    const items = flattenInboxGroups(buildInboxGroups({ snapshot: project, runs: [], results: {}, resolved: [] }));
+    expect(items.find((item) => item.id === 'candidate:merge')?.subtitle).toBe('Supersedes “Trim income” and “Cap ages”');
+    expect(items.find((item) => item.id === 'candidate:stale-1')?.subtitle).toBe('Supersedes “Use pandas” (superseded since)');
+    expect(items.find((item) => item.id === 'candidate:plain')?.subtitle).toBe('Plain candidate preview');
+  });
+
+  it('groups candidates connected through a shared predecessor', () => {
+    const chained = {
+      ...project,
+      records: [
+        ...project.records.filter((entry) => !entry.id.startsWith('half')),
+        successor('also-trim', 'Trim at p90', [P2], 60),
+      ],
+    };
+    const groups = groupSuccessorCandidates(
+      chained.records.filter((entry) => entry.status === 'candidate'),
+      new Map(chained.records.map((entry) => [entry.id, entry])),
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({
+      id: `split:${[P2, P3].sort().join(',')}`,
+      title: 'Split “Trim income” and “Cap ages” into 2 decisions',
+    });
   });
 });

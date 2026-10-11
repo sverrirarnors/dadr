@@ -104,10 +104,13 @@ test('a successor written by hand starts with Supersedes and accepting it archiv
   await expect(draft.getByRole('heading', { name: 'Supersede “Use Arrow IPC snapshots”' })).toBeVisible();
 
   await draft.getByRole('button', { name: 'Write it by hand' }).click();
-  await expect(draft.getByText('Accepting this successor supersedes the previous decision')).toBeVisible();
-  await expect(draft.getByLabel('Title')).toHaveValue('Update: Use Arrow IPC snapshots');
+  await expect(draft.getByRole('heading', { name: 'Edit “Use Arrow IPC snapshots”' })).toBeVisible();
+  await expect(draft.getByText('Saving drafts a successor candidate in the Inbox.')).toBeVisible();
+  await expect(draft.getByLabel('Title')).toHaveValue('Use Arrow IPC snapshots');
+  await draft.getByLabel('Title').fill('Use Arrow IPC snapshots everywhere');
+  await draft.getByLabel('Why does this decision change?').fill('Every step reads the snapshots now.');
   await fillEditor(
-    draft.getByLabel('Candidate Markdown'),
+    draft.getByLabel('Successor Markdown'),
     '## Context\nc\n\n## Decision\nd\n\n## Alternatives\na\n\n## Consequences\nq',
   );
   await draft.getByRole('button', { name: 'Create candidate' }).click();
@@ -115,6 +118,9 @@ test('a successor written by hand starts with Supersedes and accepting it archiv
   await expect(page).toHaveURL(/\/inbox\?item=candidate%3A/);
   const detail = page.locator('[data-inbox-detail]');
   await expect(detail.getByText('Proposed successor')).toBeVisible();
+  await expect(detail.getByRole('tab', { name: 'Changes' })).toHaveAttribute('aria-selected', 'true');
+  await expect(detail.locator('[data-successor-reason]')).toHaveText('Every step reads the snapshots now.');
+  await detail.getByRole('tab', { name: 'Document' }).click();
   const body = detail.getByRole('article');
   await expect(body.locator('h2').first()).toHaveText('Supersedes');
   await expect(body.getByRole('button', { name: 'Use Arrow IPC snapshots' })).toBeVisible();
@@ -124,10 +130,10 @@ test('a successor written by hand starts with Supersedes and accepting it archiv
 
   await page.locator('[data-app-header]').getByRole('link', { name: 'Ledger' }).click();
   const list = page.locator('[data-ledger-list]');
-  await expect(list.getByRole('link', { name: /Update: Use Arrow IPC snapshots/ })).toBeVisible();
-  await expect(list.getByRole('link', { name: /^Use Arrow IPC snapshots/ })).toHaveCount(0);
+  await expect(list.getByRole('link', { name: /Use Arrow IPC snapshots everywhere/ })).toBeVisible();
+  await expect(list.getByRole('link', { name: /^Use Arrow IPC snapshots 0193/ })).toHaveCount(0);
   await page.getByLabel('Show archived').check();
-  await expect(list.getByRole('link', { name: /^sup Use Arrow IPC snapshots/ })).toBeVisible();
+  await expect(list.getByRole('link', { name: /^sup Use Arrow IPC snapshots 0193/ })).toBeVisible();
 });
 
 test('a revise deep link sends the requested change to the agent', async ({ page }) => {

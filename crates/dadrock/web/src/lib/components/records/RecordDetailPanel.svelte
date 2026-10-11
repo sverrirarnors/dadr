@@ -8,13 +8,14 @@
   import { createApi, type MutationResponse, type RecordSource } from '$lib/api';
   import { hasMissingRationale } from '$lib/candidates/review';
   import MarkdownEditor from '$lib/components/editor/MarkdownEditor.svelte';
-  import { Alert, Badge, Button, InlineLinkBadge } from '$lib/components/ui';
-  import { ActionBar, DocumentPane, MetadataStrip } from '$lib/components/workbench';
+  import { Alert, Badge, Button, SegmentedTabs } from '$lib/components/ui';
+  import { ActionBar, DocumentPane } from '$lib/components/workbench';
+  import { currentVersions } from '$lib/history/layout';
   import { candidateItemId } from '$lib/inbox/items';
   import { renderMarkdown, stripFrontMatter } from '$lib/markdown/render';
   import { inboxUrl, ledgerRecordUrl, ledgerUrl } from '$lib/navigation/routes';
   import { applyMutationResponse } from '$lib/query/mutation-cache';
-  import { detailActionRecord, detailActions, type DetailSurface } from '$lib/records/detail-state';
+  import { detailActionRecord, detailActions, successorDraft, type DetailSurface } from '$lib/records/detail-state';
   import {
     initialRecordEditorState,
     isRecordEditorDirty,
@@ -23,8 +24,13 @@
   import { displayRecordStatus, recordStatusVariant } from '$lib/records/filters';
   import { composer } from '$lib/stores/composer.svelte';
   import { toasts } from '$lib/stores/toast.svelte';
+  import RecordHistory from './RecordHistory.svelte';
+  import StaleSupersedesNotice from './StaleSupersedesNotice.svelte';
+  import SuccessorChanges from './SuccessorChanges.svelte';
+  import TagEditor from './TagEditor.svelte';
 
   type StatusVariant = 'candidate' | 'accepted' | 'rejected' | 'superseded';
+  type View = 'changes' | 'document' | 'history';
 
   let {
     id,
@@ -41,15 +47,19 @@
   const api = createApi();
   const queryClient = useQueryClient();
 
+  // Query functions read the id from their key, not from the `id` prop: when
+  // the Inbox moves on to the next item, a refetch of this panel's queries can
+  // still run after the prop has changed, and must not store the next
+  // record's data under this record's key.
   const source = createQuery(() => ({
     queryKey: ['record-source', id],
-    queryFn: () => api.getRecordSource(id),
+    queryFn: ({ queryKey }) => api.getRecordSource(String(queryKey[1])),
     enabled: Boolean(id),
   }));
 
   const lifecycle = createQuery(() => ({
     queryKey: ['record-lifecycle', id],
-    queryFn: () => api.getRecordLifecycle(id),
+    queryFn: ({ queryKey }) => api.getRecordLifecycle(String(queryKey[1])),
     enabled: Boolean(id),
   }));
 
@@ -60,6 +70,7 @@
 
   let editorState = $state(initialRecordEditorState());
   let editing = $state(false);
+  let chosenView = $state<View | null>(null);
 
   const dirty = $derived(isRecordEditorDirty(editorState));
   const renderedHtml = $derived(source.data ? renderMarkdown(stripFrontMatter(source.data.content)) : '');
@@ -69,15 +80,55 @@
   const isCandidate = $derived(status === 'candidate');
   const agentAvailable = $derived(snapshot.data?.settings.agent_available ?? false);
   const actions = $derived(detailActions({ surface, status, agentAvailable }));
+  const inPlace = $derived(actions.editMode === 'in-place');
+  const pending = $derived(isCandidate ? (lifecycle.data?.pending_supersedes ?? []) : []);
+  const stale = $derived(isCandidate ? (lifecycle.data?.stale_supersedes ?? []) : []);
 
-  // Links from Inbox issues open the editor with `tab=edit`; the Inbox itself never uses the URL.
+  // The Ledger shows every decided record's history; the Inbox does not.
+  const showHistory = $derived(surface === 'ledger' && Boolean(record) && !isCandidate);
+  const history = createQuery(() => ({
+    queryKey: ['record-history', id],
+    queryFn: ({ queryKey }) => api.getRecordHistory(String(queryKey[1]), { patch: true }),
+    enabled: Boolean(id) && (showHistory || status === 'superseded'),
+  }));
+
+  /** Where the decision went: the versions now in force in place of this one. */
+  const supersededBy = $derived.by(() => {
+    if (status !== 'superseded') return [];
+    const tips = history.data ? currentVersions(history.data).filter((version) => version.id !== id) : [];
+    return tips.length ? tips : (lifecycle.data?.successors ?? []);
+  });
+
+  const views = $derived.by((): Array<{ value: View; label: string; count?: number }> => {
+    if (surface === 'inbox' && pending.length) {
+      return [
+        { value: 'changes', label: 'Changes' },
+        { value: 'document', label: 'Document' },
+      ];
+    }
+    if (showHistory) {
+      const versions = history.data?.versions.length;
+      return [
+        { value: 'document', label: 'Document' },
+        versions ? { value: 'history', label: 'History', count: versions } : { value: 'history', label: 'History' },
+      ];
+    }
+    return [];
+  });
+  const view = $derived<View>(
+    chosenView && views.some((option) => option.value === chosenView) ? chosenView : (views[0]?.value ?? 'document'),
+  );
+
+  // Links from Inbox issues open the editor with `tab=edit`, and `tab=history`
+  // opens the History view; the Inbox itself never uses the URL.
   const requestedTab = $derived(surface === 'ledger' ? page.url.searchParams.get('tab') : null);
 
   $effect(() => {
-    const wantsEdit = requestedTab === 'edit';
+    const tab = requestedTab;
     void id;
     untrack(() => {
-      editing = wantsEdit;
+      editing = tab === 'edit';
+      chosenView = tab === 'history' ? 'history' : null;
     });
   });
 
@@ -125,8 +176,14 @@
       : ledgerRecordUrl(recordId);
   }
 
-  function enterEditMode() {
-    editing = true;
+  function edit() {
+    if (inPlace) editing = true;
+    else composer.show(successorDraft('edit', id));
+  }
+
+  function revise() {
+    if (inPlace) composer.show({ mode: 'revise', recordIds: [id] });
+    else composer.show(successorDraft('revise', id));
   }
 
   function leaveEditMode() {
@@ -159,7 +216,7 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
-    if (!editing) return;
+    if (!editing || !inPlace) return;
     if ((event.metaKey || event.ctrlKey) && (event.key.toLowerCase() === 's' || event.code === 'KeyS')) {
       event.preventDefault();
       saveEditor();
@@ -178,6 +235,7 @@
     {source.error?.message ?? lifecycle.error?.message ?? 'Unknown record loading error'}
   </Alert>
 {:else if source.data && lifecycle.data && record}
+  {@const editingInPlace = editing && inPlace}
   <div data-record-detail-header class="flex flex-wrap items-start justify-between gap-4">
     <div class="min-w-0">
       <div class="flex flex-wrap items-center gap-2">
@@ -193,13 +251,7 @@
       </div>
       <div class="mt-2">
         <Badge mono>{fileName(record.path)}</Badge>
-        {#if record.tags.length}
-          <MetadataStrip class="mt-1">
-            {#each record.tags as tag (tag)}
-              <InlineLinkBadge href={resolve(ledgerUrl({ tag }))}>{tag}</InlineLinkBadge>
-            {/each}
-          </MetadataStrip>
-        {/if}
+        <TagEditor id={record.id} tags={record.tags} source={source.data.content} editable={actions.editTags} />
       </div>
     </div>
 
@@ -220,119 +272,110 @@
     </Alert>
   {/if}
 
-  {#if lifecycle.data.predecessors.length || lifecycle.data.successors.length || lifecycle.data.diagnostics.length}
-    <div data-record-supersession class="mt-4 space-y-1 text-xs text-fg-subtle">
-      {#if lifecycle.data.predecessors.length}
-        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <span>Supersedes</span>
-          {#each lifecycle.data.predecessors as predecessor (predecessor.id)}
-            <a class="text-accent hover:underline" href={resolve(recordHref(predecessor.id))}>
-              {predecessor.title}
-            </a>
-          {/each}
-        </div>
-      {/if}
-
-      {#if lifecycle.data.successors.length}
-        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <span>Superseded by</span>
-          {#each lifecycle.data.successors as successor (successor.id)}
-            <a class="text-accent hover:underline" href={resolve(recordHref(successor.id))}>
-              {successor.title}
-            </a>
-          {/each}
-        </div>
-      {/if}
-
-      {#if lifecycle.data.diagnostics.length}
-        <ul class="space-y-1">
-          {#each lifecycle.data.diagnostics as diagnostic (diagnostic.code + diagnostic.message)}
-            <li>
-              <span class="font-medium text-warning">{diagnostic.code}</span>
-              <span class="ml-2 text-fg-muted">{diagnostic.message}</span>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </div>
+  {#if supersededBy.length}
+    <p data-record-superseded-by class="mt-3 text-sm text-fg-muted">
+      Superseded by {#each supersededBy as successor, index (successor.id)}{index ? ', ' : ''}<a
+          class="text-accent hover:underline"
+          href={resolve(recordHref(successor.id))}>“{successor.title}”</a
+        >{/each}
+    </p>
+  {:else if status === 'rejected'}
+    <p data-record-rejected-notice class="mt-3 text-sm text-fg-muted">
+      Rejected. It stays in the archive unchanged; to revisit it, draft a new decision.
+    </p>
   {/if}
 
-  <ActionBar data-record-actions class="mt-2 border-0 bg-transparent px-0">
-    <div class="flex flex-wrap items-center gap-2">
-      {#if editing}
-        <Button type="button" variant="outline" size="sm" disabled={save.isPending} onclick={resetEditor}>
-          Cancel
-        </Button>
-        <Button type="button" size="sm" disabled={!dirty || save.isPending} onclick={saveEditor}>
-          {save.isPending ? 'Saving...' : 'Save'}
-        </Button>
-      {:else}
-        {#each actions.primary as action (action)}
-          {#if action === 'edit'}
-            <Button type="button" variant="outline" size="sm" data-record-action="edit" onclick={enterEditMode}>
-              <Pencil class="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Edit</span>
-            </Button>
-          {:else if action === 'revise'}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              data-record-action="revise"
-              onclick={() => composer.show({ mode: 'revise', recordIds: [id] })}
-            >
-              <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Revise with agent</span>
-            </Button>
-          {/if}
-        {/each}
-      {/if}
-    </div>
+  {#if lifecycle.data.diagnostics.length}
+    <ul data-record-lifecycle-diagnostics class="mt-3 space-y-1 text-xs">
+      {#each lifecycle.data.diagnostics as diagnostic (diagnostic.code + diagnostic.message)}
+        <li>
+          <span class="font-medium text-warning">{diagnostic.code}</span>
+          <span class="ml-2 text-fg-muted">{diagnostic.message}</span>
+        </li>
+      {/each}
+    </ul>
+  {/if}
 
-    {#if !editing && actions.lifecycle.length}
-      <div class="ml-auto flex flex-wrap items-center gap-2">
-        {#each actions.lifecycle as action (action)}
-          {#if action === 'reject'}
-            <Button
-              type="button"
-              variant="danger"
-              size="sm"
-              data-record-action="reject"
-              disabled={reject.isPending || accept.isPending}
-              onclick={() => reject.mutate()}
-            >
-              <X class="h-3.5 w-3.5" aria-hidden="true" />
-              <span>{reject.isPending ? 'Rejecting' : 'Reject'}</span>
-            </Button>
-          {:else if action === 'accept'}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              data-record-action="accept"
-              class="border-success/40 bg-success/10 text-success hover:bg-success/20"
-              disabled={accept.isPending || reject.isPending || dirty || save.isPending}
-              onclick={() => accept.mutate()}
-            >
-              <Check class="h-3.5 w-3.5" aria-hidden="true" />
-              <span>{accept.isPending ? 'Accepting' : 'Accept'}</span>
-            </Button>
-          {:else if action === 'supersede'}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              data-record-action="supersede"
-              onclick={() => composer.show({ mode: 'supersede', recordIds: [id] })}
-            >
-              <Replace class="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Supersede</span>
-            </Button>
-          {/if}
-        {/each}
+  {#if actions.primary.length || actions.lifecycle.length || editingInPlace}
+    <ActionBar data-record-actions class="mt-2 border-0 bg-transparent px-0">
+      <div class="flex flex-wrap items-center gap-2">
+        {#if editingInPlace}
+          <Button type="button" variant="outline" size="sm" disabled={save.isPending} onclick={resetEditor}>
+            Cancel
+          </Button>
+          <Button type="button" size="sm" disabled={!dirty || save.isPending} onclick={saveEditor}>
+            {save.isPending ? 'Saving...' : 'Save'}
+          </Button>
+        {:else}
+          {#each actions.primary as action (action)}
+            {#if action === 'edit'}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                data-record-action="edit"
+                title={inPlace ? undefined : 'Draft a successor, starting from this text'}
+                onclick={edit}
+              >
+                <Pencil class="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Edit</span>
+              </Button>
+            {:else if action === 'revise'}
+              <Button type="button" variant="outline" size="sm" data-record-action="revise" onclick={revise}>
+                <Sparkles class="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Revise with agent</span>
+              </Button>
+            {/if}
+          {/each}
+        {/if}
       </div>
-    {/if}
-  </ActionBar>
+
+      {#if !editingInPlace && actions.lifecycle.length}
+        <div class="ml-auto flex flex-wrap items-center gap-2">
+          {#each actions.lifecycle as action (action)}
+            {#if action === 'reject'}
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                data-record-action="reject"
+                disabled={reject.isPending || accept.isPending}
+                onclick={() => reject.mutate()}
+              >
+                <X class="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{reject.isPending ? 'Rejecting' : 'Reject'}</span>
+              </Button>
+            {:else if action === 'accept'}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                data-record-action="accept"
+                class="border-success/40 bg-success/10 text-success hover:bg-success/20"
+                disabled={accept.isPending || reject.isPending || dirty || save.isPending || stale.length > 0}
+                title={stale.length ? 'Retarget the candidate at the current decision first' : undefined}
+                onclick={() => accept.mutate()}
+              >
+                <Check class="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{accept.isPending ? 'Accepting' : 'Accept'}</span>
+              </Button>
+            {:else if action === 'supersede'}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                data-record-action="supersede"
+                onclick={() => composer.show(successorDraft('supersede', id))}
+              >
+                <Replace class="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Supersede</span>
+              </Button>
+            {/if}
+          {/each}
+        </div>
+      {/if}
+    </ActionBar>
+  {/if}
 
   {#if isCandidate}
     {#if surface === 'inbox'}
@@ -347,24 +390,26 @@
           Check both what was done and why. Accepting means you endorse this decision and its explanation.
         {/if}
       </Alert>
-      {#if lifecycle.data.pending_supersedes.length}
+      {#if pending.length && !stale.length}
         <Alert class="mt-2" variant="neutral" title="Proposed successor">
           Accepting will supersede
-          {#each lifecycle.data.pending_supersedes as predecessor, index (predecessor.id)}
+          {#each pending as predecessor, index (predecessor.id)}
             {index ? ', ' : ''}<a class="text-accent underline" href={resolve(recordHref(predecessor.id))}>
               {predecessor.title}
             </a>
-          {/each}{lifecycle.data.pending_supersedes.length === 1 ? ', which moves' : ', which move'} to the archive unchanged.
+          {/each}{pending.length === 1 ? ', which moves' : ', which move'} to the archive unchanged.
         </Alert>
       {/if}
-      {#each lifecycle.data.stale_supersedes as stale (stale.predecessor.id)}
-        <Alert class="mt-2" variant="warning" title="Predecessor already superseded">
-          <a class="text-accent underline" href={resolve(recordHref(stale.predecessor.id))}>{stale.predecessor.title}</a>
-          was superseded after this candidate was drafted. The decision now in force:
-          {#each stale.current_successors as current, index (current.id)}
-            {index ? ', ' : ''}<a class="text-accent underline" href={resolve(recordHref(current.id))}>{current.title}</a>
-          {/each}. Point <code>## Supersedes</code> at the current decision, or reject this candidate.
-        </Alert>
+      {#each stale as entry (entry.predecessor.id)}
+        <div class="mt-2">
+          <StaleSupersedesNotice
+            {id}
+            stale={entry}
+            source={source.data.content}
+            disabled={dirty || editingInPlace}
+            {recordHref}
+          />
+        </div>
       {/each}
     {:else}
       <Alert class="mt-3" variant="info" data-record-candidate-notice>
@@ -374,7 +419,7 @@
     {/if}
   {/if}
 
-  {#if editing}
+  {#if editingInPlace}
     <div class={embedded ? 'mt-4 flex min-h-0 flex-1 flex-col' : 'mt-4 block'}>
       <span class="mb-2 block text-sm font-medium text-fg">Raw Markdown</span>
       <MarkdownEditor
@@ -387,15 +432,44 @@
       />
     </div>
   {:else}
-    <DocumentPane
-      data-record-rendered-pane
-      class={`record-markdown mt-4 rounded-md border border-border bg-bg p-6 ${
-        embedded ? 'min-h-0 flex-1 overflow-auto' : ''
-      }`}
-    >
-      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {@html renderedHtml}
-    </DocumentPane>
+    {#if views.length}
+      <SegmentedTabs
+        class="mt-4"
+        ariaLabel="Record view"
+        data-record-views
+        value={view}
+        items={views}
+        onselect={(next) => {
+          chosenView = next;
+        }}
+      />
+    {/if}
+
+    {#if view === 'changes' && pending.length}
+      <div data-record-changes-pane class={`mt-3 ${embedded ? 'min-h-0 flex-1 overflow-auto' : ''}`}>
+        <SuccessorChanges {id} predecessors={pending} source={source.data.content} {recordHref} />
+      </div>
+    {:else if view === 'history'}
+      <div data-record-history-pane class={`mt-3 ${embedded ? 'min-h-0 flex-1 overflow-auto' : ''}`}>
+        {#if history.isPending}
+          <p class="text-sm text-fg-muted">Loading the history…</p>
+        {:else if history.isError}
+          <Alert variant="warning" title="History unavailable">{history.error.message}</Alert>
+        {:else if history.data}
+          <RecordHistory history={history.data} {recordHref} />
+        {/if}
+      </div>
+    {:else}
+      <DocumentPane
+        data-record-rendered-pane
+        class={`record-markdown mt-4 rounded-md border border-border bg-bg p-6 ${
+          embedded ? 'min-h-0 flex-1 overflow-auto' : ''
+        }`}
+      >
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+        {@html renderedHtml}
+      </DocumentPane>
+    {/if}
   {/if}
 {/if}
 

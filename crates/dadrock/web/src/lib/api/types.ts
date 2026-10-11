@@ -1,6 +1,8 @@
 import type {
   CandidateTemplate,
   MutationResponse,
+  RecordDiffResult,
+  RecordHistory,
   RecordLifecycle,
   RecordSource,
   Snapshot,
@@ -61,6 +63,10 @@ export interface DadrApi {
   initializeProject(): Promise<MutationResponse>;
   getRecordSource(id: string): Promise<RecordSource>;
   getRecordLifecycle(id: string): Promise<RecordLifecycle>;
+  /** The versions of the decision containing `id`; with `patch`, each link carries its diff. */
+  getRecordHistory(id: string, options?: { patch?: boolean }): Promise<RecordHistory>;
+  /** The difference from `against` (old) to `id` (new). */
+  getRecordDiff(id: string, against: string): Promise<RecordDiffResult>;
   saveRecordSource(id: string, content: string): Promise<MutationResponse>;
   runValidation(target: ValidationTarget): Promise<MutationResponse>;
   getCandidateTemplate(): Promise<CandidateTemplate>;
@@ -68,7 +74,8 @@ export interface DadrApi {
   applyRecordRevision(request: ApplyRecordRevisionRequest): Promise<MutationResponse>;
   supersedeRecords(request: SupersedeRecordsRequest): Promise<MutationResponse>;
   draftCandidate(request: DraftCandidateRequest): Promise<MutationResponse>;
-  acceptCandidate(id: string): Promise<MutationResponse>;
+  /** Accept a candidate, and with `withIds` more candidates in the same operation (a split). */
+  acceptCandidate(id: string, withIds?: string[]): Promise<MutationResponse>;
   rejectCandidate(id: string): Promise<MutationResponse>;
   listTasks(): Promise<TaskListing>;
   getTask(id: string): Promise<TaskPackage>;

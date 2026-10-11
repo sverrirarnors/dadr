@@ -78,3 +78,32 @@ function splitLines(text: string): string[] {
   if (lines.length > 1 && lines.at(-1) === '') lines.pop();
   return lines;
 }
+
+/** The kinds Dadrock's diff endpoints use for a line. */
+export interface RecordDiffLine {
+  kind: 'context' | 'added' | 'removed';
+  text: string;
+}
+
+/** Lines from `dadrock diff` and `dadrock history --patch`, in the form `LineDiff` draws. */
+export function fromRecordDiffLines(lines: RecordDiffLine[]): DiffLine[] {
+  return lines.map((line) => ({
+    kind: line.kind === 'context' ? 'same' : line.kind === 'added' ? 'add' : 'remove',
+    text: line.text,
+  }));
+}
+
+/** Both texts a full line diff was built from: unchanged and removed lines, unchanged and added lines. */
+export function diffSides(lines: DiffLine[]): { before: string; after: string } {
+  const side = (keep: DiffLineKind) =>
+    lines
+      .filter((line) => line.kind === 'same' || line.kind === keep)
+      .map((line) => `${line.text}\n`)
+      .join('');
+  return { before: side('remove'), after: side('add') };
+}
+
+/** `+a −b` for the tags a change adds and removes; empty when they are the same. */
+export function tagChangeSummary(added: string[], removed: string[]): string {
+  return [...added.map((tag) => `+${tag}`), ...removed.map((tag) => `−${tag}`)].join(' ');
+}

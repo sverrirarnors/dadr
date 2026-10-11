@@ -74,7 +74,7 @@ test('dismissing an informational issue hides it across reloads', async ({ page 
   await expect(group(page, 'issues').getByRole('link', { name: TAG_INFO })).toHaveCount(0);
 });
 
-test('an error issue opens its record in the ledger editor and cannot be dismissed', async ({ page }) => {
+test('an error issue opens its record in the ledger and cannot be dismissed', async ({ page }) => {
   await page.goto('/inbox');
 
   await group(page, 'issues').getByRole('link', { name: BROKEN_LINK }).click();
@@ -85,7 +85,8 @@ test('an error issue opens its record in the ledger editor and cannot be dismiss
     'href',
     new RegExp(`^/ledger\\?.*id=${POLARS_ID}.*tab=edit`),
   );
-  await expect(pane.getByRole('button', { name: 'Fix with agent' })).toBeVisible();
+  // The record is archived (superseded), so it never changes and the agent cannot fix it.
+  await expect(pane.getByRole('button', { name: 'Fix with agent' })).toHaveCount(0);
   await expect(pane.getByRole('button', { name: 'Dismiss' })).toHaveCount(0);
   await expect(pane.getByText('cannot be dismissed')).toBeVisible();
 });

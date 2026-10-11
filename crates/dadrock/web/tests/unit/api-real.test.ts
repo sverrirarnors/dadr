@@ -719,3 +719,77 @@ describe('RealApi task commands', () => {
     );
   });
 });
+
+describe('RealApi history, diff, and set acceptance', () => {
+  const OLD = '01938c20-a3b4-7000-8000-000000000001';
+  const NEW = '0193b2a1-c0f4-7000-8000-000000000002';
+  const summary = (id: string, title: string, current: boolean) => ({
+    id,
+    short_id: id.replaceAll('-', '').slice(0, 12),
+    title,
+    status: 'accepted',
+    superseded: !current,
+    current,
+    path: `/p/dadr/x/${id}.md`,
+    tags: [],
+  });
+  const diff = {
+    changed: true,
+    title: { old: 'Listwise deletion', new: 'Multiple imputation' },
+    tags_added: ['topic/missing-data'],
+    tags_removed: [],
+    lines: [{ kind: 'added', text: 'Use multiple imputation.' }],
+  };
+  const envelope = (command: string, data: unknown) =>
+    new Response(JSON.stringify({ command, ok: true, data, diagnostics: [], changed_paths: [] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+
+  it('reads the history envelope, asking for patches when wanted', async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      envelope('history', {
+        record: OLD,
+        versions: [{ ...summary(NEW, 'Multiple imputation', true), body: 'x\n' }, { ...summary(OLD, 'Listwise deletion', false), body: 'y\n' }],
+        links: [{ predecessor: OLD, successor: NEW, reason: 'Complete cases lose a third.', diff }],
+        neighbors: [],
+      }),
+    );
+    const api = new RealApi('http://example.test', fakeFetch as typeof fetch);
+    const history = await api.getRecordHistory(OLD, { patch: true });
+    expect(fakeFetch).toHaveBeenCalledWith(`http://example.test/api/records/${OLD}/history?patch=1`, expect.any(Object));
+    expect(history.versions.map((version) => version.current)).toEqual([true, false]);
+    expect(history.links[0]?.diff?.title).toEqual({ old: 'Listwise deletion', new: 'Multiple imputation' });
+  });
+
+  it('defaults a missing reason to null', async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      envelope('history', { record: OLD, versions: [], links: [{ predecessor: OLD, successor: NEW }], neighbors: [] }),
+    );
+    const history = await new RealApi('', fakeFetch as typeof fetch).getRecordHistory(OLD);
+    expect(fakeFetch).toHaveBeenCalledWith(`/api/records/${OLD}/history`, expect.any(Object));
+    expect(history.links[0]?.reason).toBeNull();
+  });
+
+  it('diffs against another record, encoding the query', async () => {
+    const fakeFetch = vi.fn().mockResolvedValue(
+      envelope('diff', { old: summary(OLD, 'Listwise deletion', false), new: summary(NEW, 'Multiple imputation', true), diff }),
+    );
+    const result = await new RealApi('', fakeFetch as typeof fetch).getRecordDiff(NEW, 'Listwise deletion');
+    expect(fakeFetch).toHaveBeenCalledWith(`/api/records/${NEW}/diff?against=Listwise%20deletion`, expect.any(Object));
+    expect(result.diff.lines).toEqual([{ kind: 'added', text: 'Use multiple imputation.' }]);
+  });
+
+  it('accepts several candidates together with `with`', async () => {
+    const fakeFetch = vi.fn().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ message: 'accepted 2 candidates', changed_paths: [], snapshot: validSnapshot }), {
+          headers: { 'content-type': 'application/json' },
+        }),
+    );
+    const api = new RealApi('', fakeFetch as typeof fetch);
+    await api.acceptCandidate('a', ['b']);
+    expect(fakeFetch).toHaveBeenLastCalledWith('/api/candidates/a/accept', expect.objectContaining({ body: '{"with":["b"]}' }));
+    await api.acceptCandidate('a');
+    expect(fakeFetch).toHaveBeenLastCalledWith('/api/candidates/a/accept', expect.objectContaining({ body: '{}' }));
+  });
+});

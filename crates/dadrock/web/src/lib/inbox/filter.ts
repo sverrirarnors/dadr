@@ -8,6 +8,9 @@ export function inboxItemSearchText(item: InboxItem): string {
     case 'candidate':
       parts.push(recordSearchText(item.record));
       break;
+    case 'split':
+      parts.push(...[...item.predecessors, ...item.records].map(recordSearchText));
+      break;
     case 'proposal':
       parts.push(...item.proposal.tags, item.proposal.body_markdown);
       break;

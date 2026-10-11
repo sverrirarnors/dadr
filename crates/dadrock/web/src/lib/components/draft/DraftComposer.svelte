@@ -8,6 +8,7 @@
   import RecordSelectionDialog from '$lib/components/records/RecordSelectionDialog.svelte';
   import { Alert, Button, TextareaInput } from '$lib/components/ui';
   import {
+    attachedRecords,
     attachRecordsStatus,
     composerTitle,
     errorMessage,
@@ -26,6 +27,7 @@
   import { toasts } from '$lib/stores/toast.svelte';
   import DraftAttachments from './DraftAttachments.svelte';
   import DraftManualForm from './DraftManualForm.svelte';
+  import DraftSuccessorForm from './DraftSuccessorForm.svelte';
 
   const api = createApi();
   const queryClient = useQueryClient();
@@ -38,7 +40,8 @@
   const records = $derived(snapshot.data?.records ?? []);
   const agentAvailable = $derived(snapshot.data?.settings.agent_available ?? false);
   const pinned = $derived(pinnedRecord(composer.mode, composer.recordIds, records));
-  const title = $derived(composerTitle(composer.mode, pinned));
+  /** In supersede mode, every attached decision is superseded together (a merge). */
+  const predecessors = $derived(composer.mode === 'supersede' ? attachedRecords(composer.recordIds, records) : []);
   const intent = $derived(
     resolveDraftIntent(
       {
@@ -53,13 +56,16 @@
 
   /** The person's explicit choice; null follows the default for the mode. */
   let chosenView = $state<ComposerView | null>(null);
-  const view = $derived(chosenView ?? initialComposerView(composer.mode, agentAvailable));
+  const view = $derived(chosenView ?? composer.view ?? initialComposerView(composer.mode, agentAvailable));
+  const title = $derived(
+    composerTitle(composer.mode, composer.mode === 'supersede' ? predecessors : pinned ? [pinned] : [], view),
+  );
   const canWriteByHand = $derived(manualFormAvailable(composer.mode));
   const canAttachRecords = $derived(
-    composer.mode === 'new' || composer.mode === 'merge' || !pinned,
+    composer.mode === 'new' || composer.mode === 'merge' || composer.mode === 'supersede' || !pinned,
   );
-  /** The record "Edit it in the Ledger" points at, in revise mode. */
-  const editRecord = $derived(composer.mode === 'revise' ? pinned : undefined);
+  /** The candidate "Edit it in the Ledger" points at, in revise mode; only candidates change in place. */
+  const editRecord = $derived(composer.mode === 'revise' && pinned?.status === 'candidate' ? pinned : undefined);
 
   let sending = $state(false);
   let error = $state<{ title: string; detail: string } | null>(null);
@@ -204,13 +210,24 @@
     <div class="mt-5">
         {#if !loaded}
           <p class="text-sm text-fg-subtle">Loading the project…</p>
+        {:else if view === 'manual' && composer.mode === 'supersede'}
+          {#if predecessors.length}
+            {#key composer.recordIds.join(',')}
+              <DraftSuccessorForm
+                {predecessors}
+                {agentAvailable}
+                onuseagent={() => (chosenView = 'agent')}
+                onattachrecords={openAttachPicker}
+              />
+            {/key}
+          {:else}
+            <div class="space-y-3">
+              <p class="text-sm text-fg-muted">Choose the decision to supersede.</p>
+              <Button type="button" variant="outline" size="sm" onclick={openAttachPicker}>Attach records</Button>
+            </div>
+          {/if}
         {:else if view === 'manual'}
-          <DraftManualForm
-            mode={composer.mode}
-            record={pinned}
-            {agentAvailable}
-            onuseagent={() => (chosenView = 'agent')}
-          />
+          <DraftManualForm {agentAvailable} onuseagent={() => (chosenView = 'agent')} />
         {:else if !agentAvailable}
           <div class="space-y-3">
             <Alert variant="warning" title="No local agent found">
@@ -261,7 +278,7 @@
           <Alert class="mt-4" variant="danger" title={error.title}>{error.detail}</Alert>
         {/if}
 
-        {#if loaded && composer.mode === 'supersede' && pinned}
+        {#if loaded && composer.mode === 'supersede' && pinned && composer.recordIds.length === 1}
           <div class="mt-6 border-t border-border pt-4">
             <p class="text-xs text-fg-subtle">Already decided elsewhere?</p>
             <Button

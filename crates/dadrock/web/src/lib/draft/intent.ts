@@ -44,6 +44,12 @@ export function resolveDraftIntent(
     case 'revise': {
       const record = attached[0];
       if (!record) return fail('Choose the record to revise.');
+      if (record.status !== 'candidate') {
+        // Only candidates change in place; a decision in force gets a successor.
+        if (!isCurrent(record)) return fail(`“${record.title}” is archived and cannot change.`);
+        if (!text) return fail('Describe what should change.');
+        return supersede([record], text, paths);
+      }
       if (!text) return fail('Describe what should change.');
       return ok('edit-record', `Revise “${record.title}”`, {
         task_id: 'edit-record',
@@ -52,14 +58,11 @@ export function resolveDraftIntent(
       });
     }
     case 'supersede': {
-      const record = attached[0];
-      if (!record) return fail('Choose the decision to supersede.');
+      if (!attached.length) return fail('Choose the decision to supersede.');
+      const archived = attached.find((record) => !isCurrent(record));
+      if (archived) return fail(`“${archived.title}” is not a decision in force; supersede the current decision instead.`);
       if (!text) return fail('Explain what changed and why.');
-      return ok('supersede-record', `Draft a successor for “${record.title}”`, {
-        task_id: 'supersede-record',
-        input: { record_ids: record.id, requested_changes: text },
-        context: context({ records: [record.id], paths }),
-      });
+      return supersede(attached, text, paths);
     }
     case 'merge': {
       const candidates = attached.filter((record) => record.status === 'candidate');
@@ -101,6 +104,25 @@ export function resolveDraftIntent(
       });
     }
   }
+}
+
+/** `supersede-record` with one predecessor, or several for a merge. */
+function supersede(records: RecordSummary[], text: string, paths: string[]): DraftIntentResult {
+  const ids = records.map((record) => record.id);
+  const [first] = records;
+  const label =
+    records.length === 1 && first
+      ? `Draft a successor for “${first.title}”`
+      : `Draft one successor for ${records.length} decisions`;
+  return ok('supersede-record', label, {
+    task_id: 'supersede-record',
+    input: { record_ids: ids.join('\n'), requested_changes: text },
+    context: context({ records: ids, paths }),
+  });
+}
+
+function isCurrent(record: RecordSummary): boolean {
+  return record.status === 'accepted' && !record.superseded;
 }
 
 interface LooseRunTaskRequest {

@@ -2,6 +2,8 @@ import {
   candidateTemplateSchema,
   commandEnvelopeSchema,
   mutationResponseSchema,
+  recordDiffResultSchema,
+  recordHistorySchema,
   recordLifecycleSchema,
   recordSourceSchema,
   snapshotSchema,
@@ -12,6 +14,8 @@ import {
   taskRunSchema,
   type CandidateTemplate,
   type MutationResponse,
+  type RecordDiffResult,
+  type RecordHistory,
   type RecordLifecycle,
   type RecordSource,
   type Snapshot,
@@ -113,6 +117,31 @@ export class RealApi implements DadrApi {
       throw await apiError(response, `GET /api/records/${id}/status failed with ${response.status}`);
     }
     return recordLifecycleSchema.parse(await response.json());
+  }
+
+  async getRecordHistory(id: string, options: { patch?: boolean } = {}): Promise<RecordHistory> {
+    const query = options.patch ? '?patch=1' : '';
+    const path = `/api/records/${encodeURIComponent(id)}/history${query}`;
+    const response = await this.fetcher(`${this.baseUrl}${path}`, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+    });
+    if (!response.ok) {
+      throw await apiError(response, `GET ${path} failed with ${response.status}`);
+    }
+    return commandEnvelopeSchema(recordHistorySchema).parse(await response.json()).data;
+  }
+
+  async getRecordDiff(id: string, against: string): Promise<RecordDiffResult> {
+    const path = `/api/records/${encodeURIComponent(id)}/diff?against=${encodeURIComponent(against)}`;
+    const response = await this.fetcher(`${this.baseUrl}${path}`, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+    });
+    if (!response.ok) {
+      throw await apiError(response, `GET ${path} failed with ${response.status}`);
+    }
+    return commandEnvelopeSchema(recordDiffResultSchema).parse(await response.json()).data;
   }
 
   async saveRecordSource(id: string, content: string): Promise<MutationResponse> {
@@ -223,8 +252,8 @@ export class RealApi implements DadrApi {
     return mutationResponseSchema.parse(await response.json());
   }
 
-  async acceptCandidate(id: string): Promise<MutationResponse> {
-    return this.candidateAction(id, 'accept');
+  async acceptCandidate(id: string, withIds: string[] = []): Promise<MutationResponse> {
+    return this.candidateAction(id, 'accept', withIds.length ? { with: withIds } : {});
   }
 
   async rejectCandidate(id: string): Promise<MutationResponse> {
@@ -331,7 +360,11 @@ export class RealApi implements DadrApi {
     return mutationResponseSchema.parse(await response.json());
   }
 
-  private async candidateAction(id: string, action: 'accept' | 'reject'): Promise<MutationResponse> {
+  private async candidateAction(
+    id: string,
+    action: 'accept' | 'reject',
+    body: Record<string, unknown> = {},
+  ): Promise<MutationResponse> {
     const response = await this.fetcher(
       `${this.baseUrl}/api/candidates/${encodeURIComponent(id)}/${action}`,
       {
@@ -340,7 +373,7 @@ export class RealApi implements DadrApi {
           accept: 'application/json',
           'content-type': 'application/json',
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify(body),
       },
     );
     if (!response.ok) {

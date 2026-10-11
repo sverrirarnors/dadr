@@ -23,6 +23,8 @@ export function kindBadge(item: InboxItem): KindBadge {
   switch (item.kind) {
     case 'candidate':
       return { label: 'CAN', variant: 'candidate' };
+    case 'split':
+      return { label: 'SPLIT', variant: 'candidate' };
     case 'proposal':
       return { label: 'AGENT', variant: 'accent' };
     case 'revision':

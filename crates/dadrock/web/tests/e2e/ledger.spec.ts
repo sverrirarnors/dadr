@@ -92,7 +92,7 @@ test('tag facet filters by prefix and offers a clear control', async ({ page }) 
   await expect(facet(page).getByRole('button', { name: 'Clear' })).toHaveCount(0);
 });
 
-test('selecting a row shows the record and its supersession chain', async ({ page }) => {
+test('selecting a row shows the record and its history', async ({ page }) => {
   await page.goto('/ledger?archived=1');
 
   await list(page).getByRole('link', { name: /Use Polars lazy frames/ }).click();
@@ -104,26 +104,34 @@ test('selecting a row shows the record and its supersession chain', async ({ pag
     'href',
     '/ledger?tag=%23dadr%2Fdata%2Fprocessing',
   );
-  await expect(detail(page).getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(detail(page).getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
   await expect(detail(page).getByRole('button', { name: 'Revise with agent' })).toBeVisible();
   await expect(detail(page).getByRole('button', { name: 'Supersede' })).toBeVisible();
   await expect(detail(page).locator('[data-action-menu]')).toHaveCount(0);
+  await expect(detail(page).locator('[data-record-supersession]')).toHaveCount(0);
 
-  const chain = detail(page).locator('[data-record-supersession]');
-  await expect(chain).toContainText('Supersedes');
-  const predecessor = chain.getByRole('link', { name: 'Use Polars over pandas' });
+  await detail(page).getByRole('tab', { name: /History/ }).click();
+  const history = detail(page).locator('[data-record-history]');
+  await expect(history.locator('[data-history-version]')).toHaveCount(2);
+  await expect(history.locator('[data-history-opened]')).toContainText('Use Polars lazy frames');
+  await expect(history.locator('[data-history-opened]')).toContainText('current');
+  await expect(history.getByText('No reason recorded.')).toBeVisible();
+  const predecessor = history.getByRole('link', { name: 'Use Polars over pandas' });
   await expect(predecessor).toHaveAttribute('href', `/ledger?archived=1&id=${supersededId}`);
   await predecessor.click();
 
   await expect(page).toHaveURL(new RegExp(`/ledger\\?archived=1&id=${supersededId}$`));
   await expect(detail(page).getByRole('heading', { name: 'Use Polars over pandas' }).first()).toBeVisible();
   await expect(detail(page).getByText('0001-use-polars.md')).toBeVisible();
-  await expect(detail(page).locator('[data-record-supersession]')).toContainText('Superseded by');
-  await expect(
-    detail(page).locator('[data-record-supersession]').getByRole('link', { name: 'Use Polars lazy frames' }),
-  ).toHaveAttribute('href', `/ledger?archived=1&id=${lazyFramesId}`);
+  const supersededBy = detail(page).locator('[data-record-superseded-by]');
+  await expect(supersededBy).toContainText('Superseded by');
+  await expect(supersededBy.getByRole('link', { name: '“Use Polars lazy frames”' })).toHaveAttribute(
+    'href',
+    `/ledger?archived=1&id=${lazyFramesId}`,
+  );
   await expect(detail(page).getByRole('button', { name: 'Supersede' })).toHaveCount(0);
-  await expect(detail(page).getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(detail(page).getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
+  await expect(detail(page).getByRole('button', { name: 'Revise with agent' })).toHaveCount(0);
   await expect(list(page).getByRole('link', { name: /Use Polars over pandas/ })).toHaveAttribute('aria-current', 'page');
 });
 

@@ -7,8 +7,14 @@ Dadrock's web UI should feel dense, quiet, and utilitarian: closer to an editor 
 There are three places, all in the header with an icon before the word. Everything else is a popover or a redirect.
 
 - **Inbox** (`/inbox`, the home route): everything that needs a human decision. Candidates, agent proposals, proposed revisions, conflicts, reports, and validation issues are one grouped list; the selected item's detail sits beside it. Empty is the success state ("Inbox zero").
-- **Ledger** (`/ledger`, `/ledger/<id>`): what has been decided. Current decisions (`dadr/ledger/`) by default; a "Show archived" toggle (`?archived=1`) adds the archived records (`dadr/archive/`: superseded and rejected). One search box, a tag facet, and the record detail with its supersession chain.
-- **Draft** (`/draft`): a full page, reached from the header or from a record. One text area plus attachments (files, folders, records). Where it was opened from and what is attached decide which built-in task runs (`$lib/draft/intent.ts`). Results land in the Inbox. Pages open it with `composer.show(prefill)`, which stores the prefill and navigates.
+  - A successor candidate (its `## Supersedes` names predecessors) opens on a **Changes** tab: the reason, then the diff against the predecessor (`RecordDiffView`: title change, tag summary, `LineDiff` of the body without `## Supersedes`). A merge opens on the section view (`SectionCompare`, Decision first) with a "Compare with" selector. The other tab is **Document**.
+  - Candidates that supersede the same current decision are one **split** item ("Split “X” into N decisions", `SplitDetail`), with a checkbox, reason, and diff per candidate and one **Accept selected** (`acceptCandidate(id, withIds)`). `inboxUrl(candidateItemId(id))` still reaches a candidate inside a split. Grouping lives in `$lib/inbox/items.ts`.
+  - A stale successor (its predecessor was superseded since) shows a warning with **Retarget**, which rewrites the link in `## Supersedes` (`$lib/records/retarget.ts`) and saves the candidate; stale candidates are never grouped into a split.
+- **Ledger** (`/ledger`, `/ledger/<id>`): what has been decided. Current decisions (`dadr/ledger/`) by default; a "Show archived" toggle (`?archived=1`) adds the archived records (`dadr/archive/`: superseded and rejected). One search box, a tag facet, and the record detail with **Document** and **History** tabs (`?tab=history` opens the second).
+  - **History** (`RecordHistory`, laid out by `$lib/history/layout.ts`): the versions of one decision newest first, the opened one highlighted, current ones labeled; lanes join at a split and fork at a merge; each change shows its reason and an expandable diff; neighbors are one line ("Also became …", "Merged with …").
+  - A decision in force never changes in place: **Edit**, **Revise with agent**, and **Supersede** open the Draft page in supersede mode (`successorDraft` in `$lib/records/detail-state.ts`). Tags of accepted and rejected records are edited in place (`TagEditor` rewrites only `tags`). Archived records have no Edit or Revise; a superseded one says "Superseded by …". The raw Markdown editor is for candidates only.
+- **Draft** (`/draft`): a full page, reached from the header or from a record. One text area plus attachments (files, folders, records). Where it was opened from and what is attached decide which built-in task runs (`$lib/draft/intent.ts`). Results land in the Inbox. Pages open it with `composer.show(prefill)`, which stores the prefill and navigates; `prefill.view` picks the agent prompt or the form written by hand.
+  - Supersede mode takes one or more decisions in force (several make a merge) and sends them all as `record_ids` to `supersede-record`. Written by hand (`DraftSuccessorForm`), the successor starts from the predecessor's exact title, tags, and body (a merge starts from every predecessor's sections) and asks "Why does this decision change?"; saving calls `createCandidate` with `supersedes` and `supersedes_reason` and lands on the candidate's Changes tab. Its title reads "Edit “X”".
 - **Project gear**: the project name in the header opens a popover with the root path, the agent, and the few project-level actions (Validate now, Clear agent runs). There is no settings page.
 
 The places follow the project folders: candidates in the Inbox live in `dadr/inbox/`, and the Ledger lists `dadr/ledger/` and, on request, `dadr/archive/`.
@@ -21,6 +27,8 @@ Legacy routes (`/records`, `/candidates/*`, `/tasks`, `/validation`, `/tags`, `/
 - **Successor** and **predecessor** name the newer and older record of a supersession, including a successor that is still a candidate.
 - **Archived** means rejected or superseded: kept, but not in force.
 - **History** means only the chain of versions of one decision. Do not use it for the archive or for agent runs, which are "runs".
+- **Edit** a candidate changes it in place; **Edit** a decision in force drafts its successor. Archived records are never edited, only their tags.
+- **Changes** is the diff a successor makes against its predecessor; **Retarget** points a stale successor at the decision now in force.
 
 ## Page Structure
 
@@ -39,7 +47,7 @@ Legacy routes (`/records`, `/candidates/*`, `/tasks`, `/validation`, `/tags`, `/
 - `Button`: commands and actions. Use icons from `lucide-svelte` when the action is familiar.
 - `Badge`: status, source, kind, count, or compact metadata.
 - `InlineLinkBadge`: badge-like links, especially tags and other compact metadata links.
-- `SegmentedTabs`: a small set of mutually exclusive views inside one detail, such as "Changes" and "Edit".
+- `SegmentedTabs`: a small set of mutually exclusive views inside one detail, such as "Changes" and "Document", or "Document" and "History".
 - `StatusPanel`: live task, validation, or operation status with optional expandable detail.
 - `PanelSection`: repeated section panels inside a pane when the content is not large enough to be its own `WorkbenchPane`.
 - `KeyValueGrid`: compact settings, environment, and diagnostic facts.
@@ -50,12 +58,15 @@ Legacy routes (`/records`, `/candidates/*`, `/tasks`, `/validation`, `/tags`, `/
 - `EmptyState`: empty lists and no-result states.
 - `Field`: labeled form controls when local layout does not need a custom label stack.
 - `TextInput`, `SelectInput`, `TextareaInput`: standard form controls for the composer and short fields.
-- `MarkdownEditor` (`$lib/components/editor`): the CodeMirror editor for every Markdown body (record source, candidate drafts, revisions). It binds `value`, takes an `ariaLabel`, and exposes the view on its host as `cmView` for browser tests.
+- `MarkdownEditor` (`$lib/components/editor`): the CodeMirror editor for every Markdown body (record source, candidate drafts, successor drafts, revisions). It binds `value`, takes an `ariaLabel`, and exposes the view on its host as `cmView` for browser tests.
+- `RecordDiffView` (`$lib/components/records`): one record diff from the API: title change, tags added and removed, and the body as a `LineDiff`.
 
 ## Patterns
 
 - One visible button per verb. The redesign removed the dropdown menus; do not reintroduce `ActionMenu` for primary actions.
-- Every item in the Inbox has at most three actions, named by what they do: Accept, Reject, Edit, Revise with agent; Save as candidate, Discard; Apply, Discard; Merge, Supersede, Dismiss; Open record, Fix with agent, Dismiss.
+- Every item in the Inbox has at most three actions, named by what they do: Accept, Reject, Edit, Revise with agent; Accept selected (a split, with Edit and Reject per candidate); Save as candidate, Discard; Apply, Discard; Merge, Supersede, Dismiss; Open record, Fix with agent, Dismiss.
 - Agent work is a verb on a thing, never a destination. Opening the composer with a record attached is how "ask the agent" works; a run's log is a detail of the running item in the Inbox.
 - Dismissed and consumed Inbox items are remembered per browser in `$lib/stores/resolved.svelte.ts`; Clear agent runs (project gear) deletes `dadr/runs/` and forgets them.
-- Record and candidate detail share `RecordDetailPanel` with a `surface` prop, because candidates are records filtered by status.
+- Record and candidate detail share `RecordDetailPanel` with a `surface` prop, because candidates are records filtered by status. Which verbs it shows, and whether Edit works in place or drafts a successor, comes from `detailActions` in `$lib/records/detail-state.ts`.
+- Queries keyed by a record id read the id from their `queryKey`, not from a prop: a refetch can run after the Inbox has moved on to the next item.
+- The mock API (`$lib/api/mock.ts`, records in `mock-records.ts`) follows Dadrock's rules: history, diffs, set acceptance, and frozen accepted and rejected records. Browser tests opt into a project with a split, a merge, a stale successor, and a rejected record with `localStorage['dadrock:mock-scenario'] = 'history'`.
