@@ -20,7 +20,6 @@ requirements:
   scope: none
 output:
   kind: record_revision.v1
-mcp_access: full
 tools:
   - name: dadrock.get_record
     mode: read

@@ -939,7 +939,7 @@ fn demo_examples_validate_without_warnings() {
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn mcp_tools_create_successors_and_accept_a_split() {
+async fn mcp_tools_create_successors_for_a_split_that_a_human_accepts() {
     use rmcp::{model::CallToolRequestParams, transport::TokioChildProcess, ServiceExt};
 
     let p = Project::new("mcp");
@@ -982,16 +982,27 @@ async fn mcp_tools_create_successors_and_accept_a_split() {
         halves.push(created["data"]["id"].as_str().unwrap().to_owned());
     }
 
-    let accepted = call(
-        "dadrock.accept_record",
-        json!({"query": halves[0], "with": [halves[1]]}),
-    )
-    .await;
+    // Accepting is a human decision: MCP cannot do it, the command layer can.
+    let refused = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("dadrock.accept_record").with_arguments(
+                json!({"query": halves[0], "with": [halves[1]]})
+                    .as_object()
+                    .cloned()
+                    .unwrap(),
+            ),
+        )
+        .await;
+    assert!(refused.is_err(), "MCP accepted a candidate: {refused:?}");
+    client.cancel().await.unwrap();
+    assert!(p.successors_of(old.id).is_empty());
+
+    let accepted = serde_json::to_value(accept_records(&p.context(), &halves).unwrap()).unwrap();
     assert_eq!(accepted["ok"], true);
     assert_eq!(
         accepted["data"]["superseded"][0]["successors"],
         json!(halves)
     );
-    client.cancel().await.unwrap();
     assert_eq!(p.successors_of(old.id).len(), 2);
 }

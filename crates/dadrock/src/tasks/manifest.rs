@@ -1,7 +1,7 @@
 use dadr::{frontmatter::split_front_matter, DiagnosticCode};
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize};
 
-use crate::{mcp::DadrockMcpAccess, DadrError};
+use crate::DadrError;
 
 use super::{ids::is_valid_task_id, output::TaskOutputKind};
 
@@ -20,9 +20,6 @@ pub struct TaskManifest {
     #[serde(default)]
     pub requirements: TaskRequirements,
     pub output: TaskOutput,
-    /// Dadrock MCP access granted to the agent while it runs this task.
-    #[serde(default)]
-    pub mcp_access: DadrockMcpAccess,
     #[serde(default)]
     pub tools: Vec<TaskTool>,
 }

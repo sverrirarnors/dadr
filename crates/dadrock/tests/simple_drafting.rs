@@ -20,7 +20,8 @@ for line in sys.stdin:
     if method=='initialize':
         result={'protocolVersion':1,'agentCapabilities':{},'authMethods':[]}
     elif method=='session/new':
-        assert '--read-only' in json.dumps(q), q
+        args=[a for server in q['params']['mcpServers'] for a in server['args']]
+        assert args[:3]==['mcp','serve','--task-run'], args
         result={'sessionId':'test','configOptions':[]}
     elif method=='session/prompt':
         prompt=json.dumps(q)

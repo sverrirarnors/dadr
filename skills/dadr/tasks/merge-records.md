@@ -20,7 +20,6 @@ requirements:
   scope: none
 output:
   kind: candidate_draft.v1
-mcp_access: full
 tools:
   - name: dadrock.get_record
     mode: read

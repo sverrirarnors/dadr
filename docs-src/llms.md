@@ -18,7 +18,7 @@ dadrock mcp serve --read-only
 dadrock mcp serve path/to/project
 ```
 
-The normal server exposes inspection and mutation tools through the same command layer as the CLI: listing, searching, and reading records, lifecycle status, decision history and diffs, tags, tasks and task runs, validation, and a project snapshot; plus creating candidates, accepting, rejecting, superseding, and submitting task results. Use read-only mode for clients that should only inspect records. Human approval is still required for acceptance or rejection.
+The normal server exposes inspection and mutation tools through the same command layer as the CLI: listing, searching, and reading records, lifecycle status, decision history and diffs, tags, tasks and task runs, validation, and a project snapshot; plus creating candidates and submitting task results. Use read-only mode for clients that should only inspect records. Lifecycle actions are not exposed over MCP: humans accept, reject, and supersede records in the [web interface](dadrock/web.md) (also available in an [editor panel](dadrock/editors.md)) or with the CLI.
 
 Register the server with your client as a stdio command. The configuration file and its location depend on the client; many accept an entry like this:
 
@@ -74,7 +74,7 @@ dadrock task runs
 dadrock task result RUN_ID
 ```
 
-Built-in workflows include drafting, editing candidates, [drafting successors](changing.md#drafting-a-successor) for accepted decisions, merging drafts, finding conflicts, and synthesizing accepted decisions into a spec. The built-in tasks are the task guides of the `dadr` skill, the files in `skills/dadr/tasks/` of this repository. Each is one Markdown file: its YAML front matter is the task manifest (id, inputs, requirements, output kind, and `mcp_access`, which is `full` or `read_only`) and its body is the prompt. `dadrock task show <task-id>` prints a task's prompt, and `--json` adds its manifest.
+Built-in workflows include drafting, editing candidates, [drafting successors](changing.md#drafting-a-successor) for accepted decisions, merging drafts, finding conflicts, and synthesizing accepted decisions into a spec. The built-in tasks are the task guides of the `dadr` skill, the files in `skills/dadr/tasks/` of this repository. Each is one Markdown file: its YAML front matter is the task manifest (id, inputs, requirements, and output kind) and its body is the prompt. Every task run gets read-only access to the [MCP server](#mcp) plus task-result submission. `dadrock task show <task-id>` prints a task's prompt, and `--json` adds its manifest.
 
 To customize a task, copy its guide to `dadr/tasks/<task-id>.md` and adapt it. A project task overrides a user task in `~/.dadrock/tasks/<task-id>.md` (or `$DADROCK_TASKS_DIR`), which overrides the built-in task with the same id. The file name must match the `id` in the front matter; `dadrock task list` reports files that do not load, including task directories in the old `task.toml` layout. Advanced and third-party inputs can use `--input-json`; do not combine it with friendly input flags such as `--path` or `--context`.
 

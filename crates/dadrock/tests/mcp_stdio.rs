@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, process, time::Duration};
+use std::{collections::BTreeSet, fs, path::PathBuf, process, time::Duration};
 
 use camino::Utf8PathBuf;
 use dadrock::{
@@ -8,7 +8,8 @@ use dadrock::{
     RecordId,
 };
 use rmcp::{
-    model::{CallToolRequestParams, JsonObject},
+    model::{CallToolRequestParams, ErrorCode, JsonObject},
+    service::ServiceError,
     transport::TokioChildProcess,
     ServiceExt,
 };
@@ -205,35 +206,121 @@ async fn dadrock_mcp_stdio_lists_and_calls_tools() {
         1
     );
 
+    // Accepting, rejecting, and superseding are human decisions: the server
+    // neither lists nor runs them, and the candidate stays where it was.
+    let listed: BTreeSet<_> = tools.iter().map(|tool| tool.name.to_string()).collect();
     let id = create["data"]["id"]
         .as_str()
         .expect("created candidate id")
         .to_owned();
-    let reject = client
-        .peer()
-        .call_tool(
-            CallToolRequestParams::new("dadrock.reject_record")
-                .with_arguments(json_object(json!({ "query": id }))),
-        )
-        .await
-        .expect("reject candidate through MCP");
-    let reject = reject.structured_content.expect("reject envelope");
-    assert_eq!(reject["command"], "status reject");
-    assert_eq!(reject["data"]["status"], "rejected");
-    assert!(reject["data"]["to"]
-        .as_str()
-        .expect("rejected path")
-        .contains("/dadr/archive/"));
+    let candidate_path = PathBuf::from(create["data"]["path"].as_str().expect("candidate path"));
+    let candidate_source = fs::read_to_string(&candidate_path).expect("read candidate");
+    for (name, arguments) in [
+        ("dadrock.accept_record", json!({ "query": id })),
+        ("dadrock.reject_record", json!({ "query": id })),
+        (
+            "dadrock.supersede_records",
+            json!({ "from": [id], "to": [id] }),
+        ),
+    ] {
+        assert!(!listed.contains(name), "{name} is listed");
+        let error = client
+            .peer()
+            .call_tool(CallToolRequestParams::new(name).with_arguments(json_object(arguments)))
+            .await
+            .expect_err("lifecycle tools are not served over MCP");
+        let ServiceError::McpError(error) = error else {
+            panic!("{name}: expected an MCP error, got {error:?}");
+        };
+        assert_eq!(error.code, ErrorCode::INVALID_PARAMS, "{name}");
+        assert_eq!(error.message, format!("unknown Dadrock MCP tool `{name}`"));
+    }
     assert_eq!(
-        reject["changed_paths"]
-            .as_array()
-            .expect("changed paths")
-            .len(),
-        2
+        fs::read_to_string(&candidate_path).expect("candidate still in place"),
+        candidate_source
     );
+    assert!(is_empty_or_missing(&root.join("dadr/ledger")));
+    assert!(is_empty_or_missing(&root.join("dadr/archive")));
 
     let _ = tokio::time::timeout(Duration::from_secs(2), client.close()).await;
     let _ = fs::remove_dir_all(root);
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn dadrock_mcp_stdio_task_run_access_only_submits_results() {
+    let root = temp_project("dadrock-mcp-stdio-task-run");
+    init_project(&root).expect("initialize project");
+    let cwd = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 project root");
+    let user_tasks_dir =
+        Utf8PathBuf::from_path_buf(root.join("user-tasks")).expect("utf8 user tasks directory");
+    let tasks = discover_tasks(&cwd, Some(&user_tasks_dir));
+    let task = tasks
+        .tasks
+        .iter()
+        .find(|task| task.manifest.id == "find-conflicts")
+        .expect("built-in find-conflicts task");
+    let run = create_task_run(&cwd, task, json!({})).expect("create task run");
+
+    let mut command = Command::new(env!("CARGO_BIN_EXE_dadrock"));
+    command.arg("mcp").arg("serve").arg("--task-run").arg(&root);
+    let transport = TokioChildProcess::new(command).expect("spawn dadrock mcp serve --task-run");
+    let mut client = ().serve(transport).await.expect("initialize MCP client");
+
+    let tools = client.peer().list_all_tools().await.expect("list tools");
+    let writable: BTreeSet<_> = tools
+        .iter()
+        .filter(|tool| {
+            tool.annotations
+                .as_ref()
+                .and_then(|annotations| annotations.read_only_hint)
+                != Some(true)
+        })
+        .map(|tool| tool.name.to_string())
+        .collect();
+    assert_eq!(
+        writable,
+        BTreeSet::from(["dadrock.submit_task_result".to_owned()])
+    );
+    assert!(tools.iter().any(|tool| tool.name == "dadrock.list_records"));
+
+    let error = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("dadrock.create_candidate")
+                .with_arguments(json_object(json!({ "title": "Created by a task run" }))),
+        )
+        .await
+        .expect_err("task runs cannot create candidates");
+    let ServiceError::McpError(error) = error else {
+        panic!("expected an MCP error, got {error:?}");
+    };
+    assert_eq!(error.code, ErrorCode::INVALID_PARAMS);
+    assert!(is_empty_or_missing(&root.join("dadr/inbox")));
+
+    let submitted = client
+        .peer()
+        .call_tool(
+            CallToolRequestParams::new("dadrock.submit_task_result").with_arguments(json_object(
+                json!({
+                    "run_id": run.id.to_string(),
+                    "result": {"kind": "conflict_set.v1", "summary": "None.", "findings": []}
+                }),
+            )),
+        )
+        .await
+        .expect("task runs submit their result");
+    let submitted = submitted.structured_content.expect("submit envelope");
+    assert_eq!(submitted["ok"], true);
+    assert_eq!(submitted["data"]["status"], "succeeded");
+
+    let _ = tokio::time::timeout(Duration::from_secs(2), client.close()).await;
+    let _ = fs::remove_dir_all(root);
+}
+
+fn is_empty_or_missing(dir: &std::path::Path) -> bool {
+    dir.read_dir()
+        .map(|mut entries| entries.next().is_none())
+        .unwrap_or(true)
 }
 
 fn json_object(value: Value) -> JsonObject {

@@ -20,6 +20,7 @@ use crate::{
     },
     error::DadrError,
     index::ProjectIndex,
+    mcp::DadrockMcpAccess,
     project::ProjectContext,
     tasks::{
         append_or_extend_task_run_log, append_task_run_log, create_task_run,
@@ -575,6 +576,20 @@ fn execute_created_local_task_run(
     )))
 }
 
+/// Every task run gets the same Dadrock MCP access, whatever the task: read
+/// tools plus result submission. Agents propose; a human reviews the result.
+fn task_run_prompt_options(
+    permission_policy: AcpPermissionPolicy,
+    enable_dadrock_mcp: bool,
+) -> AcpPromptOptions {
+    AcpPromptOptions {
+        permission_policy,
+        enable_dadrock_mcp,
+        dadrock_mcp_access: DadrockMcpAccess::TaskRun,
+        ..AcpPromptOptions::default()
+    }
+}
+
 struct CreatedAcpTaskRun<'a> {
     project: &'a ProjectContext,
     task: &'a TaskPackage,
@@ -631,12 +646,7 @@ fn execute_created_task_run(
     let text = run_acp_agent_text_with_events_and_cancellation(
         local_agent,
         &agent_request,
-        AcpPromptOptions {
-            permission_policy,
-            enable_dadrock_mcp,
-            dadrock_mcp_access: task.manifest.mcp_access,
-            ..AcpPromptOptions::default()
-        },
+        task_run_prompt_options(permission_policy, enable_dadrock_mcp),
         events.clone(),
         Some(cancellation.clone()),
     )?;
@@ -668,12 +678,7 @@ fn execute_created_task_run(
             let repaired_output = run_acp_agent_json_with_events_and_cancellation(
                 local_agent,
                 &repair_request,
-                AcpPromptOptions {
-                    permission_policy,
-                    enable_dadrock_mcp,
-                    dadrock_mcp_access: task.manifest.mcp_access,
-                    ..AcpPromptOptions::default()
-                },
+                task_run_prompt_options(permission_policy, enable_dadrock_mcp),
                 events,
                 Some(cancellation),
             )
