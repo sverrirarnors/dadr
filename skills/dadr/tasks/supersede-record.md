@@ -1,11 +1,11 @@
 ---
 name: dadr-supersede-record
-description: Propose a candidate that supersedes one or more accepted DADRs. Use when an accepted decision needs to change, however slightly, because of new evidence, a plan amendment, a correction, or a downstream conflict, or when several accepted decisions should be merged into one, without editing the originals.
+description: Propose a candidate that supersedes one or more accepted DADRs. Use when what an accepted decision says needs to change, because of new evidence, a plan amendment, a substantive correction, or a downstream conflict, or when several accepted decisions should be merged into one, without editing the originals.
 ---
 
 # Supersede record
 
-Draft a successor: a new candidate that, once accepted, supersedes one or more accepted records, its predecessors. Accepted records never change, not even for a typo, so every change to a decision goes through a successor. When the successor is accepted, Dadrock adds its id to each predecessor's `successors` and moves the predecessors to `dadr/archive/`. This skill produces the successor candidate, not the lifecycle transition itself.
+Draft a successor: a new candidate that, once accepted, supersedes one or more accepted records, its predecessors. A person may correct an accepted record in place when the meaning stays the same (spelling, formatting, links, citations), and Git keeps those edits; every change to what was decided goes through a successor, and agents never edit accepted text. When the successor is accepted, Dadrock adds its id to each predecessor's `successors` and moves the predecessors to `dadr/archive/`. This skill produces the successor candidate, not the lifecycle transition itself.
 
 Use this when the user wants to change an accepted decision or merge several accepted decisions into one. If the records are still candidates, use [edit-record.md](edit-record.md) or [merge-records.md](merge-records.md) instead. If you are detecting conflicts across the ledger, start at [find-conflicts.md](find-conflicts.md) and use this skill on each confirmed pair.
 
@@ -13,7 +13,6 @@ Trigger phrases:
 
 - "supersede decision 0193…"
 - "change the accepted choice"
-- "fix a typo in an accepted record"
 - "merge these two accepted decisions"
 - "draft a successor for this DADR"
 - "the SAP just changed — update the corresponding decision"
@@ -43,7 +42,7 @@ In one to three sentences, say why the decision changed: new evidence, a plan am
 
 The reviewer reads the successor as a diff against its predecessor, so every unnecessary edit is noise.
 
-- **One predecessor:** copy its title, tags, and four sections exactly, then change only what the request requires. A typo fix changes one word; a new cutoff changes the sentences that state the cutoff and the consequences that follow from it.
+- **One predecessor:** copy its title, tags, and four sections exactly, then change only what the request requires. A different estimator may change one phrase; a new cutoff changes the sentences that state the cutoff and the consequences that follow from it.
 - **Several predecessors (a merge):** combine their sections into one decision. Keep each predecessor's wording where it still holds, remove repetition, and change only what the merged decision requires.
 - **Do not narrate the supersession.** Do not rewrite Context to say that a predecessor existed or why it is being replaced. The successor reads as a complete record of the decision now in force; the reason lives in `## Supersedes`.
 - Keep source links that still resolve, updating shifted line ranges. Keep the tags that still apply.
@@ -105,7 +104,7 @@ If a predecessor is superseded while your candidate waits (for example, a compet
 
 ## Constraints
 
-- **Never edit a predecessor.** Accepted and rejected records are frozen; Dadrock refuses changes to their `id`, `status`, `title`, body, and `successors`. Only tags and keys outside DADR can change.
+- **Never edit a predecessor.** Agents never edit accepted or rejected text. People may correct wording in place, but Dadrock refuses changes to `id`, `status`, and `successors`; the successor carries the change of decision.
 - **Never modify `successors` by hand, or move records between folders.** Dadrock does both when the successor is accepted.
 - **No lost evidence.** Do not silently discard sources or alternatives from a predecessor. Keep them, or explain in the reason why they no longer apply.
 - **Acceptance is a human boundary.** This skill writes only to `dadr/inbox/`. Lifecycle transitions are user actions.

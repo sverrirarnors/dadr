@@ -39,9 +39,10 @@ Pick the workflow that matches the request:
 | "draft a DADR for this", "capture this decision", "log this choice" | [tasks/context-to-record.md](tasks/context-to-record.md) |
 | "revise this candidate", "rework the alternatives section", "the reviewer wants changes" | [tasks/edit-record.md](tasks/edit-record.md) |
 | "supersede decision X", "change the accepted choice", "draft a successor" | [tasks/supersede-record.md](tasks/supersede-record.md) |
+| "fix a typo in an accepted record", "correct a link in a decision" | A person corrects the record in place (**Edit** in the web interface, or any editor); agents do not edit accepted text. If the fix changes what was decided, use [tasks/supersede-record.md](tasks/supersede-record.md). |
 | "merge these candidates", "consolidate the duplicate drafts" | [tasks/merge-records.md](tasks/merge-records.md) |
 | "find conflicting decisions", "resolve duplicate DADRs", "any decisions contradict each other?", "clean up dadr/" | [tasks/find-conflicts.md](tasks/find-conflicts.md) |
-| "diagnose dadr/", "health-check the DADR ledger", "audit the ledger", "what's broken in dadr/?" | Use the validation page or `dadrock validate`; deterministic diagnostics do not go through agent tasks. `dadrock validate changes` reports edits to accepted or rejected records since a Git revision. |
+| "diagnose dadr/", "health-check the DADR ledger", "audit the ledger", "what's broken in dadr/?" | Use the validation page or `dadrock validate`; deterministic diagnostics do not go through agent tasks. `dadrock validate changes` checks accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error, and a title or body edit is a warning with the diff (an error with `--strict`). |
 | "turn accepted decisions into a spec", "write a spec from dadr/", "decisions to spec" | [tasks/decisions-to-spec.md](tasks/decisions-to-spec.md) |
 | Ad-hoc DADR request that doesn't match the rows above | [tasks/custom.md](tasks/custom.md) |
 | "what does a record look like?", "what does a candidate look like?", "how long should a DADR be?" | [record.md](record.md) |
@@ -74,7 +75,7 @@ The decision-handling workflows require:
 
 - **Acceptance is a human approval boundary** — never auto-accept candidates.
 - **UUIDv7 only.** Always go through Dadrock's candidate-writing surface (`dadrock.create_candidate` in MCP or `dadrock new` in the CLI); never hand-write the `id` field.
-- **Never edit accepted or rejected records.** Their `id`, `status`, `title`, body, and `successors` are frozen, and Dadrock refuses such edits; only tags and keys outside DADR can change. Any change to an accepted decision, however small, is drafted as a successor candidate with a `## Supersedes` section (or linked later with `dadrock supersede`).
+- **Never edit accepted or rejected records yourself.** People correct them in place when the meaning stays the same (spelling, formatting, links, citations); Git keeps those edits, `dadrock history` lists them, and `dadrock validate changes` shows them as warnings. Dadrock refuses only a changed `id`, `status`, or `successors`, or an accepted record without its four sections. Agents never edit accepted text: a change to what was decided is drafted as a successor candidate with a `## Supersedes` section (or linked later with `dadrock supersede`).
 - **One file per decision.** A single piece of code may embed two distinct choices; draft (or implement) them as two records.
 
 ## Reflect and improve

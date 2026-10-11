@@ -5,7 +5,7 @@ description: Revise an existing DADR candidate to apply reviewer-requested chang
 
 # Edit record
 
-Apply requested changes to an existing candidate DADR. The candidate stays a candidate; only its body, title, or tags change. Accepted and rejected records are frozen: to change an accepted decision, however slightly, use [supersede-record.md](supersede-record.md); to revisit a rejected one, draft a fresh candidate via [context-to-record.md](context-to-record.md). The same applies when the request would change the underlying choice to a different one.
+Apply requested changes to an existing candidate DADR. The candidate stays a candidate; only its body, title, or tags change. Agents never edit accepted or rejected records: a person corrects their wording in place when the meaning stays the same; to change an accepted decision, use [supersede-record.md](supersede-record.md); to revisit a rejected one, draft a fresh candidate via [context-to-record.md](context-to-record.md). The same applies when the request would change the underlying choice to a different one.
 
 Trigger phrases:
 
@@ -85,7 +85,7 @@ Then summarize:
 ## Constraints
 
 - **This skill does not run lifecycle transitions.** No `accept`, `reject`, or `supersede` from here — those are separate user actions.
-- **No edits to accepted, rejected, or superseded records.** Their `id`, `status`, `title`, body, and `successors` never change, not even for a typo, and Dadrock refuses such edits. Use [supersede-record.md](supersede-record.md) instead.
+- **No edits to accepted, rejected, or superseded records.** Agents never edit their text, and the `edit-record` task refuses them. For a correction that leaves the meaning intact, point the user to an in-place edit (**Edit** in the web interface, or any editor); to change the decision, use [supersede-record.md](supersede-record.md).
 - **One candidate per invocation.** If two candidates need revising, run the skill twice.
 - **Preserve `id` and `status`.** Both are dadrock-owned front-matter fields.
 

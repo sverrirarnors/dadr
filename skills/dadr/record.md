@@ -11,9 +11,9 @@ The `status` field takes one of three values: `candidate`, `accepted`, or `rejec
 | Record | Editable? | Notes |
 |---|---|---|
 | `candidate` | Yes — freely revisable | A proposed decision under review. Lives in `dadr/inbox/`. Each of the four sections must have text before acceptance; thin candidates create work for the reviewer. |
-| `accepted` | Tags only | The decision is in force. Lives in `dadr/ledger/`. Its `id`, `status`, `title`, body, and `successors` never change, not even for a typo; Dadrock refuses such edits. Every change goes through a successor candidate: accept a successor with a `## Supersedes` section naming it, or use `dadrock supersede` to link records that are already accepted. |
-| `accepted`, superseded | Tags only | An accepted record whose `successors` array names the records that supersede it. Moved to `dadr/archive/`; keeps `status: accepted`. Gains successors only by being superseded. |
-| `rejected` | Tags only | A closed candidate. Lives in `dadr/archive/`. Its `id`, `status`, `title`, and body never change. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
+| `accepted` | Corrections in place | The decision is in force. Lives in `dadr/ledger/`. Its `id` and `status` never change, `successors` only gains entries through supersession, and the four sections stay. A person may correct the title and body when the meaning stays the same (spelling, formatting, links, citations); Git keeps those edits and `dadrock history` lists them. Changing the decision goes through a successor candidate: accept a successor with a `## Supersedes` section naming it, or use `dadrock supersede` to link records that are already accepted. Agents never edit it. |
+| `accepted`, superseded | Corrections in place | An accepted record whose `successors` array names the records that supersede it. Moved to `dadr/archive/`; keeps `status: accepted`. Gains successors only by being superseded; same rules as an accepted record. |
+| `rejected` | Corrections in place | A closed candidate. Lives in `dadr/archive/`. Its `id` and `status` never change; a person may correct its wording. Usually tagged with `rejected/<reason>` (e.g., `rejected/duplicate`, `rejected/withdrawn`). |
 
 Acceptance, rejection, and supersession are all **human approval boundaries**. No skill auto-transitions.
 
@@ -169,7 +169,7 @@ A well-formed record is **roughly 200–400 words of body prose** — long enoug
 - **Hand-written `successors`.** Let Dadrock write them, when a successor with a `## Supersedes` section is accepted or through `dadrock supersede`.
 - **Question-form titles.** "Should we drop missing treatment?" → "Drop observations with missing treatment".
 - **Tense drift in `Decision`.** Active voice describing what was done (or what the code does); not "we plan to" or "we should".
-- **Editing accepted or rejected records.** Their title and body never change, not even for a typo, and Dadrock refuses the edit. Draft a successor candidate that supersedes the accepted record instead; only tags and keys outside DADR can change in place.
+- **Agents editing accepted or rejected records.** Agents never edit their text. A person corrects wording in place when the meaning stays the same; Dadrock refuses only a changed `id`, `status`, or `successors`, or an accepted record without its four sections. To change the decision, draft a successor candidate that supersedes the accepted record.
 
 ## Minimum viable record
 

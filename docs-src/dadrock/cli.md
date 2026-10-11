@@ -39,11 +39,11 @@ Earlier versions of DADRock used `candidates/`, `accepted/`, and `rejected/`. DA
 
 ## History
 
-A decision's history is its chain of versions, linked by [supersession](web.md#changing-a-decision). DADRock derives it from `successors` alone, so it needs no extra front matter and no Git.
+A decision's history is its chain of versions, linked by [supersession](web.md#changing-a-decision), plus the corrections made to each version. DADRock derives the versions from `successors` alone, so they need no extra front matter and no Git. Corrections stay in the record itself, and DADRock reads them from Git.
 
 ```sh
 dadrock history QUERY            # versions as a graph, newest first
-dadrock history QUERY --patch    # with the diff of each change
+dadrock history QUERY --patch    # with the diff of each change and each text edit
 dadrock history QUERY --json
 dadrock diff OLD NEW             # compare any two records
 ```
@@ -53,7 +53,8 @@ dadrock diff OLD NEW             # compare any two records
 - **versions**: the record, its predecessors back to the first version, and its successors forward to the current ones;
 - **current versions**: the versions without successors;
 - **links**: each supersession between two records, with its reason, the text after the links in the successor's `## Supersedes` section. Records linked with `dadrock supersede` alone have no reason;
-- **neighbors**: records at the other end of a link that are not versions, listed on one line without their own history.
+- **neighbors**: records at the other end of a link that are not versions, listed on one line without their own history;
+- **text edits**: for each version, the edits Git recorded to its title or body since the version was accepted or rejected, newest first.
 
 Versions are listed newest first, and a record always appears above its predecessors, even when it was created earlier. `◉` marks the record you asked for. A decision superseded by several records is a split; several decisions superseded by one record are a merge:
 
@@ -78,7 +79,26 @@ The history from one half of a split shows the other half as a neighbor ("also b
 
 Diffs compare the title, the tags, and the body without `## Supersedes`, after normalizing line endings; other front matter is not compared. `--patch` prints each link's diff under it: the title change, the tag changes (`+topic/missing-data −topic/attrition`), and the changed lines with a few lines of context. `dadrock diff OLD NEW` prints the same comparison for any two records, linked or not. Diffs are computed when shown and never stored.
 
-The history ignores successor ids that match no record and stops at cycles, with a warning; `dadrock validate` reports both. In the web interface, the Ledger's [**History** tab](web.md#ledger) shows the same versions. The local web server serves the same JSON at `/api/records/{id}/history` (`?patch=1` for diffs) and `/api/records/{id}/diff?against={other}`, which compares `{other}` to `{id}`.
+The history ignores successor ids that match no record and stops at cycles, with a warning; `dadrock validate` reports both. In the web interface, the Ledger's [**History** tab](web.md#ledger) shows the same versions and text edits. The local web server serves the same JSON at `/api/records/{id}/history` (`?patch=1` for diffs) and `/api/records/{id}/diff?against={other}`, which compares `{other}` to `{id}`.
+
+### Text edits
+
+A correction that leaves the meaning intact, such as a fixed typo, link, or citation, is made in the record itself and keeps its `id` ([specification §6.3](../specification.md#immutability)). DADRock never copies these edits into records. It reads them from Git with `git log --follow` on the version's file, which follows the moves between `inbox/`, `ledger/`, and `archive/`:
+
+- The baseline is the earliest commit in which the record is accepted or rejected. Edits made while it was a candidate are not listed.
+- Every later commit whose title or body (without `## Supersedes`, line endings aside) differs from the previous commit's is an edit. A commit that changes only tags, `successors`, or the folder is not.
+- A change not committed yet, the working tree against `HEAD`, is listed first.
+
+A version with edits gets one line under it in the graph, and `--patch` adds each edit's diff under a header with the commit's short hash and subject:
+
+```text
+◉   01938c20a3b4  Winsorize income at p99  current
+    edited 2 times since accepted (latest 2026-10-01, Alice)
+```
+
+In JSON, each version has `edits`, newest first. Each edit is `{commit, short_commit, author, date, subject, title_changed, body_changed}`, plus `diff` with `--patch`; `date` is the author date in ISO 8601, and the commit fields are `null` for an edit not committed yet. Candidates have no edits (`[]`). Outside a Git repository, or without `git`, `edits` is `null` and the rest of the history is unchanged.
+
+Listing the edits does not judge them. Whether an edit is a correction or a change of decision is the reviewer's call; to change the decision, supersede the record instead.
 
 ## Validation
 
@@ -101,17 +121,31 @@ Focused commands are `dadrock validate records`, `dadrock validate links`, and `
 
 ### Changes since a Git revision
 
-Once a record is accepted or rejected, its `id`, `status`, `title`, and body do not change, and entries are not removed from its `successors`. `dadrock validate changes` checks this against Git history:
+Once a record is accepted or rejected, its `id` and `status` do not change, and entries are not removed from its `successors`. Its title and body take corrections that leave the meaning intact; changing the decision means superseding the record ([specification §6.3](../specification.md#immutability)). `dadrock validate changes` checks the first rule against Git and shows every title and body edit, so a reviewer can judge the second:
 
 ```sh
 dadrock validate changes                      # working tree against HEAD
 dadrock validate changes --staged             # staged changes against HEAD
 dadrock validate changes --base origin/main   # everything since another revision
+dadrock validate changes --strict             # title and body edits are errors too
 ```
 
-For each record file in `dadr/inbox/`, `dadr/ledger/`, or `dadr/archive/` that changed since the base revision, DADRock reads the file's version at the base. If that version was accepted or rejected, the current version must have the same `id`, `status`, `title`, and body (line endings aside), and its `successors` must still list every earlier entry. `tags`, keys outside DADR, and new `successors` entries may change. A record that moved between folders, by being accepted, rejected, or superseded, is followed through Git's rename detection or by its `id`, and passes when these rules hold.
+For each record file in `dadr/inbox/`, `dadr/ledger/`, or `dadr/archive/` that changed since the base revision, DADRock reads the file's version at the base. If that version was accepted or rejected, DADRock compares the current version with it. A record that moved between folders, by being accepted, rejected, or superseded, is followed through Git's rename detection or by its `id`.
 
-A violation is an error that names the record and suggests [drafting a successor](web.md#changing-a-decision) instead (`record_id_changed`, `record_status_changed`, `record_title_changed`, `record_body_changed`, `successor_removed`, or `invalid_record` when the new version no longer parses). Deleting an accepted or rejected record is a warning (`record_deleted`). Candidates change freely, new files have no earlier version to compare, and a repository without commits passes. Outside a Git repository, or when the base revision does not resolve, the command fails. Ordinary `dadrock validate` does not use Git.
+- **Errors:** a changed `id` (`record_id_changed`) or `status` (`record_status_changed`), a removed `successors` entry (`successor_removed`), or a file that no longer parses (`invalid_record`). The message names the record and suggests [drafting a successor](web.md#changing-a-decision) instead.
+- **Warnings, with the diff:** an edited title (`record_title_edited`) or body (`record_body_edited`; line endings aside). The message names the record and says to supersede it instead if the edit changes the decision. The text output prints the diff under the warning: the old and new title, or the changed body lines with a few lines of context. In JSON, the issue's `diff` carries the same change: `title` with `old` and `new`, or the body's `lines`, each `{kind, text}` with `kind` one of `context`, `added`, or `removed`.
+- Deleting an accepted or rejected record is a warning (`record_deleted`).
+
+```text
+dadrock validate changes: 0 error(s), 1 warning(s) (working tree against HEAD (5309d425ba44))
+[warning] record_body_edited /home/me/analysis/dadr/ledger/01938c20a3b4-winsorize-income.md: the body of accepted record `Winsorize income at p99` (01938c20a3b4) was edited since HEAD. If this changes the decision, supersede the record instead.
+      ## Consequences
+
+    - Estimates are less sensitive to outliers.
+    + Estimates are much less sensitive to outliers.
+```
+
+`tags`, keys outside DADR, and new `successors` entries change freely, and so do candidates. New files have no earlier version to compare, and a repository without commits passes. Warnings alone exit with status zero. With `--strict`, title and body edits are errors too, for projects that want accepted text frozen; there is no project setting, so pass the flag wherever the check runs. Outside a Git repository, or when the base revision does not resolve, the command fails. Ordinary `dadrock validate` does not use Git.
 
 Validation checks the records' structure, their internal references, and, with `validate changes`, their history in Git. It does not resolve bibliography citations, detect `TBD` prose, enforce plan-deviation sections, or determine whether code follows a decision. Those checks are [roadmap work](../roadmap.md). Human review remains necessary.
 
@@ -119,12 +153,18 @@ Validation checks the records' structure, their internal references, and, with `
 
 Once DADRock is installed in your CI environment, run `dadrock validate` from the analysis project root. A nonzero exit status signals an error; `--json` provides structured diagnostics. Install from a pinned source revision for reproducibility; a CLI-only CI build can use the [`no-js-build` feature](index.md#without-the-web-interface).
 
-To check that a pull request leaves accepted and rejected records unchanged, compare it with its target branch. The checkout needs that branch's history:
+To review what a pull request changes in accepted and rejected records, compare it with its target branch. The checkout needs that branch's history:
 
 ```sh
 git fetch origin main
 dadrock validate
 dadrock validate changes --base origin/main
+```
+
+A changed `id` or `status`, or a removed successor, fails the check. Title and body edits appear in the CI log as warnings with their diffs, so a reviewer can tell a correction from a change of decision. A project that wants accepted text frozen adds `--strict`, which fails the check on those edits too:
+
+```sh
+dadrock validate changes --base origin/main --strict
 ```
 
 `--base origin/main` compares with the tip of `main`. That is right when the checkout already includes `main`, such as the merge commit many CI services check out for a pull request. For a branch that `main` has moved past, compare with the point where the branch started: `--base "$(git merge-base origin/main HEAD)"`.
@@ -136,7 +176,7 @@ To catch changes before they are committed, run the check on the staged changes 
 exec dadrock validate changes --staged
 ```
 
-Git runs hooks from the repository root. If the project lives in a subdirectory, such as `analysis/dadr/`, change into that subdirectory first: `cd analysis && exec dadrock validate changes --staged`.
+The hook blocks a commit only on errors; title and body edits print as warnings. Add `--strict` to block those edits too. Git runs hooks from the repository root. If the project lives in a subdirectory, such as `analysis/dadr/`, change into that subdirectory first: `cd analysis && exec dadrock validate changes --staged`.
 
 ## Reference
 
@@ -205,7 +245,7 @@ With no command, prints this help menu.
 * `demo` — Seed a new project with a named DADR example.
 * `new` — Create a candidate decision record from the active candidate template.
 * `list` — List records, optionally filtered by lifecycle status, tag, or query.
-* `history` — Show a decision's versions as a graph, newest first, with the reason for each change.
+* `history` — Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.
 * `diff` — Compare two records: title, tags, and body without `## Supersedes`.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
 * `accept` — Accept a candidate decision, or several together with --with.
@@ -328,7 +368,7 @@ List records, optionally filtered by lifecycle status, tag, or query.
 
 ### `dadrock history`
 
-Show a decision's versions as a graph, newest first, with the reason for each change.
+Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.
 
 **Usage:** `dadrock history [OPTIONS] <QUERY>...`
 
@@ -338,7 +378,7 @@ Show a decision's versions as a graph, newest first, with the reason for each ch
 
 ###### **Options:**
 
-* `--patch` — Print each change's diff under its link
+* `--patch` — Print each change's diff under its link, and each text edit's diff under its version
 * `--json`
 
 ### `dadrock diff`
@@ -453,7 +493,7 @@ Run project validation, or target records, links, tags, or changes.
 * `records` — Validate record front matter and structure.
 * `links` — Report broken or ambiguous wikilinks and local Markdown links.
 * `tags` — Report malformed YAML and inline tags.
-* `changes` — Check that accepted and rejected records changed since a Git revision only where allowed.
+* `changes` — Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.
 
 ###### **Options:**
 
@@ -495,7 +535,7 @@ Report malformed YAML and inline tags.
 
 ### `dadrock validate changes`
 
-Check that accepted and rejected records changed since a Git revision only where allowed.
+Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.
 
 **Usage:** `dadrock validate changes [OPTIONS]`
 
@@ -505,6 +545,7 @@ Check that accepted and rejected records changed since a Git revision only where
 
   Default value: `HEAD`
 * `--staged` — Compare the index (staged changes) instead of the working tree
+* `--strict` — Report title and body edits to accepted and rejected records as errors
 * `--json`
 
 ### `dadrock tags`

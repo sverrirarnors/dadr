@@ -63,7 +63,7 @@ With no command, prints this help menu.
 * `demo` — Seed a new project with a named DADR example.
 * `new` — Create a candidate decision record from the active candidate template.
 * `list` — List records, optionally filtered by lifecycle status, tag, or query.
-* `history` — Show a decision's versions as a graph, newest first, with the reason for each change.
+* `history` — Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.
 * `diff` — Compare two records: title, tags, and body without `## Supersedes`.
 * `status` — Inspect one record's lifecycle status or run lifecycle transitions.
 * `accept` — Accept a candidate decision, or several together with --with.
@@ -208,7 +208,7 @@ List records, optionally filtered by lifecycle status, tag, or query.
 
 ## `dadrock history`
 
-Show a decision's versions as a graph, newest first, with the reason for each change.
+Show a decision's versions as a graph, newest first, with the reason for each change and each version's text edits from Git.
 
 **Usage:** `dadrock history [OPTIONS] <QUERY>...`
 
@@ -218,7 +218,7 @@ Show a decision's versions as a graph, newest first, with the reason for each ch
 
 ###### **Options:**
 
-* `--patch` — Print each change's diff under its link
+* `--patch` — Print each change's diff under its link, and each text edit's diff under its version
 * `--json`
 
 
@@ -351,7 +351,7 @@ Run project validation, or target records, links, tags, or changes.
 * `records` — Validate record front matter and structure.
 * `links` — Report broken or ambiguous wikilinks and local Markdown links.
 * `tags` — Report malformed YAML and inline tags.
-* `changes` — Check that accepted and rejected records changed since a Git revision only where allowed.
+* `changes` — Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.
 
 ###### **Options:**
 
@@ -401,7 +401,7 @@ Report malformed YAML and inline tags.
 
 ## `dadrock validate changes`
 
-Check that accepted and rejected records changed since a Git revision only where allowed.
+Check accepted and rejected records against a Git revision: a changed id or status or a removed successor is an error; a title or body edit is a warning with the diff.
 
 **Usage:** `dadrock validate changes [OPTIONS]`
 
@@ -411,6 +411,7 @@ Check that accepted and rejected records changed since a Git revision only where
 
   Default value: `HEAD`
 * `--staged` — Compare the index (staged changes) instead of the working tree
+* `--strict` — Report title and body edits to accepted and rejected records as errors
 * `--json`
 
 

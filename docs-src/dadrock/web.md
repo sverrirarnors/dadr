@@ -57,7 +57,7 @@ The Inbox is the home screen and the work queue. Everything that needs a human l
 - **Agent proposals** are decisions a local agent drafted from your notes or your code. **Save as candidate** writes the file so you can review it like any other candidate; **Discard** drops it.
 - **Proposed revisions** show an agent's edit to a candidate as a diff. **Apply** writes it; **Discard** drops it.
 - **Conflicts** come from **Check for conflicts**, which asks the agent to look for overlapping or contradictory decisions. From a conflict you can **Merge** two candidates, **Supersede** an accepted decision, or **Dismiss** the finding.
-- **Issues** are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. **Open record** jumps to the record; **Fix with agent** asks the agent to revise a candidate or to draft a successor of a decision in force; warnings and notes can be dismissed. Archived records never change, so their issues offer no fix.
+- **Issues** are validation findings: structure, links, tags, and project layout. Validation runs on every load, so there is nothing to trigger. **Open record** opens the record in its editor; **Fix with agent** asks the agent to revise a candidate or to draft a successor of a decision in force; warnings and notes can be dismissed. Agents never edit decided text, so issues on archived records offer no agent fix: correct the record yourself.
 
 Review both the observed choice and its rationale. An agent-generated description of code may be accurate while the reason for that choice remains unknown. Supply the missing rationale before accepting.
 
@@ -69,17 +69,21 @@ Record text is edited in a CodeMirror editor with Markdown and front-matter high
 
 The Ledger is what has been decided. It lists the decisions in force, newest first, with one search box and a tag facet. **Show archived** adds the archived records: rejected and superseded ones.
 
-A decision in force never changes in place. **Edit** opens a full-page successor draft on the Draft page, starting from the record's exact title, tags, and body, with a required "Why does this decision change?" field. Saving creates a successor candidate and opens it in the Inbox on its **Changes** tab; the decision stays in force until you accept the successor. **Revise with agent** asks a local agent to draft the successor (`supersede-record`), and **Supersede** opens the Draft page to draft it with the agent or by hand, or to link decisions that already exist. Tags stay editable in place on accepted and rejected records: the tag button next to them saves only `tags`.
+**Edit** opens the record's Markdown in place, on every record. On an accepted, superseded, or rejected record it is for corrections, such as spelling, formatting, links, or citations: the record keeps its ID and stays where it is, and the edit shows in its **History**. A note above the editor says so. The title, body, tags, and front-matter keys outside DADR can change; see [Changing a decision](#changing-a-decision) for what cannot.
 
-Archived records have no **Edit** or **Revise with agent**. A superseded record says where the decision went ("Superseded by …", linking the decisions now in force).
+To change what was decided, use **Supersede**. It opens a full-page successor draft on the Draft page, starting from the record's exact title, tags, and body, with an optional "Why does this decision change?" field. Saving creates a successor candidate and opens it in the Inbox on its **Changes** tab; the decision stays in force until you accept the successor. From the Draft page you can also ask the agent instead, or link decisions that already exist. **Revise with agent** asks a local agent to draft the successor (`supersede-record`).
 
-The **History** tab shows the decision's versions newest first, the opened one highlighted and the current ones labeled. Lanes join where a decision was split and fork where several were merged. Each change shows its reason and, on request, its diff. Records at the other end of a split or merge appear on one line ("Also became …", "Merged with …") and link to their own history. From a terminal, [`dadrock history`](cli.md#history) shows the same versions.
+Archived records have **Edit** but no **Supersede** or **Revise with agent**. A superseded record says where the decision went ("Superseded by …", linking the decisions now in force).
+
+The **History** tab shows the decision's versions newest first, the opened one highlighted and the current ones labeled. Lanes join where a decision was split and fork where several were merged. Each change shows its reason and, on request, its diff. Records at the other end of a split or merge appear on one line ("Also became …", "Merged with …") and link to their own history.
+
+Under each version, "Edited 2 times since accepted" lists the edits Git recorded to its title or body since it was accepted (or rejected), newest first: the date, the author, and the commit subject, each with its diff. An edit that is not committed yet comes first, marked "Not committed yet". Changes to tags or to the record's folder alone are not listed. A record whose text changed after acceptance shows "Edited since acceptance" next to its file name, which opens the History tab. Outside a Git repository, History shows the versions without edits. From a terminal, [`dadrock history`](cli.md#history) shows the same versions and edits.
 
 ## Draft
 
 **Draft** is the third place: a full page reached from the header or from any record. Describe the decision in the text box, or attach files and folders to have a [configured agent](llms.md#acp) look for decisions in your code. Attach two candidates to merge them. Opened from a record, the same page revises a candidate or drafts a successor of a decision in force; attach more decisions in force to supersede them together with one successor (a merge). Results land in the Inbox as proposals.
 
-**Write it by hand** (the default without an agent) gives you a plain form with the candidate template. For a successor, the form starts from the predecessor's exact text, or from every predecessor's sections for a merge, and asks why the decision changes; DADRock writes the `## Supersedes` section from it. **Supersede with existing decisions instead** links an accepted record to successors that already exist.
+**Write it by hand** (the default without an agent, and where **Supersede** lands) gives you a plain form with the candidate template. For a successor, the form starts from the predecessor's exact text, or from every predecessor's sections for a merge, and asks why the decision changes; the reason is optional. DADRock writes the `## Supersedes` section with a link to each predecessor and the reason. **Supersede with existing decisions instead** links an accepted record to successors that already exist.
 
 ## Project
 
@@ -89,9 +93,11 @@ Old links still work: `/records`, `/candidates/new`, `/tasks`, `/validation`, `/
 
 ## Changing a decision
 
-An accepted decision is never rewritten, not even to fix a typo. Its `id`, `status`, `title`, body, and `successors` are frozen, and so are those of a rejected record; only tags and front-matter keys outside DADR can change. DADRock refuses any other change to an accepted or rejected record, from the web editor or an agent revision, and suggests drafting a successor instead. Bodies are compared with normalized line endings. The `edit-record` agent task revises candidates only.
+A decided record takes corrections in place; a change of decision is a new record.
 
-To change a decision, however slightly, draft a successor: a new candidate that supersedes the old record, its predecessor. Use **Edit**, **Revise with agent**, or **Supersede** on the record in the [Ledger](#ledger), run the `supersede-record` [task](llms.md#custom-workflows-and-runs), or write the candidate yourself. The successor names its predecessors in a `## Supersedes` section, followed by the reason for the change:
+**Corrections.** Fixing spelling, formatting, links, or citations edits the record itself, with **Edit** in the [Ledger](#ledger) or in your usual editor. It keeps its ID. When you save from the web interface, DADRock refuses to change the `id`, `status`, or `successors` of an accepted, superseded, or rejected record, and an accepted record must keep its four required sections; the title, body, tags, and front-matter keys outside DADR can change. Whether an edit corrects a record or changes the decision is a judgment no rule can make, so DADRock makes every edit visible instead of forbidding it: the record's **History** lists the edits Git recorded to its title and body since it was accepted or rejected, including changes not committed yet. Agents never edit decided text; the `edit-record` agent task revises candidates only.
+
+**Changes of decision.** To change what was decided, however slightly, draft a successor: a new candidate that supersedes the old record, its predecessor. Use **Supersede** or **Revise with agent** on the record in the [Ledger](#ledger), run the `supersede-record` [task](llms.md#custom-workflows-and-runs), or write the candidate yourself. The successor names its predecessors in a `## Supersedes` section, optionally followed by the reason for the change:
 
 ```markdown
 ## Supersedes
@@ -101,7 +107,7 @@ To change a decision, however slightly, draft a successor: a new candidate that 
 Winsorizing at p99 still left implausible incomes in two waves.
 ```
 
-The section starts with one or more lines, each exactly one record link by full UUID, `[[uuid]]` or `[[uuid|label]]`. The text after the links is the reason, in ordinary Markdown. A record has at most one `## Supersedes` section, and a section without a link is an error. When DADRock writes the section, from the web interface, a `supersede-record` result, or [MCP](llms.md#mcp), it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links. The section stays in the successor's body after acceptance as the record of why the decision changed. It is a DADRock convention, not an additional required section of the DADR format.
+The section starts with one or more lines, each exactly one record link by full UUID, `[[uuid]]` or `[[uuid|label]]`. The text after the links, if any, is the reason, in ordinary Markdown. A record has at most one `## Supersedes` section, and a section without a link is an error. When DADRock writes the section, from the web interface, a `supersede-record` result, or [MCP](llms.md#mcp), it is the first section of the body, each link is labeled with the predecessor's title, and the reason follows the links. The section stays in the successor's body after acceptance as the record of why the decision changed. It is a DADRock convention, not an additional required section of the DADR format.
 
 The `supersede-record` task takes one or more accepted records and the change you want. The agent starts from the predecessor's exact text and changes only what the request requires, so the successor reads as a small diff; for several predecessors it combines them into one decision. It returns the reason separately, and DADRock writes it into `## Supersedes` when you save the proposal as a candidate.
 

@@ -163,14 +163,14 @@ Within a record set:
 
 ### 6.3 Immutability { #immutability }
 
-Candidates MAY be edited freely. Once a record is accepted or rejected:
+Candidates MAY be edited freely. Once a record is accepted:
 
-- its `id`, `status`, `title`, and body MUST NOT change;
-- entries MUST NOT be removed from `successors`.
+- its `id` and `status` MUST NOT change, and entries MUST NOT be removed from `successors`;
+- the meaning of its title and body MUST NOT change. Corrections that leave the meaning intact, such as fixing spelling, formatting, links, or citations, are allowed.
 
-`tags` and keys outside DADR MAY change, and an accepted record gains `successors` entries when it is superseded. To change a decision, however slightly, create a new candidate, accept it, and supersede the old record.
+`tags` and keys outside DADR MAY change. To change an accepted decision, create a new candidate, accept it, and supersede the old record.
 
-These rules can be checked mechanically, for example against version-control history.
+The first rule can be checked mechanically, for example against version-control history. The second requires a reviewer's judgment. Tools can support that judgment by listing edits to accepted records, for example from version-control history.
 
 ---
 
