@@ -21,9 +21,9 @@ pub use output::{
     TaskOutputKind, TaskOutputValue,
 };
 pub use runner::{
-    create_task_run_for_acp, create_task_run_for_task, request_task_run_cancellation,
-    run_created_local_task, run_created_task_with_acp, run_task_with_acp, AcpTaskRunOptions,
-    TaskContext, TaskRunCommandRequest,
+    create_task_run_for_acp, create_task_run_for_task, prepare_task_for_run,
+    request_task_run_cancellation, run_created_local_task, run_created_task_with_acp,
+    run_task_with_acp, AcpTaskRunOptions, TaskContext, TaskRunCommandRequest,
 };
 pub use runs::{
     append_or_extend_task_run_log, append_task_run_log, clear_task_runs, create_task_run,

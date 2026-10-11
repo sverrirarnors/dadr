@@ -15,7 +15,7 @@ use dadrock::{
         acp::AcpPermissionPolicy,
         providers::{
             configured_local_acp_agent, detect_local_acp_agent, known_acp_providers,
-            ACP_AGENT_ARGS_ENV, ACP_AGENT_ENV,
+            LocalAcpAgentCommand, ACP_AGENT_ARGS_ENV, ACP_AGENT_ENV,
         },
     },
     commands::{
@@ -29,10 +29,10 @@ use dadrock::{
     records::{status_record, PendingSupersedes, ScannedRecord, ScannedRecordSummary},
     tags::{build_tag_report, TagIssue, TagReport},
     tasks::{
-        clear_task_runs as core_clear_task_runs, create_task_run_for_task, read_task_run_log,
-        resolve_task_run_dir as resolve_project_task_run_dir, run_created_local_task,
-        run_created_task_with_acp, write_task_failure, AcpTaskRunOptions, TaskContext,
-        TaskExecutionMode,
+        clear_task_runs as core_clear_task_runs, create_task_run, prepare_task_for_run,
+        read_task_run_log, resolve_task_run_dir as resolve_project_task_run_dir,
+        run_created_local_task, run_created_task_with_acp, write_task_failure, AcpTaskRunOptions,
+        TaskContext, TaskExecutionMode,
     },
     templates::{candidate_template_body, resolve_template, TemplateName, TemplateSource},
     validation::{validate_project_index, ProjectValidationIssue},
@@ -245,23 +245,34 @@ fn cancel_task_run(cwd: &Utf8PathBuf, run_id: &str) -> Result<HttpResponse, ApiF
 }
 
 fn run_task(request: &HttpRequest, cwd: &Utf8PathBuf) -> Result<HttpResponse, ApiFailure> {
+    run_task_with_agent(request, cwd, configured_local_acp_agent)
+}
+
+/// Starts a task run. The agent is found before the run is created, so when
+/// none is configured the request fails with that message, which the Draft
+/// page and the Inbox show, instead of leaving a run that stays `created`.
+fn run_task_with_agent(
+    request: &HttpRequest,
+    cwd: &Utf8PathBuf,
+    local_agent: impl FnOnce() -> Result<LocalAcpAgentCommand, DadrError>,
+) -> Result<HttpResponse, ApiFailure> {
     let body: RunTaskRequest = json_body(request)?;
     let context = context_for(cwd)?;
     let mut project = context.discover_project()?;
     project.cwd = task_project_root(&project);
     let input = body.input.unwrap_or_else(|| serde_json::json!({}));
     let task_context = body.context.unwrap_or_default();
-    let (task, run) =
-        create_task_run_for_task(&project, &body.task_id, input.clone(), &task_context)?;
+    let task = prepare_task_for_run(&project, &body.task_id, &input, &task_context)?;
     if task.manifest.execution == TaskExecutionMode::Local {
+        let run = create_task_run(&project.cwd, &task, input.clone())?;
         let run = run_created_local_task(&project, &task, input, task_context, &run)?;
         let envelope =
             CommandEnvelope::new("task run", run.clone()).with_changed_paths(vec![run.run_dir]);
         return json_response(200, &envelope);
     }
 
-    project.require_initialized()?;
-    let local_agent = configured_local_acp_agent()?;
+    let local_agent = local_agent()?;
+    let run = create_task_run(&project.cwd, &task, input.clone())?;
     let run_for_response = run.clone();
     let project_for_thread = project.clone();
     thread::spawn(move || {
@@ -284,7 +295,7 @@ fn run_agent_task_thread(
     task: dadrock::tasks::TaskPackage,
     input: serde_json::Value,
     task_context: TaskContext,
-    local_agent: dadrock::agent::providers::LocalAcpAgentCommand,
+    local_agent: LocalAcpAgentCommand,
     run: dadrock::tasks::PersistedTaskRun,
 ) {
     let run_id = run.id;
@@ -1517,6 +1528,35 @@ mod tests {
         let response = static_response(200, "text/plain", Cow::Borrowed(b"hello"));
 
         assert_eq!(response.body.as_ref(), b"hello");
+    }
+
+    #[test]
+    fn task_run_without_an_agent_fails_before_creating_a_run() {
+        let root = temp_root("task-run-no-agent");
+        let request = post(
+            "/api/tasks/run",
+            &serde_json::json!({
+                "task_id": "context-to-record",
+                "input": {"context": "Explain the sample restrictions"},
+            })
+            .to_string(),
+        );
+
+        let error = run_task_with_agent(&request, &root, || {
+            Err(DadrError::Acp(
+                "no local ACP agent found; set DADROCK_ACP_AGENT=<program>",
+            ))
+        })
+        .unwrap_err();
+
+        assert_eq!(error.status, 400);
+        assert!(
+            error.message.contains("no local ACP agent found"),
+            "{}",
+            error.message
+        );
+        assert!(dadrock::tasks::list_task_runs(&root).unwrap().is_empty());
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

@@ -1816,6 +1816,45 @@ fn code_to_record_rejects_run_when_no_context_paths_supplied() {
     let _ = fs::remove_dir_all(root);
 }
 
+/// Runs `dadrock task run` where no ACP agent can be found: nothing on
+/// `PATH` and no `DADROCK_ACP_AGENT`.
+fn dadrock_task_run_without_agent(root: &Path, args: &[&str]) -> std::process::Output {
+    let empty_path = root.join("empty-path");
+    fs::create_dir_all(&empty_path).expect("create empty PATH dir");
+    std::process::Command::new(env!("CARGO_BIN_EXE_dadrock"))
+        .args(["task", "run"])
+        .args(args)
+        .current_dir(root)
+        .env("PATH", &empty_path)
+        .env("DADROCK_TASKS_DIR", root.join("user-tasks"))
+        .env_remove("DADROCK_ACP_AGENT")
+        .env_remove("DADROCK_ACP_AGENT_ARGS")
+        .output()
+        .expect("run dadrock task run")
+}
+
+#[test]
+fn task_run_without_agent_fails_clearly_and_creates_no_run() {
+    let root = unique_temp_dir("dadrock-task-run-no-agent");
+    init_project(&root).unwrap();
+
+    let output = dadrock_task_run_without_agent(
+        &root,
+        &["context-to-record", "--context", "Explain the sample"],
+    );
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("no local ACP agent found") && stderr.contains("DADROCK_ACP_AGENT"),
+        "unexpected stderr: {stderr}"
+    );
+    let project_root = Utf8PathBuf::from_path_buf(root.clone()).expect("utf8 root");
+    assert!(list_task_runs(&project_root).unwrap().is_empty());
+
+    let _ = fs::remove_dir_all(root);
+}
+
 #[test]
 fn task_run_validation_rejects_missing_required_input() {
     let root = unique_temp_dir("dadrock-task-required-input");
