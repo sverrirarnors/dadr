@@ -33,7 +33,7 @@ function record(
   };
 }
 
-const accepted = record('acc-1', 'accepted', 'Use Polars', { tags: ['#dadr/data', '#kind/tool'] });
+const accepted = record('acc-1', 'accepted', 'Use Polars', { tags: ['#dadr/data', '#kind/setup'] });
 const candidate = record('cand-1', 'candidate', 'First draft');
 const superseded = record('acc-0', 'accepted', 'Use pandas', { superseded: true });
 const records = [accepted, candidate, superseded];
@@ -107,7 +107,7 @@ describe('manualPrefill', () => {
   it('prefills a replacement from the original decision', () => {
     expect(manualPrefill('supersede', accepted)).toEqual({
       title: 'Update: Use Polars',
-      tags: '#dadr/data #kind/tool',
+      tags: '#dadr/data #kind/setup',
     });
   });
 

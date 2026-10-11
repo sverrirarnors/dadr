@@ -100,7 +100,7 @@
   <Field label="Tags">
     <TextInput
       aria-label="Tags"
-      placeholder="#kind/sample #writer/human"
+      placeholder="#kind/sample #topic/missingness"
       bind:value={tags}
       disabled={creating}
       class="font-mono text-xs"
