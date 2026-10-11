@@ -57,13 +57,25 @@ clean: ## Remove the generated docs/ directory
 DEMO_DIR ?= /tmp/dadr-demo
 DEMO_EXAMPLE ?= candidate-review
 DEMO_PORT ?= 4004
+DEMO_URL := http://127.0.0.1:$(DEMO_PORT)/
+ifeq ($(shell uname -s),Darwin)
+  OPEN ?= open
+else
+  OPEN ?= xdg-open
+endif
 
-demo: ## Seed a throwaway demo project and open it in the web UI (DEMO_EXAMPLE=candidate-review DEMO_DIR=/tmp/dadr-demo DEMO_PORT=4004)
+demo: ## Seed a throwaway demo project and open it in your browser (DEMO_EXAMPLE=candidate-review DEMO_DIR=/tmp/dadr-demo DEMO_PORT=4004)
 	@if [ -e "$(DEMO_DIR)" ] && [ ! -d "$(DEMO_DIR)/dadr" ]; then \
 		echo "refusing to replace $(DEMO_DIR): it is not a dadrock demo project"; exit 1; \
 	fi
 	@rm -rf "$(DEMO_DIR)"
 	cargo run --quiet -p dadrock --bin dadrock -- demo --example $(DEMO_EXAMPLE) "$(DEMO_DIR)"
+	@( if command -v curl >/dev/null 2>&1; then \
+	     for i in $$(seq 1 120); do \
+	       curl -fsS "$(DEMO_URL)api/project" >/dev/null 2>&1 && break; sleep 0.5; \
+	     done; \
+	   else sleep 3; fi; \
+	   echo "Opening $(DEMO_URL)"; $(OPEN) "$(DEMO_URL)" >/dev/null 2>&1 || echo "Could not open a browser; visit $(DEMO_URL)" ) &
 	cargo run --quiet -p dadrock --bin dadrock -- preview --port $(DEMO_PORT) "$(DEMO_DIR)"
 
 kill: ## Kill running dadrock preview servers
